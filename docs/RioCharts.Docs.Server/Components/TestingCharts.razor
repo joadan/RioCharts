@@ -1,0 +1,26 @@
+﻿<LineChart Width="50%" Height="300px" TItem=Data Items="sampleData" XValue="e=> e.Name" YValue="e => e.Value">
+
+
+</LineChart>
+
+@code {
+    private List<Data> sampleData = new List<Data>();
+
+    protected override void OnInitialized()
+    {
+
+        sampleData.Add(new Data { Name = "Jocke", Value = 123 });
+        sampleData.Add(new Data { Name = "Cissi", Value = 100 });
+        sampleData.Add(new Data { Name = "Nove", Value = 150 });
+        sampleData.Add(new Data { Name = "Rio", Value = 88 });
+
+    }
+
+
+
+    private class Data
+    {
+        public decimal Value { get; set; }
+        public string Name { get; set; } = "Name";
+    }
+}

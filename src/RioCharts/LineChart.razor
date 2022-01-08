@@ -1,0 +1,28 @@
+﻿@typeparam TItem
+
+<h3>LineChart</h3>
+
+<div style="width:@Width;height:@Height">
+    <svg viewBox="0 0 @boxWidth @boxHeight" style="border:1px solid lightgrey">
+
+       @*Chart Axis*@
+        <line x1="@origoX" y1="@origoY" x2="@origoX" y2="@topPadding" stroke="red" />
+       
+        <line x1="@origoX" y1="@origoY" x2="600"  y2="@origoY" stroke="red" />
+
+
+    </svg>
+
+</div>
+
+
+
+@*<svg class="mud-chart-line mud-ltr" width="100%" height="350px" viewBox="0 0 650 350">
+    <g class="mud-charts-grid"><g class="mud-charts-gridlines-yaxis"><path stroke="#e0e0e0" stroke-width="0.3" d="M 30 325 L 620 325"></path><path stroke="#e0e0e0" stroke-width="0.3" d="M 30 265 L 620 265"></path><path stroke="#e0e0e0" stroke-width="0.3" d="M 30 205 L 620 205"></path><path stroke="#e0e0e0" stroke-width="0.3" d="M 30 145 L 620 145"></path><path stroke="#e0e0e0" stroke-width="0.3" d="M 30 85 L 620 85"></path><path stroke="#e0e0e0" stroke-width="0.3" d="M 30 25 L 620 25"></path></g></g><!--!-->
+    <g class="mud-charts-yaxis"><!--!--><text x="20" y="330" font-size="12px" text-anchor="end" dominant-baseline="auto">0</text><!--!--><text x="20" y="270" font-size="12px" text-anchor="end" dominant-baseline="auto">20</text><!--!--><text x="20" y="210" font-size="12px" text-anchor="end" dominant-baseline="auto">40</text><!--!--><text x="20" y="150" font-size="12px" text-anchor="end" dominant-baseline="auto">60</text><!--!--><text x="20" y="90" font-size="12px" text-anchor="end" dominant-baseline="auto">80</text><!--!--><text x="20" y="30" font-size="12px" text-anchor="end" dominant-baseline="auto">100</text></g><!--!-->
+    <g class="mud-charts-xaxis"><!--!--><text x="30" y="348" font-size="12px" text-anchor="middle">1986-04-20</text><!--!--><text x="128.33333333333331" y="348" font-size="12px" text-anchor="middle">1986-04-21</text><!--!--><text x="226.66666666666663" y="348" font-size="12px" text-anchor="middle">1986-04-22</text><!--!--><text x="324.99999999999994" y="348" font-size="12px" text-anchor="middle">1986-04-23</text><!--!--><text x="423.33333333333326" y="348" font-size="12px" text-anchor="middle">1986-04-24</text><!--!--><text x="521.6666666666666" y="348" font-size="12px" text-anchor="middle">1986-04-25</text><!--!--><text x="620" y="348" font-size="12px" text-anchor="middle">1986-04-26</text></g><!--!-->
+    <g class="mud-charts-line-series"><path class="mud-chart-line" fill="none" stroke="#2979FF" stroke-width="3" d="M 30 130 L 128.33333333333331 121 L 226.66666666666663 115 L 324.99999999999994 103 L 423.33333333333326 103 L 521.6666666666666 109 L 620 103"></path><path class="mud-chart-line" fill="none" stroke="#1DE9B6" stroke-width="3" d="M 30 61 L 128.33333333333331 55 L 226.66666666666663 52 L 324.99999999999994 49 L 423.33333333333326 52 L 521.6666666666666 55 L 620 55"></path><path class="mud-chart-line" fill="none" stroke="#FFC400" stroke-width="3" d="M 30 58 L 128.33333333333331 52 L 226.66666666666663 49 L 324.99999999999994 49 L 423.33333333333326 49 L 521.6666666666666 49 L 620 52"></path><path class="mud-chart-line" fill="none" stroke="#FF9100" stroke-width="3" d="M 30 70 L 128.33333333333331 67 L 226.66666666666663 55 L 324.99999999999994 55 L 423.33333333333326 49 L 521.6666666666666 28 L 620 325"></path></g><!--!-->
+
+</svg>*@
+
+
