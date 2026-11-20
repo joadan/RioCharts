@@ -23,12 +23,12 @@
             <div class="window">
                 <div class="window-bar"><i></i><i></i><i></i><span>AirHandlingUnit.razor</span></div>
                 <div class="window-body">
-                    <Chart TItem="Reading" Title="Air handling unit" YAxis="Celsius" Height="300">
+                    <RioChart TItem="Reading" Title="Air handling unit" YAxis="Celsius" Height="300">
                         <ReferenceBand From="20" To="24" Label="Comfort zone" />
                         <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
                         <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
                         <LineSeries Items="Outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-                    </Chart>
+                    </RioChart>
                 </div>
             </div>
             <p class="hero-hint">Live. Hover it, click the legend.</p>
@@ -44,29 +44,29 @@
         </div>
         <div class="gallery">
             <a class="tile" href="lines-and-areas">
-                <Chart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                <RioChart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
                     <AreaSeries Items="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-                </Chart>
+                </RioChart>
                 <span class="tile-label">Areas <span aria-hidden="true">→</span></span>
             </a>
             <a class="tile" href="bars">
-                <Chart TItem="Monthly" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                <RioChart TItem="Monthly" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
                     <BarSeries Items="Mix" Name="Heating" XValue="m => m.Month" YValue="m => m.Heating" Stack="mix" />
                     <BarSeries Items="Mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" />
                     <BarSeries Items="Mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" />
-                </Chart>
+                </RioChart>
                 <span class="tile-label">Stacked bars <span aria-hidden="true">→</span></span>
             </a>
             <a class="tile" href="pies">
-                <Chart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                <RioChart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
                     <DonutSeries Items="EnergyUse" XValue="s => s.Name" YValue="s => s.Value" />
-                </Chart>
+                </RioChart>
                 <span class="tile-label">Donuts <span aria-hidden="true">→</span></span>
             </a>
             <a class="tile" href="pies#radial-bars">
-                <Chart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                <RioChart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
                     <RadialBarSeries Items="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
-                </Chart>
+                </RioChart>
                 <span class="tile-label">Radial bars <span aria-hidden="true">→</span></span>
             </a>
         </div>
@@ -156,9 +156,9 @@
     private static readonly TooltipSpec NoTooltip = new() { Enabled = false };
 
     private const string QuickCode = """
-        <Chart Items="readings">
+        <RioChart Items="readings">
             <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
         """;
 
     private sealed record Feature(string Href, string Title, string Text, string Icon);
@@ -183,7 +183,7 @@
 
     private static readonly Package[] Packages =
     [
-        new("RioCharts.Blazor", "The <Chart> component, series, annotations and the SVG renderer."),
+        new("RioCharts.Blazor", "The <RioChart> component, series, annotations and the SVG renderer."),
         new("RioCharts.Core", "Scales, ticks, layout, the chart spec and JSON specs."),
         new("RioCharts.Skia", "Server-side export to SVG and PNG, for reports and e-mail."),
         new("RioCharts.AI", "The create_chart tool for agents: Microsoft.Extensions.AI and MCP."),

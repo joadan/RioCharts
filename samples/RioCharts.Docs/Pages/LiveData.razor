@@ -12,11 +12,11 @@
 <Example Title="A two-minute window" Code="@LiveCode">
     <Description><p>Two buffers with a time window, fed four times a second.</p></Description>
     <ChildContent>
-        <Chart TItem="double" Height="240" YAxis="Celsius" RefreshInterval="250">
+        <RioChart TItem="double" Height="240" YAxis="Celsius" RefreshInterval="250">
             <ReferenceLine Value="21" Label="Setpoint" />
             <LineSeries Name="Supply" Buffer="_supply" Curve="CurveType.Monotone" Format="0.00 °C" />
             <LineSeries Name="Room" Buffer="_room" Curve="CurveType.Monotone" Format="0.00 °C" />
-        </Chart>
+        </RioChart>
         <p class="note"><button class="small" @onclick="Toggle">@(_timer is null ? "Start" : "Pause")</button></p>
     </ChildContent>
 </Example>
@@ -68,10 +68,10 @@
     public void Dispose() => _timer?.Dispose();
 
     private const string LiveCode = """
-        <Chart TItem="double" RefreshInterval="250">
+        <RioChart TItem="double" RefreshInterval="250">
             <LineSeries Name="Supply" Buffer="supply" Curve="CurveType.Monotone" />
             <LineSeries Name="Room" Buffer="room" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
 
         @code {
             SeriesBuffer supply = new(timeWindow: TimeSpan.FromMinutes(2));

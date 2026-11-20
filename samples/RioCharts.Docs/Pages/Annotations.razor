@@ -10,7 +10,7 @@
         <p>Reference lines expand the axis so they are always visible; bands do not. Values can be numbers, times or category names. Hover an annotation for its value.</p>
     </Description>
     <ChildContent>
-        <Chart TItem="Reading" YAxis="Celsius" OnAnnotationClick="e => _clicked = e.Label">
+        <RioChart TItem="Reading" YAxis="Celsius" OnAnnotationClick="e => _clicked = e.Label">
             <ReferenceBand From="20" To="24" Label="Comfort zone" />
             <ReferenceBand Axis="AnnotationAxis.X" From="_faultStart" To="_faultEnd" Label="Fan fault" Color="#d9480f" />
             <ReferenceLine Axis="AnnotationAxis.X" Value="_now" Label="Now" />
@@ -18,7 +18,7 @@
             <Callout X="_filter" Y="20.6" Label="Filter changed" OffsetX="-30" OffsetY="-36" />
             <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
             <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
         <p class="note">Clicked: @(_clicked ?? "nothing yet (click an annotation)")</p>
     </ChildContent>
 </Example>
@@ -26,10 +26,10 @@
 <Example Title="Draggable threshold" Code="@DragCode">
     <Description><p>With <code>Draggable</code>, the user can move a reference line; <code>@@bind-Value</code> receives the new value.</p></Description>
     <ChildContent>
-        <Chart Items="Supply" YAxis="Celsius" Height="240">
+        <RioChart Items="Supply" YAxis="Celsius" Height="240">
             <ReferenceLine @bind-Value="_setpoint" Label="@($"Setpoint {_setpoint:0.0} °C")" Draggable="true" />
             <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
         <p class="note">Setpoint: @_setpoint.ToString("0.0") °C. Drag the dashed line.</p>
     </ChildContent>
 </Example>
@@ -42,14 +42,14 @@
     private string? _clicked;
 
     private const string AllCode = """
-        <Chart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" OnAnnotationClick="e => clicked = e.Label">
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" OnAnnotationClick="e => clicked = e.Label">
             <ReferenceBand From="20" To="24" Label="Comfort zone" />
             <ReferenceBand Axis="AnnotationAxis.X" From="faultStart" To="faultEnd" Label="Fan fault" Color="#d9480f" />
             <ReferenceLine Axis="AnnotationAxis.X" Value="now" Label="Now" />
             <PointAnnotation X="alarm" Y="23.4" Label="High temp alarm" Color="#d9480f" />
             <Callout X="filterChange" Y="20.6" Label="Filter changed" OffsetX="-30" OffsetY="-36" />
             <LineSeries ... />
-        </Chart>
+        </RioChart>
         """;
 
     private const string DragCode = """

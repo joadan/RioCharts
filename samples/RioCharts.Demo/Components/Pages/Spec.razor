@@ -8,7 +8,7 @@
     <div>
         <h1>Spec playground</h1>
         <p class="lead">
-            JSON chart specs, as an AI agent would write them: <code>&lt;Chart Spec="spec" Datasets="datasets" /&gt;</code>.
+            JSON chart specs, as an AI agent would write them: <code>&lt;RioChart Spec="spec" Datasets="datasets" /&gt;</code>.
             <a href="/">Back to the demo</a> · <a href="/ai/schema.json" target="_blank">JSON schema</a> ·
             <a href="/ai/tool.txt" target="_blank">create_chart tool description</a> · MCP server: <code>http://localhost:5030/mcp</code>
         </p>
@@ -35,7 +35,7 @@
             <h2>Chart</h2>
             @if (_spec is not null)
             {
-                <Chart TItem="object" Spec="_spec" Datasets="DemoDatasets.ByName" Height="340" Zoomable="true" @ref="_chart" />
+                <RioChart TItem="object" Spec="_spec" Datasets="DemoDatasets.ByName" Height="340" Zoomable="true" @ref="_chart" />
             }
 
             @if (_errors.Count > 0)
@@ -133,7 +133,7 @@
     private List<string> _errors = [];
     private List<string> _warnings = [];
     private string? _razor;
-    private Chart<object>? _chart;
+    private RioChart<object>? _chart;
 
     protected override void OnInitialized() => Load(Examples[1].Json);
 

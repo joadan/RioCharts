@@ -2,10 +2,14 @@
 
 Where the code differs from, or fills in details of, [Design.md](../Design.md).
 
+- **Component name.** The chart component is `<RioChart>`, not `<Chart>` as in Design.md, so it
+  does not clash with an app's own `Chart` types (e.g. in `@ref` fields) or other libraries'
+  `<Chart>`. Series and annotation components keep their plain names (`<LineSeries>`, …).
+
 ## Milestone 1
 
-- **Chart and TItem.** `<Chart TItem>` cascades `TItem` to its series, so `XValue`/`YValue`
-  lambdas are typed. `TItem` is inferred from `Chart.Items` (shared by all series) or must be
+- **RioChart and TItem.** `<RioChart TItem>` cascades `TItem` to its series, so `XValue`/`YValue`
+  lambdas are typed. `TItem` is inferred from `RioChart.Items` (shared by all series) or must be
   given. A chart that only uses columnar `Data` still needs some `TItem`, e.g. `TItem="double"`.
 - **Selectors.** `XValue` is `Func<TItem, object?>` (numbers, dates and strings are boxed once per
   data change); `YValue` is `Func<TItem, double?>`, so `decimal` needs a cast.
@@ -22,9 +26,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   width is known.
 - **Styles.** Scene styles are a `StyleTable` of paint and text styles. Colors are CSS colors or
   theme tokens (`--rio-series-1`); the SVG renderer writes tokens as
-  `var(--rio-series-1, var(--_rio-series-1))`, with the defaults defined in `Chart.razor.css`.
+  `var(--rio-series-1, var(--_rio-series-1))`, with the defaults defined in `RioChart.razor.css`.
 - **Change detection.** A series reprocesses its data only when `Items` or `Data` is a new
-  reference or `DataVersion` changes. `Chart.Refresh()` forces a new layout.
+  reference or `DataVersion` changes. `RioChart.Refresh()` forces a new layout.
 - **Downsampling.** Line and area series with more points than twice the plot width (at least
   500) are downsampled with LTTB; each run between gaps is downsampled separately.
 - **Target framework** is net10.0 only for now.
@@ -58,7 +62,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   inside, when the label fits. Points: above, else below. A label overlapping an earlier label or
   an annotation label is dropped. More than 1000 points: no labels, with a warning.
 - **Annotations** are `AnnotationSpec` records (`<ReferenceLine>` and `<ReferenceBand>`
-  components, or `Chart.Annotations`). Values are `object`: numbers, `DateTime`,
+  components, or `RioChart.Annotations`). Values are `object`: numbers, `DateTime`,
   `DateTimeOffset`, `DateOnly`, category names, or strings (ISO 8601 times, numbers) so JSON
   specs work. Labels stay inside the plot. Hover text is an SVG `<title>`; they become focusable
   buttons only when `OnAnnotationClick` is set. Point annotations and callouts are milestone 4.

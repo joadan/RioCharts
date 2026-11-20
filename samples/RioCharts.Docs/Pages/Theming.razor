@@ -12,10 +12,10 @@
     <Description><p>Set any token anywhere above the chart, e.g. on <code>:root</code> or a wrapper element.</p></Description>
     <ChildContent>
         <div style="--rio-series-1: #0b6e4f; --rio-series-2: #c4721a; --rio-grid: #dfe7e2;">
-            <Chart TItem="Sales">
+            <RioChart TItem="Sales">
                 <LineSeries Items="Quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
                 <LineSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
-            </Chart>
+            </RioChart>
         </div>
     </ChildContent>
 </Example>
@@ -36,10 +36,10 @@
 @code {
     private const string PaletteCode = """
         <div style="--rio-series-1: #0b6e4f; --rio-series-2: #c4721a; --rio-grid: #dfe7e2;">
-            <Chart TItem="Sales">
+            <RioChart TItem="Sales">
                 <LineSeries Items="quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
                 <LineSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
-            </Chart>
+            </RioChart>
         </div>
         """;
 }

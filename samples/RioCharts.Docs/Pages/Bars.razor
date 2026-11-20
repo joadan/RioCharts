@@ -8,41 +8,41 @@
 <Example Title="Grouped bars" Code="@GroupedCode">
     <Description><p>Several bar series share each category. Large numbers are compact (182k).</p></Description>
     <ChildContent>
-        <Chart TItem="Sales" Title="Sales per quarter">
+        <RioChart TItem="Sales" Title="Sales per quarter">
             <BarSeries Items="Quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
             <BarSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Stacked bars with data labels" Code="@StackedCode">
     <Description><p>Same <code>Stack</code> name, same slot. Labels show inside segments that are big enough.</p></Description>
     <ChildContent>
-        <Chart TItem="Monthly" Title="Energy per month" YAxis="Mwh">
+        <RioChart TItem="Monthly" Title="Energy per month" YAxis="Mwh">
             <BarSeries Items="Mix" Name="Heating" XValue="m => m.Month" YValue="m => m.Heating" Stack="mix" DataLabels="true" />
             <BarSeries Items="Mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" DataLabels="true" />
             <BarSeries Items="Mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" DataLabels="true" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Bars and a line" Code="@MixedCode">
     <Description><p>Default draw order is areas, then bars, then lines (override with <code>ZIndex</code>). Bars work on time axes too.</p></Description>
     <ChildContent>
-        <Chart TItem="Reading" YAxis="Kwh">
+        <RioChart TItem="Reading" YAxis="Kwh">
             <BarSeries Items="Daily" Name="Daily use" XValue="r => r.Time" YValue="r => r.Value" />
             <LineSeries Items="_average" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Per-bar tooltip" Code="@SingleCode">
     <Description><p>Tooltips are shared per x by default; <code>Shared = false</code> shows only the bar under the pointer.</p></Description>
     <ChildContent>
-        <Chart TItem="Sales" Tooltip="_single">
+        <RioChart TItem="Sales" Tooltip="_single">
             <BarSeries Items="Quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" DataLabels="true" />
             <BarSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" DataLabels="true" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
@@ -55,10 +55,10 @@
         .ToList();
 
     private const string GroupedCode = """
-        <Chart TItem="Sales" Title="Sales per quarter">
+        <RioChart TItem="Sales" Title="Sales per quarter">
             <BarSeries Items="quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
             <BarSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string StackedCode = """
@@ -73,8 +73,8 @@
         """;
 
     private const string SingleCode = """
-        <Chart TItem="Sales" Tooltip="new TooltipSpec { Shared = false }">
+        <RioChart TItem="Sales" Tooltip="new TooltipSpec { Shared = false }">
             <BarSeries ... DataLabels="true" />
-        </Chart>
+        </RioChart>
         """;
 }

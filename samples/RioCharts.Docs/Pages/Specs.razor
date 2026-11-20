@@ -6,7 +6,7 @@
 <h1>JSON specs</h1>
 <p class="lead">
     A chart can also be a small JSON spec that names a dataset and its fields: easy for AI agents to write, easy to save. The same spec renders
-    with <code>&lt;Chart Spec="spec" Datasets="datasets" /&gt;</code>, on the server, or through the <a href="ai">create_chart tool</a>.
+    with <code>&lt;RioChart Spec="spec" Datasets="datasets" /&gt;</code>, on the server, or through the <a href="ai">create_chart tool</a>.
     Edit the spec below; it is parsed, validated and drawn in your browser.
 </p>
 
@@ -30,7 +30,7 @@
     <div class="example-live">
         @if (_spec is not null)
         {
-            <Chart TItem="object" Spec="_spec" Datasets="SpecDatasets.ByName" Height="320" Zoomable="true" />
+            <RioChart TItem="object" Spec="_spec" Datasets="SpecDatasets.ByName" Height="320" Zoomable="true" />
         }
     </div>
 

@@ -7,6 +7,12 @@ changes are called out under **Breaking**.
 
 Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
+### Blazor
+
+- **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
+  not clash with an app's own `Chart` types or other libraries. Series and annotation components
+  keep their names. `ChartRazor` now generates `<RioChart>`.
+
 ### Packaging
 
 - NuGet packages for RioCharts.Core, .Blazor, .Skia, .AI and the `RioCharts.Mcp` tool, with a

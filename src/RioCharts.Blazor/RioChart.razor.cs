@@ -13,10 +13,10 @@ namespace RioCharts.Blazor;
 
 /// <summary>
 /// A chart. Series are added as child components:
-/// <code>&lt;Chart Items="readings"&gt;&lt;LineSeries XValue="r =&gt; r.Time" YValue="r =&gt; r.Temp" /&gt;&lt;/Chart&gt;</code>
+/// <code>&lt;RioChart Items="readings"&gt;&lt;LineSeries XValue="r =&gt; r.Time" YValue="r =&gt; r.Temp" /&gt;&lt;/RioChart&gt;</code>
 /// The chart fills its container's width and lays out again when the width changes.
 /// </summary>
-public partial class Chart<TItem> : IChartContext
+public partial class RioChart<TItem> : IChartContext
 {
     private const double FallbackWidth = 640;
 
@@ -35,7 +35,7 @@ public partial class Chart<TItem> : IChartContext
     private double? _measuredWidth;
     private ITextMeasurer _measurer = ApproximateTextMeasurer.Instance;
     private IJSObjectReference? _module;
-    private DotNetObjectReference<Chart<TItem>>? _dotnet;
+    private DotNetObjectReference<RioChart<TItem>>? _dotnet;
     private object? _sentInteraction;
     private (double Min, double Max)? _range;
     private ChartRange? _lastVisibleRangeParameter;
@@ -459,7 +459,7 @@ public partial class Chart<TItem> : IChartContext
         {
             if (firstRender)
             {
-                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/Chart.razor.js");
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/RioChart.razor.js");
                 _dotnet = DotNetObjectReference.Create(this);
                 var info = await _module.InvokeAsync<ContainerInfo>("init", _container, _dotnet);
                 var changed = false;

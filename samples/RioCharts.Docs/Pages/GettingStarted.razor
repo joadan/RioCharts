@@ -38,9 +38,9 @@
         <p>Pass items and say which property is x and which is y. The axis type follows the data: times give a time axis, numbers a linear axis, strings a category axis.</p>
     </Description>
     <ChildContent>
-        <Chart Items="Supply">
+        <RioChart Items="Supply">
             <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
@@ -49,10 +49,10 @@
         <p>More series add a legend. Click a legend item to hide a series; the axis refits and colors stay put.</p>
     </Description>
     <ChildContent>
-        <Chart TItem="Reading" YAxis="Celsius">
+        <RioChart TItem="Reading" YAxis="Celsius">
             <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
             <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
@@ -61,9 +61,9 @@
         <p>For large data, pass columns directly with <code>SeriesData.From</code>: no per-item cost. The chart then needs some <code>TItem</code>, e.g. <code>double</code>.</p>
     </Description>
     <ChildContent>
-        <Chart TItem="double" Height="240">
+        <RioChart TItem="double" Height="240">
             <LineSeries Name="Sensor" Data="_columns" StrokeWidth="1.25" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
@@ -80,7 +80,7 @@
 
     private static readonly Package[] Packages =
     [
-        new("RioCharts.Blazor", "The <Chart> component for Blazor apps."),
+        new("RioCharts.Blazor", "The <RioChart> component for Blazor apps."),
         new("RioCharts.Core", "The chart engine alone, with no UI dependencies."),
         new("RioCharts.Skia", "PNG and SVG export on the server."),
         new("RioCharts.AI", "create_chart and render_chart tools for AI agents."),
@@ -108,9 +108,9 @@
     private const string ImportsCode = "@using RioCharts.Blazor\n@using RioCharts.Core";
 
     private const string FirstCode = """
-        <Chart Items="readings">
+        <RioChart Items="readings">
             <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
 
         @code {
             record Reading(DateTime Time, double? Value);
@@ -119,15 +119,15 @@
         """;
 
     private const string SeveralCode = """
-        <Chart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }">
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }">
             <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
             <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string ArraysCode = """
-        <Chart TItem="double">
+        <RioChart TItem="double">
             <LineSeries Name="Sensor" Data="SeriesData.From(times, values)" StrokeWidth="1.25" />
-        </Chart>
+        </RioChart>
         """;
 }

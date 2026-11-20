@@ -44,7 +44,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
   dataset fields with filter, time buckets, aggregation, groupBy, sort and limit, `"type": "auto"`
 - `create_chart` and `render_chart` (the image as PNG or SVG for the agent itself) as Microsoft.Extensions.AI
   `AIFunction`s and as MCP server tools (`RioCharts.AI`),
-  spec → Razor export, `<Chart Spec="...">`
+  spec → Razor export, `<RioChart Spec="...">`
 - `riocharts-mcp`: a local MCP server (.NET tool) so agents such as Claude Code, Claude Desktop or
   Copilot render charts to PNG or SVG files from CSV/JSON files or inline data (`RioCharts.Mcp`)
 
@@ -57,19 +57,19 @@ Reference `RioCharts.Blazor` and add `@using RioCharts.Blazor` and `@using RioCh
 to `_Imports.razor`. Styles come with `{YourApp}.styles.css` automatically.
 
 ```razor
-<Chart Items="readings">
+<RioChart Items="readings">
     <LineSeries XValue="r => r.Timestamp" YValue="r => r.SupplyTemp" />
-</Chart>
+</RioChart>
 ```
 
 Several series, options and two-way bound legend state:
 
 ```razor
-<Chart TItem="Reading" Title="Air handling unit" YAxis="new AxisSpec { Title = "°C" }" @bind-HiddenSeries="hidden">
+<RioChart TItem="Reading" Title="Air handling unit" YAxis="new AxisSpec { Title = "°C" }" @bind-HiddenSeries="hidden">
     <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
     <AreaSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
     <BarSeries Items="energy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" />
-</Chart>
+</RioChart>
 ```
 
 - `XValue` may return a number, `DateTime`, `DateTimeOffset`, `DateOnly` or `string` (category).
@@ -79,7 +79,7 @@ Several series, options and two-way bound legend state:
 Stacking, a second axis, data labels and annotations:
 
 ```razor
-<Chart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]"
+<RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]"
        OnPointClick="e => selected = e.Item">
     <ReferenceBand From="20" To="24" Label="Comfort zone" />
     <ReferenceLine Value="21" Label="Setpoint" />
@@ -87,19 +87,19 @@ Stacking, a second axis, data labels and annotations:
     <BarSeries Items="heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" />
     <BarSeries Items="fans" Name="Fans" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" DataLabels="true" />
     <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-</Chart>
+</RioChart>
 ```
 
 Pie, donut and radial bar (the x value names each slice; the legend lists slices):
 
 ```razor
-<Chart Items="use">
+<RioChart Items="use">
     <DonutSeries Name="Energy use" XValue="u => u.System" YValue="u => u.MWh" GroupSmallSlices="0.03" />
-</Chart>
+</RioChart>
 
-<Chart Items="health">
+<RioChart Items="health">
     <RadialBarSeries XValue="h => h.Component" YValue="h => h.Percent" Max="100" Format="0'%'" />
-</Chart>
+</RioChart>
 ```
 
 AI chart creation, with `RioCharts.AI`: agents write a small JSON spec against your datasets; the
@@ -131,7 +131,7 @@ dotnet tool install -g RioCharts.Mcp --prerelease
 To try it, open [samples/RioCharts.Mcp.Sample](samples/RioCharts.Mcp.Sample) in Claude Code or VS Code: it has
 sample data, the agent configuration and example prompts.
 
-The same specs work in Blazor: `<Chart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
+The same specs work in Blazor: `<RioChart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
 `{"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}]}`.
 
 Server-side export (no browser), with `RioCharts.Skia`: the same spec and data, as PNG or SVG:
@@ -146,9 +146,9 @@ string svg = ChartExport.ToSvg(spec, data);
 Large data, as plain arrays (no per-item cost):
 
 ```razor
-<Chart TItem="double">
+<RioChart TItem="double">
     <LineSeries Name="Sensor" Data="SeriesData.From(timestamps, values)" />
-</Chart>
+</RioChart>
 ```
 
 Theming: set any of `--rio-text`, `--rio-text-muted`, `--rio-grid`, `--rio-axis`,
@@ -164,7 +164,7 @@ plot on instants and label in that zone.
 | Path | What |
 |------|------|
 | `src/RioCharts.Core` | Scales, ticks, layout, path builders, scene, hit-testing, chart spec. No UI dependencies. |
-| `src/RioCharts.Blazor` | `<Chart>` and series components, SVG scene renderer, JS module. |
+| `src/RioCharts.Blazor` | `<RioChart>` and series components, SVG scene renderer, JS module. |
 | `src/RioCharts.Skia` | Server-side export to SVG and PNG with SkiaSharp (`ChartExport`). |
 | `src/RioCharts.AI` | `create_chart` and `render_chart` tools for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
 | `src/RioCharts.Mcp` | `riocharts-mcp`: local MCP server (stdio, .NET tool) that renders charts to PNG/SVG files. |

@@ -113,7 +113,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     {
         if (Chart is null)
         {
-            throw new InvalidOperationException($"{GetType().Name} must be placed inside a <Chart>.");
+            throw new InvalidOperationException($"{GetType().Name} must be placed inside a <RioChart>.");
         }
 
         if (!_registered)

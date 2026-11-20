@@ -11,12 +11,12 @@
     </Description>
     <ChildContent>
         <div class="row">
-            <Chart Items="Supply" Height="180" Title="Two days">
+            <RioChart Items="Supply" Height="180" Title="Two days">
                 <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
-            <Chart Items="Daily" Height="180" Title="Five weeks">
+            </RioChart>
+            <RioChart Items="Daily" Height="180" Title="Five weeks">
                 <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
+            </RioChart>
         </div>
     </ChildContent>
 </Example>
@@ -24,19 +24,19 @@
 <Example Title="Two Y axes" Code="@TwoAxesCode">
     <Description><p>Extra axes go on the right; series pick one with <code>YAxisId</code>. Their ticks line up with the main grid.</p></Description>
     <ChildContent>
-        <Chart TItem="Reading" YAxis="Celsius" YAxes="_energyAxis">
+        <RioChart TItem="Reading" YAxis="Celsius" YAxes="_energyAxis">
             <BarSeries Items="_hourlyEnergy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Format="0 kWh" />
             <LineSeries Items="_hourlyOutdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Formats and fixed ranges" Code="@FormatCode">
     <Description><p>Set <code>Format</code> (any .NET format string) and <code>Min</code>/<code>Max</code> on an axis; <code>Culture</code> on the chart.</p></Description>
     <ChildContent>
-        <Chart TItem="Sales" YAxis="_currency" Culture="_german" Height="240">
+        <RioChart TItem="Sales" YAxis="_currency" Culture="_german" Height="240">
             <BarSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
@@ -49,9 +49,9 @@
         </p>
     </Description>
     <ChildContent>
-        <Chart TItem="(DateTimeOffset Time, double Value)" Items="DstReadings" TimeZone="@_zone" Height="220" YAxis="Celsius">
+        <RioChart TItem="(DateTimeOffset Time, double Value)" Items="DstReadings" TimeZone="@_zone" Height="220" YAxis="Celsius">
             <LineSeries Name="Outdoor" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-        </Chart>
+        </RioChart>
         <p class="note">
             Zone:
             <select @bind="_zone">
@@ -80,28 +80,28 @@
         .ToList();
 
     private const string TimeCode = """
-        <Chart Items="readings" Title="Two days">
+        <RioChart Items="readings" Title="Two days">
             <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string TwoAxesCode = """
-        <Chart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]">
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]">
             <BarSeries Items="energy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" />
             <LineSeries Items="outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string FormatCode = """
-        <Chart TItem="Sales" Culture="CultureInfo.GetCultureInfo("de-DE")"
+        <RioChart TItem="Sales" Culture="CultureInfo.GetCultureInfo("de-DE")"
                YAxis="new AxisSpec { Title = "EUR", Format = "C0", Min = 0 }">
             <BarSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string ZoneCode = """
-        <Chart Items="readings" TimeZone="Europe/Stockholm">   @* readings use DateTimeOffset *@
+        <RioChart Items="readings" TimeZone="Europe/Stockholm">   @* readings use DateTimeOffset *@
             <LineSeries XValue="m => m.Time" YValue="m => m.Value" />
-        </Chart>
+        </RioChart>
         """;
 }

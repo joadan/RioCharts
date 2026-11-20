@@ -22,7 +22,7 @@ internal interface IAnnotationSource
     Task DraggedAsync(object value);
 }
 
-/// <summary>Cascaded from <see cref="Chart{TItem}"/> to its series and annotation components.</summary>
+/// <summary>Cascaded from <see cref="RioChart{TItem}"/> to its series and annotation components.</summary>
 internal interface IChartContext
 {
     /// <summary>The chart's Items, used by series that do not set their own.</summary>

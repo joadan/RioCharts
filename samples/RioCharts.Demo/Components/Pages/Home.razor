@@ -15,57 +15,57 @@
     <div class="grid">
         <section>
             <h2>Zero configuration</h2>
-            <Chart Items="_supply">
+            <RioChart Items="_supply">
                 <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
+            </RioChart>
             <p class="note">A single series: no legend, time axis picked from the data.</p>
         </section>
 
         <section>
             <h2>Several series, gaps and toggling</h2>
-            <Chart TItem="Reading" Title="Air handling unit" YAxis="_celsius" @bind-HiddenSeries="_hidden">
+            <RioChart TItem="Reading" Title="Air handling unit" YAxis="_celsius" @bind-HiddenSeries="_hidden">
                 <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
                 <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
                 <LineSeries Items="_outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
+            </RioChart>
             <p class="note">Outdoor has a sensor gap. Click legend items to hide series. Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden))</p>
         </section>
 
         <section>
             <h2>Area</h2>
-            <Chart Items="_energy" YAxis="_kwh">
+            <RioChart Items="_energy" YAxis="_kwh">
                 <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-            </Chart>
+            </RioChart>
         </section>
 
         <section>
             <h2>Grouped bars, categories</h2>
-            <Chart TItem="QuarterSales" Title="Sales per quarter">
+            <RioChart TItem="QuarterSales" Title="Sales per quarter">
                 <BarSeries Items="_sales" Name="2025" XValue="s => s.Quarter" YValue="s => s.Last" />
                 <BarSeries Items="_sales" Name="2026" XValue="s => s.Quarter" YValue="s => s.This" />
-            </Chart>
+            </RioChart>
             <p class="note">Large numbers are compact (k, M).</p>
         </section>
 
         <section>
             <h2>Bars and a line over time</h2>
-            <Chart TItem="Reading" YAxis="_kwh">
+            <RioChart TItem="Reading" YAxis="_kwh">
                 <BarSeries Items="_daily" Name="Daily use" XValue="r => r.Time" YValue="r => r.Value" />
                 <LineSeries Items="_dailyAverage" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-            </Chart>
+            </RioChart>
             <p class="note">Default z-order: areas, then bars, then lines.</p>
         </section>
 
         <section>
             <h2>Step line</h2>
-            <Chart Items="_setpoints" YAxis="_celsius">
+            <RioChart Items="_setpoints" YAxis="_celsius">
                 <LineSeries Name="Setpoint" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
-            </Chart>
+            </RioChart>
         </section>
 
         <section>
             <h2>Annotations, tooltip and clicks</h2>
-            <Chart TItem="Reading" YAxis="_celsius" OnPointClick="PointClicked" OnAnnotationClick="AnnotationClicked">
+            <RioChart TItem="Reading" YAxis="_celsius" OnPointClick="PointClicked" OnAnnotationClick="AnnotationClicked">
                 <ReferenceBand From="20" To="24" Label="Comfort zone" />
                 <ReferenceBand Axis="AnnotationAxis.X" From="_faultStart" To="_faultEnd" Label="Fan fault" Color="#d9480f" />
                 <ReferenceLine @bind-Value="_setpoint" Label="@($"Setpoint {_setpoint:0.0} °C")" Draggable="true" />
@@ -74,91 +74,91 @@
                 <ReferenceLine Axis="AnnotationAxis.X" Value="_now" Label="Now" />
                 <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
                 <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-            </Chart>
+            </RioChart>
             <p class="note">Hover for the shared tooltip; click a point or an annotation; drag the setpoint line (bound with <code>@@bind-Value</code>: @_setpoint.ToString("0.0") °C). @_clicked</p>
         </section>
 
         <section>
             <h2>Two Y axes</h2>
-            <Chart TItem="Reading" YAxis="_celsius" YAxes="_energyAxis">
+            <RioChart TItem="Reading" YAxis="_celsius" YAxes="_energyAxis">
                 <BarSeries Items="_hourlyEnergy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Format="0 kWh" />
                 <LineSeries Items="_hourlyOutdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-            </Chart>
+            </RioChart>
             <p class="note">Energy uses the right axis (<code>YAxisId="energy"</code>); the grid follows the left axis.</p>
         </section>
 
         <section>
             <h2>Stacked bars with data labels</h2>
-            <Chart TItem="EnergyMix" Title="Heat supply per month" YAxis="_mwh">
+            <RioChart TItem="EnergyMix" Title="Heat supply per month" YAxis="_mwh">
                 <BarSeries Items="_mix" Name="District heating" XValue="m => m.Month" YValue="m => m.District" Stack="heat" DataLabels="true" />
                 <BarSeries Items="_mix" Name="Heat pump" XValue="m => m.Month" YValue="m => m.HeatPump" Stack="heat" DataLabels="true" />
                 <BarSeries Items="_mix" Name="Solar" XValue="m => m.Month" YValue="m => m.Solar" Stack="heat" DataLabels="true" />
-            </Chart>
+            </RioChart>
             <p class="note">Labels show inside segments that are big enough. Toggle a series and the stack closes up.</p>
         </section>
 
         <section>
             <h2>Stacked areas</h2>
-            <Chart TItem="Reading" YAxis="_kwh">
+            <RioChart TItem="Reading" YAxis="_kwh">
                 <AreaSeries Items="_heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
                 <AreaSeries Items="_ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
                 <AreaSeries Items="_lighting" Name="Lighting" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
-            </Chart>
+            </RioChart>
         </section>
 
         <section>
             <h2>Data labels on bars</h2>
-            <Chart TItem="QuarterSales" Tooltip="_singleTooltip">
+            <RioChart TItem="QuarterSales" Tooltip="_singleTooltip">
                 <BarSeries Items="_sales" Name="2025" XValue="s => s.Quarter" YValue="s => s.Last" DataLabels="true" />
                 <BarSeries Items="_sales" Name="2026" XValue="s => s.Quarter" YValue="s => s.This" DataLabels="true" />
-            </Chart>
+            </RioChart>
             <p class="note">This chart uses a per-bar tooltip (<code>Shared = false</code>).</p>
         </section>
 
         <section>
             <h2>Pie</h2>
-            <Chart TItem="Share" Title="Energy use by system" OnPointClick="SliceClicked">
+            <RioChart TItem="Share" Title="Energy use by system" OnPointClick="SliceClicked">
                 <PieSeries Items="_use" Name="Energy use" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 MWh" />
-            </Chart>
+            </RioChart>
             <p class="note">Slices under 3% are grouped into "Other"; small slices get outside labels. Click a slice or a legend item. @_sliceClicked</p>
         </section>
 
         <section>
             <h2>Donut</h2>
-            <Chart TItem="Share" Legend="_rightLegend">
+            <RioChart TItem="Share" Legend="_rightLegend">
                 <DonutSeries Items="_supplyShare" Name="Heat supply" XValue="s => s.Name" YValue="s => s.Value" />
-            </Chart>
+            </RioChart>
             <p class="note">The total sits in the middle; the legend is on the right.</p>
         </section>
 
         <section>
             <h2>Half donut and nested rings</h2>
             <div class="edge two">
-                <Chart TItem="Share" Height="220">
+                <RioChart TItem="Share" Height="220">
                     <DonutSeries Items="_supplyShare" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
-                </Chart>
-                <Chart TItem="Share" Height="220">
+                </RioChart>
+                <RioChart TItem="Share" Height="220">
                     <PieSeries Items="_supplyShare" Name="2026" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.35" />
                     <PieSeries Items="_supplyShareLastYear" Name="2025" XValue="s => s.Name" YValue="s => s.Value" />
-                </Chart>
+                </RioChart>
             </div>
             <p class="note">Rings: the first series is the outer ring (2026), the inner ring is 2025.</p>
         </section>
 
         <section>
             <h2>Radial bars</h2>
-            <Chart TItem="Share" Title="Component health">
+            <RioChart TItem="Share" Title="Component health">
                 <RadialBarSeries Items="_health" Name="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
-            </Chart>
+            </RioChart>
         </section>
 
         <section class="wide">
             <h2>Live data</h2>
-            <Chart TItem="double" Height="220" YAxis="_celsius" RefreshInterval="250">
+            <RioChart TItem="double" Height="220" YAxis="_celsius" RefreshInterval="250">
                 <ReferenceLine Value="21" Label="Setpoint" />
                 <LineSeries Name="Supply" Buffer="_liveSupply" Curve="CurveType.Monotone" Format="0.00 °C" />
                 <LineSeries Name="Room" Buffer="_liveRoom" Curve="CurveType.Monotone" Format="0.00 °C" />
-            </Chart>
+            </RioChart>
             <p class="note">
                 Two <code>SeriesBuffer</code>s with a 2-minute window, fed four times a second from a timer; the chart redraws at
                 most every 250 ms.
@@ -168,9 +168,9 @@
 
         <section class="wide">
             <h2>Display time zone</h2>
-            <Chart TItem="Measurement" Items="_dst" TimeZone="@_zone" Height="220" YAxis="_celsius">
+            <RioChart TItem="Measurement" Items="_dst" TimeZone="@_zone" Height="220" YAxis="_celsius">
                 <LineSeries Name="Outdoor" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-            </Chart>
+            </RioChart>
             <p class="note">
                 Hourly UTC readings (<code>DateTimeOffset</code>) across the end of summer time on 25 Oct 2026. Zone:
                 <select @bind="_zone">
@@ -186,13 +186,13 @@
 
         <section class="wide">
             <h2>Zoom, pan and linked charts</h2>
-            <Chart TItem="Reading" Height="220" YAxis="_celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
+            <RioChart TItem="Reading" Height="220" YAxis="_celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
                 <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
                 <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-            </Chart>
-            <Chart TItem="Reading" Height="160" YAxis="_kwh" Zoomable="true" Group="ahu">
+            </RioChart>
+            <RioChart TItem="Reading" Height="160" YAxis="_kwh" Zoomable="true" Group="ahu">
                 <AreaSeries Items="_energy" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 kWh" />
-            </Chart>
+            </RioChart>
             <p class="note">
                 Drag to zoom, Shift+drag to pan, Ctrl+wheel to zoom at the pointer, double-click to reset. The two charts share the
                 crosshair and the zoom (<code>Group="ahu"</code>). Visible: @(_range is null ? "all" : $"{_range.Min:g} – {_range.Max:g}")
@@ -212,9 +212,9 @@
 
         <section class="wide">
             <h2>Columnar fast path: 200 000 points</h2>
-            <Chart TItem="double" Height="260" Zoomable="true" SeriesLayer="_bigLayer">
+            <RioChart TItem="double" Height="260" Zoomable="true" SeriesLayer="_bigLayer">
                 <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />
-            </Chart>
+            </RioChart>
             <p class="note">
                 Passed as arrays with <code>SeriesData.From(times, values)</code>; downsampled with LTTB to the plot width. Zoom in: only the
                 visible points are downsampled, so detail appears. Series layer: @_bigLayer
@@ -224,32 +224,32 @@
 
         <section class="wide resizable">
             <h2>Responsive: drag the corner to resize</h2>
-            <Chart Items="_supply" Height="220">
+            <RioChart Items="_supply" Height="220">
                 <AreaSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
+            </RioChart>
         </section>
 
         <section>
             <h2>Edge cases</h2>
             <div class="edge">
-                <Chart TItem="Reading" Height="140" Title="Empty">
+                <RioChart TItem="Reading" Height="140" Title="Empty">
                     <LineSeries Items="_empty" XValue="r => r.Time" YValue="r => r.Value" />
-                </Chart>
-                <Chart TItem="Reading" Height="140" Title="One point">
+                </RioChart>
+                <RioChart TItem="Reading" Height="140" Title="One point">
                     <LineSeries Items="_onePoint" XValue="r => r.Time" YValue="r => r.Value" />
-                </Chart>
-                <Chart TItem="Reading" Height="140" Title="All equal">
+                </RioChart>
+                <RioChart TItem="Reading" Height="140" Title="All equal">
                     <LineSeries Items="_flat" XValue="r => r.Time" YValue="r => r.Value" />
-                </Chart>
+                </RioChart>
             </div>
         </section>
 
         <section class="custom-palette">
             <h2>Theme tokens</h2>
-            <Chart TItem="QuarterSales">
+            <RioChart TItem="QuarterSales">
                 <LineSeries Items="_sales" Name="2025" XValue="s => s.Quarter" YValue="s => s.Last" />
                 <LineSeries Items="_sales" Name="2026" XValue="s => s.Quarter" YValue="s => s.This" />
-            </Chart>
+            </RioChart>
             <p class="note">Colors overridden with <code>--rio-series-1</code> and <code>--rio-series-2</code> in CSS.</p>
         </section>
     </div>

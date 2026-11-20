@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Description>Blazor charts rendered as SVG, built on RioCharts.Core. Provides a responsive &lt;Chart&gt; with line, area, bar, pie, donut and radial bar series, tooltips, zoom and pan, annotations, live data, an interactive legend, light and dark themes through CSS variables, and a tiny JS module for measurement and interaction.</Description>
+    <Description>Blazor charts rendered as SVG, built on RioCharts.Core. Provides a responsive &lt;RioChart&gt; with line, area, bar, pie, donut and radial bar series, tooltips, zoom and pan, annotations, live data, an interactive legend, light and dark themes through CSS variables, and a tiny JS module for measurement and interaction.</Description>
     <PackageTags>$(PackageTags);dataviz;time-series;razor</PackageTags>
   </PropertyGroup>
 

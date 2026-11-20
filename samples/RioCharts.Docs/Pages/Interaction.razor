@@ -13,10 +13,10 @@
         <p>One tooltip per x lists every series. Click a legend item to hide a series (<code>@@bind-HiddenSeries</code> keeps it in your page); click a point to get its item.</p>
     </Description>
     <ChildContent>
-        <Chart TItem="Reading" YAxis="Celsius" @bind-HiddenSeries="_hidden" OnPointClick="e => _point = e">
+        <RioChart TItem="Reading" YAxis="Celsius" @bind-HiddenSeries="_hidden" OnPointClick="e => _point = e">
             <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
             <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-        </Chart>
+        </RioChart>
         <p class="note">
             Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden)).
             Clicked: @(_point is null ? "nothing yet" : $"{_point.SeriesName} {_point.Item?.Value:0.0} °C at {_point.Item?.Time:g}")
@@ -32,13 +32,13 @@
         </p>
     </Description>
     <ChildContent>
-        <Chart TItem="Reading" Height="200" YAxis="Celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
+        <RioChart TItem="Reading" Height="200" YAxis="Celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
             <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
             <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        </Chart>
-        <Chart TItem="Reading" Height="150" YAxis="Kwh" Zoomable="true" Group="ahu">
+        </RioChart>
+        <RioChart TItem="Reading" Height="150" YAxis="Kwh" Zoomable="true" Group="ahu">
             <AreaSeries Items="Heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
         <p class="note">
             Visible: @(_range is null ? "all" : $"{_range.Min:g} – {_range.Max:g}")
             <button class="small" @onclick="() => _range = ChartRange.Of(Start.AddHours(30), Start.AddHours(42))">Zoom to 17 Nov 06–18</button>
@@ -59,19 +59,19 @@
     private ChartRange? _range;
 
     private const string ClickCode = """
-        <Chart TItem="Reading" @bind-HiddenSeries="hidden" OnPointClick="e => clicked = e">
+        <RioChart TItem="Reading" @bind-HiddenSeries="hidden" OnPointClick="e => clicked = e">
             <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
             <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string ZoomCode = """
-        <Chart TItem="Reading" Zoomable="true" Group="ahu" @bind-VisibleRange="range">
+        <RioChart TItem="Reading" Zoomable="true" Group="ahu" @bind-VisibleRange="range">
             <LineSeries Items="supply" ... />
-        </Chart>
-        <Chart TItem="Reading" Zoomable="true" Group="ahu">
+        </RioChart>
+        <RioChart TItem="Reading" Zoomable="true" Group="ahu">
             <AreaSeries Items="heating" ... />
-        </Chart>
+        </RioChart>
 
         <button @onclick="() => range = ChartRange.Of(from, to)">Zoom</button>
         """;

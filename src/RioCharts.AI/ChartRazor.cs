@@ -19,7 +19,7 @@ public static class ChartRazor
     {
         ArgumentNullException.ThrowIfNull(spec);
         var sb = new StringBuilder();
-        sb.Append($"<Chart TItem=\"{itemType}\" Items=\"{itemsName}\"");
+        sb.Append($"<RioChart TItem=\"{itemType}\" Items=\"{itemsName}\"");
         if (spec.Title is { } title)
         {
             sb.Append($" Title=\"{Attr(title)}\"");
@@ -134,7 +134,7 @@ public static class ChartRazor
             sb.AppendLine(" />");
         }
 
-        sb.Append("</Chart>");
+        sb.Append("</RioChart>");
         return sb.ToString();
     }
 

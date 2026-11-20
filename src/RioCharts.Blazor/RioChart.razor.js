@@ -1,4 +1,4 @@
-// RioCharts: the small JS side of <Chart>.
+// RioCharts: the small JS side of <RioChart>.
 // - Measures the container (ResizeObserver) and the inherited font, so C# lays out at the real
 //   size with real text widths.
 // - Handles hover locally: C# sends the drawn points once per layout; pointer moves find the

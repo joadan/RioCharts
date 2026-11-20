@@ -11,12 +11,12 @@
     </Description>
     <ChildContent>
         <div class="row">
-            <Chart TItem="Reading" Height="200" Title="Monotone">
+            <RioChart TItem="Reading" Height="200" Title="Monotone">
                 <LineSeries Items="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-            </Chart>
-            <Chart TItem="Reading" Height="200" Title="Step">
+            </RioChart>
+            <RioChart TItem="Reading" Height="200" Title="Step">
                 <LineSeries Items="Setpoints" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
-            </Chart>
+            </RioChart>
         </div>
     </ChildContent>
 </Example>
@@ -26,28 +26,28 @@
         <p>A <code>null</code> y value breaks the line instead of dropping to zero. A point with no neighbour gets a small dot so it stays visible.</p>
     </Description>
     <ChildContent>
-        <Chart Items="Outdoor" Height="220" YAxis="Celsius">
+        <RioChart Items="Outdoor" Height="220" YAxis="Celsius">
             <LineSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Areas" Code="@AreaCode">
     <Description><p>Areas always include zero, with a light fill under the line.</p></Description>
     <ChildContent>
-        <Chart Items="Heating" Height="220" YAxis="Kwh">
+        <RioChart Items="Heating" Height="220" YAxis="Kwh">
             <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Stacked areas" Code="@StackedCode">
     <Description><p>Series with the same <code>Stack</code> name are stacked. Hide one in the legend and the stack closes up.</p></Description>
     <ChildContent>
-        <Chart TItem="Reading" Height="240" YAxis="Kwh">
+        <RioChart TItem="Reading" Height="240" YAxis="Kwh">
             <AreaSeries Items="Heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
             <AreaSeries Items="Ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
     </ChildContent>
 </Example>
 
@@ -55,15 +55,15 @@
     <Description><p>Empty data, a single point and all-equal values each render a clean state, never an error or a collapsed axis.</p></Description>
     <ChildContent>
         <div class="row">
-            <Chart TItem="Reading" Height="150" Title="Empty">
+            <RioChart TItem="Reading" Height="150" Title="Empty">
                 <LineSeries Items="_empty" XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
-            <Chart TItem="Reading" Height="150" Title="One point">
+            </RioChart>
+            <RioChart TItem="Reading" Height="150" Title="One point">
                 <LineSeries Items="_one" XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
-            <Chart TItem="Reading" Height="150" Title="All equal">
+            </RioChart>
+            <RioChart TItem="Reading" Height="150" Title="All equal">
                 <LineSeries Items="_flat" XValue="r => r.Time" YValue="r => r.Value" />
-            </Chart>
+            </RioChart>
         </div>
     </ChildContent>
 </Example>
@@ -81,27 +81,27 @@
         """;
 
     private const string GapsCode = """
-        <Chart Items="outdoor" YAxis="new AxisSpec { Title = "°C" }">
+        <RioChart Items="outdoor" YAxis="new AxisSpec { Title = "°C" }">
             <LineSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />  @* Value is double? *@
-        </Chart>
+        </RioChart>
         """;
 
     private const string AreaCode = """
-        <Chart Items="heating" YAxis="new AxisSpec { Title = "kWh" }">
+        <RioChart Items="heating" YAxis="new AxisSpec { Title = "kWh" }">
             <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string StackedCode = """
-        <Chart TItem="Reading" YAxis="new AxisSpec { Title = "kWh" }">
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "kWh" }">
             <AreaSeries Items="heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" />
             <AreaSeries Items="ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" />
-        </Chart>
+        </RioChart>
         """;
 
     private const string EdgeCode = """
-        <Chart TItem="Reading" Title="Empty"><LineSeries Items="empty" ... /></Chart>
-        <Chart TItem="Reading" Title="One point"><LineSeries Items="one" ... /></Chart>
-        <Chart TItem="Reading" Title="All equal"><LineSeries Items="flat" ... /></Chart>
+        <RioChart TItem="Reading" Title="Empty"><LineSeries Items="empty" ... /></RioChart>
+        <RioChart TItem="Reading" Title="One point"><LineSeries Items="one" ... /></RioChart>
+        <RioChart TItem="Reading" Title="All equal"><LineSeries Items="flat" ... /></RioChart>
         """;
 }

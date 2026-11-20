@@ -191,7 +191,7 @@ public class ChartToolTests
 
         var razor = ChartRazor.FromSpec(spec, "Reading", "readings");
 
-        Assert.StartsWith("<Chart TItem=\"Reading\" Items=\"readings\" Title=\"Supply &quot;air&quot;\"", razor);
+        Assert.StartsWith("<RioChart TItem=\"Reading\" Items=\"readings\" Title=\"Supply &quot;air&quot;\"", razor);
         Assert.Contains("<LineSeries Name=\"Supply\" XValue=\"r => r.Timestamp\" YValue=\"r => r.SupplyTemp\" Curve=\"CurveType.Monotone\" />", razor);
         Assert.Contains("<DonutSeries XValue=\"r => r.System\" YValue=\"r => r.Share\" />", razor);
         Assert.Contains("<ReferenceLine Value=\"21\" Label=\"Setpoint\" />", razor);

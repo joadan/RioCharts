@@ -50,7 +50,7 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
     {
         if (Chart is null)
         {
-            throw new InvalidOperationException($"{GetType().Name} must be placed inside a <Chart>.");
+            throw new InvalidOperationException($"{GetType().Name} must be placed inside a <RioChart>.");
         }
 
         var spec = CreateSpec();
