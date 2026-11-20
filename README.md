@@ -1,79 +1,80 @@
 # RioCharts
 
-SVG charts for Blazor, rendered directly in Razor with no JavaScript.
+A pure .NET chart library, with Blazor as the first target. C# does the math and layout,
+Razor renders SVG, and a tiny JS module only measures the container and the font.
 
-- Line, scatter and area charts (`XYSeries`), with multiple Y axes
-- Pie, donut and funnel charts (`ValueSeries`)
-- Bubble charts and heatmaps (`XYZSeries`)
-- Tooltips, click to select, click the legend to show or hide series
-- Keyboard navigation and screen reader descriptions
-- Large datasets are downsampled with LTTB (over 1000 points by default)
-- Optional pan, zoom (wheel, pinch, keyboard) and crosshair on the X axis
+> **Status: early preview.** APIs will change without notice before 1.0. It is built for our
+> own teams' needs; issues are welcome, but there is no roadmap promise.
 
-Charts render without JavaScript. Pan/zoom and crosshair load a small JS module only when turned on.
+Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
-The full specification is in [Design.md](Design.md).
+## What works today (milestone 1)
+
+- Line, area and bar series (grouped bars), with linear, monotone and step lines
+- Linear, time and category axes, picked automatically from the data
+- Nice ticks; time ticks that switch between minutes, hours, days, weeks, months and years
+- Compact, culture-aware labels (1.2k, 3.4M); dates adapt to the visible range
+- Gaps for missing values; clean states for empty data, a single point and flat data
+- Legend (shown when there is more than one series); click to hide and show series
+- Responsive width with real font measurement; fixed height (300 px by default)
+- Light and dark themes through CSS variables; colorblind-aware palette
+- LTTB downsampling for large series, and a columnar fast path for big data
+- Screen-reader description of every chart (series, extremes, trend)
+
+Not yet: tooltips and crosshair, stacking, multiple Y axes, annotations, pie and donut,
+zoom and pan. See [Design.md](Design.md) for the design and milestones.
 
 ## Usage
 
-Reference `src/RioCharts` from your Blazor app and add `@using RioCharts` to `_Imports.razor`.
-The component's styles are included automatically through `{YourApp}.styles.css`.
+Reference `RioCharts.Blazor` and add `@using RioCharts.Blazor` and `@using RioCharts.Core`
+to `_Imports.razor`. Styles come with `{YourApp}.styles.css` automatically.
 
 ```razor
-<RioChart Title="Revenue" Width="800" Height="400"
-          XAxis="xAxis" Series="series"
-          OnSeriesClick="args => selected = $"{args.Series?.Name}: {args.Y}"" />
-
-@code {
-    private string selected = "";
-    private readonly Axis xAxis = new() { Title = "Month" };
-    private readonly List<ISeries> series =
-    [
-        new XYSeries
-        {
-            Name = "Revenue",
-            Marker = MarkerStyle.Circle,
-            Points = [new(1, 120), new(2, 135), new(3, 128), new(4, 150)],
-        },
-    ];
-}
+<Chart Items="readings">
+    <LineSeries XValue="r => r.Timestamp" YValue="r => r.SupplyTemp" />
+</Chart>
 ```
 
-Other series types:
-
-```csharp
-new ValueSeries { Type = ValueSeriesType.Donut, Points = [new("Alpha", 42), new("Beta", 27)] };
-new XYZSeries { Type = XYZSeriesType.Bubble, Points = [new(48, 82, 67), new(12, 77, 1400)] };
-new XYSeries { Name = "Area", FillColor = "auto", Points = ... };      // area chart
-new XYSeries { Name = "Dots", ShowLine = false, Marker = MarkerStyle.Diamond, Points = ... }; // scatter
-```
-
-Dates: use `new XYPoint(DateTime, y)` and an axis with `LabelFormat = AxisLabelFormat.Date`
-(or `Custom` with a format string such as `"MMM dd"`).
-
-Live data: change `Points` in place and call `Refresh()` on the component (via `@ref`).
-
-Pan, zoom and crosshair:
+Several series, options and two-way bound legend state:
 
 ```razor
-<RioChart Series="series" EnablePanZoom="true" EnableCrosshair="true" @bind-XAxisRange="visible" />
-
-@code {
-    private AxisRange? visible; // null = all data
-}
+<Chart TItem="Reading" Title="Air handling unit" YAxis="new AxisSpec { Title = "°C" }" @bind-HiddenSeries="hidden">
+    <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+    <AreaSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+    <BarSeries Items="energy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" />
+</Chart>
 ```
 
-Drag to pan, scroll or pinch to zoom, double-click to reset. Keyboard: `+`/`-` zoom, Shift+arrows pan, `0` resets.
+- `XValue` may return a number, `DateTime`, `DateTimeOffset`, `DateOnly` or `string` (category).
+- `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` values to `double`.
+- Data is processed when `Items` is a new reference or `DataVersion` changes, not on every render.
+
+Large data, as plain arrays (no per-item cost):
+
+```razor
+<Chart TItem="double">
+    <LineSeries Name="Sensor" Data="SeriesData.From(timestamps, values)" />
+</Chart>
+```
+
+Theming: set any of `--rio-text`, `--rio-text-muted`, `--rio-grid`, `--rio-axis` and
+`--rio-series-1` … `--rio-series-10` anywhere above the chart. Dark mode follows
+`prefers-color-scheme`, or an ancestor with `data-theme="dark"` or class `dark`.
+
+Times are shown exactly as given: no time zone conversion.
 
 ## Projects
 
 | Path | What |
 |------|------|
-| `src/RioCharts` | The component library |
-| `tests/RioCharts.Tests` | xUnit tests for layout, scales and SVG helpers |
-| `samples/RioCharts.Demo` | Blazor Server demo with every chart type |
+| `src/RioCharts.Core` | Scales, ticks, layout, path builders, scene, hit-testing, chart spec. No UI dependencies. |
+| `src/RioCharts.Blazor` | `<Chart>` and series components, SVG scene renderer, JS module. |
+| `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
+| `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
 
 ```powershell
 dotnet test
-dotnet run --project samples/RioCharts.Demo
+dotnet run --project samples/RioCharts.Demo --launch-profile http
 ```
+
+See [CHANGELOG.md](CHANGELOG.md) for changes.

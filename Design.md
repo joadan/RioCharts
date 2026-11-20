@@ -1,598 +1,357 @@
-# Chart Component Design Specification
+# RioCharts – design
 
-The chart component is designed to be modular, extensible, and SVG-renderer friendly. It separates data model, layout, and rendering, supporting multiple chart types and axes.
+**RioCharts** is a pure .NET chart library with Blazor as the first target.
 
-## Implementation Status
+## Packages and naming
+| Package | Contents |
+|---|---|
+| `RioCharts.Core` | Scales, ticks, layout, path builders, scene, hit-testing, chart spec. No UI dependencies. |
+| `RioCharts.Blazor` | Razor components, SVG renderer, JS interop module. |
+| `RioCharts.Canvas` | Canvas renderer (later). |
+| `RioCharts.Skia` | Server-side SVG/PNG export (later). |
+| `RioCharts.AI` | `create_chart` tool (AIFunction/MCP), schema export, validation (later). |
 
-Implemented: everything below except the items under "Not yet implemented".
+- Root namespace: `RioCharts` (e.g. `RioCharts.Core.Scales`, `RioCharts.Blazor`).
+- Reserve the NuGet package ID prefix `RioCharts` and the domains early.
 
-Where the code differs from the sketches in this document:
+### Why "RioCharts"
+- **Named after Rio**, my son. It gives the project a personal story worth telling in the README.
+- **"Río" means river** in Spanish and Portuguese, which fits flowing lines and time series.
+- **Short and international**: easy to say and spell in any language, with no awkward meanings.
+- **"Charts" in the name** for discoverability, so people searching for chart libraries find it.
+- **Not tied to Blazor**: the name still fits as Canvas, Skia and AI packages are added.
 
-- **Colors:** `XYSeries.StrokeColor` and `XYZSeries.FillColor` default to null, meaning "next color from
-  `Chart.Palette`" (`ChartPalette.Default` or `ChartPalette.HighContrast`), instead of "blue" for everything.
-- **ISeries:** `Visible` and `IsSelected` are settable on the interface so the legend and clicks can change them.
-- **Points:** `XYPoint` and `XYZPoint` are `readonly record struct`s (cheaper for large datasets).
-  Date values are OLE Automation dates; `new XYPoint(DateTime, y)` converts.
-- **Additions:** `XYSeries.ShowLine` (false = scatter), `XYSeries.FillOpacity` (`FillColor = "auto"` uses the
-  line color), `ValueSeries.Type` (Pie/Donut/Funnel), `ValueSeries.InnerRadiusRatio`, `ValueSeries.ShowLabels`,
-  `ValuePoint.Visible`, `XYZSeries.Type` (Bubble/Heatmap), `Chart.Palette`, `Chart.DownsampleThreshold`.
-- **Layout output:** the layout engine does not mutate `Axis`. It returns a `ChartLayout` with `AxisLayout`
-  objects (computed min/max, ticks, pixel mapping) and `SeriesLayout`/`SliceLayout` per series.
-  Screen points are `ScreenPoint` (doubles) rather than `PointF`.
-- **Multiple Y axes:** even indexes are drawn on the left, odd on the right, stacking outward.
-  Only the first Y axis draws horizontal grid lines.
-- **Legend:** Top/Bottom/Left/Right take space from the plot; corner positions overlay the plot
-  (for pie/donut/funnel-only charts they sit beside it instead). Pie slices with the same label across
-  several series share one legend item.
-- **Ranges:** heatmap and date axes use the data range as is (no rounding out); date ticks of a month or
-  more land on the first of the month. Bubble axes get 10% padding so bubbles are not cut off.
-- **Errors:** layout problems (invalid range, missing Y axis) are collected in `ChartLayout.Warnings`
-  rather than logged.
-- **Caching:** layout is recomputed when parameters change or `Refresh()` is called, not on hover or
-  focus changes. In-place data changes need `Refresh()`.
-- **Tooltip `CustomFormat`** arguments: {0} series name, {1} Y/value, {2} X/label, {3} Z or slice fraction.
+## Stance
+- Open source (MIT), but built for our own teams. It is not promoted externally.
+- Scope comes from internal needs: build the 20% of features that cover 90% of real use, not ApexCharts parity.
+- The repo is **public from day one**. Before creating it, confirm ownership and copyright under the company open-source policy.
+- Stay pre-1.0 and change APIs freely. Publish packages as prereleases (e.g. `0.x.y-preview`), and treat our internal dashboards as the main test bed.
+- The README states the status clearly from the first commit: early preview, APIs will change, built for our own needs, issues welcome, no roadmap promises.
+- Keep a CHANGELOG from the start and call out breaking changes there.
+- No public plugin API or third-party series registration until there is a real need. Keep the internal seams clean, though.
 
-- **Pan, zoom and crosshair** (`EnablePanZoom`, `EnableCrosshair`, both off by default) use the
-  collocated module `RioChart.razor.js`, loaded only when one of them is on. Zoom and pan act on the
-  X axis only and stay inside the full data range. During a gesture JS previews the change with an SVG
-  transform on the plot content; Blazor is called once when the gesture ends (wheel: after 250 ms idle)
-  and re-renders at the new range. Double-click or "Reset zoom" shows everything again. Keyboard:
-  `+`/`-` zoom, Shift+arrows pan, `0`/Home reset. When zoomed, the Y axis fits the visible points and
-  LTTB downsampling runs on the visible part only, so zooming in shows more detail. The visible range
-  is `XAxisRange` (two-way bindable); `OnAxisRangeChanged` reports old and new ranges. `ZoomTo`,
-  `ZoomBy`, `PanBy` and `ResetZoom` are public methods on the component.
+## Architecture (hybrid approach)
+C# does the math and layout. Razor renders SVG. A small JS module handles only interaction and measurement.
 
-Not yet implemented:
-
-- Pattern fills for series.
-- `ObservableCollection`/`INotifyPropertyChanged` auto-refresh and update throttling.
-- Rendering only the visible viewport for very large datasets (data is downsampled and clipped instead).
-
-## Chart Model
-
-### Chart Container
-class Chart
-{
-    string? Title;
-    double Width = 800;
-    double Height = 600;
-    ChartMargin Margin = new(60, 40, 60, 80); // Top, Right, Bottom, Left
-    string BackgroundColor = "white";
-    Axis? XAxis;
-    List<Axis> YAxes = new(); // Empty list by default, not null
-    LegendSettings Legend = new();
-    List<ISeries> Series = new(); // Empty list by default, not null
-    TooltipSettings Tooltip = new();
-    bool EnableInteractions = true;
-    bool EnableAnimations = true;
-}
-class ChartMargin
-{
-    double Top, Right, Bottom, Left;
-}
-- Title: optional chart title
-- Width/Height: chart dimensions in pixels
-- Margin: space around the plot area for axes and labels
-- BackgroundColor: chart background
-- XAxis: optional horizontal axis
-- YAxes: multiple vertical axes (support different scales per series), empty list by default
-- Legend: configurable position, visibility, font
-- Series: collection of ISeries objects, empty list by default
-- Tooltip: tooltip configuration
-- EnableInteractions: enable/disable mouse interactions
-- EnableAnimations: enable/disable transitions
-
-### Axis
-class Axis
-{
-    string? Title;
-    double? Minimum;
-    double? Maximum;
-    bool AutoRange = true;
-    int TargetTickCount = 6;
-    bool ShowGridLines = true;
-    string GridLineColor = "#e0e0e0";
-    double GridLineWidth = 1;
-    AxisLabelFormat LabelFormat = AxisLabelFormat.Auto;
-    string? CustomFormatString; // e.g., "C2" for currency, "P0" for percentage
-    double LabelRotation = 0; // degrees
-    string LabelColor = "black";
-    float LabelFontSize = 11;
-}
-enum AxisLabelFormat { Auto, Number, Currency, Percentage, Date, Time, DateTime, Custom }
-- Optional min/max; automatic range if null
-- Supports tick calculation and optional grid lines
-- LabelFormat: predefined or custom format strings
-- LabelRotation: for long labels (e.g., 45° for dates)
-- GridLineColor/Width: customizable grid appearance
-
-### Legend Settings
-enum LegendPosition { Top, Bottom, Left, Right, TopLeft, TopRight, BottomLeft, BottomRight }
-class LegendSettings
-{
-    bool Visible = true;
-    LegendPosition Position = TopRight;
-    float FontSize = 12;
-    string FontColor = "black";
-    float MarkerSize = 10;
-    string BackgroundColor = "white";
-    string BorderColor = "#cccccc";
-    double BorderWidth = 1;
-    double Padding = 8;
-    double Opacity = 0.9;
-}
-- Visible: show/hide legend
-- Position: placement on chart
-- Font styling: size and color
-- MarkerSize: size of color/symbol indicators
-- Background/Border: visual container styling
-- Padding: internal spacing
-- Opacity: semi-transparent background support
-
-### Tooltip Settings
-class TooltipSettings
-{
-    bool Enabled = true;
-    string BackgroundColor = "rgba(50, 50, 50, 0.9)";
-    string TextColor = "white";
-    float FontSize = 12;
-    double Padding = 8;
-    double BorderRadius = 4;
-    string? CustomFormat; // e.g., "{0}: {1:N2}" for series name + value
-}
-- Enabled: show/hide tooltips on hover
-- Styling: background, text, padding, rounded corners
-- CustomFormat: format string for tooltip content
-
-## Series Types
-
-### Base Interface
-interface ISeries
-{
-    string Name { get; }
-    bool Visible { get; }
-    int RenderOrder { get; } // Z-order for overlapping series
-    double Opacity { get; } // 0.0 to 1.0
-}
-- Name: series identifier for legend
-- Visible: show/hide series
-- RenderOrder: control draw order (lower values draw first)
-- Opacity: transparency level
-
-### XYSeries (Line, Scatter, Area)
-class XYSeries : ISeries
-{
-    string Name;
-    bool Visible = true;
-    int RenderOrder = 0;
-    double Opacity = 1.0;
-    List<XYPoint> Points = new();
-    string StrokeColor = "blue";
-    double StrokeWidth = 2;
-    string? FillColor; // for area charts
-    MarkerStyle Marker = MarkerStyle.None;
-    double MarkerSize = 6;
-    string? MarkerColor; // defaults to StrokeColor if null
-    int YAxisIndex = 0; // reference to YAxes
-    bool IsSelected = false; // for interaction state
-}
-enum MarkerStyle { None, Circle, Square, Triangle, Diamond, Cross, Plus }
-class XYPoint
-{
-    double X;
-    double Y;
-}
-- FillColor: enables area chart rendering when set
-- Marker: scatter plot point style
-- MarkerSize/MarkerColor: marker appearance
-- IsSelected: highlight state for user interaction
-
-### ValueSeries (Pie, Donut, Funnel)
-class ValueSeries : ISeries
-{
-    string Name;
-    bool Visible = true;
-    int RenderOrder = 0;
-    double Opacity = 1.0;
-    List<ValuePoint> Points = new();
-    bool IsSelected = false;
-}
-class ValuePoint
-{
-    string Label;
-    double Value;
-    string? Color; // optional per-slice color
-    bool IsExploded = false; // for pie/donut charts
-}
-- IsExploded: offset slice from center for emphasis
-- Color: override default color palette per point
-
-### XYZSeries (Bubble, Heatmap)
-class XYZSeries : ISeries
-{
-    string Name;
-    bool Visible = true;
-    int RenderOrder = 0;
-    double Opacity = 1.0;
-    List<XYZPoint> Points = new();
-    int YAxisIndex = 0;
-    double MinBubbleSize = 5;
-    double MaxBubbleSize = 50;
-    string? FillColor = "blue";
-    string? StrokeColor;
-    double StrokeWidth = 1;
-    bool IsSelected = false;
-}
-class XYZPoint
-{
-    double X;
-    double Y;
-    double Z; // size/intensity
-}
-- MinBubbleSize/MaxBubbleSize: scale Z values to pixel radius
-- FillColor/StrokeColor: bubble appearance
-- Z value maps to bubble size (bubble chart) or color intensity (heatmap)
-
-## Layout Engine
-- Responsible for mapping data to screen coordinates
-- Handles margins, multiple Y axes, scaling, min/max, tick calculation, and downsampling
-- Computes automatic ranges when Axis.AutoRange is true
-- Validates axis ranges (ensures min < max, handles empty data)
-- Applies downsampling algorithm (LTTB - Largest Triangle Three Buckets) for large datasets
-- Caches layout results to avoid redundant calculations on re-render
-- Produces SeriesLayout:
-class SeriesLayout
-{
-    ISeries Series;
-    List<PointF> ScreenPoints; // XY position for rendering
-    List<double>? BubbleSizes; // for XYZSeries bubble radii in pixels
-    Axis LayoutXAxis; // axis with computed range/ticks
-    Axis LayoutYAxis; // axis with computed range/ticks
-}
-- ValueSeries stores slice angles instead of pixel points
-- BubbleSizes: pre-calculated pixel radii for bubble charts
-
-### Error Handling
-- Empty data: render empty chart with axes and message "No data available"
-- Invalid axis range (min >= max): use default range [0, 100] and log warning
-- Missing YAxis reference: default to YAxes[0] if available
-- Null or empty Points: skip series rendering but show in legend (grayed out)
-
-## SVG Renderer
-
-### Responsibilities
-- Axes: render <line> for X/Y axes, <text> for tick labels, grid lines if enabled
-- Series: XYSeries -> <path> for lines, optional <circle> for scatter points; ValueSeries -> <path> slices for pie/donut; XYZSeries -> <circle> for bubble with radius from Z
-- Legend: <rect> + <text> for each series, positioned according to LegendSettings
-
-### Performance Tips
-- Use one <path> per series for line charts
-- Downsample large datasets (>1000 points) using LTTB algorithm to reduce DOM elements
-- Reuse <path> elements instead of recreating
-- Only render visible points within the axis range
-- Debounce layout recalculations during window resize (300ms)
-- Use CSS transforms for animations instead of re-rendering SVG
-- Implement virtual rendering for extremely large datasets (render only viewport)
-
-### Rendering Pipeline
-Chart Model (Series + Axes + Legend)
-      ↓
-Layout Engine (compute pixel positions, angles)
-      ↓
-SVG Renderer (draw axes, series, legend)
-      ↓
-Output: <svg> element
-
-### Multi-Axis Support
-- Chart.YAxes stores multiple vertical axes
-- XYSeries.YAxisIndex selects which axis to map
-- Each axis can have independent min/max, ticks, and labels
-- Layout engine maps series Y values according to axis scale
-
-## Extensibility
-- Add new series types by creating new ISeries implementations
-- Add custom renderers for new point types
-- Supports multiple chart types in one chart (mixed line/scatter, pie, bubble)
-
-## Interactivity & Events
-
-### Interaction Approaches
-
-**Approach 1: Pure Blazor (Recommended for basic charts)**
-- Use @onclick, @onmouseenter, @onmouseleave on SVG elements
-- Update Blazor state to toggle CSS classes for hover/selection
-- Tooltip rendered as Blazor component
-- Good for: static charts, simple click interactions, Blazor WASM
-- Limitations: not suitable for real-time mouse tracking, pan/zoom
-
-**Approach 2: Hybrid (JS for high-frequency, Blazor for state)**
-- JS handles mousemove, wheel, touch events
-- JS updates DOM directly for crosshair, tooltip position
-- JS calls Blazor only for significant events (click, selection)
-- Good for: advanced interactive charts, Blazor Server
-- Complexity: requires JS interop code
-
-### User Interactions
-- Hover: highlight series, show tooltip with data point info
-- Click: select/deselect series, toggle visibility from legend
-- Pan: drag to shift axis range (when enabled)
-- Zoom: mouse wheel or pinch to zoom in/out on data
-- Crosshair: vertical/horizontal lines following mouse position
-
-### Event Model
-class ChartEventArgs
-{
-    ISeries? Series;
-    int PointIndex;
-    double X, Y;
-    MouseButton Button;
-}
-- SeriesHover(ChartEventArgs)
-- SeriesClick(ChartEventArgs)
-- SeriesSelected(ChartEventArgs)
-- AxisRangeChanged(Axis, double oldMin, double oldMax)
-- LegendItemClick(ISeries)
-
-## Accessibility
-
-### ARIA Support
-- <svg role="img" aria-label="{Chart.Title}">
-- Each series: aria-label="{Series.Name}: {Points.Count} data points"
-- Axis labels: aria-label for min/max values
-- Legend items: role="button" for clickable items
-
-### Keyboard Navigation
-- Tab: navigate between series and legend items
-- Enter/Space: toggle series visibility
-- Arrow keys: move focus between data points
-- Escape: clear selection
-
-### Screen Reader Support
-- Provide text alternative summarizing chart data
-- Announce data ranges and key statistics
-- Describe trends (increasing, decreasing, stable)
-
-### Color Contrast
-- Ensure text meets WCAG AA standards (4.5:1 contrast ratio)
-- Provide configurable high-contrast color palettes
-- Support pattern fills in addition to colors for series distinction
-
-## Data Update Strategy
-
-### Update Types
-- Full Refresh: replace entire Series list, recalculate layout
-- Incremental: append new points to existing series, update layout for new data only
-- Streaming: continuous real-time updates with sliding window
-
-### Observable Pattern
-- Chart.Series as ObservableCollection for automatic UI updates
-- INotifyPropertyChanged for series property changes
-- Throttle updates to avoid excessive re-renders (e.g., max 60 FPS)
-
-### Caching
-- Cache SeriesLayout until data or dimensions change
-- Invalidate cache on Series/Axis/Dimension changes
-- Preserve zoom/pan state across data updates
-
-## Blazor Component Integration
-
-### Component API
-```razor
-<RioChart Width="800" 
-          Height="600"
-          Title="@title"
-          XAxis="@xAxis"
-          YAxes="@yAxes"
-          Series="@series"
-          EnableInteractions="true"
-          EnableAnimations="true"
-          OnSeriesClick="HandleSeriesClick"
-          OnSeriesHover="HandleSeriesHover"
-          OnAxisRangeChanged="HandleAxisRangeChanged" />
+```
+Core (no Blazor dependency)  ->  Scene (display list)  ->  Renderers (SVG, Canvas, later Skia)
 ```
 
-### Component Parameters
+### Packages
+- **Core**: scales (linear, log, sqrt, time, band), nice-tick and time-tick generation, layout pass, path builders (linear, monotone, step), arcs, stacking, LTTB downsampling, hit-test index. Pure and unit-testable.
+- **Blazor**: Razor components that render the scene as SVG, with series registering through a cascading parameter.
+- **JS module** (keep it tiny): ResizeObserver, text measurement, pointer tracking, overlay drawing.
+
+### Scene (render-agnostic)
+Core never emits SVG. It emits primitives:
+
 ```csharp
-[Parameter] public string? Title { get; set; }
-[Parameter] public double Width { get; set; } = 800;
-[Parameter] public double Height { get; set; } = 600;
-[Parameter] public ChartMargin? Margin { get; set; }
-[Parameter] public string BackgroundColor { get; set; } = "white";
-[Parameter] public Axis? XAxis { get; set; }
-[Parameter] public List<Axis>? YAxes { get; set; }
-[Parameter] public LegendSettings? Legend { get; set; }
-[Parameter] public List<ISeries>? Series { get; set; }
-[Parameter] public TooltipSettings? Tooltip { get; set; }
-[Parameter] public bool EnableInteractions { get; set; } = true;
-[Parameter] public bool EnableAnimations { get; set; } = true;
+abstract record Node;
+record PathNode(PathData Path, StyleRef Style) : Node;   // commands + float coords, not SVG strings
+record RectNode(RectF Bounds, StyleRef Style) : Node;
+record TextNode(string Text, PointF At, TextStyle Style, Anchor Anchor) : Node;
+record GroupNode(IReadOnlyList<Node> Children, RectF? Clip, Matrix? Transform) : Node;
 
-// Event Callbacks
-[Parameter] public EventCallback<ChartEventArgs> OnSeriesClick { get; set; }
-[Parameter] public EventCallback<ChartEventArgs> OnSeriesHover { get; set; }
-[Parameter] public EventCallback<ChartEventArgs> OnSeriesSelected { get; set; }
-[Parameter] public EventCallback<AxisRangeChangedArgs> OnAxisRangeChanged { get; set; }
-[Parameter] public EventCallback<ISeries> OnLegendItemClick { get; set; }
+record Scene(Node Static, Node Series, Node Overlay);
 ```
 
-### Component Lifecycle
-```csharp
-protected override void OnInitialized()
-{
-    // Initialize default axes, legend if not provided
-    // Set up internal state
-}
+Rules:
+- `PathData` stores move/line/curve/**arc** commands as float arrays. An arc is defined by center, radii and angles, and each renderer converts it (SVG uses endpoint `A` parameters; canvas uses `arc()`).
+- There are three layers from day one. **Static** holds axes and grid; **Series** holds the data; **Overlay** holds the crosshair, tooltip, selection and hover effects. On canvas, only the overlay is redrawn when the pointer moves.
+- Styles resolve to concrete values (colors, fonts) through a style table. Theme CSS variables are read once via JS, because canvas cannot use CSS variables.
+- Text measurement sits behind `ITextMeasurer`: browser measurement (cached per font), Skia on the server, or an approximation for prerendering and export.
 
-protected override void OnParametersSet()
-{
-    // Detect parameter changes
-    // Invalidate layout cache if data/dimensions changed
-    // Validate configuration (axis ranges, series references)
-}
+### Renderers
+- **SVG (first)**: Razor emits one `<path>` per series, never a component per point. Use `@key` and control `ShouldRender`.
+- **Canvas (later)**: send data as binary (`float[]`/`byte[]` over interop), not JSON, and scale by `devicePixelRatio`. Needs an accessibility fallback (hidden table or ARIA summary).
+- **Hybrid option**: canvas for the series layer and SVG for axes and text.
+- **Skia (later)**: server-side SVG/PNG export from the same Core.
 
-protected override bool ShouldRender()
-{
-    // Only re-render if meaningful changes occurred
-    // Avoid re-render during hover/interaction states handled by JS
-    return _layoutInvalidated || _configurationChanged;
-}
+## Chart model
+Separate the **chart** (coordinate system and axes) from the **series types** (things that draw inside it). Adding a chart type means adding a series type.
 
-protected override void OnAfterRender(bool firstRender)
-{
-    if (firstRender && EnableInteractions && _advancedInteractionsEnabled)
-    {
-        // Optional: Initialize JS interop only if pan/zoom/crosshair needed
-        await JSRuntime.InvokeVoidAsync("RioCharts.initializeInteractions", _elementRef, DotNetObjectReference.Create(this));
-    }
-}
+### Coordinate systems
+- **Cartesian**: line, area, bar, scatter, heatmap, candlestick, box plot.
+- **Polar**: pie, donut, radial bar, radar, polar area, gauge.
+- Special cases (treemap, sankey) get their own system later, if ever.
+- Cartesian and polar series never mix in one chart.
 
-public override async ValueTask DisposeAsync()
-{
-    // Clean up JS event listeners (if used)
-    if (_advancedInteractionsEnabled)
-    {
-        await JSRuntime.InvokeVoidAsync("RioCharts.dispose", _elementRef);
-    }
-}
-```
+### Series type contract
+Each series type provides:
+- the coordinate system it requires;
+- its **extent**, used for shared scale domains (stacked series report stacked extents);
+- its **layout needs**, such as bar band slots shared across bar series or a ring's radius band;
+- **scene nodes** for its layers;
+- **hit-test entries**, **tooltip data** and **legend items**, so interaction and legends work uniformly.
 
-### Rendering Strategy
-- Component renders SVG markup directly in Blazor (no JSInterop for rendering)
-- Use @key directive on series elements for efficient diffing
-- Leverage Blazor's incremental DOM updates for series changes
-- Apply CSS classes for hover/selection states
-- Use ElementReference + JS interop only for advanced interactions (optional)
+### Mixing (cartesian)
+- Multiple y-axes, with each series bound to an axis id.
+- Named stacking groups, so several stacks can sit side by side.
+- Default z-order is areas, then bars, then lines, with an override.
 
-### Two-Way Binding Support
-```csharp
-// Optional: support @bind-SelectedSeries
-[Parameter] public ISeries? SelectedSeries { get; set; }
-[Parameter] public EventCallback<ISeries?> SelectedSeriesChanged { get; set; }
+### Polar specifics
+| Type | Angle | Radius |
+|---|---|---|
+| Pie | value (cumulative share) | fixed band |
+| Donut | as pie | inner radius > 0 (a parameter, not a separate type) |
+| Gauge | custom start/end angle | as pie or radial bar |
+| Radial bar | value | category band |
+| Radar | category band | value |
+| Polar area | category band | value on a **sqrt** scale (area proportional to value) |
+| Nested donut / sunburst | value | one radius band per ring |
 
-// Optional: support @bind-XAxisRange for zoom/pan
-[Parameter] public AxisRange? XAxisRange { get; set; }
-[Parameter] public EventCallback<AxisRange?> XAxisRangeChanged { get; set; }
-```
+- Labels are the hard part: inside labels when the slice is big enough, otherwise outside labels with leader lines and per-side collision avoidance.
+- An optional threshold groups small slices into "Other".
+- Hit-testing uses the angle and distance from the center.
+- Hover explode and the donut center label (total or hovered value) live in the overlay layer.
+- Animate start and end angles, never path data.
+- Without axes, the legend does more of the work; it is a shared component for both coordinate systems.
 
-### JavaScript Interop (Optional)
+## Data input model
+**Two ways in, one representation inside.** Developers get a convenient API, large data gets a fast path, and Core only ever sees one data format.
 
-**When JS Interop is NOT needed:**
-- Basic charts with click interactions only (@onclick in Blazor)
-- Static charts (no interactions)
-- Simple selection/highlighting via Blazor state
-- CSS-only tooltips (using :hover)
-- Click-to-zoom or button-based zoom controls
+### Inside Core: columnar buffers
+Every series is normalized to contiguous arrays (structure of arrays):
+- **x**: `double[]`. Times become instants (e.g. ms since epoch); categories become band indices plus a category list.
+- **y**: `double[]`, with `NaN` for missing values (gaps in lines).
+- **Extra columns** for multi-value types: OHLC, range area (low/high), box plot.
 
-**When JS Interop IS beneficial:**
-- Real-time hover effects (crosshair, tooltip following mouse)
-- Smooth pan/zoom via mouse drag or wheel
-- High-frequency interactions (would cause excessive SignalR traffic in Blazor Server)
-- Touch gestures (pinch-to-zoom)
-- Performance-critical animations
+Scales, downsampling (LTTB), stacking, hit-testing and binary transfer to canvas all work on these buffers. One code path.
 
-**Pure Blazor Approach (No JS):**
+### Way in 1: items with selectors (default)
 ```razor
-<svg @onclick="HandleClick" @onmousemove="HandleMouseMove">
-    <!-- SVG content -->
-</svg>
-
-@code {
-    private void HandleClick(MouseEventArgs e)
-    {
-        // Handle clicks purely in Blazor
-        // Works fine for basic interactions
-    }
-
-    private void HandleMouseMove(MouseEventArgs e)
-    {
-        // Avoid this in Blazor Server - too many SignalR round-trips!
-        // OK in WASM for simple scenarios
-    }
-}
+<LineSeries TItem="Reading" Items="readings"
+            XValue="r => r.Timestamp" YValue="r => r.SupplyTemp" />
 ```
+- Selectors are plain `Func` delegates, never expression trees, so they stay trimming- and AOT-friendly.
+- Selectors run **once per data change** to fill the buffers, never per render.
+- An index → `TItem` mapping is kept, so events and tooltips return the actual item.
 
-**JS Interop Approach (Advanced Interactions):**
-File: RioCharts.js
-```javascript
-window.RioCharts = {
-    initializeInteractions: function(element, dotNetHelper) {
-        element.addEventListener('mousemove', (e) => {
-            // Handle high-frequency events in JS
-            // Only callback to Blazor when needed (debounced)
-            updateCrosshair(e); // Pure JS/CSS, no Blazor callback
-        });
-
-        element.addEventListener('click', (e) => {
-            // Callback to Blazor for important events
-            dotNetHelper.invokeMethodAsync('OnChartClick', {
-                x: e.offsetX,
-                y: e.offsetY
-            });
-        });
-    },
-    dispose: function(element) {
-        // Remove event listeners
-    }
-};
-```
-
-**Recommendation:**
-- Start with pure Blazor approach (no JS interop)
-- Add JS interop only if you need:
-  - Pan/zoom functionality
-  - Real-time crosshair
-  - Smooth tooltip following mouse
-  - Touch gestures
-- For Blazor Server: minimize callbacks to avoid latency
-- For Blazor WASM: more flexibility, but still use JS for 60fps interactions
-
-### CSS Isolation
-File: RioChart.razor.css
-```css
-/* Scoped styles for the component */
-.chart-container { position: relative; }
-.chart-svg { display: block; }
-.chart-tooltip { position: absolute; pointer-events: none; }
-.series-hover { stroke-width: 3px; filter: brightness(1.2); }
-.series-selected { stroke-width: 4px; }
-```
-
-### Performance Optimization
-- Use RenderFragment for custom legend/tooltip templates (advanced scenarios)
-- Implement virtualization for extremely large datasets (render visible range only)
-- Debounce parameter changes to avoid excessive re-renders
-- Use @key on series to help Blazor's diffing algorithm
-- Consider StaticRenderFragment for static axes/grid (Blazor 8+)
-
-### Usage Example
+### Way in 2: columnar data (fast path)
 ```razor
-@page "/chart-demo"
+<LineSeries Data="SeriesData.From(timestamps, values)" />
+```
+- Takes `ReadOnlyMemory<double>` / `ReadOnlyMemory<DateTimeOffset>` directly: no per-item cost, close to zero-copy to canvas.
+- Events return an index and values instead of a `TItem`.
+- Intended for large time series, e.g. straight from an analytics pipeline.
 
-<RioChart Width="1000" 
-          Height="500"
-          Title="Sales Data"
-          Series="@series"
-          OnSeriesClick="@(args => selectedPoint = $"{args.Series.Name}: {args.Y}")" />
+Selector-based and columnar series behave identically. Developers can start with selectors and switch to the fast path when data grows.
 
-<p>Selected: @selectedPoint</p>
+### Change detection
+- Reprocess only when the data changes: a new reference, or an explicit `DataVersion` parameter.
+- Never diff list contents on render. Mutating a list in place is not the update mechanism.
 
-@code {
-    private List<ISeries> series = new();
-    private string selectedPoint = "None";
+### Streaming
+- A dedicated buffer type (a ring buffer with `Append`, `Trim` and a window) that the chart observes.
+- An optional helper consumes an `IAsyncEnumerable<T>` into that buffer with throttling. It is a convenience, not a core input type.
 
-    protected override void OnInitialized()
-    {
-        series.Add(new XYSeries
-        {
-            Name = "Revenue",
-            StrokeColor = "blue",
-            Points = GenerateData()
-        });
-    }
-}
+### Out of scope
+- `IQueryable`: querying belongs in the app or data layer. The chart takes materialized data; AI-spec transforms run in memory or through the data-source abstraction.
+
+### Performance rules
+- Time series are assumed sorted. Check once on load and sort if needed, because binary-search hit-testing depends on it.
+- Pool buffers (`ArrayPool`) for large and streaming data to reduce GC pressure.
+
+## Annotations
+Annotations are **another kind of scene contributor**, using the same contract as series: extent, scene nodes, hit-test entries and optional legend items. They get layout, rendering, interaction and AI-spec support without special cases.
+
+### Types
+- **Reference lines**: horizontal or vertical, e.g. a setpoint, threshold or "today".
+- **Bands**: an x-range (a time period such as a fault or maintenance window) or a y-range (an acceptable zone).
+- **Point annotations**: a marker plus a label at a data value, e.g. "alarm triggered".
+- **Text/callouts**: free labels with an optional connector line to a point.
+- **Polar**: kept minimal; a target marker on gauges and radial bars.
+
+### Rules
+- **Coordinates**: data coordinates bound to an axis id by default. Relative positions are allowed per dimension, e.g. x at a timestamp and y at "top".
+- **Extent**: each annotation sets whether it expands the axis domain. Default yes for reference lines (a threshold is always visible), no for bands.
+- **Layering**: bands go behind series; lines and labels go above. Overridable per annotation.
+- **Labels**: positions at start, middle or end; clamped to the plot edges and included in the shared label collision avoidance.
+- **Interaction**: tooltips and click events from the start. Draggable annotations (e.g. editing a threshold) come later.
+- **Styling**: muted and theme-driven by default, so annotations support the data instead of competing with it.
+
+## Interaction model
+- After each render, send the computed x-pixel positions (and bounds for bars and slices) to JS once.
+- JS handles pointermove locally: a binary search finds the nearest point, and JS draws the crosshair and tooltip in the DOM.
+- JS calls back to C# only on meaningful events: click, selection, end of a zoom.
+- This keeps Blazor Server as responsive as WASM.
+
+## Blazor API
+- Take inspiration from Blazor-ApexCharts' component model (generic `TItem`, XValue/YValue selectors) so it feels familiar. It is not a compatibility target: change names, structure and defaults wherever a cleaner API results.
+- Example shape: `<Chart TItem="..."><LineSeries .../><BarSeries .../></Chart>`.
+- Prerendering runs no JS, so the first render must look acceptable without measured text sizes.
+
+## Visual design: modern and clean
+Charts should look calm, current and data-first. When in doubt, remove rather than add.
+
+- **Minimal chrome**: no chart border, no background box, no 3D, no gradients, no drop shadows.
+- **Gridlines**: horizontal only, thin and low-contrast. No vertical gridlines by default.
+- **Axes**: no y-axis line. The x-axis baseline is subtle. Tick marks are off by default.
+- **Typography**: inherit the app's font. Axis labels are smaller and muted. Use tabular numbers (`font-variant-numeric: tabular-nums`) so values align.
+- **Color**: a restrained, colorblind-safe default palette, with good contrast in both light and dark mode. Series colors come from theme tokens.
+- **Shapes**: line width around 2px, markers hidden until hover, subtle rounded corners on bars, a small gap between donut slices.
+- **Whitespace**: generous padding. Labels never touch the plot edges.
+- **Tooltip**: a clean card in the theme surface color, with series color dots, aligned values and no heavy borders.
+- **Motion**: short, subtle entry and update animations. Respect `prefers-reduced-motion`.
+- **Theming**: everything is driven by CSS variables / theme tokens, with light and dark mode out of the box.
+
+## Sensible defaults
+Zero configuration should produce a good chart. Every default can be overridden, but defaults are opinionated, not "everything on".
+
+- `<Chart><LineSeries Items="data" XValue="..." YValue="..." /></Chart>` with nothing else must look finished.
+- **Size**: width is 100% of the container and the default height is fixed (e.g. 300px). The chart is responsive automatically.
+- **Scales**: chosen from the data type (DateTime gives a time axis, numbers a linear axis, strings a band axis).
+- **Zero baseline**: bars and areas always start at zero. Lines and scatter may use a tight domain.
+- **Ticks**: nice values, with the count derived from the available pixels rather than a fixed number.
+- **Formatting**: culture-aware. Large numbers are compact (1.2k, 3.4M). Date labels adapt to the visible range (hours, days, months, years).
+- **Legend**: shown only when there is more than one series. Clicking an item toggles that series.
+- **Tooltip**: on by default. Shared across series (one tooltip per x) for cartesian charts, per slice for polar charts.
+- **Data labels**: off for cartesian charts. On for pie and donut when the slice is large enough.
+- **Colors**: assigned automatically from the palette in series order, and stable when series are toggled.
+- **Missing data**: null values create gaps in lines rather than dropping to zero.
+- **Edge cases**: empty data, a single point and all-equal values each render a clean state, never an error or a collapsed axis.
+- **Large data**: downsampling switches on automatically above a threshold.
+
+## AI chart creation
+AI agents create charts through a **declarative chart spec**: JSON that maps 1:1 to the component model, in the spirit of Vega-Lite. The AI produces a spec; the library validates and renders it.
+
+### One model, two front doors
+- `<Chart Spec="spec" />` and the Razor components (`<LineSeries … />`) compile to the same internal chart model. There is no second rendering path.
+- Because of the sensible defaults, a minimal spec must render a finished chart:
+
+```json
+{ "series": [{ "type": "line", "x": "timestamp", "y": "supplyTemp" }] }
 ```
 
-### Considerations for Blazor Server vs. WebAssembly
-- Server: Minimize JS interop calls to reduce latency
-- Server: Debounce hover events to avoid excessive SignalR traffic
-- WASM: Can handle more frequent updates without network overhead
-- WASM: Consider rendering large charts client-side for better performance
+### Schema
+- Spec types are plain C# records. The JSON schema is generated from them with `JsonSchemaExporter`.
+- Every property has a `[Description]`, which LLMs rely on heavily. Include a few short examples in the tool description.
+- Keep required fields to a minimum, and use enums for chart types and options.
+
+### Data
+- Specs reference data instead of inlining it: a dataset id or query plus a field mapping. Inline data is allowed only for small sets, with a size limit.
+- Data binding goes through a data-source abstraction, so the chart library doesn't depend on any particular data layer.
+- Optional declarative transforms: aggregate, group by, time bucket, filter, sort.
+
+### Robustness
+- **Strict validation with actionable errors** that name the path and list valid options, e.g. `series[0].y: field 'temp' not found; available: supplyTemp, extractTemp`. This lets the model fix the spec and retry.
+- **Tolerant parsing where it's safe**: ignore unknown fields, accept obvious synonyms ("column" → bar, "doughnut" → donut).
+- **`"type": "auto"`**: a recommender picks the chart type from the data shape (time + numeric → line, category + numeric → bar, part-of-whole → donut).
+- **The spec is pure data**: no code, no expressions, formatting only through format strings, and limits on series count and data size.
+
+### Integration
+- Expose a `create_chart` tool as an `AIFunction` (Microsoft.Extensions.AI) and as an MCP server. It works with Microsoft Agent Framework agents.
+- **Server-side render** (SVG/PNG via Core + Skia) so an agent can return a chart in Teams, email or chat, not only in Blazor.
+- **Spec → Razor export**, so a developer can turn an AI-built chart into component markup in the codebase.
+- **Text summary**: generate an accessible description (trend, min/max, notable points) from the spec and data, for screen readers and for the agent to explain the chart.
+- **Annotations in the spec**: an agent can add reference lines, bands and points, e.g. "mark the fault periods" or "add the setpoint at 21 °C", or turn detected anomalies into annotations.
+- **Spec round-trip**: any chart built with components can be serialized back to a spec, which is useful for saving dashboards and for AI edits ("make it a stacked bar").
+
+## Time handling
+**Default: use the time as given.** A `DateTime` is shown exactly as it arrives, with no conversion. This is simple, predictable and correct for most dashboards.
+
+**Optional display zone** for the cases where "as given" breaks:
+- the data is UTC but viewers think in local time;
+- local-time data crosses DST (a repeated hour in autumn, a missing hour in spring);
+- one chart mixes data from different time zones.
+
+When a display zone is set (the browser's zone, UTC, or a specific IANA zone such as the unit's site):
+- **Plot on instants, label in the zone.** Time positions are absolute instants, so lines never double back across DST.
+- **Calendar logic runs in the display zone**: ticks ("every day at 00:00", "every Monday", "the 1st of each month"), date formatting and time-bucket transforms compute boundaries there, then convert back to instants.
+- **Input**: prefer `DateTimeOffset`. `DateTime` with Kind `Utc` or `Local` is converted. `Unspecified` is interpreted through an explicit chart option ("assume UTC" or "assume display zone"), never a silent guess.
+- **Show the zone** in tooltips or on the axis when it differs from the viewer's.
+
+Notes:
+- On Blazor Server the browser's zone comes from JS. Never use the server's local time for display.
+- Use `TimeZoneInfo` with IANA IDs; Core stays dependency-free (NodaTime could be an optional add-on).
+- Blazor WASM invariant time zone mode breaks conversion; document it.
+- Test case: hourly data across the autumn DST change.
+
+## Live and streaming data
+See also the streaming buffer under Data input model.
+- **Append and window**: append points to a series, with a sliding window by point count or time span (e.g. the last 24 hours).
+- **Incremental updates**: extents update incrementally. Only the series layer re-renders; axes re-render only when the domain or ticks change.
+- **Throttling**: coalesce rapid updates (especially on Blazor Server) and render at a capped rate.
+- **Downsampling** applies to the visible window.
+- **Motion**: no entry animation on every update; transitions stay subtle or off for streaming.
+
+## Linked charts
+- A **chart group** (by group id or a wrapping component) links charts on a dashboard.
+- **Shared crosshair**: hovering one chart shows the crosshair at the same x in all charts. This is synced in JS, with no server round trip.
+- **Synced zoom/pan** on the x-axis, with state held in C#.
+- Charts in a group share the same x-scale type (e.g. all time axes).
+
+## Programmatic interaction
+**Principle: everything a user can do in the UI can be done from code, and every UI interaction raises an event.** Chart state is observable and controllable.
+
+### Command model
+- UI interactions, code and the AI spec all go through the same internal **commands** (zoom, toggle series, select, add annotation, …).
+- This keeps behaviour consistent whichever way a change starts, and makes undo/redo possible later.
+
+### Declarative state (Blazor-idiomatic)
+Prefer two-way binding where state is natural:
+- `@bind-VisibleRange` (zoom/pan window)
+- `@bind-HiddenSeries`
+- `@bind-SelectedItems` and `@bind-SelectedRange`
+
+### Imperative API (chart reference)
+All methods are async, and they work the same on Server and WASM.
+- **View**: `ZoomToAsync(range)`, `PanAsync`, `ResetZoomAsync`, `GetVisibleRange()`.
+- **Series**: show, hide, toggle and highlight series.
+- **Selection**: select points or a range, clear the selection, read the current selection.
+- **Hover and tooltip**: `ShowTooltipAsync(x)`, `HideTooltipAsync()`, set the crosshair position. For example, hovering a table row highlights the matching point.
+- **Data**: append, replace and remove points (streaming), refresh.
+- **Annotations**: add, update and remove at runtime.
+- **Export**: `ExportSvgAsync`, `ExportPngAsync`, and `GetSpec()` to serialize the current chart to a spec.
+- **Batching**: `ApplyAsync(…)` or an update scope groups several changes into one render. This matters on Blazor Server.
+
+### Events
+- `OnPointClick`, `OnSeriesClick`, `OnAnnotationClick`, `OnLegendClick`.
+- `OnSelectionChanged`, `OnVisibleRangeChanged`, `OnAnnotationChanged` (e.g. a dragged threshold), `OnRendered`.
+- **Cancelable "-ing" events** where useful, e.g. `OnLegendClicking` to override the default toggle, or `OnZoomChanging` to clamp the range.
+- **Hover events** are opt-in and throttled, since each one is a server round trip on Blazor Server.
+- **Typed payloads**: `TItem`, series, x/y value, and the screen position, not just indices.
+
+### Coordinates and hit-testing
+- `ValueToPixel` / `PixelToValue` for custom overlays and positioning external UI.
+- `FindNearest(point)` and `GetItemsInRange(range)` from the Core hit-test index. These also work server-side, without a browser.
+
+### Customization hooks
+- Templates as `RenderFragment<TContext>` for the tooltip, legend items and data labels.
+- A custom overlay layer: a `RenderFragment` that draws in chart coordinates.
+- Formatter delegates for axis labels, tooltips and data labels.
+
+### Linked charts
+- A chart group exposes the same view commands (`group.ZoomToAsync(range)`), applied to every chart in the group.
+
+## Other topics (to cover later)
+- Render modes: Server, WASM, Auto, and static SSR (plain SVG, no interactivity).
+- Trimming/AOT friendliness: no reflection in hot paths; System.Text.Json source generation for the spec.
+- Target frameworks: current LTS plus the latest .NET.
+- Testing: Core unit tests, SVG snapshot tests (e.g. Verify), BenchmarkDotNet.
+- Accessibility: keyboard navigation through points and series, ARIA roles, focus handling.
+- Docs and a Blazor WASM demo site on GitHub Pages.
+- Low priority: a short README note for Blazor-ApexCharts users on how the main concepts map.
+- Client-side export: PNG/SVG download, CSV data.
+- Compact modes: sparklines, and auto-hiding axes and legend at small sizes.
+
+## Hard parts to budget for
+- Nice ticks and time axes that switch cleanly between hours, days and months, plus formatting.
+- Axis and pie label collision avoidance.
+- Responsive sizing (ResizeObserver; `viewBox` scaling alone distorts text).
+- Large data: LTTB downsampling at about 5–10k points and above, canvas for much more.
+
+## Milestones
+1. Line, area and bar with linear and time axes (time as given by default), legend, responsive sizing, theming via CSS variables (SVG renderer).
+2. Tooltip and crosshair, stacked and mixed series, multiple y-axes, data labels, annotations (reference lines and bands).
+3. Pie, donut and radial bar (arc command, label placement).
+4. Zoom/pan, display time zone, streaming data, linked charts, remaining annotations (points, callouts, draggable), large-data mode (downsampling, canvas series layer).
+5. Server-side export via Skia using the same Core.
+6. AI chart spec: JSON schema, validation with actionable errors, `create_chart` tool (AIFunction/MCP), auto chart type.
+
+Design the internal chart model so it is serializable from milestone 1. That keeps the AI spec cheap to add later.
+
+## References
+- Radzen and MudBlazor charts: pure-SVG Blazor implementations.
+- ScottPlot: C# rendering and axis logic.
+- Blazor-ApexCharts: inspiration for the component API (not a compatibility target).

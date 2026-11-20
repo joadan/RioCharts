@@ -1,0 +1,135 @@
+/*
+  Theme tokens. Override the public variables (--rio-text, --rio-series-1, ...) anywhere above
+  the chart, e.g. on :root. The --_rio-* variables hold the built-in light/dark defaults.
+*/
+.rio-chart {
+    --_rio-text: #1f2328;
+    --_rio-text-muted: #6b7280;
+    --_rio-grid: #e9ebef;
+    --_rio-axis: #c3c8d0;
+    --_rio-surface: #ffffff;
+    --_rio-focus: #2f6fde;
+    /* Colorblind-aware categorical palette */
+    --_rio-series-1: #4269d0;
+    --_rio-series-2: #efb118;
+    --_rio-series-3: #ff725c;
+    --_rio-series-4: #6cc5b0;
+    --_rio-series-5: #3ca951;
+    --_rio-series-6: #ff8ab7;
+    --_rio-series-7: #a463f2;
+    --_rio-series-8: #97bbf5;
+    --_rio-series-9: #9c6b4e;
+    --_rio-series-10: #9498a0;
+
+    position: relative;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+    color: var(--rio-text, var(--_rio-text));
+    line-height: normal;
+}
+
+@media (prefers-color-scheme: dark) {
+    .rio-chart {
+        --_rio-text: #e6e8eb;
+        --_rio-text-muted: #9aa1ab;
+        --_rio-grid: #2b3038;
+        --_rio-axis: #4a515c;
+        --_rio-surface: #16191d;
+        --_rio-focus: #7aa7ff;
+        --_rio-series-1: #6b8ff0;
+        --_rio-series-2: #f2c14e;
+        --_rio-series-3: #ff8a76;
+        --_rio-series-4: #7fd3c0;
+        --_rio-series-5: #5cc06e;
+        --_rio-series-6: #ff9fc6;
+        --_rio-series-7: #b98af7;
+        --_rio-series-8: #a9c7f7;
+        --_rio-series-9: #c08c6b;
+        --_rio-series-10: #a8acb4;
+    }
+}
+
+/* Explicit app themes win over the OS preference. */
+:is([data-theme="dark"], .dark, .rio-theme-dark) .rio-chart {
+    --_rio-text: #e6e8eb;
+    --_rio-text-muted: #9aa1ab;
+    --_rio-grid: #2b3038;
+    --_rio-axis: #4a515c;
+    --_rio-surface: #16191d;
+    --_rio-focus: #7aa7ff;
+    --_rio-series-1: #6b8ff0;
+    --_rio-series-2: #f2c14e;
+    --_rio-series-3: #ff8a76;
+    --_rio-series-4: #7fd3c0;
+    --_rio-series-5: #5cc06e;
+    --_rio-series-6: #ff9fc6;
+    --_rio-series-7: #b98af7;
+    --_rio-series-8: #a9c7f7;
+    --_rio-series-9: #c08c6b;
+    --_rio-series-10: #a8acb4;
+}
+
+:is([data-theme="light"], .light, .rio-theme-light) .rio-chart {
+    --_rio-text: #1f2328;
+    --_rio-text-muted: #6b7280;
+    --_rio-grid: #e9ebef;
+    --_rio-axis: #c3c8d0;
+    --_rio-surface: #ffffff;
+    --_rio-focus: #2f6fde;
+    --_rio-series-1: #4269d0;
+    --_rio-series-2: #efb118;
+    --_rio-series-3: #ff725c;
+    --_rio-series-4: #6cc5b0;
+    --_rio-series-5: #3ca951;
+    --_rio-series-6: #ff8ab7;
+    --_rio-series-7: #a463f2;
+    --_rio-series-8: #97bbf5;
+    --_rio-series-9: #9c6b4e;
+    --_rio-series-10: #9498a0;
+}
+
+.rio-chart-svg {
+    display: block;
+    overflow: visible;
+    font-family: inherit;
+    user-select: none;
+}
+
+/* ---------- Legend ---------- */
+
+.rio-chart ::deep .rio-legend-item {
+    cursor: pointer;
+    outline: none;
+}
+
+.rio-chart ::deep .rio-legend-item:focus-visible .rio-legend-hit {
+    stroke: var(--rio-focus, var(--_rio-focus));
+    stroke-width: 1.5;
+}
+
+.rio-chart ::deep .rio-legend-off {
+    opacity: 0.4;
+}
+
+.rio-chart ::deep .rio-legend-empty .rio-swatch {
+    fill: var(--rio-grid, var(--_rio-grid));
+    stroke: var(--rio-axis, var(--_rio-axis));
+}
+
+/* ---------- Motion: short entry fade; nothing on updates ---------- */
+
+.rio-chart ::deep .rio-series {
+    animation: rio-enter 0.35s ease-out both;
+}
+
+@keyframes rio-enter {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rio-chart ::deep .rio-series {
+        animation: none;
+    }
+}

@@ -1,21 +1,24 @@
 # RioCharts
 
-A Blazor SVG chart component library. `Design.md` is the specification: read it
-before adding or changing features, and keep it in sync when the design changes.
+A pure .NET chart library, Blazor first. `Design.md` is the design (the owner's document): read it
+before adding or changing features. Record where the code differs from it in
+`docs/implementation-notes.md`, not in `Design.md`.
 
 ## Layout
 
-- `src/RioCharts/` — the component library (Razor class library, `net10.0`,
-  nullable and implicit usings enabled).
-  - `Model/` — chart model and series types (namespace `RioCharts`).
-  - `Layout/` — layout engine, scales, LTTB, formatting, accessibility summary (`RioCharts.Layout`).
-  - `Rendering/Svg.cs` — SVG path/number helpers (`RioCharts.Rendering`).
-  - `RioChart.razor` (+ `.razor.cs`, `.razor.css`) — the component.
-  - `RioChart.razor.js` — pan/zoom/crosshair module, served at `_content/RioCharts/RioChart.razor.js`.
+- `src/RioCharts.Core/` — no UI dependencies (namespace `RioCharts.Core.*`).
+  - `Data/` — `SeriesData` (columnar x/y, NaN = gap), `TimeValue`, `Lttb`.
+  - `Scales/` — linear, band, nice ticks, calendar time ticks.
+  - `Formatting/`, `Text/` — label formatting, text measurement.
+  - `Paths/` — line/area path builders (linear, monotone, step).
+  - `Scene/` — render-agnostic nodes, `PathData`, styles, theme tokens.
+  - `Series/` — series type contract and line/area/bar types (internal).
+  - `Layout/` — `ChartLayout.Compute` (spec + data → scene), hit-test index, describer.
+  - `ChartSpec.cs` — the serializable chart model.
+- `src/RioCharts.Blazor/` — `Chart.razor` (+ `.cs`, `.css`, `.js`), `Series.cs`, `Rendering/` (SVG writer and scene renderer).
 - `tests/RioCharts.Tests/` — xUnit tests.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
-- `docs/` — documentation.
-- `RioCharts.sln` — solution file.
+- `docs/` — implementation notes.
 
 ## Build and test
 
@@ -25,37 +28,21 @@ dotnet test
 dotnet run --project samples/RioCharts.Demo --launch-profile http
 ```
 
-Stop the running demo before rebuilding; it locks `RioCharts.dll`.
+Stop the running demo before rebuilding; it locks the library DLLs.
 
 ## Git
 
 - Commit and push directly to `master`; no feature branches or PRs for now.
-
-## Architecture (from Design.md)
-
-Keep these layers separate:
-
-1. **Model** — `Chart`, `Axis`, `LegendSettings`, `TooltipSettings`, and series
-   types implementing `ISeries` (`XYSeries`, `ValueSeries`, `XYZSeries`).
-2. **Layout engine** — maps data to screen coordinates (ranges, ticks, multiple
-   Y axes, LTTB downsampling, caching). Produces `SeriesLayout`. No rendering here.
-3. **SVG renderer** — turns layout into SVG elements. No data math here.
-4. **`<RioChart>` component** — Blazor parameters, event callbacks, lifecycle.
+- Keep `CHANGELOG.md` up to date and call out breaking changes.
 
 ## Conventions
 
-- Render SVG directly in Razor; no JS interop for rendering.
-- Prefer pure Blazor event handling. Add JS interop (`RioCharts.js`) only for
-  high-frequency interactions: pan/zoom, crosshair, tooltip following the mouse,
-  touch gestures.
-- Collections on the model default to empty lists, never null.
-- Handle bad input gracefully as described in Design.md "Error Handling"
-  (empty data, invalid axis range, missing Y axis reference) — do not throw.
-- Use `@key` on series elements so Blazor diffs efficiently.
-- Component styles go in scoped CSS (`RioChart.razor.css`).
-- Layout engine logic should be plain C# and unit-testable without Blazor.
-- Format every number written into SVG with `Svg.N` (invariant culture); labels shown to
-  users use the current culture.
-- In Razor, an SVG `<text>` directly inside a code block (`@if`, `@foreach`) is parsed as
-  Razor's `<text>` tag; wrap it in a `<g>`.
-- Record differences from the design in Design.md "Implementation Status".
+- Core never emits SVG or references Blazor. It produces scene nodes; renderers convert them.
+- Series render nothing themselves; they register a `SeriesSpec` and `SeriesData` with the chart.
+- Selectors run once per data change, never per render. Never diff list contents on render.
+- Format every number written into SVG with `SvgWriter.N` (invariant culture). User-visible labels use the chart's culture.
+- Colors in the scene are theme tokens (`ThemeTokens`) or CSS colors; never hard-code theme colors in Core.
+- Visual defaults follow Design.md "Visual design": no y-axis line, horizontal grid only, no tick marks, markers hidden.
+- Edge cases (empty, single point, equal values, gaps) must render a clean state, never throw.
+- Keep the JS module tiny: measurement and high-frequency interaction only.
+- Temperatures in examples are in °C.

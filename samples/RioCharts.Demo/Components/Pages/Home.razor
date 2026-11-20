@@ -2,313 +2,180 @@
 
 <PageTitle>RioCharts demo</PageTitle>
 
-<h1>RioCharts</h1>
-<p class="lead">
-    Hover points for tooltips, click a series to select it, click legend items to hide them.
-    Focus a chart and use the arrow keys to move between points; Escape clears the selection.
-</p>
+<header class="top">
+    <div>
+        <h1>RioCharts</h1>
+        <p class="lead">Milestone 1: line, area and bar series; linear, time and category axes; legend; responsive sizing; theming.</p>
+    </div>
+    <button class="theme" @onclick="() => _dark = !_dark">@(_dark ? "Light" : "Dark") theme</button>
+</header>
 
-<div class="status">
-    <span><strong>Last event:</strong> @_lastEvent</span>
-    <span><strong>Selected:</strong> @(_selected?.Name ?? "none")</span>
-</div>
+<main class="@(_dark ? "rio-theme-dark dark-page" : "rio-theme-light")">
+    <div class="grid">
+        <section>
+            <h2>Zero configuration</h2>
+            <Chart Items="_supply">
+                <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+            <p class="note">A single series: no legend, time axis picked from the data.</p>
+        </section>
 
-<div class="grid">
-    <section>
-        <h2>Line, multiple Y axes</h2>
-        <RioChart Title="Revenue and visitors" Width="560" Height="360"
-                  XAxis="_monthAxis" YAxes="_twoAxes" Series="_lineSeries"
-                  Legend="_topLeftLegend"
-                  @bind-SelectedSeries="_selected"
-                  OnSeriesClick="OnClick"
-                  OnLegendItemClick="OnLegend" />
-    </section>
+        <section>
+            <h2>Several series, gaps and toggling</h2>
+            <Chart TItem="Reading" Title="Air handling unit" YAxis="_celsius" @bind-HiddenSeries="_hidden">
+                <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+                <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+                <LineSeries Items="_outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+            <p class="note">Outdoor has a sensor gap. Click legend items to hide series. Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden))</p>
+        </section>
 
-    <section>
-        <h2>Area and scatter</h2>
-        <RioChart Title="Temperature" Width="560" Height="360"
-                  XAxis="_dayAxis" YAxes="_tempAxis" Series="_areaSeries"
-                  Tooltip="_tempTooltip"
-                  EnablePanZoom="true" EnableCrosshair="true"
-                  OnAxisRangeChanged="OnRange"
-                  OnSeriesClick="OnClick" />
-    </section>
+        <section>
+            <h2>Area</h2>
+            <Chart Items="_energy" YAxis="_kwh">
+                <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            </Chart>
+        </section>
 
-    <section>
-        <h2>Pie and donut</h2>
-        <RioChart Title="Market share" Width="560" Height="360" Series="_pieSeries"
-                  Legend="_rightLegend"
-                  OnSeriesClick="OnClick" />
-    </section>
+        <section>
+            <h2>Grouped bars, categories</h2>
+            <Chart TItem="QuarterSales" Title="Sales per quarter">
+                <BarSeries Items="_sales" Name="2025" XValue="s => s.Quarter" YValue="s => s.Last" />
+                <BarSeries Items="_sales" Name="2026" XValue="s => s.Quarter" YValue="s => s.This" />
+            </Chart>
+            <p class="note">Large numbers are compact (k, M).</p>
+        </section>
 
-    <section>
-        <h2>Funnel</h2>
-        <RioChart Title="Sales funnel" Width="560" Height="360" Series="_funnelSeries"
-                  Legend="_hiddenLegend"
-                  OnSeriesClick="OnClick" />
-    </section>
+        <section>
+            <h2>Bars and a line over time</h2>
+            <Chart TItem="Reading" YAxis="_kwh">
+                <BarSeries Items="_daily" Name="Daily use" XValue="r => r.Time" YValue="r => r.Value" />
+                <LineSeries Items="_dailyAverage" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            </Chart>
+            <p class="note">Default z-order: areas, then bars, then lines.</p>
+        </section>
 
-    <section>
-        <h2>Bubble</h2>
-        <RioChart Title="Countries" Width="560" Height="360"
-                  XAxis="_gdpAxis" YAxes="_lifeAxis" Series="_bubbleSeries"
-                  Legend="_bottomLegend"
-                  OnSeriesClick="OnClick" />
-    </section>
+        <section>
+            <h2>Step line</h2>
+            <Chart Items="_setpoints" YAxis="_celsius">
+                <LineSeries Name="Setpoint" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
+            </Chart>
+        </section>
 
-    <section>
-        <h2>Heatmap</h2>
-        <RioChart Title="Activity by hour" Width="560" Height="360"
-                  XAxis="_hourAxis" YAxes="_weekdayAxis" Series="_heatSeries"
-                  Legend="_hiddenLegend"
-                  OnSeriesClick="OnClick" />
-    </section>
+        <section class="wide">
+            <h2>Columnar fast path: 200 000 points</h2>
+            <Chart TItem="double" Height="260">
+                <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />
+            </Chart>
+            <p class="note">Passed as arrays with <code>SeriesData.From(times, values)</code>; downsampled with LTTB to the plot width.</p>
+        </section>
 
-    <section>
-        <h2>Dates, 50 000 points (LTTB), pan, zoom and crosshair</h2>
-        <RioChart Title="Sensor readings" Width="560" Height="360"
-                  XAxis="_dateAxis" Series="_bigSeries"
-                  EnablePanZoom="true" EnableCrosshair="true"
-                  @bind-XAxisRange="_sensorRange"
-                  OnSeriesClick="OnClick" />
-        <p class="hint">
-            Drag to pan, scroll or pinch to zoom, double-click to reset.
-            Keyboard: + / − zoom, Shift+arrows pan, 0 resets.<br />
-            Visible range: @RangeText(_sensorRange)
-        </p>
-    </section>
+        <section class="wide resizable">
+            <h2>Responsive: drag the corner to resize</h2>
+            <Chart Items="_supply" Height="220">
+                <AreaSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+        </section>
 
-    <section>
-        <h2>Live updates</h2>
-        <RioChart @ref="_liveChart" Title="Streaming" Width="560" Height="360"
-                  YAxes="_liveAxis" Series="_liveSeries" EnableAnimations="false" />
-        <button @onclick="ToggleStreaming">@(_streaming ? "Stop" : "Start") streaming</button>
-    </section>
+        <section>
+            <h2>Edge cases</h2>
+            <div class="edge">
+                <Chart TItem="Reading" Height="140" Title="Empty">
+                    <LineSeries Items="_empty" XValue="r => r.Time" YValue="r => r.Value" />
+                </Chart>
+                <Chart TItem="Reading" Height="140" Title="One point">
+                    <LineSeries Items="_onePoint" XValue="r => r.Time" YValue="r => r.Value" />
+                </Chart>
+                <Chart TItem="Reading" Height="140" Title="All equal">
+                    <LineSeries Items="_flat" XValue="r => r.Time" YValue="r => r.Value" />
+                </Chart>
+            </div>
+        </section>
 
-    <section>
-        <h2>Empty chart</h2>
-        <RioChart Title="Nothing here yet" Width="560" Height="360" Series="_emptySeries" />
-    </section>
-
-    <section>
-        <h2>High contrast markers</h2>
-        <RioChart Title="Markers" Width="560" Height="360" Series="_markerSeries"
-                  Palette="ChartPalette.HighContrast" Legend="_bottomLegend" />
-    </section>
-</div>
+        <section class="custom-palette">
+            <h2>Theme tokens</h2>
+            <Chart TItem="QuarterSales">
+                <LineSeries Items="_sales" Name="2025" XValue="s => s.Quarter" YValue="s => s.Last" />
+                <LineSeries Items="_sales" Name="2026" XValue="s => s.Quarter" YValue="s => s.This" />
+            </Chart>
+            <p class="note">Colors overridden with <code>--rio-series-1</code> and <code>--rio-series-2</code> in CSS.</p>
+        </section>
+    </div>
+</main>
 
 @code {
-    private string _lastEvent = "none";
-    private ISeries? _selected;
+    private sealed record Reading(DateTime Time, double? Value);
+    private sealed record QuarterSales(string Quarter, double Last, double This);
 
-    private readonly Axis _monthAxis = new() { Title = "Month", ShowGridLines = false, Minimum = 1, Maximum = 12, TargetTickCount = 12 };
-    private readonly List<Axis> _twoAxes =
+    private bool _dark;
+    private IReadOnlyCollection<string> _hidden = [];
+
+    private readonly AxisSpec _celsius = new() { Title = "°C" };
+    private readonly AxisSpec _kwh = new() { Title = "kWh" };
+
+    private List<Reading> _supply = [];
+    private List<Reading> _extract = [];
+    private List<Reading> _outdoor = [];
+    private List<Reading> _energy = [];
+    private List<Reading> _daily = [];
+    private List<Reading> _dailyAverage = [];
+    private List<Reading> _setpoints = [];
+    private readonly List<Reading> _empty = [];
+    private List<Reading> _onePoint = [];
+    private List<Reading> _flat = [];
+    private SeriesData _big = SeriesData.Empty;
+
+    private readonly List<QuarterSales> _sales =
     [
-        new Axis { Title = "Revenue", LabelFormat = AxisLabelFormat.Currency },
-        new Axis { Title = "Visitors", ShowGridLines = false },
+        new("Q1", 182_000, 214_000),
+        new("Q2", 236_000, 251_000),
+        new("Q3", 198_000, 243_000),
+        new("Q4", 271_000, 305_000),
     ];
-    private readonly LegendSettings _topLeftLegend = new() { Position = LegendPosition.TopLeft };
-    private readonly LegendSettings _rightLegend = new() { Position = LegendPosition.Right };
-    private readonly LegendSettings _bottomLegend = new() { Position = LegendPosition.Bottom };
-    private readonly LegendSettings _hiddenLegend = new() { Visible = false };
-
-    private List<ISeries> _lineSeries = [];
-    private readonly Axis _dayAxis = new() { Title = "Day" };
-    private readonly List<Axis> _tempAxis = [new Axis { Title = "°C" }];
-    private readonly TooltipSettings _tempTooltip = new() { CustomFormat = "{0}\nDay {2:N0}: {1:N1} °C" };
-    private List<ISeries> _areaSeries = [];
-    private List<ISeries> _pieSeries = [];
-    private List<ISeries> _funnelSeries = [];
-    private readonly Axis _gdpAxis = new() { Title = "GDP per capita (k$)" };
-    private readonly List<Axis> _lifeAxis = [new Axis { Title = "Life expectancy" }];
-    private List<ISeries> _bubbleSeries = [];
-    private readonly Axis _hourAxis = new() { Title = "Hour", ShowGridLines = false, TargetTickCount = 9 };
-    private readonly List<Axis> _weekdayAxis = [new Axis { Title = "Weekday", ShowGridLines = false }];
-    private List<ISeries> _heatSeries = [];
-    private readonly Axis _dateAxis = new() { LabelFormat = AxisLabelFormat.Custom, CustomFormatString = "MMM dd", LabelRotation = 35 };
-    private List<ISeries> _bigSeries = [];
-    private readonly List<ISeries> _emptySeries = [new XYSeries { Name = "No points yet" }];
-    private List<ISeries> _markerSeries = [];
 
     protected override void OnInitialized()
     {
-        var revenue = new[] { 120, 135, 128, 150, 172, 168, 190, 210, 205, 230, 248, 260.0 };
-        var visitors = new[] { 3200, 3500, 3100, 4100, 4800, 4700, 5300, 6100, 5900, 6800, 7200, 7900.0 };
-        _lineSeries =
-        [
-            new XYSeries
-            {
-                Name = "Revenue (k)",
-                Marker = MarkerStyle.Circle,
-                Points = revenue.Select((v, i) => new XYPoint(i + 1, v)).ToList(),
-            },
-            new XYSeries
-            {
-                Name = "Visitors",
-                YAxisIndex = 1,
-                Marker = MarkerStyle.Square,
-                Points = visitors.Select((v, i) => new XYPoint(i + 1, v)).ToList(),
-            },
-        ];
+        var random = new Random(3);
+        var start = new DateTime(2026, 11, 16);
 
-        var random = new Random(7);
-        _areaSeries =
-        [
-            new XYSeries
-            {
-                Name = "Average",
-                FillColor = "auto",
-                Points = Enumerable.Range(0, 60).Select(d => new XYPoint(d, 12 + 8 * Math.Sin(d / 9.0))).ToList(),
-            },
-            new XYSeries
-            {
-                Name = "Measured",
-                ShowLine = false,
-                Marker = MarkerStyle.Diamond,
-                MarkerSize = 7,
-                Points = Enumerable.Range(0, 60).Select(d => new XYPoint(d, 12 + 8 * Math.Sin(d / 9.0) + random.NextDouble() * 6 - 3)).ToList(),
-            },
-        ];
-
-        _pieSeries =
-        [
-            new ValueSeries
-            {
-                Name = "2025",
-                Points = [new("Alpha", 42) { IsExploded = true }, new("Beta", 27), new("Gamma", 18), new("Delta", 9), new("Other", 4)],
-            },
-            new ValueSeries
-            {
-                Name = "2026",
-                Type = ValueSeriesType.Donut,
-                Points = [new("Alpha", 38), new("Beta", 31), new("Gamma", 20), new("Delta", 7), new("Other", 4)],
-            },
-        ];
-
-        _funnelSeries =
-        [
-            new ValueSeries
-            {
-                Name = "Funnel",
-                Type = ValueSeriesType.Funnel,
-                Points = [new("Visits", 12000), new("Sign-ups", 5400), new("Trials", 2100), new("Purchases", 640)],
-            },
-        ];
-
-        _bubbleSeries =
-        [
-            new XYZSeries
-            {
-                Name = "Europe",
-                MaxBubbleSize = 30,
-                Points = [new(48, 82, 67), new(55, 83, 10), new(42, 81, 47), new(51, 81, 84), new(36, 78, 38)],
-            },
-            new XYZSeries
-            {
-                Name = "Asia",
-                MaxBubbleSize = 30,
-                Points = [new(12, 77, 1400), new(8, 70, 1380), new(42, 84, 125), new(33, 83, 52), new(4, 72, 270)],
-            },
-        ];
-
-        var heat = new List<XYZPoint>();
-        for (var day = 0; day < 7; day++)
+        // Two days of 15-minute readings.
+        for (var i = 0; i < 2 * 96; i++)
         {
-            for (var hour = 0; hour < 24; hour++)
-            {
-                var work = day < 5 && hour is >= 8 and <= 17 ? 60 : 10;
-                heat.Add(new XYZPoint(hour, day, work + random.Next(0, 40)));
-            }
+            var t = start.AddMinutes(15 * i);
+            var dayCycle = Math.Sin((t.Hour + t.Minute / 60.0 - 9) / 24 * 2 * Math.PI);
+            _outdoor.Add(new Reading(t, i is >= 60 and < 75 ? null : Math.Round(4 + 5 * dayCycle + random.NextDouble(), 1)));
+            _supply.Add(new Reading(t, Math.Round(19 + 1.5 * dayCycle + random.NextDouble() * 0.4, 1)));
+            _extract.Add(new Reading(t, Math.Round(22 + 0.8 * dayCycle + random.NextDouble() * 0.3, 1)));
+            _energy.Add(new Reading(t, Math.Round(Math.Max(0, 14 - 9 * dayCycle + random.NextDouble() * 2), 1)));
         }
 
-        _heatSeries = [new XYZSeries { Name = "Activity", Type = XYZSeriesType.Heatmap, Points = heat }];
+        // Five weeks of daily values.
+        var days = Enumerable.Range(0, 35).Select(d => start.AddDays(d - 34)).ToList();
+        _daily = days.Select(d => new Reading(d, Math.Round(220 + 60 * Math.Sin(d.DayOfYear / 5.0) + random.Next(-25, 25), 0))).ToList();
+        _dailyAverage = _daily.Select((r, i) => new Reading(r.Time, _daily.Skip(Math.Max(0, i - 6)).Take(Math.Min(7, i + 1)).Average(x => x.Value))).ToList();
 
-        var start = new DateTime(2026, 1, 1);
-        var value = 50.0;
-        var big = new List<XYPoint>(50_000);
-        for (var i = 0; i < 50_000; i++)
+        _setpoints =
+        [
+            new(start, 21), new(start.AddHours(6), 21), new(start.AddHours(7), 22.5), new(start.AddHours(17), 22.5),
+            new(start.AddHours(18), 20), new(start.AddHours(30), 20), new(start.AddHours(31), 22.5), new(start.AddHours(41), 22.5),
+            new(start.AddHours(42), 20), new(start.AddHours(48), 20),
+        ];
+
+        _onePoint = [new(start, 21.5)];
+        _flat = Enumerable.Range(0, 24).Select(h => new Reading(start.AddHours(h), 21)).ToList();
+
+        // A large series as plain arrays (the columnar fast path).
+        const int n = 200_000;
+        var times = new DateTime[n];
+        var values = new double[n];
+        var value = 20.0;
+        for (var i = 0; i < n; i++)
         {
-            value += random.NextDouble() - 0.5;
-            if (i == 31_000)
-            {
-                value += 25; // a spike LTTB should keep
-            }
-
-            big.Add(new XYPoint(start.AddMinutes(i * 3), value));
+            times[i] = start.AddDays(-30).AddSeconds(i * 13);
+            value += (random.NextDouble() - 0.5) * 0.08;
+            values[i] = i == 150_000 ? value + 6 : value;
         }
 
-        _bigSeries = [new XYSeries { Name = "Sensor", StrokeWidth = 1.2, Points = big }];
-
-        var markers = new[] { MarkerStyle.Circle, MarkerStyle.Square, MarkerStyle.Triangle, MarkerStyle.Diamond, MarkerStyle.Cross, MarkerStyle.Plus };
-        _markerSeries = markers
-            .Select((m, i) => (ISeries)new XYSeries
-            {
-                Name = m.ToString(),
-                Marker = m,
-                MarkerSize = 9,
-                Points = Enumerable.Range(0, 8).Select(x => new XYPoint(x, i * 2 + Math.Sin(x + i))).ToList(),
-            })
-            .ToList();
-
-        _liveSeries = [_live];
+        _big = SeriesData.From(times, values);
     }
-
-    // ---------- Live updates ----------
-
-    private RioChart? _liveChart;
-    private readonly List<Axis> _liveAxis = [new Axis { Minimum = -2, Maximum = 2 }];
-    private readonly XYSeries _live = new() { Name = "Signal", Points = [] };
-    private List<ISeries> _liveSeries = [];
-    private bool _streaming;
-    private CancellationTokenSource? _cts;
-    private int _tick;
-
-    private async Task ToggleStreaming()
-    {
-        if (_streaming)
-        {
-            _cts?.Cancel();
-            _streaming = false;
-            return;
-        }
-
-        _streaming = true;
-        _cts = new CancellationTokenSource();
-        var token = _cts.Token;
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
-        try
-        {
-            while (await timer.WaitForNextTickAsync(token))
-            {
-                _tick++;
-                _live.Points.Add(new XYPoint(_tick, Math.Sin(_tick / 10.0) + Math.Sin(_tick / 3.7) * 0.3));
-                if (_live.Points.Count > 200)
-                {
-                    _live.Points.RemoveAt(0); // sliding window
-                }
-
-                _liveChart?.Refresh();
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
-    // ---------- Events ----------
-
-    private void OnClick(ChartEventArgs e) =>
-        _lastEvent = $"click on {e.Series?.Name}, point {e.PointIndex} (x={e.X:0.##}, y={e.Y:0.##})";
-
-    private AxisRange? _sensorRange;
-
-    private static string RangeText(AxisRange? range) => range is null
-        ? "all data"
-        : $"{DateTime.FromOADate(range.Minimum):yyyy-MM-dd HH:mm} – {DateTime.FromOADate(range.Maximum):yyyy-MM-dd HH:mm}";
-
-    private void OnRange(AxisRangeChangedArgs e) =>
-        _lastEvent = $"X range {e.OldMinimum:0.#}–{e.OldMaximum:0.#} → {e.NewMinimum:0.#}–{e.NewMaximum:0.#}";
-
-    private void OnLegend(ISeries series) =>
-        _lastEvent = $"legend toggled {series.Name} (now {(series.Visible ? "shown" : "hidden")})";
 }

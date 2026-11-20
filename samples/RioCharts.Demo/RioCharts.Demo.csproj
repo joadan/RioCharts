@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\RioCharts\RioCharts.csproj" />
+    <ProjectReference Include="..\..\src\RioCharts.Blazor\RioCharts.Blazor.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
