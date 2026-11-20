@@ -4,9 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
 
-    <!-- Pre-1.0: APIs change freely; packages are published as previews. -->
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix>preview</VersionSuffix>
+    <!-- Versions come from version.json and the git height (Nerdbank.GitVersioning).
+         Pre-1.0: APIs change freely; packages are published as previews. -->
     <PackageProjectUrl>https://github.com/joadan/RioCharts</PackageProjectUrl>
     <RepositoryUrl>https://github.com/joadan/RioCharts</RepositoryUrl>
     <PackageTags>charts;blazor;svg</PackageTags>
@@ -30,6 +29,10 @@
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50" PrivateAssets="all" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(IsPackable)' != 'false'">
     <None Include="$(MSBuildThisFileDirectory)assets/icon.png" Pack="true" PackagePath="\" Visible="false" />

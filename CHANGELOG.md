@@ -10,8 +10,10 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 ### Packaging
 
 - NuGet packages for RioCharts.Core, .Blazor, .Skia, .AI and the `RioCharts.Mcp` tool, with a
-  package README, symbols (`.snupkg`), Source Link and XML docs. `.github/workflows/nuget.yml`
-  packs, tests and publishes them to nuget.org when a `v*` tag is pushed (Trusted Publishing).
+  package README, symbols (`.snupkg`), Source Link and XML docs. The manual **Create Release**
+  workflow (`.github/workflows/create-release.yml`) tests, packs and publishes them to nuget.org
+  (Trusted Publishing), then tags the commit and creates a GitHub release. Versions come from
+  `version.json` and the git height (Nerdbank.GitVersioning).
 
 ### AI
 

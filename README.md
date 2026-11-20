@@ -183,8 +183,10 @@ See [CHANGELOG.md](CHANGELOG.md) for changes.
 
 ## Releasing
 
-Push a tag `v<version>` (e.g. `v0.1.0-preview.1`); [nuget.yml](.github/workflows/nuget.yml) tests,
-packs and publishes all packages to nuget.org with that version. The package README is
+Run **Create Release** ([create-release.yml](.github/workflows/create-release.yml)) by hand from
+the Actions tab on `master`: it tests, packs and publishes all packages to nuget.org, then tags the
+commit and creates a GitHub release. The version comes from [version.json](version.json) and the git
+height (Nerdbank.GitVersioning): `0.1-preview` gives `0.1.<height>-preview`. The package README is
 [assets/nuget-readme.md](assets/nuget-readme.md).
 
 ## License
