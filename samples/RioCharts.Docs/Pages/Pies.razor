@@ -1,0 +1,79 @@
+@page "/pies"
+
+<PageTitle>Pie, donut and radial · RioCharts</PageTitle>
+
+<h1>Pie, donut and radial bar</h1>
+<p class="lead">The x value names each slice and the legend lists slices. Click a legend item to hide a slice.</p>
+
+<Example Title="Pie" Code="@PieCode">
+    <Description>
+        <p>Percentages inside slices that fit; small slices get outside labels with leader lines. <code>GroupSmallSlices</code> merges tiny ones into "Other".</p>
+    </Description>
+    <ChildContent>
+        <Chart TItem="Share" Title="Energy use by system">
+            <PieSeries Items="EnergyUse" Name="Energy use" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 MWh" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+<Example Title="Donut" Code="@DonutCode">
+    <Description><p>A pie with a hole, and the total in the middle.</p></Description>
+    <ChildContent>
+        <Chart TItem="Share" Legend="_right">
+            <DonutSeries Items="EnergyUse" XValue="s => s.Name" YValue="s => s.Value" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+<Example Title="Half donut and nested rings" Code="@HalfCode">
+    <Description><p>Start and end angles make a half donut that uses the full height. Several pie series become rings.</p></Description>
+    <ChildContent>
+        <div class="row">
+            <Chart TItem="Share" Height="220">
+                <DonutSeries Items="_supply" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
+            </Chart>
+            <Chart TItem="Share" Height="220">
+                <PieSeries Items="_supply" Name="2026" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.35" />
+                <PieSeries Items="_lastYear" Name="2025" XValue="s => s.Name" YValue="s => s.Value" />
+            </Chart>
+        </div>
+    </ChildContent>
+</Example>
+
+<Example Title="Radial bars" Code="@RadialCode">
+    <Description><p>One track per category, filled up to <code>Max</code>.</p></Description>
+    <ChildContent>
+        <Chart TItem="Share" Title="Component health">
+            <RadialBarSeries Items="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+@code {
+    private static readonly LegendSpec _right = new() { Position = LegendPosition.Right };
+    private static readonly List<Share> _supply = [new("District heating", 214), new("Heat pump", 96), new("Solar", 38)];
+    private static readonly List<Share> _lastYear = [new("District heating", 251), new("Heat pump", 71), new("Solar", 22)];
+
+    private const string PieCode = """
+        <Chart TItem="Share" Title="Energy use by system">
+            <PieSeries Items="use" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 MWh" />
+        </Chart>
+        """;
+
+    private const string DonutCode = """
+        <Chart TItem="Share" Legend="new LegendSpec { Position = LegendPosition.Right }">
+            <DonutSeries Items="use" XValue="s => s.Name" YValue="s => s.Value" />
+        </Chart>
+        """;
+
+    private const string HalfCode = """
+        <DonutSeries Items="supply" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
+
+        <PieSeries Items="supply" Name="2026" ... InnerRadius="0.35" />   @* outer ring *@
+        <PieSeries Items="lastYear" Name="2025" ... />                    @* inner ring *@
+        """;
+
+    private const string RadialCode = """
+        <RadialBarSeries Items="health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+        """;
+}

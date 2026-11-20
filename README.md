@@ -7,6 +7,8 @@
 A pure .NET chart library, with Blazor as the first target. C# does the math and layout,
 Razor renders SVG, and a tiny JS module only measures the container and the font.
 
+**Docs and live examples:** https://joadan.github.io/RioCharts/ (Blazor WebAssembly, runs in your browser).
+
 > **Status: early preview.** APIs will change without notice before 1.0. It is built for our
 > own teams' needs; issues are welcome, but there is no roadmap promise.
 
@@ -145,10 +147,12 @@ plot on instants and label in that zone.
 | `src/RioCharts.AI` | `create_chart` tool for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
 | `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
 | `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
+| `samples/RioCharts.Docs` | Docs site with live examples (Blazor WebAssembly, published to GitHub Pages). |
 
 ```powershell
 dotnet test
 dotnet run --project samples/RioCharts.Demo --launch-profile http
+dotnet run --project samples/RioCharts.Docs --launch-profile http   # docs site, http://localhost:5031
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for changes.

@@ -1,0 +1,47 @@
+@page "/large-data"
+
+<PageTitle>Large data · RioCharts</PageTitle>
+
+<h1>Large data</h1>
+<p class="lead">
+    Pass columns directly, let LTTB downsampling keep the shape at the plot's resolution, and draw the series on a canvas when the DOM gets heavy.
+    Zooming in downsamples only the visible points, so detail appears.
+</p>
+
+<Example Title="200 000 points" Code="@BigCode">
+    <Description><p>Running in WebAssembly in your browser. Drag to zoom in.</p></Description>
+    <ChildContent>
+        <Chart TItem="double" Height="280" Zoomable="true" SeriesLayer="_layer">
+            <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />
+        </Chart>
+        <p class="note">
+            Series layer: @_layer
+            <button class="small" @onclick="() => _layer = _layer == SeriesLayer.Svg ? SeriesLayer.Canvas : SeriesLayer.Svg">Switch to @(_layer == SeriesLayer.Svg ? "canvas" : "SVG")</button>
+        </p>
+    </ChildContent>
+</Example>
+
+<h2>Guidelines</h2>
+<ul>
+    <li>Use <code>SeriesData.From(times, values)</code> for big series: no per-item selectors, no boxing.</li>
+    <li>Downsampling is automatic (twice the plot width, four times on a canvas); set <code>DownsampleThreshold</code> to change it.</li>
+    <li><code>SeriesLayer.Canvas</code> keeps axes, labels and annotations in SVG and draws only the series on a canvas.</li>
+    <li>Update with a new <code>SeriesData</code> or a <code>DataVersion</code>; for streams use a <code>SeriesBuffer</code>.</li>
+</ul>
+
+@code {
+    private static readonly SeriesData _big = Create();
+    private SeriesLayer _layer = SeriesLayer.Canvas;
+
+    private static SeriesData Create()
+    {
+        var (times, values) = Big(200_000);
+        return SeriesData.From(times, values);
+    }
+
+    private const string BigCode = """
+        <Chart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas">
+            <LineSeries Name="Sensor" Data="SeriesData.From(times, values)" StrokeWidth="1.25" />
+        </Chart>
+        """;
+}

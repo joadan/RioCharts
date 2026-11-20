@@ -21,6 +21,7 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset`, `IChartDataSource`.
 - `tests/RioCharts.Tests/` — xUnit tests.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
+- `samples/RioCharts.Docs/` — docs site, Blazor WebAssembly (http://localhost:5031); `.github/workflows/docs.yml` publishes it to GitHub Pages. Add new features there with a live example.
 - `docs/` — implementation notes.
 
 ## Build and test
@@ -29,6 +30,7 @@ before adding or changing features. Record where the code differs from it in
 dotnet build RioCharts.sln
 dotnet test
 dotnet run --project samples/RioCharts.Demo --launch-profile http
+dotnet run --project samples/RioCharts.Docs --launch-profile http
 ```
 
 Stop the running demo before rebuilding; it locks the library DLLs.

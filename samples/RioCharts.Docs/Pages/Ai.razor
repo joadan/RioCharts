@@ -1,0 +1,59 @@
+@page "/ai"
+
+<PageTitle>AI agents and MCP · RioCharts</PageTitle>
+
+<h1>AI agents and MCP</h1>
+<p class="lead">
+    <code>RioCharts.AI</code> gives agents a <code>create_chart</code> tool. The agent writes a small <a href="specs">JSON spec</a> against your datasets;
+    the tool validates it, renders it on the server and returns a short description, or errors that name the path and the valid options so the
+    model can fix the spec and call again. The image goes to your app, not to the model.
+</p>
+
+<h2>Your data</h2>
+<pre><code>@DataCode</code></pre>
+<p>The tool description lists each dataset with its fields, types and descriptions, the spec format and a few examples. Querying and access control stay in your app.</p>
+
+<h2>Microsoft.Extensions.AI</h2>
+<pre><code>@AiCode</code></pre>
+
+<h2>MCP server</h2>
+<pre><code>@McpCode</code></pre>
+<p>Tools: <code>create_chart</code> (returns text and a PNG image), <code>list_datasets</code> and <code>get_chart_schema</code>.</p>
+
+<h2>From chat to code</h2>
+<pre><code>@RazorCode</code></pre>
+
+@code {
+    private const string DataCode = """
+        // Datasets the agent may chart: from rows, objects or JSON.
+        var ahu = ChartDataset.FromItems("ahu", readings, "Air handling units, hourly",
+            new Dictionary<string, string> { ["supplyTemp"] = "supply air °C", ["energy"] = "kWh per hour" });
+        var source = new InMemoryDataSource([ahu]);   // or implement IChartDataSource to load on demand
+        var tool = new ChartTool(source, new ChartToolOptions { Export = new ExportOptions { Width = 720, Height = 360 } });
+        tool.ChartCreated += result => ShowToUser(result.Png!, result.Summary);
+        """;
+
+    private const string AiCode = """
+        IChatClient client = ...;
+        var options = new ChatOptions { Tools = tool.AsAIFunctions() };
+        var response = await client.GetResponseAsync("Show supply air per unit last week, with the 19 °C setpoint", options);
+
+        // The model calls create_chart with e.g.
+        // {"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}],
+        //  "annotations":[{"value":19,"label":"Setpoint"}]}
+        """;
+
+    private const string McpCode = """
+        // dotnet add package ModelContextProtocol.AspNetCore
+        builder.Services.AddMcpServer()
+            .WithHttpTransport()
+            .WithRioChartsTools(tool);
+
+        app.MapMcp("/mcp");
+        """;
+
+    private const string RazorCode = """
+        // Turn a spec the agent built into component markup for the codebase:
+        string razor = ChartRazor.FromSpec(ChartSpecJson.Parse(json).Spec!, itemType: "Reading", itemsName: "readings");
+        """;
+}

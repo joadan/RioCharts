@@ -1,0 +1,36 @@
+@* A live example: a title, a short explanation, the chart itself, and the code that makes it. *@
+<section class="example" id="@Anchor">
+    @if (Title is not null)
+    {
+        <h2><a href="@($"#{Anchor}")" class="anchor">@Title</a></h2>
+    }
+
+    @if (Description is not null)
+    {
+        <div class="example-text">@Description</div>
+    }
+
+    <div class="example-live">@ChildContent</div>
+
+    @if (Code is not null)
+    {
+        <details class="example-code" open="@CodeOpen">
+            <summary>Code</summary>
+            <pre><code>@Code.Trim()</code></pre>
+        </details>
+    }
+</section>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+
+    [Parameter] public RenderFragment? Description { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public string? Code { get; set; }
+
+    [Parameter] public bool CodeOpen { get; set; } = true;
+
+    private string Anchor => Title is null ? "" : new string(Title.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Trim('-');
+}

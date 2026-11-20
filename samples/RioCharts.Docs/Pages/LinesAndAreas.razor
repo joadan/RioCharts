@@ -1,0 +1,107 @@
+@page "/lines-and-areas"
+
+<PageTitle>Lines and areas · RioCharts</PageTitle>
+
+<h1>Lines and areas</h1>
+<p class="lead">Time series are the common case: lines with three curve shapes, gaps for missing values, and areas that start at zero.</p>
+
+<Example Title="Curves" Code="@CurvesCode">
+    <Description>
+        <p><code>Linear</code> (default), <code>Monotone</code> (smooth, never overshoots the data) and <code>Step</code> (each value holds until the next point, for setpoints and states).</p>
+    </Description>
+    <ChildContent>
+        <div class="row">
+            <Chart TItem="Reading" Height="200" Title="Monotone">
+                <LineSeries Items="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            </Chart>
+            <Chart TItem="Reading" Height="200" Title="Step">
+                <LineSeries Items="Setpoints" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
+            </Chart>
+        </div>
+    </ChildContent>
+</Example>
+
+<Example Title="Gaps" Code="@GapsCode">
+    <Description>
+        <p>A <code>null</code> y value breaks the line instead of dropping to zero. A point with no neighbour gets a small dot so it stays visible.</p>
+    </Description>
+    <ChildContent>
+        <Chart Items="Outdoor" Height="220" YAxis="Celsius">
+            <LineSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+<Example Title="Areas" Code="@AreaCode">
+    <Description><p>Areas always include zero, with a light fill under the line.</p></Description>
+    <ChildContent>
+        <Chart Items="Heating" Height="220" YAxis="Kwh">
+            <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+<Example Title="Stacked areas" Code="@StackedCode">
+    <Description><p>Series with the same <code>Stack</code> name are stacked. Hide one in the legend and the stack closes up.</p></Description>
+    <ChildContent>
+        <Chart TItem="Reading" Height="240" YAxis="Kwh">
+            <AreaSeries Items="Heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
+            <AreaSeries Items="Ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+<Example Title="Edge cases" Code="@EdgeCode">
+    <Description><p>Empty data, a single point and all-equal values each render a clean state, never an error or a collapsed axis.</p></Description>
+    <ChildContent>
+        <div class="row">
+            <Chart TItem="Reading" Height="150" Title="Empty">
+                <LineSeries Items="_empty" XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+            <Chart TItem="Reading" Height="150" Title="One point">
+                <LineSeries Items="_one" XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+            <Chart TItem="Reading" Height="150" Title="All equal">
+                <LineSeries Items="_flat" XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+        </div>
+    </ChildContent>
+</Example>
+
+@code {
+    private static readonly AxisSpec Celsius = new() { Title = "°C" };
+    private static readonly AxisSpec Kwh = new() { Title = "kWh" };
+    private static readonly List<Reading> _empty = [];
+    private static readonly List<Reading> _one = [new(Start, 21.5)];
+    private static readonly List<Reading> _flat = Enumerable.Range(0, 24).Select(h => new Reading(Start.AddHours(h), 21)).ToList();
+
+    private const string CurvesCode = """
+        <LineSeries Items="supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <LineSeries Items="setpoints" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
+        """;
+
+    private const string GapsCode = """
+        <Chart Items="outdoor" YAxis="new AxisSpec { Title = "°C" }">
+            <LineSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />  @* Value is double? *@
+        </Chart>
+        """;
+
+    private const string AreaCode = """
+        <Chart Items="heating" YAxis="new AxisSpec { Title = "kWh" }">
+            <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </Chart>
+        """;
+
+    private const string StackedCode = """
+        <Chart TItem="Reading" YAxis="new AxisSpec { Title = "kWh" }">
+            <AreaSeries Items="heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" />
+            <AreaSeries Items="ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" />
+        </Chart>
+        """;
+
+    private const string EdgeCode = """
+        <Chart TItem="Reading" Title="Empty"><LineSeries Items="empty" ... /></Chart>
+        <Chart TItem="Reading" Title="One point"><LineSeries Items="one" ... /></Chart>
+        <Chart TItem="Reading" Title="All equal"><LineSeries Items="flat" ... /></Chart>
+        """;
+}

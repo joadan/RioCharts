@@ -7,6 +7,12 @@ changes are called out under **Breaking**.
 
 Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
+### Docs site
+
+- Blazor WebAssembly docs site (`samples/RioCharts.Docs`) with a live example and its code for every
+  feature, a JSON spec playground that runs in the browser, and pages on server export and AI
+  agents. Published to GitHub Pages by `.github/workflows/docs.yml`.
+
 ### Milestone 6
 
 - JSON chart specs (`RioCharts.Core.Specs`): series name dataset fields (`dataset`, `x`, `y`) with

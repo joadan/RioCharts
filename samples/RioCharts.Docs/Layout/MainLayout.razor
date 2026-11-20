@@ -1,0 +1,50 @@
+﻿@inherits LayoutComponentBase
+
+<div class="site @(_dark ? "rio-theme-dark dark" : "rio-theme-light")">
+    <header class="site-header">
+        <button class="menu" aria-label="Menu" @onclick="() => _menuOpen = !_menuOpen">☰</button>
+        <a class="brand" href="">
+            <img src="favicon.svg" alt="" width="28" height="28" />
+            <span>RioCharts</span>
+        </a>
+        <span class="badge">preview</span>
+        <span class="spacer"></span>
+        <a class="header-link" href="https://github.com/joadan/RioCharts">GitHub</a>
+        <button class="theme-toggle" @onclick="() => _dark = !_dark" aria-label="Toggle dark theme">@(_dark ? "☀ Light" : "☾ Dark")</button>
+    </header>
+
+    <div class="site-body">
+        <nav class="sidebar @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false">
+            @foreach (var (group, links) in Navigation)
+            {
+                <div class="nav-group">@group</div>
+                @foreach (var (href, text) in links)
+                {
+                    <NavLink href="@href" Match="@(href.Length == 0 ? NavLinkMatch.All : NavLinkMatch.Prefix)">@text</NavLink>
+                }
+            }
+        </nav>
+
+        <main class="content">
+            @Body
+            <footer class="site-footer">
+                RioCharts is open source (MIT) and an early preview: APIs change before 1.0.
+                Rendered live in your browser with Blazor WebAssembly.
+            </footer>
+        </main>
+    </div>
+</div>
+
+@code {
+    private bool _dark;
+    private bool _menuOpen;
+
+    private static readonly (string Group, (string Href, string Text)[] Links)[] Navigation =
+    [
+        ("Start", [("", "Overview"), ("getting-started", "Getting started")]),
+        ("Charts", [("lines-and-areas", "Lines and areas"), ("bars", "Bars and stacking"), ("pies", "Pie, donut and radial")]),
+        ("Features", [("axes", "Axes and time"), ("annotations", "Annotations"), ("interaction", "Tooltips, clicks and zoom"),
+            ("live-data", "Live data"), ("large-data", "Large data"), ("theming", "Theming")]),
+        ("Beyond Blazor", [("specs", "JSON specs (playground)"), ("server-export", "Server-side export"), ("ai", "AI agents and MCP")]),
+    ];
+}

@@ -1,0 +1,46 @@
+@page "/server-export"
+
+<PageTitle>Server-side export · RioCharts</PageTitle>
+
+<h1>Server-side export</h1>
+<p class="lead">
+    <code>RioCharts.Skia</code> renders the same chart model and layout as the Blazor components to PNG or SVG on the server, with real font metrics.
+    Use it for emails, reports, Teams or Slack messages, and AI agents.
+</p>
+
+<pre><code>@Code</code></pre>
+
+<h2>Options</h2>
+<table class="docs">
+    <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+    <tr><td><code>Width</code>, <code>Height</code></td><td>800 × 400</td><td>Chart size in pixels.</td></tr>
+    <tr><td><code>Scale</code></td><td>2</td><td>Pixel density of the PNG (2 = sharp on high-density screens).</td></tr>
+    <tr><td><code>Theme</code></td><td><code>ExportTheme.Light</code></td><td>Or <code>Dark</code>; <code>.With("--rio-series-1", "#0b6e4f")</code> overrides a token.</td></tr>
+    <tr><td><code>Background</code></td><td>the surface color</td><td>Null for a transparent PNG.</td></tr>
+    <tr><td><code>FontFamily</code></td><td>Segoe UI, Inter, Roboto, ...</td><td>The first installed font is used. In Linux containers install fonts (e.g. <code>fonts-dejavu</code>).</td></tr>
+    <tr><td><code>CssVariables</code></td><td>false</td><td>SVG only: write colors as <code>var(--rio-…, color)</code> so a page can restyle it.</td></tr>
+</table>
+
+<div class="callout">
+    Charts made with components can be exported too: <code>ChartExport.ToPng(chart.Layout.Scene)</code>, or serialize <code>chart.GetSpec()</code> and render it later.
+</div>
+
+@code {
+    private const string Code = """
+        // dotnet add package RioCharts.Skia --prerelease
+        var spec = new ChartSpec
+        {
+            Title = "Supply air",
+            Y = new AxisSpec { Title = "°C" },
+            Series = [new SeriesSpec { Id = "supply", Name = "Supply", Curve = CurveType.Monotone }],
+            Annotations = [new AnnotationSpec { Value = 21, Label = "Setpoint" }],
+        };
+        var data = new Dictionary<string, SeriesData> { ["supply"] = SeriesData.From(times, values) };
+
+        byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320, Theme = ExportTheme.Dark });
+        string svg = ChartExport.ToSvg(spec, data);
+
+        // In a minimal API:
+        app.MapGet("/charts/supply.png", () => Results.File(ChartExport.ToPng(spec, data), "image/png"));
+        """;
+}

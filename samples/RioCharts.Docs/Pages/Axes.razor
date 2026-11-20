@@ -1,0 +1,107 @@
+@page "/axes"
+
+<PageTitle>Axes and time · RioCharts</PageTitle>
+
+<h1>Axes and time</h1>
+<p class="lead">Axes are picked from the data; ticks are nice numbers or calendar boundaries, and labels follow the culture.</p>
+
+<Example Title="Time ticks that follow the range" Code="@TimeCode">
+    <Description>
+        <p>Ticks land on calendar boundaries: midnights, Mondays, the 1st of the month, 1 January. The densest set whose labels fit is used, so a narrow chart gets fewer ticks.</p>
+    </Description>
+    <ChildContent>
+        <div class="row">
+            <Chart Items="Supply" Height="180" Title="Two days">
+                <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+            <Chart Items="Daily" Height="180" Title="Five weeks">
+                <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
+            </Chart>
+        </div>
+    </ChildContent>
+</Example>
+
+<Example Title="Two Y axes" Code="@TwoAxesCode">
+    <Description><p>Extra axes go on the right; series pick one with <code>YAxisId</code>. Their ticks line up with the main grid.</p></Description>
+    <ChildContent>
+        <Chart TItem="Reading" YAxis="Celsius" YAxes="_energyAxis">
+            <BarSeries Items="_hourlyEnergy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Format="0 kWh" />
+            <LineSeries Items="_hourlyOutdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+<Example Title="Formats and fixed ranges" Code="@FormatCode">
+    <Description><p>Set <code>Format</code> (any .NET format string) and <code>Min</code>/<code>Max</code> on an axis; <code>Culture</code> on the chart.</p></Description>
+    <ChildContent>
+        <Chart TItem="Sales" YAxis="_currency" Culture="_german" Height="240">
+            <BarSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
+        </Chart>
+    </ChildContent>
+</Example>
+
+<Example Title="Display time zone" Code="@ZoneCode">
+    <Description>
+        <p>
+            By default times are shown exactly as given. With <code>TimeZone</code> (<code>"UTC"</code>, <code>"local"</code> for the visitor's zone, or an IANA id),
+            times are plotted on instants and labelled in that zone, so a line runs straight through the repeated hour when summer time ends.
+            Tooltips show the offset when it differs from yours.
+        </p>
+    </Description>
+    <ChildContent>
+        <Chart TItem="(DateTimeOffset Time, double Value)" Items="DstReadings" TimeZone="@_zone" Height="220" YAxis="Celsius">
+            <LineSeries Name="Outdoor" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+        </Chart>
+        <p class="note">
+            Zone:
+            <select @bind="_zone">
+                <option value="">none (as given: UTC here)</option>
+                <option value="local">local (your browser)</option>
+                <option value="Europe/Stockholm">Europe/Stockholm</option>
+                <option value="America/New_York">America/New_York</option>
+            </select>
+        </p>
+    </ChildContent>
+</Example>
+
+@code {
+    private static readonly AxisSpec Celsius = new() { Title = "°C" };
+    private static readonly IReadOnlyList<AxisSpec> _energyAxis = [new() { Id = "energy", Title = "kWh" }];
+    private static readonly AxisSpec _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
+    private static readonly System.Globalization.CultureInfo _german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
+    private string? _zone = "Europe/Stockholm";
+
+    private static readonly List<Reading> _hourlyOutdoor = Enumerable.Range(0, 48)
+        .Select(h => new Reading(Start.AddHours(h), Math.Round(4 + 5 * Math.Sin((h % 24 - 9) / 24.0 * 2 * Math.PI) + Noise(h, 11), 1)))
+        .ToList();
+
+    private static readonly List<Reading> _hourlyEnergy = _hourlyOutdoor
+        .Select((r, h) => new Reading(r.Time, Math.Round(30 - 2.2 * r.Value!.Value + Noise(h, 12) * 4, 0)))
+        .ToList();
+
+    private const string TimeCode = """
+        <Chart Items="readings" Title="Two days">
+            <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
+        </Chart>
+        """;
+
+    private const string TwoAxesCode = """
+        <Chart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]">
+            <BarSeries Items="energy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" />
+            <LineSeries Items="outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+        </Chart>
+        """;
+
+    private const string FormatCode = """
+        <Chart TItem="Sales" Culture="CultureInfo.GetCultureInfo("de-DE")"
+               YAxis="new AxisSpec { Title = "EUR", Format = "C0", Min = 0 }">
+            <BarSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
+        </Chart>
+        """;
+
+    private const string ZoneCode = """
+        <Chart Items="readings" TimeZone="Europe/Stockholm">   @* readings use DateTimeOffset *@
+            <LineSeries XValue="m => m.Time" YValue="m => m.Value" />
+        </Chart>
+        """;
+}

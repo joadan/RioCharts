@@ -1,0 +1,45 @@
+@page "/theming"
+
+<PageTitle>Theming · RioCharts</PageTitle>
+
+<h1>Theming</h1>
+<p class="lead">
+    Every color is a CSS variable. Light and dark defaults follow <code>prefers-color-scheme</code>, or an ancestor with
+    <code>data-theme="dark"</code> or class <code>dark</code>. Use the toggle at the top to switch this site.
+</p>
+
+<Example Title="Your own palette" Code="@PaletteCode">
+    <Description><p>Set any token anywhere above the chart, e.g. on <code>:root</code> or a wrapper element.</p></Description>
+    <ChildContent>
+        <div style="--rio-series-1: #0b6e4f; --rio-series-2: #c4721a; --rio-grid: #dfe7e2;">
+            <Chart TItem="Sales">
+                <LineSeries Items="Quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
+                <LineSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
+            </Chart>
+        </div>
+    </ChildContent>
+</Example>
+
+<h2>Tokens</h2>
+<table class="docs">
+    <tr><th>Variable</th><th>Used for</th></tr>
+    <tr><td><code>--rio-text</code>, <code>--rio-text-muted</code></td><td>Titles and legend; axis labels.</td></tr>
+    <tr><td><code>--rio-grid</code>, <code>--rio-axis</code></td><td>Grid lines; the baseline and crosshair.</td></tr>
+    <tr><td><code>--rio-surface</code></td><td>Tooltip and slice gaps.</td></tr>
+    <tr><td><code>--rio-annotation</code></td><td>Reference lines, bands and their labels.</td></tr>
+    <tr><td><code>--rio-data-label-inverse</code></td><td>Labels drawn on top of bars and slices.</td></tr>
+    <tr><td><code>--rio-series-1</code> … <code>--rio-series-10</code></td><td>The palette, in series order (colorblind-aware by default).</td></tr>
+</table>
+
+<p>Charts inherit the page font and use tabular numbers. Motion is a short fade on first render and respects <code>prefers-reduced-motion</code>.</p>
+
+@code {
+    private const string PaletteCode = """
+        <div style="--rio-series-1: #0b6e4f; --rio-series-2: #c4721a; --rio-grid: #dfe7e2;">
+            <Chart TItem="Sales">
+                <LineSeries Items="quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
+                <LineSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
+            </Chart>
+        </div>
+        """;
+}

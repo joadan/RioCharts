@@ -1,0 +1,55 @@
+@page "/"
+
+<PageTitle>RioCharts: charts for Blazor</PageTitle>
+
+<h1>RioCharts</h1>
+<p class="lead">
+    A pure .NET chart library, Blazor first. C# does the math and layout, Razor renders SVG, and a tiny JS module only
+    measures and handles the pointer. Every chart on these pages runs live in your browser.
+</p>
+
+<Example Code="@HeroCode">
+    <Chart TItem="Reading" Title="Air handling unit" YAxis="Celsius" Height="320">
+        <ReferenceBand From="20" To="24" Label="Comfort zone" />
+        <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+        <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+        <LineSeries Items="Outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+    </Chart>
+</Example>
+
+<h2>What you get</h2>
+<ul>
+    <li><b>Charts:</b> line, area, bar (grouped and stacked), pie, donut and radial bar.</li>
+    <li><b>Good defaults:</b> nice ticks, calendar-aware time axes, compact culture-aware labels, gaps for missing values, a clean empty state.</li>
+    <li><b>Interaction:</b> shared tooltips and crosshair, legend toggles, zoom and pan, linked charts, click events. Handled in the browser, so Blazor Server stays fast.</li>
+    <li><b>Annotations:</b> reference lines and bands, points and callouts, draggable thresholds.</li>
+    <li><b>Data:</b> items with selectors, plain arrays for big data, live buffers, display time zones.</li>
+    <li><b>Beyond Blazor:</b> server-side PNG/SVG export and a JSON spec that AI agents can write.</li>
+</ul>
+
+<h2>Packages</h2>
+<table class="docs">
+    <tr><th>Package</th><th>What</th></tr>
+    <tr><td><code>RioCharts.Blazor</code></td><td>The <code>&lt;Chart&gt;</code> component and series, annotations, SVG renderer.</td></tr>
+    <tr><td><code>RioCharts.Core</code></td><td>Scales, ticks, layout, chart spec, JSON specs. No UI dependencies.</td></tr>
+    <tr><td><code>RioCharts.Skia</code></td><td>Server-side export to SVG and PNG.</td></tr>
+    <tr><td><code>RioCharts.AI</code></td><td>The <code>create_chart</code> tool for agents (Microsoft.Extensions.AI and MCP).</td></tr>
+</table>
+
+<div class="callout">
+    <b>Early preview.</b> RioCharts is built for our own teams' needs; APIs will change before 1.0. Issues are welcome on
+    <a href="https://github.com/joadan/RioCharts">GitHub</a>. Named after Rio, and <i>río</i> means river: fitting for flowing lines and time series.
+</div>
+
+@code {
+    private static readonly AxisSpec Celsius = new() { Title = "°C" };
+
+    private const string HeroCode = """
+        <Chart TItem="Reading" Title="Air handling unit" YAxis="new AxisSpec { Title = "°C" }">
+            <ReferenceBand From="20" To="24" Label="Comfort zone" />
+            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Items="outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+        </Chart>
+        """;
+}

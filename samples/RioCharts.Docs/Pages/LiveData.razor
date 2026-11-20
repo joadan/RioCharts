@@ -1,0 +1,83 @@
+@page "/live-data"
+@implements IDisposable
+
+<PageTitle>Live data · RioCharts</PageTitle>
+
+<h1>Live data</h1>
+<p class="lead">
+    Append points to a <code>SeriesBuffer</code> from any thread. The chart coalesces the changes and redraws at most every
+    <code>RefreshInterval</code> milliseconds; the tooltip stays open while it updates.
+</p>
+
+<Example Title="A two-minute window" Code="@LiveCode">
+    <Description><p>Two buffers with a time window, fed four times a second.</p></Description>
+    <ChildContent>
+        <Chart TItem="double" Height="240" YAxis="Celsius" RefreshInterval="250">
+            <ReferenceLine Value="21" Label="Setpoint" />
+            <LineSeries Name="Supply" Buffer="_supply" Curve="CurveType.Monotone" Format="0.00 °C" />
+            <LineSeries Name="Room" Buffer="_room" Curve="CurveType.Monotone" Format="0.00 °C" />
+        </Chart>
+        <p class="note"><button class="small" @onclick="Toggle">@(_timer is null ? "Start" : "Pause")</button></p>
+    </ChildContent>
+</Example>
+
+<h2>From a stream</h2>
+<pre><code>await buffer.ConsumeAsync(sensor.ReadingsAsync(token), r => r.Time, r => r.Temperature, token);</code></pre>
+<p>Buffers keep at most <code>Capacity</code> points (100 000 by default) and, with a <code>timeWindow</code>, only the latest span of time.</p>
+
+@code {
+    private static readonly AxisSpec Celsius = new() { Title = "°C" };
+    private readonly SeriesBuffer _supply = new(timeWindow: TimeSpan.FromMinutes(2));
+    private readonly SeriesBuffer _room = new(timeWindow: TimeSpan.FromMinutes(2));
+    private readonly Random _random = new(7);
+    private Timer? _timer;
+    private double _s = 19.5, _r = 21.2;
+
+    protected override void OnInitialized()
+    {
+        var now = DateTime.Now;
+        for (var i = 480; i > 0; i--)
+        {
+            Append(now.AddMilliseconds(-250 * i));
+        }
+
+        Toggle();
+    }
+
+    private void Toggle()
+    {
+        if (_timer is null)
+        {
+            _timer = new Timer(_ => Append(DateTime.Now), null, 250, 250);
+        }
+        else
+        {
+            _timer.Dispose();
+            _timer = null;
+        }
+    }
+
+    private void Append(DateTime t)
+    {
+        _s += (_random.NextDouble() - 0.5) * 0.12 + (19.5 - _s) * 0.02;
+        _r += (_random.NextDouble() - 0.5) * 0.05 + (21.2 - _r) * 0.02;
+        _supply.Append(t, _s);
+        _room.Append(t, _r);
+    }
+
+    public void Dispose() => _timer?.Dispose();
+
+    private const string LiveCode = """
+        <Chart TItem="double" RefreshInterval="250">
+            <LineSeries Name="Supply" Buffer="supply" Curve="CurveType.Monotone" />
+            <LineSeries Name="Room" Buffer="room" Curve="CurveType.Monotone" />
+        </Chart>
+
+        @code {
+            SeriesBuffer supply = new(timeWindow: TimeSpan.FromMinutes(2));
+            SeriesBuffer room = new(timeWindow: TimeSpan.FromMinutes(2));
+
+            void OnReading(DateTime time, double value) => supply.Append(time, value); // any thread
+        }
+        """;
+}
