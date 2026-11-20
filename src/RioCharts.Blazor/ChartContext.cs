@@ -9,8 +9,14 @@ internal interface ISeriesSource
     SeriesSpec Spec { get; }
     SeriesData Data { get; }
 
-    /// <summary>The input item behind a point, or null for columnar data.</summary>
-    object? ItemAt(int sourceIndex);
+    /// <summary>The input item at an index into the items list, or null for columnar data.</summary>
+    object? ItemAt(int inputIndex);
+
+    /// <summary>
+    /// The items-list indexes behind a point's source index: one, or the group's when the series
+    /// aggregates; empty when unknown.
+    /// </summary>
+    IReadOnlyList<int> InputIndexes(int sourceIndex);
 }
 
 /// <summary>An annotation component as the chart sees it.</summary>
@@ -49,11 +55,18 @@ internal interface IChartContext
 public sealed record LegendClickEventArgs(string SeriesId, string Name, bool Visible);
 
 /// <summary>Raised when a point or bar is clicked.</summary>
-/// <param name="Item">The input item, or default for columnar data.</param>
-/// <param name="Index">Index into the series' input (items list or columns).</param>
+/// <param name="Item">The input item (the first of the group when the series aggregates), or default for columnar data.</param>
+/// <param name="Index">Index into the series' input (items list or columns); the first item's when the series aggregates.</param>
 /// <param name="X">The x value: a number, DateTime or category name.</param>
 /// <param name="Y">The y value (the series' own value, also when stacked).</param>
-public sealed record PointClickEventArgs<TItem>(string SeriesId, string SeriesName, TItem? Item, int Index, object? X, double Y);
+public sealed record PointClickEventArgs<TItem>(string SeriesId, string SeriesName, TItem? Item, int Index, object? X, double Y)
+{
+    /// <summary>
+    /// All input items behind the point: the group when the series aggregates (<c>Aggregate</c> or
+    /// <c>YAggregate</c>), else just <see cref="Item"/>; empty for columnar data.
+    /// </summary>
+    public IReadOnlyList<TItem> Items { get; init; } = [];
+}
 
 /// <summary>
 /// A range on the x axis (the visible window when zoomed). Values are <see cref="DateTime"/> on

@@ -12,6 +12,15 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Series components combine items with the same x into one point: `Aggregate` (`Sum`,
+  `Average`, `Min`, `Max`, `Count` or `Last` of `YValue`) or `YAggregate`, a function of the
+  group's items (e.g. `g => g.Sum(o => o.Amount)`), in the spirit of Blazor-ApexCharts. Grouping
+  runs once per data change. `PointClickEventArgs.Items` holds every item behind a clicked point
+  (the group, or just `Item`). Core: `SeriesData.FromGroups` and `Aggregation`.
+- `ChartRazor` writes a spec's per-x `aggregate` as the series' `Aggregate` instead of a comment
+  (with a `timeBucket` it stays a comment).
+- Layout warns when a category, bar or pie series has the same x more than once and nothing
+  combines them (the points are drawn on top of each other).
 
 ### Packaging
 

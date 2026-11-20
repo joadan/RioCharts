@@ -8,8 +8,8 @@ namespace RioCharts.AI;
 /// <summary>
 /// Turns a spec (e.g. one an agent built) into Razor component markup, so a developer can move
 /// the chart into the codebase. Fields become properties of an item type (camelCase → PascalCase);
-/// transforms that components do not do (filter, aggregate, groupBy...) become comments to
-/// implement in the query.
+/// transforms that components do not do (filter, timeBucket, groupBy...) become comments to
+/// implement in the query; an aggregate per x value becomes the series' <c>Aggregate</c>.
 /// </summary>
 public static class ChartRazor
 {
@@ -70,7 +70,9 @@ public static class ChartRazor
                 notes.Add($"per {bucket.ToString().ToLowerInvariant()}");
             }
 
-            if (s.Aggregate is { } aggregate)
+            // Components aggregate per x value; per time bucket stays a note.
+            var componentAggregate = s.TimeBucket is null ? s.Aggregate : null;
+            if (s.Aggregate is { } aggregate && componentAggregate is null)
             {
                 notes.Add($"aggregate: {aggregate.ToString().ToLowerInvariant()}");
             }
@@ -106,7 +108,16 @@ public static class ChartRazor
                 sb.Append($" Name=\"{Attr(name)}\"");
             }
 
-            sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\" YValue=\"r => r.{Property(s.Y ?? "value")}\"");
+            sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\"");
+            if (componentAggregate != Aggregate.Count || s.Y is not null)
+            {
+                sb.Append($" YValue=\"r => r.{Property(s.Y ?? "value")}\"");
+            }
+
+            if (componentAggregate is { } a)
+            {
+                sb.Append($" Aggregate=\"Aggregate.{a}\"");
+            }
             if (s.Curve != CurveType.Linear)
             {
                 sb.Append($" Curve=\"CurveType.{s.Curve}\"");

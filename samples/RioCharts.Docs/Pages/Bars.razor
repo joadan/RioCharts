@@ -3,7 +3,7 @@
 <PageTitle>Bars and stacking · RioCharts</PageTitle>
 
 <h1>Bars and stacking</h1>
-<p class="lead">Bars start at zero, group side by side, stack by name, and can mix with lines.</p>
+<p class="lead">Bars start at zero, group side by side, stack by name, combine repeated x values, and can mix with lines.</p>
 
 <Example Title="Grouped bars" Code="@GroupedCode">
     <Description><p>Several bar series share each category. Large numbers are compact (182k).</p></Description>
@@ -23,6 +23,26 @@
             <BarSeries Items="Mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" DataLabels="true" />
             <BarSeries Items="Mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" DataLabels="true" />
         </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Combining repeated x values" Code="@AggregateCode">
+    <Description>
+        <p>
+            Items with the same x are drawn on top of each other unless the series combines them.
+            <code>Aggregate</code> gives the <code>Sum</code>, <code>Average</code>, <code>Min</code>, <code>Max</code> or <code>Last</code>
+            of <code>YValue</code>, or the <code>Count</code> of items. <code>YAggregate</code> computes y from the group's items.
+            A click gives the whole group in <code>Items</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Alarm" Items="Alarms" Title="Alarms per unit" OnPointClick="e => _alarms = e">
+            <BarSeries Name="Alarms" XValue="a => a.Unit" Aggregate="Aggregate.Count" />
+            <BarSeries Name="Downtime (h)" XValue="a => a.Unit" YAggregate="g => g.Sum(a => a.Minutes) / 60" Format="0.0 h" />
+        </RioChart>
+        <p class="note">
+            Clicked: @(_alarms is null ? "nothing yet" : $"{_alarms.X}, {_alarms.SeriesName}: " + string.Join(", ", _alarms.Items.Select(a => $"{a.Text} ({a.Minutes} min)")))
+        </p>
     </ChildContent>
 </Example>
 
@@ -50,6 +70,7 @@
     private static readonly AxisSpec Kwh = new() { Title = "kWh" };
     private static readonly AxisSpec Mwh = new() { Title = "MWh" };
     private static readonly TooltipSpec _single = new() { Shared = false };
+    private PointClickEventArgs<Alarm>? _alarms;
     private static readonly List<Reading> _average = Daily
         .Select((r, i) => new Reading(r.Time, Daily.Skip(Math.Max(0, i - 6)).Take(Math.Min(7, i + 1)).Average(x => x.Value)))
         .ToList();
@@ -65,6 +86,15 @@
         <BarSeries Items="mix" Name="Heating" XValue="m => m.Month" YValue="m => m.Heating" Stack="mix" DataLabels="true" />
         <BarSeries Items="mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" DataLabels="true" />
         <BarSeries Items="mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" DataLabels="true" />
+        """;
+
+    private const string AggregateCode = """
+        <RioChart TItem="Alarm" Items="alarms" OnPointClick="e => clicked = e">
+            <BarSeries Name="Alarms" XValue="a => a.Unit" Aggregate="Aggregate.Count" />
+            <BarSeries Name="Downtime (h)" XValue="a => a.Unit" YAggregate="g => g.Sum(a => a.Minutes) / 60" Format="0.0 h" />
+        </RioChart>
+
+        @* clicked.Items holds every alarm behind the bar *@
         """;
 
     private const string MixedCode = """

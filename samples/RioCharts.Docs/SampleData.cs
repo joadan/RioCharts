@@ -11,6 +11,8 @@ public static class SampleData
 
     public sealed record Monthly(string Month, double Heating, double Ventilation, double Cooling);
 
+    public sealed record Alarm(string Unit, string Text, double Minutes);
+
     public static readonly DateTime Start = new(2026, 11, 16);
 
     private static double Cycle(DateTime t) => Math.Sin((t.Hour + t.Minute / 60.0 - 9) / 24 * 2 * Math.PI);
@@ -54,6 +56,15 @@ public static class SampleData
     public static readonly List<Share> EnergyUse =
     [
         new("Heating", 412), new("Ventilation", 236), new("Cooling", 148), new("Lighting", 97), new("Pumps", 31), new("Elevators", 9), new("Controls", 6),
+    ];
+
+    // One row per alarm, so units repeat: aggregate them per unit.
+    public static readonly List<Alarm> Alarms =
+    [
+        new("AHU 1", "Filter pressure", 45), new("AHU 2", "Supply fan", 120), new("AHU 1", "Frost guard", 15),
+        new("AHU 3", "Filter pressure", 30), new("AHU 1", "Supply temperature low", 60), new("AHU 2", "Extract fan", 90),
+        new("AHU 4", "Filter pressure", 20), new("AHU 1", "Filter pressure", 35), new("AHU 3", "Heat recovery", 75),
+        new("AHU 2", "Supply fan", 40),
     ];
 
     public static readonly List<Share> Health = [new("Supply fan", 87), new("Extract fan", 74), new("Filter", 41), new("Heat recovery", 92)];

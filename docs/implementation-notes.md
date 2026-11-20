@@ -217,6 +217,25 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `.json` (an array of objects, or an object with one array) in one folder, caches by write time
   and size, skips files over 100 MB and lists unreadable files with the reason and no fields.
 - **Spec → Razor** writes component markup with field names as PascalCase properties; transforms
-  that components do not do become comments to implement in the query.
+  that components do not do become comments to implement in the query. An `aggregate` without a
+  `timeBucket` becomes the series' `Aggregate` parameter.
 - **Not yet:** a time zone-aware `timeBucket` (buckets are on wall-clock time), declarative joins,
   and streaming specs.
+
+## Aggregating series components
+
+- Design.md lists aggregate only as a declarative spec transform. The series components also
+  have it, modelled on Blazor-ApexCharts' `YAggregate`: `Aggregate` (the enum the specs use) and
+  `YAggregate` (`Func<IReadOnlyList<TItem>, double?>`, which wins when both are set).
+- Items group by the x value as `XValue` returns it: strings ordinally, times exactly (no
+  bucketing; two timestamps a millisecond apart are two points), numbers by value (1 and 1.0 are
+  the same x). Items with a null x are left out. Categories keep first-appearance order.
+- Grouping runs in `SeriesData.FromGroups`, once per data change (new Items reference,
+  `DataVersion`, or a change of `Aggregate` or of whether `YAggregate` is set). Changing the
+  `YAggregate` function alone does not reprocess, the same as `YValue`. `Data` (columnar) and
+  `Buffer` (live) are not aggregated.
+- A point's source index is its group's index; the series maps it back to the group's item
+  indexes. `PointClickEventArgs.Item` and `Index` are the group's first item, `Items` the whole group.
+- Without an aggregate, duplicates are drawn as given. The layout warns about them for category
+  x, bars and polar series; lines on numbers or times may repeat an x on purpose (a vertical step)
+  and get no warning.

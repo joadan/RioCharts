@@ -151,6 +151,11 @@ public static partial class ChartLayout
                 Upper = d.Y,
             };
             r.Axis = FindAxis(axes, s.YAxisId, $"series[{i}].yAxisId", warnings) ?? primary;
+            if ((d.Kind == XKind.Category || r.Type.UsesSlots) && RepeatsX(d) is { } repeated)
+            {
+                warnings.Add($"series '{s.Id}': x value {repeated} appears more than once; the points are drawn on top of each other. Combine them with an aggregate (Aggregate or YAggregate on a series component, 'aggregate' in a spec).");
+            }
+
             resolved.Add(r);
         }
 
@@ -573,6 +578,41 @@ public static partial class ChartLayout
         }
 
         return result;
+    }
+
+    /// <summary>The first x value that appears more than once (for a warning), or null. Numbers and times are sorted.</summary>
+    private static string? RepeatsX(SeriesData d)
+    {
+        if (d.Kind == XKind.Category)
+        {
+            if (d.Count <= d.Categories.Count)
+            {
+                return null;
+            }
+
+            var seen = new HashSet<double>();
+            for (var i = 0; i < d.Count; i++)
+            {
+                if (!seen.Add(d.X[i]) && (int)d.X[i] is var c && c >= 0 && c < d.Categories.Count)
+                {
+                    return $"'{d.Categories[c]}'";
+                }
+            }
+
+            return null;
+        }
+
+        for (var i = 1; i < d.Count; i++)
+        {
+            if (d.X[i] == d.X[i - 1])
+            {
+                return d.Kind == XKind.Time
+                    ? TimeValue.ToDateTime(d.X[i]).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+                    : d.X[i].ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

@@ -442,8 +442,13 @@ public partial class RioChart<TItem> : IChartContext
             XKind.Category => (int)x >= 0 && (int)x < data.Categories.Count ? data.Categories[(int)x] : null,
             _ => x,
         };
-        var item = series.ItemAt(source) is TItem t ? t : default;
-        await OnPointClick.InvokeAsync(new PointClickEventArgs<TItem>(seriesId, series.Spec.DisplayName, item, source, xValue, data.Y[index]));
+        var inputs = series.InputIndexes(source);
+        var items = inputs.Select(series.ItemAt).OfType<TItem>().ToList();
+        var input = inputs.Count > 0 ? inputs[0] : source;
+        await OnPointClick.InvokeAsync(new PointClickEventArgs<TItem>(seriesId, series.Spec.DisplayName, items.FirstOrDefault(), input, xValue, data.Y[index])
+        {
+            Items = items,
+        });
     }
 
     // ---------- Responsive sizing, font metrics and pointer interaction (JS) ----------

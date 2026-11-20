@@ -203,6 +203,64 @@ public sealed class SeriesData
         return kind == XKind.Time ? data.WithOffsets(Array.ConvertAll(rawX, TimeValue.OffsetOf)) : data;
     }
 
+    /// <inheritdoc cref="FromGroups{TItem}(IEnumerable{TItem}, Func{TItem, object?}, Func{IReadOnlyList{TItem}, double?}, out IReadOnlyList{int[]})"/>
+    public static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate) =>
+        FromGroups(items, xValue, aggregate, out _);
+
+    /// <summary>
+    /// Groups items with the same x and makes one point per group, with y from
+    /// <paramref name="aggregate"/> (null is a gap). Categories keep the order of first appearance;
+    /// numbers and times are sorted as usual. Items with a null x are left out. Selectors and the
+    /// aggregate run once here, never per render.
+    /// </summary>
+    /// <param name="groups">
+    /// Each group's item indexes (into <paramref name="items"/>). A point's source index
+    /// (<see cref="ToSourceIndex"/>) is the index of its group in this list.
+    /// </param>
+    public static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue,
+        Func<IReadOnlyList<TItem>, double?> aggregate, out IReadOnlyList<int[]> groups)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(xValue);
+        ArgumentNullException.ThrowIfNull(aggregate);
+
+        var list = items as IReadOnlyList<TItem> ?? items.ToList();
+        var lookup = new Dictionary<object, int>();
+        var keys = new List<object>();
+        var members = new List<List<int>>();
+        for (var i = 0; i < list.Count; i++)
+        {
+            // Numbers group by value, so 1 (int) and 1.0 (double) are the same x.
+            var x = xValue(list[i]);
+            var key = x is null or string or DateTime or DateTimeOffset or DateOnly ? x : ToX(x);
+            if (key is null)
+            {
+                continue;
+            }
+
+            if (!lookup.TryGetValue(key, out var g))
+            {
+                g = keys.Count;
+                lookup[key] = g;
+                keys.Add(key);
+                members.Add([]);
+            }
+
+            members[g].Add(i);
+        }
+
+        var result = new int[members.Count][];
+        var ys = new double?[members.Count];
+        for (var g = 0; g < result.Length; g++)
+        {
+            result[g] = [.. members[g]];
+            ys[g] = aggregate(Array.ConvertAll(result[g], i => list[i]));
+        }
+
+        groups = result;
+        return FromItems(Enumerable.Range(0, keys.Count).ToArray(), g => keys[g], g => ys[g]);
+    }
+
     private static XKind? KindOf(object? value) => value switch
     {
         null => null,

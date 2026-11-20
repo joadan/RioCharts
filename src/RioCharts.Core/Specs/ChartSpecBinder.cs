@@ -249,21 +249,7 @@ public static class ChartSpecBinder
             list.Add(r);
         }
 
-        return order.Select(key =>
-        {
-            var values = groups[key].Select(YAt).OfType<double>().ToList();
-            double? value = aggregate switch
-            {
-                Aggregate.Count => groups[key].Count,
-                _ when values.Count == 0 => null,
-                Aggregate.Sum => values.Sum(),
-                Aggregate.Average => values.Average(),
-                Aggregate.Min => values.Min(),
-                Aggregate.Max => values.Max(),
-                _ => values[^1],
-            };
-            return new Point(key, value);
-        }).ToList();
+        return order.Select(key => new Point(key, Aggregation.Apply(aggregate.Value, groups[key].Select(YAt).ToList()))).ToList();
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>

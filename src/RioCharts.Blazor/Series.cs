@@ -15,6 +15,8 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     private object? _lastItems;
     private SeriesData? _lastData;
     private object? _lastVersion;
+    private (Aggregate?, bool) _lastAggregate;
+    private IReadOnlyList<int[]>? _groups;
     private bool _registered;
     private string _id = "";
 
@@ -34,6 +36,21 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
     /// <summary>Y value; null leaves a gap.</summary>
     [Parameter] public Func<TItem, double?>? YValue { get; set; }
+
+    /// <summary>
+    /// Combines items with the same x into one point: the Sum, Average, Min, Max or Last of
+    /// <see cref="YValue"/>, or the Count of items (needs no YValue). Use <see cref="YAggregate"/>
+    /// for anything else. Without either, items with the same x are drawn on top of each other.
+    /// </summary>
+    [Parameter] public Aggregate? Aggregate { get; set; }
+
+    /// <summary>
+    /// Combines items with the same x into one point, with y computed from the group, e.g.
+    /// <c>g => g.Sum(o => o.Amount)</c>; null leaves a gap. Used instead of <see cref="YValue"/>
+    /// and <see cref="Aggregate"/> when set. A clicked point's items are in
+    /// <c>PointClickEventArgs.Items</c>.
+    /// </summary>
+    [Parameter] public Func<IReadOnlyList<TItem>, double?>? YAggregate { get; set; }
 
     /// <summary>Columnar data (fast path for large series); used instead of Items when set.</summary>
     [Parameter] public SeriesData? Data { get; set; }
@@ -74,8 +91,11 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         Format = Format,
     };
 
-    object? ISeriesSource.ItemAt(int sourceIndex) =>
-        sourceIndex >= 0 && sourceIndex < ItemList.Count ? ItemList[sourceIndex] : null;
+    object? ISeriesSource.ItemAt(int inputIndex) =>
+        inputIndex >= 0 && inputIndex < ItemList.Count ? ItemList[inputIndex] : null;
+
+    IReadOnlyList<int> ISeriesSource.InputIndexes(int sourceIndex) =>
+        _groups is null ? [sourceIndex] : sourceIndex >= 0 && sourceIndex < _groups.Count ? _groups[sourceIndex] : [];
 
     public SeriesSpec Spec { get; private set; } = new() { Id = "" };
 
@@ -136,6 +156,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             {
                 _buffer.Changed += OnBufferChanged;
                 ItemList = [];
+                _groups = null;
             }
             else
             {
@@ -147,15 +168,26 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         }
 
         var items = Items ?? Chart.DefaultItems as IEnumerable<TItem>;
-        if (_buffer is null && !ReferenceEquals(items, _lastItems) || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
+        var aggregateKey = (Aggregate, YAggregate is not null);
+        if (_buffer is null && (!ReferenceEquals(items, _lastItems) || aggregateKey != _lastAggregate)
+            || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
         {
             _lastItems = items;
             _lastData = Data;
             _lastVersion = DataVersion;
+            _lastAggregate = aggregateKey;
+            _groups = null;
+            var aggregate = YAggregate ?? (Aggregate is { } a ? Aggregation.For(a, YValue) : null);
             if (Data is not null)
             {
                 _data = Data;
                 ItemList = [];
+            }
+            else if (items is not null && XValue is not null && aggregate is not null)
+            {
+                ItemList = items as IReadOnlyList<TItem> ?? items.ToList();
+                _data = SeriesData.FromGroups(ItemList, XValue, aggregate, out var groups);
+                _groups = groups;
             }
             else if (items is not null && XValue is not null && YValue is not null)
             {
