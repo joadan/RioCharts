@@ -13,5 +13,10 @@
     <Authors>Joakim Dangården</Authors>
     <Copyright>Copyright (c) 2026 Joakim Dangården</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)assets/icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 </Project>

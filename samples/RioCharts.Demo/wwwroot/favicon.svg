@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>RioCharts</title>
+  <rect width="256" height="256" rx="56" fill="#efb118"/>
+  <path d="M30 212 L64 180 L90 196 L126 160" fill="none" stroke="#4269d0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M100 178 C68 144,80 66,140 60 C178 56,198 74,204 96 L198 148 C176 164,146 166,114 182 Z" fill="#4269d0"/>
+  <path d="M196 90 C236 86,248 140,220 176 C214 152,206 142,190 138 Z" fill="#1f2328"/>
+  <path d="M190 138 C204 140,212 150,214 164 C200 162,192 154,188 146 Z" fill="#1f2328"/>
+  <ellipse cx="164" cy="104" rx="26" ry="22" fill="#ffffff"/>
+  <circle cx="167" cy="102" r="8.5" fill="#1f2328"/>
+  <circle cx="170" cy="99" r="2.5" fill="#ffffff"/>
+</svg>
