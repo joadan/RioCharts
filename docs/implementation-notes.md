@@ -123,3 +123,14 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   marks annotation groups with `data-key`, and JS moves the group while dragging (mouse or touch)
   and sends only the dropped value. The line snaps back unless the app stores the new value
   (`@bind-Value` or `OnAnnotationChanged`).
+- **Time zones.** `SeriesData` keeps each time's UTC offset when the input had one
+  (`DateTimeOffset`, `DateTime` with Kind Utc or Local) in `TimeOffsets`; without a display zone it
+  is ignored. With `ChartSpec.TimeZone`, the layout converts time data to instants
+  (`TimeConversion`): known offsets are used; other times follow `UnspecifiedTimes` (UTC by default,
+  with a warning when it is not set). Ticks are generated on wall-clock time in the zone and
+  converted back; a tick that repeats (autumn) is kept once, one in the spring gap moves to the
+  hour after it. Kind Local means the server's zone on Blazor Server. `"local"` is the browser's
+  zone, sent by the JS module (UTC until it is known). Columnar `SeriesBuffer` times have no offset.
+  Zone names use `TimeZoneInfo` (IANA ids work on Windows too); Blazor WASM in invariant time zone
+  mode only knows UTC. With a zone, `VisibleRange`, point clicks and dragged values use
+  `DateTimeOffset` in the display zone.

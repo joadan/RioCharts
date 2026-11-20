@@ -42,6 +42,53 @@ public sealed class SeriesData
     /// <summary>For each point, its index in the original input; null when the input order was kept.</summary>
     public int[]? SourceIndex { get; }
 
+    /// <summary>
+    /// Time data: the UTC offset (milliseconds) of each point when the input had one (DateTimeOffset,
+    /// or DateTime with Kind Utc or Local), NaN otherwise; null when no point had one. Used only
+    /// when the chart has a display time zone; by default times are shown as given.
+    /// </summary>
+    public double[]? TimeOffsets { get; private set; }
+
+    /// <summary>Keeps the offsets of the input points (in input order) that have one.</summary>
+    private SeriesData WithOffsets(double[] rawOffsets)
+    {
+        if (!rawOffsets.Any(double.IsFinite))
+        {
+            return this;
+        }
+
+        var offsets = new double[Count];
+        for (var i = 0; i < offsets.Length; i++)
+        {
+            offsets[i] = rawOffsets[ToSourceIndex(i)];
+        }
+
+        TimeOffsets = offsets;
+        return this;
+    }
+
+    /// <summary>The same points with new x values (e.g. converted to instants), sorted again when needed.</summary>
+    internal SeriesData WithX(double[] x)
+    {
+        if (IsSorted(x))
+        {
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex);
+        }
+
+        var order = Enumerable.Range(0, x.Length).ToArray();
+        var keys = (double[])x.Clone();
+        Array.Sort(keys, order);
+        var y = new double[order.Length];
+        var source = new int[order.Length];
+        for (var i = 0; i < order.Length; i++)
+        {
+            y[i] = Y[order[i]];
+            source[i] = ToSourceIndex(order[i]);
+        }
+
+        return new SeriesData(keys, y, Kind, Categories, source);
+    }
+
     public static SeriesData Empty { get; } = new([], [], XKind.Numeric, null, null);
 
     /// <summary>Index of the point in the original input (items list or columns).</summary>
@@ -62,7 +109,13 @@ public sealed class SeriesData
             xs[i] = TimeValue.FromDateTime(x[i]);
         }
 
-        return Create(xs, CopyY(y, x.Length), XKind.Time);
+        var offsets = new double[x.Length];
+        for (var i = 0; i < offsets.Length; i++)
+        {
+            offsets[i] = TimeValue.OffsetOf(x[i]);
+        }
+
+        return Create(xs, CopyY(y, x.Length), XKind.Time).WithOffsets(offsets);
     }
 
     public static SeriesData From(ReadOnlyMemory<DateTime> x, ReadOnlyMemory<double> y) => From(x.Span, y.Span);
@@ -75,7 +128,13 @@ public sealed class SeriesData
             xs[i] = TimeValue.FromDateTimeOffset(x[i]);
         }
 
-        return Create(xs, CopyY(y, x.Length), XKind.Time);
+        var offsets = new double[x.Length];
+        for (var i = 0; i < offsets.Length; i++)
+        {
+            offsets[i] = x[i].Offset.TotalMilliseconds;
+        }
+
+        return Create(xs, CopyY(y, x.Length), XKind.Time).WithOffsets(offsets);
     }
 
     public static SeriesData From(ReadOnlyMemory<DateTimeOffset> x, ReadOnlyMemory<double> y) => From(x.Span, y.Span);
@@ -140,7 +199,8 @@ public sealed class SeriesData
             xs[i] = ToX(rawX[i]);
         }
 
-        return Create(xs, ys, kind.Value);
+        var data = Create(xs, ys, kind.Value);
+        return kind == XKind.Time ? data.WithOffsets(Array.ConvertAll(rawX, TimeValue.OffsetOf)) : data;
     }
 
     private static XKind? KindOf(object? value) => value switch

@@ -32,6 +32,9 @@ public sealed record LayoutOptions
     /// all data. The y axes fit the visible data. Ignored for category axes.
     /// </summary>
     public (double Min, double Max)? XRange { get; init; }
+
+    /// <summary>The viewer's IANA time zone (from the browser), used for TimeZone "local" and to show the zone when it differs.</summary>
+    public string? ViewerTimeZone { get; init; }
 }
 
 public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty);
@@ -57,6 +60,9 @@ public sealed class ChartLayoutResult
 
     /// <summary>True when <see cref="LayoutOptions.XRange"/> narrowed the x axis.</summary>
     public bool Zoomed { get; init; }
+
+    /// <summary>The display time zone conversion, or null when times are shown as given.</summary>
+    public TimeConversion? Time { get; init; }
 
     /// <summary>Scale of the primary vertical axis (the one with the grid lines).</summary>
     public required LinearScale YScale { get; init; }
@@ -114,6 +120,7 @@ public static partial class ChartLayout
 
         // ---------- Axes and series ----------
         var axes = ResolveAxes(spec, warnings);
+        var time = ResolveTime(spec, data, options, warnings);
         var primary = axes[0];
         var resolved = new List<Resolved>();
         var seenIds = new HashSet<string>(StringComparer.Ordinal);
@@ -127,6 +134,11 @@ public static partial class ChartLayout
             }
 
             var d = data.TryGetValue(s.Id, out var found) ? found : SeriesData.Empty;
+            if (time is not null && d.Kind == XKind.Time)
+            {
+                d = time.Convert(d); // plot on instants
+            }
+
             var r = new Resolved
             {
                 Spec = s,
@@ -170,7 +182,7 @@ public static partial class ChartLayout
         var categoryIndex = categories.Select((c, i) => (c, i)).ToDictionary(t => t.c, t => t.i, StringComparer.Ordinal);
         ApplyStacking(drawable, xKind, categoryIndex);
 
-        var annotations = ResolveAnnotations(spec, axes, xKind, categories, warnings);
+        var annotations = ResolveAnnotations(spec, axes, xKind, categories, warnings, time);
         var hasBars = drawable.Any(r => r.Type.UsesSlots);
         var (xMin, xMax, barSpacing) = xKind == XKind.Category
             ? (0, 0, 0)
@@ -295,7 +307,7 @@ public static partial class ChartLayout
             xScale = new LinearScale(xMin, xMax, plotLeft, plotLeft + plotWidth);
             if (hasData)
             {
-                xGrid = AddContinuousXLabels(xScale, xKind, spec.X, culture, measure, font, plotBottom, width, xTickNodes);
+                xGrid = AddContinuousXLabels(xScale, xKind, spec.X, culture, measure, font, plotBottom, width, xTickNodes, time);
             }
         }
 
@@ -402,7 +414,7 @@ public static partial class ChartLayout
         var tooltipSeries = new List<TooltipSeries>();
         var seriesNodes = new List<(int Order, int Index, Node Node)>();
         var labelAnchors = new List<(Resolved Series, List<LabelAnchor> Anchors)>();
-        var formatX = ValueFormatter.ForX(xKind, drawable.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format);
+        var formatX = TimeFormat(xKind, drawable.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format, time, options.ViewerTimeZone);
         foreach (var r in drawable)
         {
             var axisScale = r.Axis.Scale;
@@ -455,7 +467,7 @@ public static partial class ChartLayout
         if (hasData)
         {
             BuildAnnotations(annotations, plot, xKind, xScale, xBand, culture, measure, font, styles, options.InteractiveAnnotations,
-                below, above, placedLabels, dragHandles, spec.X.Format);
+                below, above, placedLabels, dragHandles, spec.X.Format, time);
             labelNodes.AddRange(BuildDataLabels(labelAnchors, plot, culture, measure, font, styles, placedLabels, warnings));
         }
 
@@ -500,6 +512,7 @@ public static partial class ChartLayout
             XBand = xBand,
             XExtent = fullX,
             Zoomed = window is not null,
+            Time = time,
             YScale = gridAxis.Scale,
             YScales = axes.ToDictionary(a => a.Id, a => a.Scale, StringComparer.Ordinal),
             HasData = hasData,

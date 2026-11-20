@@ -167,6 +167,24 @@
         </section>
 
         <section class="wide">
+            <h2>Display time zone</h2>
+            <Chart TItem="Measurement" Items="_dst" TimeZone="@_zone" Height="220" YAxis="_celsius">
+                <LineSeries Name="Outdoor" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+            </Chart>
+            <p class="note">
+                Hourly UTC readings (<code>DateTimeOffset</code>) across the end of summer time on 25 Oct 2026. Zone:
+                <select @bind="_zone">
+                    <option value="">none (as given)</option>
+                    <option value="local">local (browser)</option>
+                    <option value="UTC">UTC</option>
+                    <option value="Europe/Stockholm">Europe/Stockholm</option>
+                    <option value="America/New_York">America/New_York</option>
+                </select>
+                In Stockholm the line runs straight through the repeated hour; hover around 02:00.
+            </p>
+        </section>
+
+        <section class="wide">
             <h2>Zoom, pan and linked charts</h2>
             <Chart TItem="Reading" Height="220" YAxis="_celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
                 <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
@@ -228,6 +246,13 @@
     private sealed record QuarterSales(string Quarter, double Last, double This);
     private sealed record EnergyMix(string Month, double District, double HeatPump, double Solar);
     private sealed record Share(string Name, double Value);
+    private sealed record Measurement(DateTimeOffset Time, double Value);
+
+    private string? _zone = "Europe/Stockholm";
+    private readonly List<Measurement> _dst = Enumerable.Range(0, 36)
+        .Select(h => new Measurement(new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero).AddHours(h),
+            Math.Round(7 + 4 * Math.Sin((h - 3) / 24.0 * 2 * Math.PI), 1)))
+        .ToList();
 
     private readonly LegendSpec _rightLegend = new() { Position = LegendPosition.Right };
     private string _sliceClicked = "";

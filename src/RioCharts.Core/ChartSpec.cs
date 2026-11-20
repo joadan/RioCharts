@@ -32,6 +32,12 @@ public sealed record ChartSpec
 
     [Description("Reference lines and bands, e.g. a setpoint or a fault period.")]
     public IReadOnlyList<AnnotationSpec> Annotations { get; init; } = [];
+
+    [Description("Display time zone: \"UTC\", \"local\" (the viewer's zone) or an IANA id such as \"Europe/Stockholm\". Null shows times as given. Times are then plotted on instants and labelled in this zone.")]
+    public string? TimeZone { get; init; }
+
+    [Description("With a display zone: how to read times without a zone (DateTime with Kind Unspecified). Utc or DisplayZone.")]
+    public RioCharts.Core.Data.UnspecifiedTimes? UnspecifiedTimes { get; init; }
 }
 
 public sealed record AxisSpec

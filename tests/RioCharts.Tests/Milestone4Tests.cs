@@ -173,6 +173,66 @@ public class Milestone4Tests
         Assert.Contains(All(result.Scene.Series), n => n is Core.Scene.GroupNode { Key: "annotation:sp" } g && g.Class!.Contains("rio-draggable-y"));
     }
 
+    // ---------- Time zones ----------
+
+    [Fact]
+    public void Hourly_data_across_the_autumn_dst_change_is_evenly_spaced_and_labelled_in_the_zone()
+    {
+        // Stockholm leaves summer time on 2026-10-25 at 03:00 local (01:00 UTC): 02:00 happens twice.
+        var utc = Enumerable.Range(0, 8).Select(h => new DateTimeOffset(2026, 10, 24, 22, 0, 0, TimeSpan.Zero).AddHours(h)).ToArray();
+        var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(utc, utc.Select((_, i) => (double)i).ToArray()) };
+        var spec = new ChartSpec { TimeZone = "Europe/Stockholm", Series = [new SeriesSpec { Id = "a" }] };
+
+        var result = ChartLayout.Compute(spec, data, Options with { ViewerTimeZone = "Europe/Stockholm" });
+        var s = result.Tooltip.Series[0];
+
+        var gaps = s.X.Zip(s.X.Skip(1), (a, b) => b - a).ToList();
+        Assert.All(gaps, g => Assert.Equal(gaps[0], g, 0.01)); // instants: never doubles back
+        Assert.Equal(2, s.XLabels.Count(l => l.EndsWith("02:00", StringComparison.Ordinal)));
+        Assert.Equal("10/25/2026 00:00", s.XLabels[0]); // 22:00 UTC is midnight in Stockholm (UTC+2)
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void Times_are_shown_as_given_without_a_zone()
+    {
+        var times = new[] { new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.FromHours(5)), new DateTimeOffset(2026, 1, 1, 13, 0, 0, TimeSpan.FromHours(5)) };
+        var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(times, [1.0, 2]) };
+
+        var result = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "a" }] }, data, Options);
+
+        Assert.Equal("01/01/2026 12:00", result.Tooltip.Series[0].XLabels[0]);
+        Assert.Null(result.Time);
+    }
+
+    [Fact]
+    public void The_zone_is_shown_when_it_differs_from_the_viewers_and_unspecified_times_follow_the_option()
+    {
+        var local = new[] { new DateTime(2026, 7, 1, 12, 0, 0), new DateTime(2026, 7, 1, 13, 0, 0) }; // Kind Unspecified
+        var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(local, [1.0, 2]) };
+        var spec = new ChartSpec { TimeZone = "Europe/Stockholm", UnspecifiedTimes = UnspecifiedTimes.DisplayZone, Series = [new SeriesSpec { Id = "a" }] };
+
+        var result = ChartLayout.Compute(spec, data, Options with { ViewerTimeZone = "America/New_York" });
+
+        Assert.Equal("07/01/2026 12:00 UTC+02:00", result.Tooltip.Series[0].XLabels[0]);
+        Assert.Equal(TimeValue.FromDateTime(new DateTime(2026, 7, 1, 10, 0, 0)), result.XExtent!.Value.Min, 1);
+        Assert.Empty(result.Warnings);
+
+        var unset = ChartLayout.Compute(spec with { UnspecifiedTimes = null }, data, Options);
+        Assert.Contains(unset.Warnings, w => w.StartsWith("unspecifiedTimes", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Unknown_zones_are_reported_and_times_shown_as_given()
+    {
+        var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([new DateTime(2026, 1, 1)], [1.0]) };
+
+        var result = ChartLayout.Compute(new ChartSpec { TimeZone = "Mars/Olympus", Series = [new SeriesSpec { Id = "a" }] }, data, Options);
+
+        Assert.Null(result.Time);
+        Assert.Contains(result.Warnings, w => w.StartsWith("timeZone", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void Visible_range_is_ignored_on_category_axes()
     {

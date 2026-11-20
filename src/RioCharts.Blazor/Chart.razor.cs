@@ -38,6 +38,7 @@ public partial class Chart<TItem> : IChartContext
     private object? _sentInteraction;
     private (double Min, double Max)? _range;
     private ChartRange? _lastVisibleRangeParameter;
+    private string? _viewerZone;
     private bool _disposed;
 
     [Inject] private IJSRuntime JS { get; set; } = null!;
@@ -70,6 +71,16 @@ public partial class Chart<TItem> : IChartContext
 
     /// <summary>Annotations as data (in addition to &lt;ReferenceLine&gt; and &lt;ReferenceBand&gt; children).</summary>
     [Parameter] public IReadOnlyList<AnnotationSpec>? Annotations { get; set; }
+
+    /// <summary>
+    /// Display time zone: "UTC", "local" (the viewer's browser zone) or an IANA id such as
+    /// "Europe/Stockholm". Default: none, times are shown as given. With a zone, times are plotted
+    /// on instants (no doubling back at DST changes) and labelled in that zone.
+    /// </summary>
+    [Parameter] public string? TimeZone { get; set; }
+
+    /// <summary>With a TimeZone: how DateTime values with Kind Unspecified are read (UTC or the display zone).</summary>
+    [Parameter] public UnspecifiedTimes? UnspecifiedTimes { get; set; }
 
     /// <summary>Culture for labels. Default: the current culture.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
@@ -240,7 +251,7 @@ public partial class Chart<TItem> : IChartContext
             _dirty = true;
         }
 
-        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate);
+        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -261,6 +272,8 @@ public partial class Chart<TItem> : IChartContext
         Tooltip = Tooltip ?? new TooltipSpec(),
         Series = _series.Select(s => s.Spec).ToList(),
         Annotations = (Annotations ?? []).Concat(_annotations.Select(a => a.Spec)).ToList(),
+        TimeZone = TimeZone,
+        UnspecifiedTimes = UnspecifiedTimes,
     };
 
     private ChartLayoutResult EnsureLayout()
@@ -285,6 +298,7 @@ public partial class Chart<TItem> : IChartContext
             HiddenSeries = _hidden,
             InteractiveAnnotations = OnAnnotationClick.HasDelegate,
             XRange = _range,
+            ViewerTimeZone = _viewerZone,
         });
         _dirty = false;
         return _layout;
@@ -347,7 +361,7 @@ public partial class Chart<TItem> : IChartContext
 
         var spec = all[index];
         var kind = spec.Axis == AnnotationAxis.X ? _layout?.XKind ?? XKind.Numeric : XKind.Numeric;
-        var result = AxisValues.FromAxis(value, kind);
+        object result = kind == XKind.Time && _layout?.Time is { } time ? time.ToDateTimeOffset(value) : AxisValues.FromAxis(value, kind);
 
         // Components bound with @bind-Value update themselves; the event is raised either way.
         var offset = (Annotations ?? []).Count;
@@ -376,7 +390,7 @@ public partial class Chart<TItem> : IChartContext
         var x = data.X[index];
         object? xValue = data.Kind switch
         {
-            XKind.Time => TimeValue.ToDateTime(x),
+            XKind.Time => _layout?.Time is { } time ? time.ToDateTimeOffset(x) : TimeValue.ToDateTime(x),
             XKind.Category => (int)x >= 0 && (int)x < data.Categories.Count ? data.Categories[(int)x] : null,
             _ => x,
         };
@@ -407,6 +421,7 @@ public partial class Chart<TItem> : IChartContext
                     changed = true;
                 }
 
+                _viewerZone = info.TimeZone;
                 if (info.Width > 0 && Width is null)
                 {
                     _measuredWidth = info.Width;
@@ -596,9 +611,11 @@ public partial class Chart<TItem> : IChartContext
         return (min, min + width);
     }
 
-    private ChartRange FromRange((double Min, double Max) r) => _layout?.XKind == XKind.Time
-        ? new ChartRange(TimeValue.ToDateTime(r.Min), TimeValue.ToDateTime(r.Max))
-        : new ChartRange(r.Min, r.Max);
+    private ChartRange FromRange((double Min, double Max) r) => _layout?.XKind != XKind.Time
+        ? new ChartRange(r.Min, r.Max)
+        : _layout.Time is { } time
+            ? new ChartRange(time.ToDateTimeOffset(r.Min), time.ToDateTimeOffset(r.Max))
+            : new ChartRange(TimeValue.ToDateTime(r.Min), TimeValue.ToDateTime(r.Max));
 
     private (double Min, double Max)? ToRange(ChartRange? range)
     {
@@ -608,7 +625,8 @@ public partial class Chart<TItem> : IChartContext
         }
 
         var kind = _layout?.XKind ?? XKind.Numeric;
-        var (min, max) = (AxisValue.ToDouble(range.Min, kind), AxisValue.ToDouble(range.Max, kind));
+        double Convert(object value) => kind == XKind.Time && _layout?.Time is { } time ? time.ToInstant(value) : AxisValue.ToDouble(value, kind);
+        var (min, max) = (Convert(range.Min), Convert(range.Max));
         return double.IsFinite(min) && double.IsFinite(max) && max != min ? (Math.Min(min, max), Math.Max(min, max)) : null;
     }
 
@@ -645,5 +663,5 @@ public partial class Chart<TItem> : IChartContext
         GC.SuppressFinalize(this);
     }
 
-    private sealed record ContainerInfo(double Width, double[]? Widths);
+    private sealed record ContainerInfo(double Width, double[]? Widths, string? TimeZone);
 }

@@ -49,9 +49,12 @@ public static partial class ChartLayout
     }
 
     private static List<ResolvedAnnotation> ResolveAnnotations(ChartSpec spec, List<YAxisLayout> axes, XKind xKind, IReadOnlyList<string> categories,
-        List<string> warnings)
+        List<string> warnings, TimeConversion? time = null)
     {
         var result = new List<ResolvedAnnotation>();
+
+        // With a display zone, times are instants like the data.
+        double ToValue(object? v, XKind k) => time is not null && k == XKind.Time ? time.ToInstant(v) : AxisValue.ToDouble(v, k, categories);
         for (var i = 0; i < spec.Annotations.Count; i++)
         {
             var a = spec.Annotations[i];
@@ -62,7 +65,7 @@ public static partial class ChartLayout
             double first, second;
             if (isPoint)
             {
-                (first, second) = (AxisValue.ToDouble(a.X, xKind, categories), AxisValue.ToDouble(a.Y, XKind.Numeric));
+                (first, second) = (ToValue(a.X, xKind), AxisValue.ToDouble(a.Y, XKind.Numeric));
                 if (!double.IsFinite(first) || !double.IsFinite(second))
                 {
                     warnings.Add($"annotations[{i}]: x '{a.X}' must be a valid {Describe(xKind)} value and y '{a.Y}' a number; the {a.Type.ToString().ToLowerInvariant()} is skipped.");
@@ -71,7 +74,7 @@ public static partial class ChartLayout
             }
             else if (a.Type == AnnotationType.Band)
             {
-                (first, second) = (AxisValue.ToDouble(a.From, kind, categories), AxisValue.ToDouble(a.To, kind, categories));
+                (first, second) = (ToValue(a.From, kind), ToValue(a.To, kind));
                 if (!double.IsFinite(first) || !double.IsFinite(second))
                 {
                     warnings.Add($"annotations[{i}]: from '{a.From}' and to '{a.To}' must both be valid {Describe(kind)} values; the band is skipped.");
@@ -82,7 +85,7 @@ public static partial class ChartLayout
             }
             else
             {
-                (first, second) = (AxisValue.ToDouble(a.Value, kind, categories), double.NaN);
+                (first, second) = (ToValue(a.Value, kind), double.NaN);
                 if (!double.IsFinite(first))
                 {
                     warnings.Add($"annotations[{i}].value: '{a.Value}' is not a valid {Describe(kind)} value; the line is skipped.");
@@ -123,7 +126,7 @@ public static partial class ChartLayout
     /// </summary>
     private static void BuildAnnotations(List<ResolvedAnnotation> annotations, RectF plot, XKind xKind, LinearScale? xScale, BandScale? xBand,
         CultureInfo culture, ITextMeasurer measure, double font, StyleTable styles, bool interactive,
-        List<Node> below, List<Node> above, List<RectF> placed, List<DragHandle> handles, string? xFormat)
+        List<Node> below, List<Node> above, List<RectF> placed, List<DragHandle> handles, string? xFormat, TimeConversion? time)
     {
         var small = Math.Max(9, font - 1);
         var textHeight = small * 1.25;
@@ -209,7 +212,7 @@ public static partial class ChartLayout
                 }
             }
 
-            var title = AnnotationTitle(a, xKind, xBand, culture, xFormat);
+            var title = AnnotationTitle(a, xKind, xBand, culture, xFormat, time);
             var group = new GroupNode(nodes)
             {
                 Key = "annotation:" + a.Id,
@@ -305,7 +308,7 @@ public static partial class ChartLayout
         return true;
     }
 
-    private static string AnnotationTitle(ResolvedAnnotation a, XKind xKind, BandScale? xBand, CultureInfo culture, string? xFormat)
+    private static string AnnotationTitle(ResolvedAnnotation a, XKind xKind, BandScale? xBand, CultureInfo culture, string? xFormat, TimeConversion? time)
     {
         string FormatX(double v)
         {
@@ -315,7 +318,7 @@ public static partial class ChartLayout
                 return xBand is not null && i >= 0 && i < xBand.Categories.Count ? xBand.Categories[i] : "";
             }
 
-            return ValueFormatter.ForX(xKind, [v], culture, xFormat)(v);
+            return TimeFormat(xKind, [v], culture, xFormat, time, null)(v);
         }
 
         string FormatY(double v) => ValueFormatter.Format(v, culture, a.Axis!.Spec.Format);

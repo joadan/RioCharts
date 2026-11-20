@@ -218,7 +218,7 @@ public static partial class ChartLayout
 
     /// <summary>Adds numeric or time tick labels, choosing the densest ticks whose labels do not overlap.</summary>
     private static List<double> AddContinuousXLabels(LinearScale scale, XKind kind, AxisSpec axis, CultureInfo culture,
-        ITextMeasurer measure, double font, double plotBottom, double chartWidth, List<Node> output)
+        ITextMeasurer measure, double font, double plotBottom, double chartWidth, List<Node> output, TimeConversion? time = null)
     {
         var plotWidth = scale.RangeEnd - scale.RangeStart;
         List<double> ticks = [];
@@ -229,8 +229,18 @@ public static partial class ChartLayout
             var maxCount = Math.Max(2, (int)(plotWidth / 50));
             foreach (var interval in TimeTicks.FromSmallest(scale.DomainMin, scale.DomainMax, maxCount))
             {
-                ticks = TimeTicks.Generate(scale.DomainMin, scale.DomainMax, interval);
-                labels = ticks.Select(t => TimeFormatter.Format(t, interval, culture, axis.Format)).ToList();
+                if (time is not null)
+                {
+                    var (instants, wall) = ZonedTicks(scale.DomainMin, scale.DomainMax, interval, time);
+                    ticks = instants;
+                    labels = wall.Select(t => TimeFormatter.Format(t, interval, culture, axis.Format)).ToList();
+                }
+                else
+                {
+                    ticks = TimeTicks.Generate(scale.DomainMin, scale.DomainMax, interval);
+                    labels = ticks.Select(t => TimeFormatter.Format(t, interval, culture, axis.Format)).ToList();
+                }
+
                 if (Fits(ticks, labels, scale, measure, font, chartWidth))
                 {
                     break;

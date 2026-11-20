@@ -95,7 +95,7 @@ export function init(container, dotnet) {
     }
 
     states.set(container, state);
-    return { width: state.width, widths: measureFont(container) };
+    return { width: state.width, widths: measureFont(container), timeZone: viewerTimeZone() };
 }
 
 export function update(container, model) {
@@ -795,6 +795,15 @@ function measureFont(container) {
         }
 
         return widths;
+    } catch {
+        return null;
+    }
+}
+
+// The browser's IANA time zone (for TimeZone="local" and to show the zone when it differs).
+function viewerTimeZone() {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
     } catch {
         return null;
     }

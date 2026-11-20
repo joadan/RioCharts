@@ -22,6 +22,11 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3, mile
   connector line); `AnnotationType.Point` and `Callout` with `X`, `Y`, `OffsetX`, `OffsetY`.
 - Draggable reference lines: `Draggable="true"`, with `@bind-Value` on `<ReferenceLine>` and
   `OnAnnotationChanged` on the chart.
+- Display time zone: `TimeZone="Europe/Stockholm"` (or `"UTC"`, `"local"` for the browser's
+  zone). Times are plotted on instants, so lines never double back at DST changes; ticks
+  (midnights, Mondays, months) and labels use the zone, and tooltips show the offset when it
+  differs from the viewer's. `UnspecifiedTimes` says how DateTime values without a zone are read.
+  The default is unchanged: times are shown as given.
 - **Breaking:** `<ReferenceLine>` is generic (`ReferenceLine<TValue>`, inferred from `Value`) so
   it can bind its value. `Axis` and `LabelPosition` moved from `AnnotationBase` to the line and
   band components.
