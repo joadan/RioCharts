@@ -1070,7 +1070,7 @@ table.docs tr:last-child td {
 
 .packages {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 18px;
 }
 
@@ -1085,6 +1085,18 @@ table.docs tr:last-child td {
     color: var(--doc-muted);
     font-size: 14px;
     line-height: 1.55;
+}
+
+.site a.package {
+    color: var(--doc-muted);
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.site a.package:hover {
+    border-color: var(--doc-border-strong);
+    box-shadow: var(--doc-shadow-lg);
+    transform: translateY(-3px);
 }
 
 .site .package code {

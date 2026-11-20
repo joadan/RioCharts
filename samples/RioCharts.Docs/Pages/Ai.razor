@@ -9,6 +9,10 @@
     model can fix the spec and call again. The image goes to your app; <code>render_chart</code> returns it to the agent instead.
 </p>
 
+<h2>Install</h2>
+<CodeBlock Language="shell" Code="dotnet add package RioCharts.AI --prerelease" />
+<p>It brings in <code>RioCharts.Skia</code> for the images. For a local agent with no app of your own, use <a href="ai#local-agents">riocharts-mcp</a> instead.</p>
+
 <h2>Your data</h2>
 <CodeBlock Language="csharp" Code="@DataCode" />
 <p>The tool description lists each dataset with its fields, types and descriptions, the spec format and a few examples. Querying and access control stay in your app.</p>
@@ -29,7 +33,7 @@
 </p>
 <CodeBlock Language="csharp" Code="@RenderCode" />
 
-<h2>Local agents: riocharts-mcp</h2>
+<h2 id="local-agents">Local agents: riocharts-mcp</h2>
 <p>
     For agents on your machine, such as Claude Code, Claude Desktop or GitHub Copilot in VS Code, there is a ready-made MCP server. It runs over stdio,
     so the agent starts it; you write no host app. CSV and JSON files in the <code>--data</code> folder become datasets (read again when they change),
@@ -91,6 +95,8 @@
 
     private const string ToolInstallCode = """
         dotnet tool install -g RioCharts.Mcp --prerelease
+        # later, to get a newer version:
+        dotnet tool update -g RioCharts.Mcp --prerelease
         """;
 
     private const string ToolConfigCode = """

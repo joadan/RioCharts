@@ -8,6 +8,9 @@
     Use it for emails, reports, Teams or Slack messages, and AI agents.
 </p>
 
+<CodeBlock Language="shell" Code="dotnet add package RioCharts.Skia --prerelease" />
+<p>On Linux it uses SkiaSharp's native assets without system dependencies; install a font package in slim containers (see <code>FontFamily</code> below).</p>
+
 <CodeBlock Language="csharp" Code="@Code" />
 
 <h2>Options</h2>
@@ -27,7 +30,6 @@
 
 @code {
     private const string Code = """
-        // dotnet add package RioCharts.Skia --prerelease
         var spec = new ChartSpec
         {
             Title = "Supply air",

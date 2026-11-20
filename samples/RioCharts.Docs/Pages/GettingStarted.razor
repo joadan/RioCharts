@@ -6,10 +6,32 @@
 <p class="lead">Add the package, two usings, and a chart. Zero configuration gives a finished chart.</p>
 
 <h2>Install</h2>
+<p>RioCharts is on <a href="https://www.nuget.org/packages?q=RioCharts" target="_blank" rel="noopener">NuGet</a>. For Blazor (Server, WebAssembly or Auto), add one package:</p>
 <CodeBlock Language="shell" Code="dotnet add package RioCharts.Blazor --prerelease" />
 <p>Then in <code>_Imports.razor</code>:</p>
 <CodeBlock Code="@ImportsCode" />
 <p>Styles come with your app's <code>{App}.styles.css</code> bundle automatically; there is nothing else to register.</p>
+
+<h3>All packages</h3>
+<p>
+    Take the parts you need; each brings in what it depends on. The packages are previews until 1.0, so add <code>--prerelease</code>
+    (or tick <em>Include prerelease</em> in Visual Studio). All target .NET 10.
+</p>
+<table class="docs">
+    <tr><th>Package</th><th>For</th></tr>
+    @foreach (var p in Packages)
+    {
+        <tr>
+            <td><a href="@($"https://www.nuget.org/packages/{p.Id}")" target="_blank" rel="noopener"><code>@p.Id</code></a></td>
+            <td>@p.Text</td>
+        </tr>
+    }
+</table>
+<CodeBlock Language="shell" Code="@InstallCode" />
+<p>
+    <code>riocharts-mcp</code> is a .NET tool rather than a library; see <a href="ai#local-agents">AI agents and MCP</a>.
+    Update it with <code>dotnet tool update -g RioCharts.Mcp --prerelease</code>.
+</p>
 
 <Example Title="Your first chart" Code="@FirstCode">
     <Description>
@@ -54,6 +76,25 @@
 </ul>
 
 @code {
+    private sealed record Package(string Id, string Text);
+
+    private static readonly Package[] Packages =
+    [
+        new("RioCharts.Blazor", "The <Chart> component for Blazor apps."),
+        new("RioCharts.Core", "The chart engine alone, with no UI dependencies."),
+        new("RioCharts.Skia", "PNG and SVG export on the server."),
+        new("RioCharts.AI", "create_chart and render_chart tools for AI agents."),
+        new("RioCharts.Mcp", "riocharts-mcp, a local MCP server for agents (a .NET tool)."),
+    ];
+
+    private const string InstallCode = """
+        dotnet add package RioCharts.Blazor --prerelease
+        dotnet add package RioCharts.Core --prerelease
+        dotnet add package RioCharts.Skia --prerelease
+        dotnet add package RioCharts.AI --prerelease
+        dotnet tool install -g RioCharts.Mcp --prerelease
+        """;
+
     private static readonly AxisSpec Celsius = new() { Title = "°C" };
     private static readonly SeriesData _columns = Columns();
 

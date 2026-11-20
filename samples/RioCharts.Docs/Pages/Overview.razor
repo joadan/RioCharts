@@ -123,10 +123,10 @@
         <div class="packages">
             @foreach (var p in Packages)
             {
-                <div class="package">
+                <a class="package" href="@($"https://www.nuget.org/packages/{p.Name}")" target="_blank" rel="noopener">
                     <code>@p.Name</code>
                     <span>@p.Text</span>
-                </div>
+                </a>
             }
         </div>
     </div>
@@ -187,5 +187,6 @@
         new("RioCharts.Core", "Scales, ticks, layout, the chart spec and JSON specs."),
         new("RioCharts.Skia", "Server-side export to SVG and PNG, for reports and e-mail."),
         new("RioCharts.AI", "The create_chart tool for agents: Microsoft.Extensions.AI and MCP."),
+        new("RioCharts.Mcp", "riocharts-mcp: a local MCP server (.NET tool) that renders charts to files."),
     ];
 }
