@@ -20,6 +20,8 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   saved to `--out`. Options for default size, theme and culture.
 - `ChartDataset.FromCsv` (delimiter detection, quoted cells, decimal comma with `;` or tab) and
   `FolderDataSource` (one dataset per CSV or JSON file, read again when a file changes).
+- `samples/RioCharts.Mcp.Sample`: sample data, `.mcp.json` (Claude Code), `.vscode/mcp.json`
+  (VS Code) and example prompts for trying `riocharts-mcp`.
 
 ### Docs site
 

@@ -1,0 +1,29 @@
+{
+  "rows": [
+    {
+      "system": "Heating",
+      "kwh": 182000,
+      "share": 41
+    },
+    {
+      "system": "Cooling",
+      "kwh": 54000,
+      "share": 12
+    },
+    {
+      "system": "Fans",
+      "kwh": 98000,
+      "share": 22
+    },
+    {
+      "system": "Pumps",
+      "kwh": 27000,
+      "share": 6
+    },
+    {
+      "system": "Lighting",
+      "kwh": 84000,
+      "share": 19
+    }
+  ]
+}

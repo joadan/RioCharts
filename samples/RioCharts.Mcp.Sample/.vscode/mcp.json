@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "riocharts": {
+      "type": "stdio",
+      "command": "riocharts-mcp",
+      "args": ["--data", "${workspaceFolder}/data", "--out", "${workspaceFolder}/charts"]
+    }
+  }
+}

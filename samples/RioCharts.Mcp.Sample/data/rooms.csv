@@ -1,0 +1,11 @@
+room;floor;temperature;co2;occupancy
+Konferens A;1;20,3;839;68
+Konferens B;1;21,9;962;71
+Kontor 101;1;22,3;812;9
+Kontor 102;1;21,0;493;55
+Kontor 201;2;19,9;529;40
+Kontor 202;2;21,5;1037;51
+Lunchrum;2;21,9;877;37
+Reception;1;20,1;471;41
+Labb;3;20,3;1082;58
+Server;3;25,8;420;0

@@ -22,6 +22,7 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
 - `tests/RioCharts.Tests/` — xUnit tests.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
+- `samples/RioCharts.Mcp.Sample/` — sample data (CSV/JSON) and agent config for trying `riocharts-mcp`; not a .NET project. Its `.mcp.json` applies only when an agent is opened in that folder.
 - `samples/RioCharts.Docs/` — docs site, Blazor WebAssembly (http://localhost:5031); `.github/workflows/docs.yml` publishes it to GitHub Pages. Add new features there with a live example.
 - `docs/` — implementation notes.
 

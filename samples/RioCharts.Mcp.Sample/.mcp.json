@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "riocharts": {
+      "command": "riocharts-mcp",
+      "args": ["--data", "data", "--out", "charts"]
+    }
+  }
+}

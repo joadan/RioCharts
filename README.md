@@ -128,6 +128,9 @@ dotnet tool install -g RioCharts.Mcp --prerelease
 { "mcpServers": { "riocharts": { "command": "riocharts-mcp", "args": ["--data", "data", "--out", "charts"] } } }
 ```
 
+To try it, open [samples/RioCharts.Mcp.Sample](samples/RioCharts.Mcp.Sample) in Claude Code or VS Code: it has
+sample data, the agent configuration and example prompts.
+
 The same specs work in Blazor: `<Chart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
 `{"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}]}`.
 
@@ -167,6 +170,7 @@ plot on instants and label in that zone.
 | `src/RioCharts.Mcp` | `riocharts-mcp`: local MCP server (stdio, .NET tool) that renders charts to PNG/SVG files. |
 | `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
 | `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
+| `samples/RioCharts.Mcp.Sample` | Sample data and agent config (`.mcp.json`, `.vscode/mcp.json`) for trying `riocharts-mcp`. |
 | `samples/RioCharts.Docs` | Docs site with live examples (Blazor WebAssembly, published to GitHub Pages). |
 
 ```powershell
