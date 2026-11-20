@@ -31,4 +31,9 @@
     <svg class="rio-hover" aria-hidden="true" width="100%" height="@SvgWriter.N(scene.Height)"
          viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"></svg>
     <div class="rio-tooltip" aria-hidden="true"></div>
+    @if (Zoomable && layout.Zoomed)
+    {
+        <button type="button" class="rio-reset-zoom" @onclick="ResetZoomAsync"
+                style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4)}px")">Reset zoom</button>
+    }
 </div>

@@ -91,3 +91,19 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   the rendered slices); the donut center keeps showing the total. Entry motion is the shared
   fade, not an angle animation.
 - **Negative pie values** are left out with a warning; negative radial bar values show as empty.
+
+## Milestone 4
+
+- **Zoom state** is view state, not part of `ChartSpec`: `LayoutOptions.XRange` (data units,
+  milliseconds for time). The chart keeps it in C# and clamps it to the data extent
+  (`ChartLayoutResult.XExtent`); a range covering all data means "not zoomed". Category axes
+  do not zoom.
+- **Gestures:** drag selects a range (mouse only), Shift+drag pans, Ctrl/⌘+wheel zooms around the
+  pointer (the plain wheel keeps scrolling the page), double-click resets. Pan previews by sliding
+  the series inside the clip; wheel zoom has no preview and commits 140 ms after the last wheel
+  event. Pinch zoom on touch is not supported yet.
+- **Y fits the visible data** (only points inside the range count), and line series draw the
+  visible points plus one on each side, downsampled within that window.
+- **Linked charts:** charts with the same `Group` find each other in the JS module. Hover shows the
+  crosshair and markers at the same x in the others (no tooltip there). A zoom or pan in one is sent
+  to every zoomable chart in the group, each applying it through its own .NET side.

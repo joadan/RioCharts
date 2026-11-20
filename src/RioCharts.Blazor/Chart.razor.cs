@@ -36,6 +36,8 @@ public partial class Chart<TItem> : IChartContext
     private IJSObjectReference? _module;
     private DotNetObjectReference<Chart<TItem>>? _dotnet;
     private object? _sentInteraction;
+    private (double Min, double Max)? _range;
+    private ChartRange? _lastVisibleRangeParameter;
     private bool _disposed;
 
     [Inject] private IJSRuntime JS { get; set; } = null!;
@@ -85,6 +87,26 @@ public partial class Chart<TItem> : IChartContext
 
     /// <summary>Raised when a reference line or band is clicked (it becomes a focusable button).</summary>
     [Parameter] public EventCallback<AnnotationClickEventArgs> OnAnnotationClick { get; set; }
+
+    /// <summary>
+    /// Zoom and pan on the x axis: drag to zoom in, Shift+drag to pan, Ctrl/⌘+wheel to zoom at the
+    /// pointer, double-click or the reset button to zoom out. Not for category axes.
+    /// </summary>
+    [Parameter] public bool Zoomable { get; set; }
+
+    /// <summary>The visible x range (null: all data). Two-way bindable with <c>@bind-VisibleRange</c>.</summary>
+    [Parameter] public ChartRange? VisibleRange { get; set; }
+
+    [Parameter] public EventCallback<ChartRange?> VisibleRangeChanged { get; set; }
+
+    /// <summary>Raised before a zoom or pan is applied; the handler may change or cancel it.</summary>
+    [Parameter] public EventCallback<ZoomChangingEventArgs> OnZoomChanging { get; set; }
+
+    /// <summary>
+    /// Charts with the same group name share the crosshair and (when zoomable) the zoom. They
+    /// should have the same kind of x axis.
+    /// </summary>
+    [Parameter] public string? Group { get; set; }
 
     /// <summary>Extra CSS class on the container.</summary>
     [Parameter] public string? Class { get; set; }
@@ -170,6 +192,13 @@ public partial class Chart<TItem> : IChartContext
         }
 
         // Re-layout only when the chart's own parameters changed (child components report their own changes).
+        if (!ReferenceEquals(VisibleRange, _lastVisibleRangeParameter))
+        {
+            _lastVisibleRangeParameter = VisibleRange;
+            _range = ToRange(VisibleRange);
+            _dirty = true;
+        }
+
         var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate);
         if (!Equals(parameters, _lastParameters))
         {
@@ -214,6 +243,7 @@ public partial class Chart<TItem> : IChartContext
             Culture = Culture ?? CultureInfo.CurrentCulture,
             HiddenSeries = _hidden,
             InteractiveAnnotations = OnAnnotationClick.HasDelegate,
+            XRange = _range,
         });
         _dirty = false;
         return _layout;
@@ -339,7 +369,7 @@ public partial class Chart<TItem> : IChartContext
             return;
         }
 
-        var key = (_layout, OnPointClick.HasDelegate);
+        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group);
         if (Equals(key, _sentInteraction))
         {
             return;
@@ -348,7 +378,9 @@ public partial class Chart<TItem> : IChartContext
         _sentInteraction = key;
         var model = _layout.Tooltip;
         var click = OnPointClick.HasDelegate;
-        object? payload = model.Enabled || click
+        var scale = _layout.XScale;
+        var zoom = Zoomable && scale is not null && _layout.HasData;
+        object? payload = model.Enabled || click || zoom || (Group is not null && scale is not null)
             ? new
             {
                 plot = new { x = model.Plot.X, y = model.Plot.Y, w = model.Plot.Width, h = model.Plot.Height },
@@ -356,6 +388,10 @@ public partial class Chart<TItem> : IChartContext
                 shared = model.Shared,
                 band = model.BandWidth,
                 click,
+                zoom,
+                zoomed = _layout.Zoomed,
+                group = Group,
+                xscale = scale is null ? null : new { d0 = scale.DomainMin, d1 = scale.DomainMax, r0 = scale.RangeStart, r1 = scale.RangeEnd },
                 series = model.Series.Select(s => new
                 {
                     id = s.Id,
@@ -390,6 +426,112 @@ public partial class Chart<TItem> : IChartContext
             }
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
+    }
+
+    // ---------- Zoom and pan ----------
+
+    /// <summary>The visible x range, or null when all data is shown.</summary>
+    public ChartRange? GetVisibleRange() => _range is { } r ? FromRange(r) : null;
+
+    /// <summary>Shows the given x range (clamped to the data).</summary>
+    public Task ZoomToAsync(ChartRange range) => ToRange(range) is { } r ? ApplyRangeAsync(r) : Task.CompletedTask;
+
+    /// <summary>Shows all data again.</summary>
+    public Task ResetZoomAsync() => ApplyRangeAsync(null);
+
+    /// <summary>Moves the visible range by a fraction of its width (negative: left).</summary>
+    public Task PanAsync(double fraction)
+    {
+        if (_layout?.XScale is not { } scale)
+        {
+            return Task.CompletedTask;
+        }
+
+        var shift = (scale.DomainMax - scale.DomainMin) * fraction;
+        return ApplyRangeAsync((scale.DomainMin + shift, scale.DomainMax + shift));
+    }
+
+    /// <summary>Called by JS at the end of a drag, pan or wheel zoom (data units).</summary>
+    [JSInvokable]
+    public Task OnZoom(double min, double max) => ApplyRangeAsync((min, max));
+
+    [JSInvokable]
+    public Task OnZoomReset() => ApplyRangeAsync(null);
+
+    private async Task ApplyRangeAsync((double Min, double Max)? range)
+    {
+        if (range is { } r)
+        {
+            range = Clamp(r);
+            if (range is null)
+            {
+                return;
+            }
+        }
+
+        if (OnZoomChanging.HasDelegate)
+        {
+            var args = new ZoomChangingEventArgs { Range = range is { } x ? FromRange(x) : null };
+            await OnZoomChanging.InvokeAsync(args);
+            if (args.Cancel)
+            {
+                return;
+            }
+
+            range = args.Range is null ? null : ToRange(args.Range) is { } changed ? Clamp(changed) : null;
+        }
+
+        if (Equals(range, _range))
+        {
+            return;
+        }
+
+        _range = range;
+        _dirty = true;
+        var bound = GetVisibleRange();
+        if (VisibleRangeChanged.HasDelegate)
+        {
+            _lastVisibleRangeParameter = bound;
+            await VisibleRangeChanged.InvokeAsync(bound);
+        }
+
+        StateHasChanged();
+    }
+
+    /// <summary>Keeps the range inside the data and not narrower than a millionth of it.</summary>
+    private (double Min, double Max)? Clamp((double Min, double Max) range)
+    {
+        var (min, max) = range.Min <= range.Max ? range : (range.Max, range.Min);
+        if (_layout?.XExtent is not { } extent || !double.IsFinite(min) || !double.IsFinite(max))
+        {
+            return max > min ? (min, max) : null;
+        }
+
+        var full = extent.Max - extent.Min;
+        var width = Math.Min(Math.Max(max - min, full * 1e-6), full);
+        if (width >= full * 0.999)
+        {
+            return null; // all data: no zoom
+        }
+
+        min = Math.Clamp(min, extent.Min, extent.Max - width);
+        return (min, min + width);
+    }
+
+    private ChartRange FromRange((double Min, double Max) r) => _layout?.XKind == XKind.Time
+        ? new ChartRange(TimeValue.ToDateTime(r.Min), TimeValue.ToDateTime(r.Max))
+        : new ChartRange(r.Min, r.Max);
+
+    private (double Min, double Max)? ToRange(ChartRange? range)
+    {
+        if (range is null)
+        {
+            return null;
+        }
+
+        var kind = _layout?.XKind ?? XKind.Numeric;
+        var (min, max) = (AxisValue.ToDouble(range.Min, kind), AxisValue.ToDouble(range.Max, kind));
+        return double.IsFinite(min) && double.IsFinite(max) && max != min ? (Math.Min(min, max), Math.Max(min, max)) : null;
     }
 
     /// <summary>Called by the JS ResizeObserver when the container width changes.</summary>

@@ -1,8 +1,4 @@
-<img src="assets/icon.svg" alt="" width="64" height="64" align="left" />
-
 # RioCharts
-
-<br clear="left" />
 
 A pure .NET chart library, with Blazor as the first target. C# does the math and layout,
 Razor renders SVG, and a tiny JS module only measures the container and the font.

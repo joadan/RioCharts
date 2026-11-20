@@ -150,11 +150,27 @@
         </section>
 
         <section class="wide">
+            <h2>Zoom, pan and linked charts</h2>
+            <Chart TItem="Reading" Height="220" YAxis="_celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
+                <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+                <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+            </Chart>
+            <Chart TItem="Reading" Height="160" YAxis="_kwh" Zoomable="true" Group="ahu">
+                <AreaSeries Items="_energy" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 kWh" />
+            </Chart>
+            <p class="note">
+                Drag to zoom, Shift+drag to pan, Ctrl+wheel to zoom at the pointer, double-click to reset. The two charts share the
+                crosshair and the zoom (<code>Group="ahu"</code>). Visible: @(_range is null ? "all" : $"{_range.Min:g} – {_range.Max:g}")
+                <button class="small" @onclick="() => _range = ChartRange.Of(new DateTime(2026, 11, 17, 6, 0, 0), new DateTime(2026, 11, 17, 18, 0, 0))">Show 17 Nov 06–18</button>
+            </p>
+        </section>
+
+        <section class="wide">
             <h2>Columnar fast path: 200 000 points</h2>
-            <Chart TItem="double" Height="260">
+            <Chart TItem="double" Height="260" Zoomable="true">
                 <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />
             </Chart>
-            <p class="note">Passed as arrays with <code>SeriesData.From(times, values)</code>; downsampled with LTTB to the plot width.</p>
+            <p class="note">Passed as arrays with <code>SeriesData.From(times, values)</code>; downsampled with LTTB to the plot width. Zoom in: only the visible points are downsampled, so detail appears.</p>
         </section>
 
         <section class="wide resizable">
@@ -214,6 +230,7 @@
     private bool _dark;
     private IReadOnlyCollection<string> _hidden = [];
     private string _clicked = "";
+    private ChartRange? _range;
 
     private readonly AxisSpec _celsius = new() { Title = "°C" };
     private readonly AxisSpec _kwh = new() { Title = "kWh" };

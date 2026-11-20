@@ -72,17 +72,17 @@ public static partial class ChartLayout
         return axis;
     }
 
-    private static void YExtent(YAxisLayout axis, IEnumerable<ResolvedAnnotation> annotations)
+    private static void YExtent(YAxisLayout axis, IEnumerable<ResolvedAnnotation> annotations, (double Min, double Max)? window)
     {
         double min = double.PositiveInfinity, max = double.NegativeInfinity;
         var includeZero = false;
         foreach (var r in axis.Series)
         {
             includeZero |= r.Type.IncludesZero;
-            Include(r.Upper);
+            Include(r.Upper, r.Data.X);
             if (r.Lower is not null)
             {
-                Include(r.Lower);
+                Include(r.Lower, r.Data.X);
             }
         }
 
@@ -112,16 +112,49 @@ public static partial class ChartLayout
         axis.ExtentMin = axis.Spec.Min ?? min;
         axis.ExtentMax = axis.Spec.Max ?? max;
 
-        void Include(double[] values)
+        // Zoomed: only the points in the visible x range count, so the y axis fits what is shown.
+        void Include(double[] values, double[] xs)
         {
-            foreach (var y in values)
+            var (start, end) = window is { } w ? VisibleIndexes(xs, w.Min, w.Max, 0) : (0, values.Length);
+            for (var i = start; i < end; i++)
             {
+                var y = values[i];
                 if (double.IsFinite(y))
                 {
                     min = Math.Min(min, y);
                     max = Math.Max(max, y);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Index range [start, end) of the sorted x values within [min, max], widened by
+    /// <paramref name="margin"/> points on each side (so lines run on to the plot edge).
+    /// </summary>
+    internal static (int Start, int End) VisibleIndexes(double[] xs, double min, double max, int margin)
+    {
+        var start = LowerBound(xs, min);
+        var end = LowerBound(xs, Math.BitIncrement(max));
+        return (Math.Max(0, start - margin), Math.Min(xs.Length, end + margin));
+
+        static int LowerBound(double[] xs, double value)
+        {
+            int lo = 0, hi = xs.Length;
+            while (lo < hi)
+            {
+                var mid = (lo + hi) >>> 1;
+                if (xs[mid] < value)
+                {
+                    lo = mid + 1;
+                }
+                else
+                {
+                    hi = mid;
+                }
+            }
+
+            return lo;
         }
     }
 

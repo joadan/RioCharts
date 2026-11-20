@@ -5,7 +5,16 @@ changes are called out under **Breaking**.
 
 ## 0.1.0-preview (unreleased)
 
-Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3.
+Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3, milestone 4 in progress.
+
+### Milestone 4
+
+- Zoom and pan on the x axis: `Zoomable="true"`. Drag to zoom in, Shift+drag to pan,
+  Ctrl/⌘+wheel to zoom at the pointer, double-click or "Reset zoom" to zoom out. The y axes fit
+  the visible data, and downsampling runs on the visible points only.
+- `@bind-VisibleRange` (`ChartRange`), `OnZoomChanging` (clamp or cancel), and
+  `ZoomToAsync`, `PanAsync`, `ResetZoomAsync`, `GetVisibleRange` on the chart reference.
+- Linked charts: `Group="name"` shares the crosshair (in the browser) and the zoom.
 
 ### Milestone 3
 
@@ -19,10 +28,6 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3.
 - Slice tooltips with a hover halo, and `OnPointClick` for slices and radial bars.
 - **Breaking:** `SeriesSpec.DataLabels` and the series `DataLabels` parameter are now `bool?`
   (null: on for pie, donut and radial bar, off otherwise).
-
-### Project
-
-- Project icon (`assets/icon.svg`, `assets/icon.png`), used as the NuGet package icon and the demo favicon.
 
 ### Milestone 2
 

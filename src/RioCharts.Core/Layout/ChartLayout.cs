@@ -26,6 +26,12 @@ public sealed record LayoutOptions
 
     /// <summary>Make annotations clickable (focusable buttons in the scene).</summary>
     public bool InteractiveAnnotations { get; init; }
+
+    /// <summary>
+    /// Visible x range (zoom/pan) in data units: numbers, or milliseconds for time axes. Null shows
+    /// all data. The y axes fit the visible data. Ignored for category axes.
+    /// </summary>
+    public (double Min, double Max)? XRange { get; init; }
 }
 
 public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty);
@@ -45,6 +51,12 @@ public sealed class ChartLayoutResult
 
     /// <summary>X scale for category axes.</summary>
     public BandScale? XBand { get; init; }
+
+    /// <summary>The full x range of the data (numeric and time axes), the bounds for zoom and pan.</summary>
+    public (double Min, double Max)? XExtent { get; init; }
+
+    /// <summary>True when <see cref="LayoutOptions.XRange"/> narrowed the x axis.</summary>
+    public bool Zoomed { get; init; }
 
     /// <summary>Scale of the primary vertical axis (the one with the grid lines).</summary>
     public required LinearScale YScale { get; init; }
@@ -160,9 +172,17 @@ public static partial class ChartLayout
         var (xMin, xMax, barSpacing) = xKind == XKind.Category
             ? (0, 0, 0)
             : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.IsX && a.ExpandsDomain));
+        (double Min, double Max)? fullX = xKind == XKind.Category ? null : (xMin, xMax);
+        (double Min, double Max)? window = null;
+        if (fullX is not null && options.XRange is { } range && range.Max > range.Min && double.IsFinite(range.Min) && double.IsFinite(range.Max))
+        {
+            (xMin, xMax) = range;
+            window = range;
+        }
+
         foreach (var axis in axes)
         {
-            YExtent(axis, annotations.Where(a => !a.IsX && a.ExpandsDomain && a.Axis == axis));
+            YExtent(axis, annotations.Where(a => !a.IsX && a.ExpandsDomain && a.Axis == axis), window);
         }
 
         // ---------- Title and legend ----------
@@ -400,6 +420,7 @@ public static partial class ChartLayout
                 SlotIndex = r.Type.UsesSlots ? slotKeys.IndexOf(SlotKey(r)) : 0,
                 SlotCount = Math.Max(1, slotKeys.Count),
                 DownsampleThreshold = threshold,
+                XWindow = window,
             };
             r.Type.Build(context);
             if (context.Hits is { } hits)
@@ -473,6 +494,8 @@ public static partial class ChartLayout
             XKind = xKind,
             XScale = xScale,
             XBand = xBand,
+            XExtent = fullX,
+            Zoomed = window is not null,
             YScale = gridAxis.Scale,
             YScales = axes.ToDictionary(a => a.Id, a => a.Scale, StringComparer.Ordinal),
             HasData = hasData,

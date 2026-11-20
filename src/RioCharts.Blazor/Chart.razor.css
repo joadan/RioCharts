@@ -249,3 +249,39 @@
         animation: none;
     }
 }
+
+/* ---------- Zoom ---------- */
+
+.rio-chart-svg.rio-zoomable {
+    cursor: crosshair;
+}
+
+.rio-chart ::deep .rio-zoom-select {
+    fill: var(--rio-series-1, var(--_rio-series-1));
+    fill-opacity: 0.12;
+    stroke: var(--rio-series-1, var(--_rio-series-1));
+    stroke-opacity: 0.5;
+    stroke-width: 1;
+}
+
+.rio-reset-zoom {
+    position: absolute;
+    z-index: 1;
+    padding: 3px 9px;
+    border: 1px solid var(--rio-grid, var(--_rio-grid));
+    border-radius: 6px;
+    background: var(--rio-surface, var(--_rio-surface));
+    color: var(--rio-text, var(--_rio-text));
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.rio-reset-zoom:hover {
+    border-color: var(--rio-axis, var(--_rio-axis));
+}
+
+.rio-reset-zoom:focus-visible {
+    outline: 2px solid var(--rio-focus, var(--_rio-focus));
+    outline-offset: 1px;
+}

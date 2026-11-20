@@ -74,6 +74,12 @@ internal sealed class SeriesBuildContext
     public int SlotCount { get; init; } = 1;
     public int DownsampleThreshold { get; init; }
 
+    /// <summary>Visible x range when zoomed (data units).</summary>
+    public (double Min, double Max)? XWindow { get; init; }
+
+    /// <summary>True when a pixel x is inside the plot (hits and labels outside it are dropped).</summary>
+    public bool InPlotX(double px) => px >= Plot.X - 0.5 && px <= Plot.Right + 0.5;
+
     public List<Node> Output { get; } = [];
     public HitTestIndex.SeriesHits? Hits { get; set; }
 
@@ -138,9 +144,13 @@ internal sealed class LineSeriesType : ISeriesType
     internal static (double[] X, double[] Y, double[]? Y0, int[] Indices) DrawnPoints(SeriesBuildContext c)
     {
         var data = c.Data;
-        var indices = c.DownsampleThreshold > 0 && data.Count > c.DownsampleThreshold
-            ? Lttb.Downsample(data.X, c.Upper, 0, data.Count, c.DownsampleThreshold)
-            : Enumerable.Range(0, data.Count).ToArray();
+        // Zoomed: only the visible points (plus one on each side, so lines reach the plot edge).
+        var (start, end) = c.XWindow is { } w && data.Kind != XKind.Category
+            ? Layout.ChartLayout.VisibleIndexes(data.X, w.Min, w.Max, 1)
+            : (0, data.Count);
+        var indices = c.DownsampleThreshold > 0 && end - start > c.DownsampleThreshold
+            ? Lttb.Downsample(data.X, c.Upper, start, end, c.DownsampleThreshold)
+            : Enumerable.Range(start, end - start).ToArray();
 
         var xs = new double[indices.Length];
         var ys = new double[indices.Length];
@@ -179,7 +189,7 @@ internal sealed class LineSeriesType : ISeriesType
         var hs = new List<int>(xs.Length);
         for (var i = 0; i < xs.Length; i++)
         {
-            if (double.IsFinite(xs[i]) && double.IsFinite(ys[i]))
+            if (double.IsFinite(xs[i]) && double.IsFinite(ys[i]) && c.InPlotX(xs[i]))
             {
                 hx.Add((float)xs[i]);
                 hy.Add((float)ys[i]);
@@ -200,7 +210,7 @@ internal sealed class LineSeriesType : ISeriesType
 
         for (var i = 0; i < xs.Length; i++)
         {
-            if (double.IsFinite(xs[i]) && double.IsFinite(ys[i]))
+            if (double.IsFinite(xs[i]) && double.IsFinite(ys[i]) && c.InPlotX(xs[i]))
             {
                 c.Labels.Add(new LabelAnchor(c.Data.Y[indices[i]], xs[i], ys[i], double.NaN, 0, c.Stacked));
             }
@@ -262,7 +272,7 @@ internal sealed class BarSeriesType : ISeriesType
         {
             var value = c.Data.Y[i];
             var center = c.PixelX[i];
-            if (!double.IsFinite(value) || !double.IsFinite(center) || !double.IsFinite(c.Upper[i]))
+            if (!double.IsFinite(value) || !double.IsFinite(center) || !double.IsFinite(c.Upper[i]) || !c.InPlotX(center))
             {
                 continue;
             }

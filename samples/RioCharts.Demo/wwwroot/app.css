@@ -34,7 +34,8 @@ h2 {
     color: #5b6470;
 }
 
-.theme {
+.theme,
+button.small {
     padding: 6px 12px;
     border: 1px solid #c9ced6;
     border-radius: 6px;
@@ -54,7 +55,7 @@ main.dark-page {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
     gap: 16px;
 }
 
@@ -123,4 +124,10 @@ code {
     padding: 8px 16px;
     background: lightyellow;
     z-index: 1000;
+}
+
+button.small {
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-size: 12px;
 }

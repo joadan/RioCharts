@@ -3,9 +3,12 @@
 //   size with real text widths.
 // - Handles hover locally: C# sends the drawn points once per layout; pointer moves find the
 //   nearest x by binary search and draw the crosshair and tooltip without a server round trip.
-//   Only clicks call back into .NET.
+// - Zoom and pan preview locally; only the final range goes to .NET. Linked charts (same group)
+//   share the crosshair here in the browser and the zoom through each chart's .NET side.
+// Only clicks and finished zooms call back into .NET.
 
 const states = new WeakMap();
+const groups = new Map(); // group name -> Set of chart states
 const SVG = 'http://www.w3.org/2000/svg';
 
 export function init(container, dotnet) {
@@ -23,7 +26,9 @@ export function init(container, dotnet) {
         svg: container.querySelector('svg.rio-chart-svg'),
         hover: container.querySelector('svg.rio-hover'),
         tip: container.querySelector('.rio-tooltip'),
-        current: null,
+        drag: null,
+        wheel: null,
+        group: null,
     };
 
     state.observer = new ResizeObserver(() => {
@@ -40,6 +45,11 @@ export function init(container, dotnet) {
     state.observer.observe(container);
 
     state.onMove = e => {
+        if (state.drag) {
+            dragMove(state, e);
+            return;
+        }
+
         state.lastEvent = e;
         if (!state.frame) {
             state.frame = requestAnimationFrame(() => {
@@ -48,13 +58,38 @@ export function init(container, dotnet) {
             });
         }
     };
-    state.onLeave = () => hide(state);
+    state.onDown = e => {
+        if (!dragStart(state, e)) {
+            state.onMove(e); // touch: show the tooltip where the finger lands
+        }
+    };
+    state.onUp = e => dragEnd(state, e);
+    state.onLeave = () => {
+        if (!state.drag) {
+            hide(state);
+            broadcastHover(state, null);
+        }
+    };
     state.onClick = e => click(state, e);
-    if (state.svg) {
-        state.svg.addEventListener('pointermove', state.onMove);
-        state.svg.addEventListener('pointerdown', state.onMove);
-        state.svg.addEventListener('pointerleave', state.onLeave);
-        state.svg.addEventListener('click', state.onClick);
+    state.onWheel = e => wheel(state, e);
+    state.onDblClick = e => {
+        const m = state.model;
+        const pos = m ? pointer(state, e) : null;
+        if (m && m.zoom && m.zoomed && pos && inPlot(m, pos, 0)) {
+            commitReset(state);
+        }
+    };
+
+    const svg = state.svg;
+    if (svg) {
+        svg.addEventListener('pointermove', state.onMove);
+        svg.addEventListener('pointerdown', state.onDown);
+        svg.addEventListener('pointerup', state.onUp);
+        svg.addEventListener('pointercancel', state.onUp);
+        svg.addEventListener('pointerleave', state.onLeave);
+        svg.addEventListener('click', state.onClick);
+        svg.addEventListener('dblclick', state.onDblClick);
+        svg.addEventListener('wheel', state.onWheel, { passive: false });
     }
 
     states.set(container, state);
@@ -68,9 +103,13 @@ export function update(container, model) {
     }
 
     state.model = model;
+    state.drag = null;
+    resetPreview(state);
     hide(state);
+    joinGroup(state, model && model.group);
     if (state.svg) {
         state.svg.classList.toggle('rio-clickable', !!(model && model.click));
+        state.svg.classList.toggle('rio-zoomable', !!(model && model.zoom));
     }
 }
 
@@ -78,40 +117,258 @@ export function dispose(container) {
     const state = states.get(container);
     if (state) {
         clearTimeout(state.timer);
+        if (state.wheel) {
+            clearTimeout(state.wheel.timer);
+        }
+
         cancelAnimationFrame(state.frame);
         state.observer.disconnect();
-        if (state.svg) {
-            state.svg.removeEventListener('pointermove', state.onMove);
-            state.svg.removeEventListener('pointerdown', state.onMove);
-            state.svg.removeEventListener('pointerleave', state.onLeave);
-            state.svg.removeEventListener('click', state.onClick);
+        joinGroup(state, null);
+        const svg = state.svg;
+        if (svg) {
+            svg.removeEventListener('pointermove', state.onMove);
+            svg.removeEventListener('pointerdown', state.onDown);
+            svg.removeEventListener('pointerup', state.onUp);
+            svg.removeEventListener('pointercancel', state.onUp);
+            svg.removeEventListener('pointerleave', state.onLeave);
+            svg.removeEventListener('click', state.onClick);
+            svg.removeEventListener('dblclick', state.onDblClick);
+            svg.removeEventListener('wheel', state.onWheel);
         }
 
         states.delete(container);
     }
 }
 
-// ---------- Hit-testing ----------
+// ---------- Linked charts ----------
 
-// Pointer position in chart (viewBox) units, or null when outside the plot.
-function toChart(state, e) {
-    const m = state.model;
-    if (!m || !state.svg) {
+function joinGroup(state, name) {
+    if (state.group === (name || null)) {
+        return;
+    }
+
+    if (state.group && groups.has(state.group)) {
+        groups.get(state.group).delete(state);
+    }
+
+    state.group = name || null;
+    if (state.group) {
+        if (!groups.has(state.group)) {
+            groups.set(state.group, new Set());
+        }
+
+        groups.get(state.group).add(state);
+    }
+}
+
+function others(state) {
+    return state.group && groups.has(state.group) ? [...groups.get(state.group)].filter(s => s !== state && s.model) : [];
+}
+
+// Shows the crosshair (no tooltip) at a data x in the other charts of the group; null hides it.
+function broadcastHover(state, dataX) {
+    for (const other of others(state)) {
+        const m = other.model;
+        if (dataX === null || !m.xscale || !m.series || m.series.length === 0) {
+            clearHover(other);
+            continue;
+        }
+
+        const px = toPixel(m.xscale, dataX);
+        const rows = px >= m.plot.x - 1 && px <= m.plot.x + m.plot.w + 1 ? findShared(m, px) : [];
+        if (rows.length === 0) {
+            clearHover(other);
+        } else {
+            drawHover(other, rows, m);
+        }
+    }
+}
+
+// ---------- Scales ----------
+
+function toPixel(s, v) {
+    return s.r0 + (v - s.d0) / (s.d1 - s.d0) * (s.r1 - s.r0);
+}
+
+function toData(s, px) {
+    return s.d0 + (px - s.r0) / (s.r1 - s.r0) * (s.d1 - s.d0);
+}
+
+// Pointer position in chart (viewBox) units, not limited to the plot.
+function pointer(state, e) {
+    if (!state.svg) {
         return null;
     }
 
     const rect = state.svg.getBoundingClientRect();
     const vb = state.svg.viewBox.baseVal;
     const k = vb && vb.width && rect.width ? vb.width / rect.width : 1;
-    const x = (e.clientX - rect.left) * k;
-    const y = (e.clientY - rect.top) * k;
+    return { x: (e.clientX - rect.left) * k, y: (e.clientY - rect.top) * k, k, rect };
+}
+
+function inPlot(m, pos, margin) {
     const p = m.plot;
-    if (x < p.x - 6 || x > p.x + p.w + 6 || y < p.y - 6 || y > p.y + p.h + 6) {
-        return null;
+    return pos.x >= p.x - margin && pos.x <= p.x + p.w + margin && pos.y >= p.y - margin && pos.y <= p.y + p.h + margin;
+}
+
+// Pointer position in chart units, or null when outside the plot.
+function toChart(state, e) {
+    const m = state.model;
+    const pos = m ? pointer(state, e) : null;
+    return pos && inPlot(m, pos, 6) ? pos : null;
+}
+
+// ---------- Zoom and pan ----------
+
+function dragStart(state, e) {
+    const m = state.model;
+    if (!m || !m.zoom || !m.xscale || e.button !== 0 || e.pointerType !== 'mouse') {
+        return false;
     }
 
-    return { x, y, k, rect };
+    const pos = pointer(state, e);
+    if (!pos || !inPlot(m, pos, 0)) {
+        return false;
+    }
+
+    state.suppressClick = false;
+    state.drag = { mode: e.shiftKey ? 'pan' : 'select', x0: pos.x, x1: pos.x, moved: false, id: e.pointerId };
+    try {
+        state.svg.setPointerCapture(e.pointerId);
+    } catch {
+        // not an active pointer (e.g. synthetic events)
+    }
+    e.preventDefault();
+    return true;
 }
+
+function dragMove(state, e) {
+    const d = state.drag;
+    const m = state.model;
+    const pos = pointer(state, e);
+    if (!pos) {
+        return;
+    }
+
+    const p = m.plot;
+    d.x1 = d.mode === 'pan' ? pos.x : Math.max(p.x, Math.min(p.x + p.w, pos.x));
+    d.moved = d.moved || Math.abs(pos.x - d.x0) > 3;
+    if (!d.moved) {
+        return;
+    }
+
+    hide(state);
+    if (d.mode === 'pan') {
+        movePreview(state, d.x1 - d.x0);
+    } else if (state.hover) {
+        const x = Math.min(d.x0, d.x1), w = Math.abs(d.x1 - d.x0);
+        state.hover.replaceChildren(el('rect', { class: 'rio-zoom-select', x, y: p.y, width: w, height: p.h }));
+    }
+}
+
+function dragEnd(state) {
+    const d = state.drag;
+    if (!d) {
+        return;
+    }
+
+    state.drag = null;
+    if (state.svg.hasPointerCapture && state.svg.hasPointerCapture(d.id)) {
+        state.svg.releasePointerCapture(d.id);
+    }
+
+    if (state.hover) {
+        state.hover.replaceChildren();
+    }
+
+    const s = state.model.xscale;
+    if (!d.moved || !s) {
+        resetPreview(state);
+        return;
+    }
+
+    state.suppressClick = true; // the click that ends a drag is not a point click
+    if (d.mode === 'pan') {
+        const shift = toData(s, s.r0) - toData(s, s.r0 + (d.x1 - d.x0));
+        commitRange(state, s.d0 + shift, s.d1 + shift);
+    } else if (Math.abs(d.x1 - d.x0) >= 6) {
+        commitRange(state, toData(s, Math.min(d.x0, d.x1)), toData(s, Math.max(d.x0, d.x1)));
+    }
+}
+
+// Ctrl/Cmd + wheel zooms around the pointer; the plain wheel keeps scrolling the page.
+function wheel(state, e) {
+    const m = state.model;
+    if (!m || !m.zoom || !m.xscale || !(e.ctrlKey || e.metaKey)) {
+        return;
+    }
+
+    const pos = pointer(state, e);
+    if (!pos || !inPlot(m, pos, 0)) {
+        return;
+    }
+
+    e.preventDefault();
+    hide(state);
+    const s = m.xscale;
+    const w = state.wheel || (state.wheel = { d0: s.d0, d1: s.d1, timer: 0 });
+    const anchor = toData(s, pos.x);
+    const factor = Math.pow(1.0015, e.deltaY);
+    w.d0 = anchor - (anchor - w.d0) * factor;
+    w.d1 = anchor + (w.d1 - anchor) * factor;
+    clearTimeout(w.timer);
+    w.timer = setTimeout(() => {
+        state.wheel = null;
+        commitRange(state, w.d0, w.d1);
+    }, 140);
+}
+
+function commitRange(state, min, max) {
+    for (const s of [state, ...others(state).filter(o => o.model.zoom)]) {
+        s.dotnet.invokeMethodAsync('OnZoom', min, max).catch(() => { });
+    }
+}
+
+function commitReset(state) {
+    for (const s of [state, ...others(state).filter(o => o.model.zoom)]) {
+        s.dotnet.invokeMethodAsync('OnZoomReset').catch(() => { });
+    }
+}
+
+// Pan preview: slide the series (the clip stays put) until .NET lays out the new range.
+function movePreview(state, dx) {
+    const plot = state.svg.querySelector('.rio-plot');
+    if (plot) {
+        for (const child of plot.children) {
+            child.style.transform = `translateX(${dx}px)`;
+        }
+    }
+
+    const labels = state.svg.querySelector('.rio-labels');
+    if (labels) {
+        labels.style.opacity = '0';
+    }
+}
+
+function resetPreview(state) {
+    if (!state.svg) {
+        return;
+    }
+
+    const plot = state.svg.querySelector('.rio-plot');
+    if (plot) {
+        for (const child of plot.children) {
+            child.style.transform = '';
+        }
+    }
+
+    const labels = state.svg.querySelector('.rio-labels');
+    if (labels) {
+        labels.style.opacity = '';
+    }
+}
+
+// ---------- Hit-testing ----------
 
 // Index of the value in the ascending array closest to v (-1 when empty).
 function nearest(xs, v) {
@@ -296,11 +553,15 @@ function move(state, e) {
     const rows = pos ? find(m, pos) : [];
     if (rows.length === 0) {
         hide(state);
+        broadcastHover(state, null);
         return;
     }
 
     drawHover(state, rows, m);
     drawTooltip(state, rows, pos);
+    if (state.group && m.xscale) {
+        broadcastHover(state, toData(m.xscale, rows[0].s.x[rows[0].i]));
+    }
 }
 
 function drawHover(state, rows, m) {
@@ -385,6 +646,12 @@ function placeTooltip(state, pos, x, y) {
     tip.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
 }
 
+function clearHover(state) {
+    if (state.hover) {
+        state.hover.replaceChildren();
+    }
+}
+
 function hide(state) {
     if (state.hover) {
         state.hover.replaceChildren();
@@ -407,6 +674,11 @@ function el(name, attrs) {
 // ---------- Clicks ----------
 
 function click(state, e) {
+    if (state.suppressClick) {
+        state.suppressClick = false;
+        return;
+    }
+
     const m = state.model;
     if (!m || !m.click) {
         return;
