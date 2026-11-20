@@ -15,7 +15,8 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - Redesigned docs site: a landing page (hero with a live chart, a gallery of live chart tiles,
   features, packages), a frosted header, a sidebar with an active marker, previous/next links,
   highlighted code blocks with a copy button, a remembered light/dark theme that follows the OS by
-  default, and a branded loading screen.
+  default, and a branded loading screen. The JSON spec playground editor highlights its JSON as you
+  type.
 
 ### Milestone 6
 
