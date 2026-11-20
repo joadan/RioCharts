@@ -134,3 +134,12 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   Zone names use `TimeZoneInfo` (IANA ids work on Windows too); Blazor WASM in invariant time zone
   mode only knows UTC. With a zone, `VisibleRange`, point clicks and dragged values use
   `DateTimeOffset` in the display zone.
+- **Canvas series layer.** With `SeriesLayer.Canvas`, the SVG renderer leaves out the series groups
+  and `CanvasSeriesWriter` sends them to JS as draw operations: SVG path data (read with `Path2D`),
+  rectangles and CSS paint. This is JSON, not binary; the paths are already downsampled, so it
+  stays small. The canvas sits over the SVG, scaled by `devicePixelRatio`, and clipped to the plot.
+  So annotations and data labels sit under the series there, unlike in SVG mode. Colors are CSS
+  values resolved in the browser; the canvas repaints when a `class` or `data-theme` attribute
+  changes anywhere in the page or the OS color scheme changes. Downsampling defaults to four times
+  the plot width (at least 2000 points) in canvas mode. Pan previews by redrawing with an offset.
+  There is no entry fade on the canvas.

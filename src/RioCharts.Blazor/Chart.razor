@@ -25,8 +25,13 @@
          aria-describedby="@(_id + "-desc")">
         <title>@label</title>
         <desc id="@(_id + "-desc")">@scene.Description</desc>
-        <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" />
+        <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" OmitSeries="SeriesLayer == SeriesLayer.Canvas" />
     </svg>
+    @if (SeriesLayer == SeriesLayer.Canvas)
+    {
+        @* Painted by the JS module; Blazor renders it empty. *@
+        <canvas class="rio-canvas" aria-hidden="true" style="@($"height:{SvgWriter.N(scene.Height)}px")"></canvas>
+    }
     @* Filled by the JS module on hover; Blazor renders them empty and never touches their content. *@
     <svg class="rio-hover" aria-hidden="true" width="100%" height="@SvgWriter.N(scene.Height)"
          viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"></svg>

@@ -233,6 +233,33 @@ public class Milestone4Tests
         Assert.Contains(result.Warnings, w => w.StartsWith("timeZone", StringComparison.Ordinal));
     }
 
+    // ---------- Canvas series layer ----------
+
+    [Fact]
+    public void Canvas_writer_turns_series_groups_into_draw_operations()
+    {
+        var spec = new ChartSpec
+        {
+            Series = [new SeriesSpec { Id = "l" }, new SeriesSpec { Id = "b", Type = SeriesType.Bar }],
+            Annotations = [new AnnotationSpec { Value = 1.5 }],
+        };
+        var data = new Dictionary<string, SeriesData>
+        {
+            ["l"] = SeriesData.From([0.0, 1, 2], [1.0, 2, 1]),
+            ["b"] = SeriesData.From([0.0, 1, 2], [2.0, 1, 2]),
+        };
+
+        var scene = ChartLayout.Compute(spec, data, Options).Scene;
+        var json = System.Text.Json.JsonSerializer.Serialize(RioCharts.Blazor.Rendering.CanvasSeriesWriter.Build(scene));
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var ops = doc.RootElement.GetProperty("ops").EnumerateArray().ToList();
+
+        Assert.Equal(1, ops.Count(o => o.GetProperty("shape").GetProperty("t").GetString() == "p")); // the line
+        Assert.Equal(3, ops.Count(o => o.GetProperty("shape").GetProperty("t").GetString() == "r")); // the bars
+        Assert.StartsWith("var(--rio-series-1", ops.First(o => o.GetProperty("shape").GetProperty("t").GetString() == "p").GetProperty("stroke").GetString());
+        Assert.Equal(4, doc.RootElement.GetProperty("clip").GetArrayLength()); // annotations stay in SVG
+    }
+
     [Fact]
     public void Visible_range_is_ignored_on_category_axes()
     {

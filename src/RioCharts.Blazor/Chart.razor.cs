@@ -125,6 +125,15 @@ public partial class Chart<TItem> : IChartContext
     /// </summary>
     [Parameter] public string? Group { get; set; }
 
+    /// <summary>
+    /// Draw the series as SVG (default) or on a canvas: no DOM per series, for large or many series.
+    /// Axes, labels and annotations stay SVG (annotations then sit under the series).
+    /// </summary>
+    [Parameter] public SeriesLayer SeriesLayer { get; set; }
+
+    /// <summary>Line and area series with more points than this are downsampled (LTTB). Default: twice the plot width, four times on a canvas.</summary>
+    [Parameter] public int? DownsampleThreshold { get; set; }
+
     /// <summary>Live data (series with a <c>Buffer</c>): the shortest time between redraws, in milliseconds. Default 100.</summary>
     [Parameter] public int RefreshInterval { get; set; } = 100;
 
@@ -251,7 +260,7 @@ public partial class Chart<TItem> : IChartContext
             _dirty = true;
         }
 
-        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes);
+        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -297,6 +306,7 @@ public partial class Chart<TItem> : IChartContext
             Culture = Culture ?? CultureInfo.CurrentCulture,
             HiddenSeries = _hidden,
             InteractiveAnnotations = OnAnnotationClick.HasDelegate,
+            DownsampleThreshold = DownsampleThreshold ?? (SeriesLayer == SeriesLayer.Canvas ? Math.Max(2000, (int)((Width ?? _measuredWidth ?? FallbackWidth) * 4)) : null),
             XRange = _range,
             ViewerTimeZone = _viewerZone,
         });
@@ -460,13 +470,18 @@ public partial class Chart<TItem> : IChartContext
             return;
         }
 
-        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group);
+        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group, SeriesLayer);
         if (Equals(key, _sentInteraction))
         {
             return;
         }
 
         _sentInteraction = key;
+        if (SeriesLayer == SeriesLayer.Canvas)
+        {
+            await _module.InvokeVoidAsync("paint", _container, CanvasSeriesWriter.Build(_layout.Scene));
+        }
+
         var model = _layout.Tooltip;
         var click = OnPointClick.HasDelegate;
         var scale = _layout.XScale;

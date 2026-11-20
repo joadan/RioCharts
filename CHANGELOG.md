@@ -5,7 +5,7 @@ changes are called out under **Breaking**.
 
 ## 0.1.0-preview (unreleased)
 
-Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3, milestone 4 in progress.
+Restructured to the new design ([Design.md](Design.md)), milestones 1 to 4.
 
 ### Milestone 4
 
@@ -27,6 +27,9 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3, mile
   (midnights, Mondays, months) and labels use the zone, and tooltips show the offset when it
   differs from the viewer's. `UnspecifiedTimes` says how DateTime values without a zone are read.
   The default is unchanged: times are shown as given.
+- Canvas series layer: `SeriesLayer="SeriesLayer.Canvas"` draws the series on a canvas (axes,
+  labels and annotations stay SVG), with a higher default downsampling threshold;
+  `DownsampleThreshold` on the chart sets it explicitly.
 - **Breaking:** `<ReferenceLine>` is generic (`ReferenceLine<TValue>`, inferred from `Value`) so
   it can bind its value. `Axis` and `LabelPosition` moved from `AnnotationBase` to the line and
   band components.

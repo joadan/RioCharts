@@ -83,3 +83,16 @@ public sealed record AnnotationChangedEventArgs(string AnnotationId, string? Lab
 
 /// <summary>Raised when a reference line or band is clicked.</summary>
 public sealed record AnnotationClickEventArgs(string AnnotationId, string? Label);
+
+/// <summary>Where the chart draws its series.</summary>
+public enum SeriesLayer
+{
+    /// <summary>SVG elements (default): crisp, styleable, one path per series.</summary>
+    Svg,
+
+    /// <summary>
+    /// A canvas over the SVG: no DOM per series, for many or dense series. Axes, labels and
+    /// annotations stay SVG.
+    /// </summary>
+    Canvas,
+}

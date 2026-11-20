@@ -303,3 +303,13 @@
 .rio-chart ::deep .rio-draggable {
     touch-action: none;
 }
+
+/* ---------- Canvas series layer ---------- */
+
+.rio-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    pointer-events: none;
+}

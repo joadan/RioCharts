@@ -12,7 +12,7 @@ Razor renders SVG, and a tiny JS module only measures the container and the font
 
 Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
-## What works today (milestones 1–3)
+## What works today (milestones 1–4)
 
 - Line, area and bar series (grouped bars), with linear, monotone and step lines
 - Linear, time and category axes, picked automatically from the data
@@ -31,9 +31,15 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Point and annotation click events
 - Pie, donut (also half donut and nested rings) and radial bar, with inside and outside labels,
   leader lines and "Other" grouping
+- Zoom and pan on the x axis (drag, Shift+drag, Ctrl+wheel), `@bind-VisibleRange`, linked charts
+  sharing crosshair and zoom (`Group`)
+- Live data from a `SeriesBuffer` (append from any thread, time window, capped redraw rate)
+- Point markers, callouts and draggable reference lines (`@bind-Value`)
+- Display time zone (`TimeZone`): plotted on instants, labelled in the zone, DST-safe
+- Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
 
-Not yet: zoom and pan, display time zones, streaming, linked charts. See [Design.md](Design.md)
-for the design and milestones.
+Not yet: server-side export (Skia) and the AI chart spec. See [Design.md](Design.md) for the design
+and milestones.
 
 ## Usage
 
@@ -99,7 +105,8 @@ Theming: set any of `--rio-text`, `--rio-text-muted`, `--rio-grid`, `--rio-axis`
 `--rio-series-1` … `--rio-series-10` anywhere above the chart. Dark mode follows
 `prefers-color-scheme`, or an ancestor with `data-theme="dark"` or class `dark`.
 
-Times are shown exactly as given: no time zone conversion.
+Times are shown exactly as given by default. Set `TimeZone` ("UTC", "local" or an IANA id) to
+plot on instants and label in that zone.
 
 ## Projects
 

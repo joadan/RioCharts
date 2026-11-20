@@ -126,6 +126,7 @@ export function update(container, model) {
 export function dispose(container) {
     const state = states.get(container);
     if (state) {
+        canvasCharts.delete(state);
         clearTimeout(state.timer);
         if (state.wheel) {
             clearTimeout(state.wheel.timer);
@@ -407,11 +408,19 @@ function movePreview(state, dx) {
     if (labels) {
         labels.style.opacity = '0';
     }
+
+    if (state.canvasScene) {
+        paintCanvas(state, dx);
+    }
 }
 
 function resetPreview(state) {
     if (!state.svg) {
         return;
+    }
+
+    if (state.canvasScene) {
+        paintCanvas(state, 0);
     }
 
     const plot = state.svg.querySelector('.rio-plot');
@@ -807,4 +816,114 @@ function viewerTimeZone() {
     } catch {
         return null;
     }
+}
+
+// ---------- Canvas series layer ----------
+
+const canvasCharts = new Set();
+let themeObserver = null;
+
+// Draw operations for the series (SVG path data, rectangles, CSS paint) from .NET.
+export function paint(container, scene) {
+    const state = states.get(container);
+    if (!state) {
+        return;
+    }
+
+    state.canvasScene = scene;
+    canvasCharts.add(state);
+    watchTheme();
+    paintCanvas(state, 0);
+}
+
+// Theme switches (a class or data-theme attribute, or the OS setting) change the CSS colors the
+// canvas resolved: repaint.
+function watchTheme() {
+    if (themeObserver) {
+        return;
+    }
+
+    const repaint = () => requestAnimationFrame(() => canvasCharts.forEach(s => s.canvasScene && paintCanvas(s, 0)));
+    themeObserver = new MutationObserver(repaint);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'], subtree: true });
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repaint);
+    }
+}
+
+function paintCanvas(state, dx) {
+    const canvas = state.container.querySelector('canvas.rio-canvas');
+    const scene = state.canvasScene;
+    if (!canvas || !scene || !state.svg) {
+        return;
+    }
+
+    const box = canvas.getBoundingClientRect();
+    const vb = state.svg.viewBox.baseVal;
+    const k = vb && vb.width ? state.svg.getBoundingClientRect().width / vb.width : 1;
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(box.width * dpr)), h = Math.max(1, Math.round(box.height * dpr));
+    if (canvas.width !== w) {
+        canvas.width = w;
+    }
+
+    if (canvas.height !== h) {
+        canvas.height = h;
+    }
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
+    if (scene.clip) {
+        ctx.beginPath();
+        ctx.rect(scene.clip[0], scene.clip[1], scene.clip[2], scene.clip[3]);
+        ctx.clip();
+    }
+
+    ctx.translate(dx, 0);
+    const colors = new Map();
+    const resolve = css => {
+        if (!colors.has(css)) {
+            canvas.style.color = css;
+            colors.set(css, getComputedStyle(canvas).color);
+            canvas.style.color = '';
+        }
+
+        return colors.get(css);
+    };
+
+    for (const op of scene.ops) {
+        const s = op.shape;
+        let path;
+        if (s.t === 'p') {
+            path = new Path2D(s.d);
+        } else {
+            path = new Path2D();
+            if (s.rx > 0 && path.roundRect) {
+                path.roundRect(s.x, s.y, s.w, s.h, s.rx);
+            } else {
+                path.rect(s.x, s.y, s.w, s.h);
+            }
+        }
+
+        const alpha = op.op == null ? 1 : op.op;
+        if (op.fill && op.fill !== 'none' && op.fill !== 'transparent') {
+            ctx.globalAlpha = alpha * (op.fo == null ? 1 : op.fo);
+            ctx.fillStyle = resolve(op.fill);
+            ctx.fill(path);
+        }
+
+        if (op.stroke && op.stroke !== 'none' && op.stroke !== 'transparent') {
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = resolve(op.stroke);
+            ctx.lineWidth = op.sw;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.setLineDash(op.dash ? op.dash.split(/[ ,]+/).map(Number) : []);
+            ctx.stroke(path);
+        }
+    }
+
+    ctx.globalAlpha = 1;
 }

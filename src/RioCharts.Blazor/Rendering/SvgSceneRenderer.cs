@@ -22,11 +22,17 @@ public sealed class SvgSceneRenderer : ComponentBase
     /// <summary>Raised when an interactive group (e.g. a legend item) is activated.</summary>
     [Parameter] public EventCallback<NodeInteraction> OnInteraction { get; set; }
 
-    protected override bool ShouldRender() => !ReferenceEquals(Scene, _rendered);
+    /// <summary>Leave out the series groups (they are drawn on a canvas instead).</summary>
+    [Parameter] public bool OmitSeries { get; set; }
+
+    private bool _renderedOmit;
+
+    protected override bool ShouldRender() => !ReferenceEquals(Scene, _rendered) || OmitSeries != _renderedOmit;
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         _rendered = Scene;
+        _renderedOmit = OmitSeries;
         _clipCounter = 0;
         if (Scene is null)
         {
@@ -148,6 +154,11 @@ public sealed class SvgSceneRenderer : ComponentBase
 
         foreach (var child in g.Children)
         {
+            if (OmitSeries && child is GroupNode cg && CanvasSeriesWriter.IsSeries(cg))
+            {
+                continue;
+            }
+
             Render(b, child, styles);
         }
 

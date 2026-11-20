@@ -6,7 +6,7 @@
 <header class="top">
     <div>
         <h1>RioCharts</h1>
-        <p class="lead">Line, area and bar series with tooltips, stacking, multiple Y axes, data labels and annotations; responsive and themeable.</p>
+        <p class="lead">Line, area, bar, pie and radial charts with tooltips, stacking, multiple Y axes, annotations, zoom, live data and time zones.</p>
     </div>
     <button class="theme" @onclick="() => _dark = !_dark">@(_dark ? "Light" : "Dark") theme</button>
 </header>
@@ -202,10 +202,14 @@
 
         <section class="wide">
             <h2>Columnar fast path: 200 000 points</h2>
-            <Chart TItem="double" Height="260" Zoomable="true">
+            <Chart TItem="double" Height="260" Zoomable="true" SeriesLayer="_bigLayer">
                 <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />
             </Chart>
-            <p class="note">Passed as arrays with <code>SeriesData.From(times, values)</code>; downsampled with LTTB to the plot width. Zoom in: only the visible points are downsampled, so detail appears.</p>
+            <p class="note">
+                Passed as arrays with <code>SeriesData.From(times, values)</code>; downsampled with LTTB to the plot width. Zoom in: only the
+                visible points are downsampled, so detail appears. Series layer: @_bigLayer
+                <button class="small" @onclick="() => _bigLayer = _bigLayer == SeriesLayer.Svg ? SeriesLayer.Canvas : SeriesLayer.Svg">Switch to @(_bigLayer == SeriesLayer.Svg ? "canvas" : "SVG")</button>
+            </p>
         </section>
 
         <section class="wide resizable">
@@ -273,6 +277,7 @@
     private IReadOnlyCollection<string> _hidden = [];
     private string _clicked = "";
     private ChartRange? _range;
+    private SeriesLayer _bigLayer = SeriesLayer.Canvas;
 
     // ---------- Live data ----------
 
