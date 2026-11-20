@@ -178,7 +178,7 @@ Annotations are **another kind of scene contributor**, using the same contract a
 
 ## Blazor API
 - Take inspiration from Blazor-ApexCharts' component model (generic `TItem`, XValue/YValue selectors) so it feels familiar. It is not a compatibility target: change names, structure and defaults wherever a cleaner API results.
-- Example shape: `<Chart TItem="..."><LineSeries .../><BarSeries .../></Chart>`.
+- Example shape: `<RioChart TItem="..."><LineSeries .../><BarSeries .../></RioChart>`.
 - Prerendering runs no JS, so the first render must look acceptable without measured text sizes.
 
 ## Visual design: modern and clean
@@ -198,7 +198,7 @@ Charts should look calm, current and data-first. When in doubt, remove rather th
 ## Sensible defaults
 Zero configuration should produce a good chart. Every default can be overridden, but defaults are opinionated, not "everything on".
 
-- `<Chart><LineSeries Items="data" XValue="..." YValue="..." /></Chart>` with nothing else must look finished.
+- `<RioChart><LineSeries Items="data" XValue="..." YValue="..." /></RioChart>` with nothing else must look finished.
 - **Size**: width is 100% of the container and the default height is fixed (e.g. 300px). The chart is responsive automatically.
 - **Scales**: chosen from the data type (DateTime gives a time axis, numbers a linear axis, strings a band axis).
 - **Zero baseline**: bars and areas always start at zero. Lines and scatter may use a tight domain.
@@ -216,7 +216,7 @@ Zero configuration should produce a good chart. Every default can be overridden,
 AI agents create charts through a **declarative chart spec**: JSON that maps 1:1 to the component model, in the spirit of Vega-Lite. The AI produces a spec; the library validates and renders it.
 
 ### One model, two front doors
-- `<Chart Spec="spec" />` and the Razor components (`<LineSeries … />`) compile to the same internal chart model. There is no second rendering path.
+- `<RioChart Spec="spec" />` and the Razor components (`<LineSeries … />`) compile to the same internal chart model. There is no second rendering path.
 - Because of the sensible defaults, a minimal spec must render a finished chart:
 
 ```json

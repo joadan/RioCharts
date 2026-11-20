@@ -2,10 +2,6 @@
 
 Where the code differs from, or fills in details of, [Design.md](../Design.md).
 
-- **Component name.** The chart component is `<RioChart>`, not `<Chart>` as in Design.md, so it
-  does not clash with an app's own `Chart` types (e.g. in `@ref` fields) or other libraries'
-  `<Chart>`. Series and annotation components keep their plain names (`<LineSeries>`, …).
-
 ## Milestone 1
 
 - **RioChart and TItem.** `<RioChart TItem>` cascades `TItem` to its series, so `XValue`/`YValue`
