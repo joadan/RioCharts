@@ -181,6 +181,12 @@ dotnet run --project samples/RioCharts.Docs --launch-profile http   # docs site,
 
 See [CHANGELOG.md](CHANGELOG.md) for changes.
 
+## Releasing
+
+Push a tag `v<version>` (e.g. `v0.1.0-preview.1`); [nuget.yml](.github/workflows/nuget.yml) tests,
+packs and publishes all packages to nuget.org with that version. The package README is
+[assets/nuget-readme.md](assets/nuget-readme.md).
+
 ## License
 
 [MIT](LICENSE) © 2026 Joakim Dangården

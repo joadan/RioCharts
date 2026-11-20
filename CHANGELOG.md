@@ -7,6 +7,12 @@ changes are called out under **Breaking**.
 
 Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
+### Packaging
+
+- NuGet packages for RioCharts.Core, .Blazor, .Skia, .AI and the `RioCharts.Mcp` tool, with a
+  package README, symbols (`.snupkg`), Source Link and XML docs. `.github/workflows/nuget.yml`
+  packs, tests and publishes them to nuget.org when a `v*` tag is pushed (Trusted Publishing).
+
 ### AI
 
 - `render_chart` tool (`ChartTool.RenderChartAsync`, `AsRenderFunction`, and in
