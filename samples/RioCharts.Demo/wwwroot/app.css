@@ -44,6 +44,12 @@ section {
     padding: 10px;
 }
 
+.hint {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #555;
+}
+
 button {
     margin-top: 6px;
 }

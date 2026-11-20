@@ -11,6 +11,7 @@ before adding or changing features, and keep it in sync when the design changes.
   - `Layout/` — layout engine, scales, LTTB, formatting, accessibility summary (`RioCharts.Layout`).
   - `Rendering/Svg.cs` — SVG path/number helpers (`RioCharts.Rendering`).
   - `RioChart.razor` (+ `.razor.cs`, `.razor.css`) — the component.
+  - `RioChart.razor.js` — pan/zoom/crosshair module, served at `_content/RioCharts/RioChart.razor.js`.
 - `tests/RioCharts.Tests/` — xUnit tests.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `docs/` — documentation.

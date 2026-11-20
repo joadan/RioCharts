@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using RioCharts.Layout;
 using RioCharts.Rendering;
 
@@ -10,9 +11,24 @@ namespace RioCharts;
 /// Renders a chart as SVG. Layout is computed in C# (<see cref="ChartLayoutEngine"/>) and
 /// drawn directly in Razor; interactions use plain Blazor events.
 /// </summary>
-public partial class RioChart
+public partial class RioChart : IAsyncDisposable
 {
     private readonly string _id = "rio" + Guid.NewGuid().ToString("N")[..8];
+
+    // Zoom/pan state: _zoom is the visible X range (null = full range). _lastParamRange tracks the
+    // XAxisRange parameter so a parent that does not bind it does not reset the zoom on re-render.
+    private AxisRange? _zoom;
+    private AxisRange? _lastParamRange;
+
+    // JS interop (only loaded when pan/zoom or crosshair is enabled).
+    private ElementReference _svg;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<RioChart>? _dotnet;
+    private string? _lastJsOptions;
+    private bool _forceJsUpdate;
+    private bool _disposed;
+
+    [Inject] private IJSRuntime JS { get; set; } = null!;
     private ChartLayout _layout = null!;
     private Chart _chart = null!;
     private string _summary = "";
@@ -43,6 +59,15 @@ public partial class RioChart
     /// <summary>Extra CSS class on the outer container.</summary>
     [Parameter] public string? CssClass { get; set; }
 
+    /// <summary>
+    /// Drag to pan and wheel/pinch to zoom the X axis; double-click resets. Keyboard: + and -
+    /// zoom, Shift+arrows pan, 0 resets. Uses a small JS module.
+    /// </summary>
+    [Parameter] public bool EnablePanZoom { get; set; }
+
+    /// <summary>Show crosshair lines with axis values following the mouse. Uses a small JS module.</summary>
+    [Parameter] public bool EnableCrosshair { get; set; }
+
     // Event callbacks.
     [Parameter] public EventCallback<ChartEventArgs> OnSeriesClick { get; set; }
     [Parameter] public EventCallback<ChartEventArgs> OnSeriesHover { get; set; }
@@ -63,6 +88,12 @@ public partial class RioChart
 
     protected override void OnParametersSet()
     {
+        if (!Equals(XAxisRange, _lastParamRange))
+        {
+            _zoom = XAxisRange;
+            _lastParamRange = XAxisRange;
+        }
+
         if (SelectedSeriesChanged.HasDelegate || SelectedSeries is not null)
         {
             foreach (var s in Series ?? [])
@@ -104,7 +135,7 @@ public partial class RioChart
             DownsampleThreshold = DownsampleThreshold,
         };
 
-        _layout = ChartLayoutEngine.Compute(_chart, XAxisRange);
+        _layout = ChartLayoutEngine.Compute(_chart, _zoom);
         _summary = ChartSummary.Describe(_layout);
 
         // Drop hover/focus that no longer points at something drawable.
@@ -253,6 +284,168 @@ public partial class RioChart
         }
     }
 
+    // ---------- Zoom and pan ----------
+
+    /// <summary>True when the X axis shows less than the full data range.</summary>
+    public bool IsZoomed => _layout.XAxis?.IsZoomed == true;
+
+    /// <summary>Shows the given X range (clamped to the data); null shows everything.</summary>
+    public Task ZoomTo(AxisRange? range) => SetXRange(range);
+
+    /// <summary>Shows the full X range.</summary>
+    public Task ResetZoom() => SetXRange(null);
+
+    /// <summary>Zooms the X axis around the center of the visible range. Factor above 1 zooms in.</summary>
+    public Task ZoomBy(double factor)
+    {
+        if (_layout.XAxis is not { } x)
+        {
+            return Task.CompletedTask;
+        }
+
+        var current = new AxisRange(x.Min, x.Max);
+        return SetXRange(ZoomMath.Zoom(current, FullXRange(x), factor, (x.Min + x.Max) / 2));
+    }
+
+    /// <summary>Pans the X axis by a fraction of the visible span (negative = left).</summary>
+    public Task PanBy(double fraction)
+    {
+        if (_layout.XAxis is not { } x)
+        {
+            return Task.CompletedTask;
+        }
+
+        var current = new AxisRange(x.Min, x.Max);
+        return SetXRange(ZoomMath.Pan(current, FullXRange(x), (x.Max - x.Min) * fraction));
+    }
+
+    private static AxisRange FullXRange(AxisLayout x) => new(x.FullMin, x.FullMax);
+
+    private async Task SetXRange(AxisRange? range)
+    {
+        if (_layout.XAxis is not { } x)
+        {
+            return;
+        }
+
+        var full = FullXRange(x);
+        if (range is not null)
+        {
+            range = ZoomMath.Clamp(range, full);
+            if (ZoomMath.IsFull(range, full))
+            {
+                range = null;
+            }
+        }
+
+        _forceJsUpdate = true;
+        if (Equals(range, _zoom))
+        {
+            StateHasChanged();
+            return;
+        }
+
+        var (oldMin, oldMax) = (x.Min, x.Max);
+        _zoom = range;
+        Recompute();
+        StateHasChanged();
+
+        var newX = _layout.XAxis!;
+        await XAxisRangeChanged.InvokeAsync(range);
+        await OnAxisRangeChanged.InvokeAsync(new AxisRangeChangedArgs(newX.Axis, oldMin, oldMax, newX.Min, newX.Max));
+    }
+
+    /// <summary>Called from JS when a pan, wheel or pinch gesture ends.</summary>
+    [JSInvokable]
+    public Task OnJsRangeChanged(double min, double max) => SetXRange(new AxisRange(min, max));
+
+    /// <summary>Called from JS on double-click inside the plot.</summary>
+    [JSInvokable]
+    public Task OnJsResetZoom() => SetXRange(null);
+
+    private bool NeedsJs => (EnablePanZoom || EnableCrosshair) && EnableInteractions && _layout.HasCartesian;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_disposed || (_module is null && !NeedsJs))
+        {
+            return;
+        }
+
+        var options = JsOptions();
+        var json = System.Text.Json.JsonSerializer.Serialize(options);
+        try
+        {
+            if (_module is null)
+            {
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts/RioChart.razor.js");
+                _dotnet = DotNetObjectReference.Create(this);
+                await _module.InvokeVoidAsync("init", _svg, _dotnet, options);
+            }
+            else if (_forceJsUpdate || json != _lastJsOptions)
+            {
+                await _module.InvokeVoidAsync("update", _svg, options);
+            }
+
+            _lastJsOptions = json;
+            _forceJsUpdate = false;
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit gone; nothing to update.
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private object JsOptions()
+    {
+        var plot = _layout.Plot;
+        var x = _layout.XAxis;
+        var y = _layout.YAxes.Count > 0 ? _layout.YAxes[0] : null;
+        return new
+        {
+            panZoom = EnablePanZoom && EnableInteractions && _layout.HasCartesian,
+            crosshair = EnableCrosshair && EnableInteractions && _layout.HasCartesian,
+            locale = CultureInfo.CurrentCulture.Name,
+            plot = new { left = plot.Left, top = plot.Top, width = plot.Width, height = plot.Height },
+            x = x is null ? null : JsAxis(x),
+            y = y is null ? null : JsAxis(y),
+        };
+    }
+
+    private static object JsAxis(AxisLayout axis)
+    {
+        var isDate = AxisLabelFormatter.IsDateFormat(axis.Axis);
+
+        // Crosshair labels: one decimal finer than the ticks; date axes show time below one-day steps.
+        var decimals = isDate ? (axis.TickStep < 1 ? 1 : 0) : Math.Min(10, AxisLabelFormatter.Decimals(axis.TickStep) + 1);
+        return new { min = axis.Min, max = axis.Max, fullMin = axis.FullMin, fullMax = axis.FullMax, isDate, decimals };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("dispose", _svg);
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        }
+
+        _dotnet?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     // ---------- Keyboard navigation ----------
 
     private List<SeriesLayout> NavigableSeries() =>
@@ -276,6 +469,28 @@ public partial class RioChart
             _hover = null;
             await ClearSelection();
             return;
+        }
+
+        if (EnablePanZoom && _layout.HasCartesian)
+        {
+            switch (e.Key)
+            {
+                case "+" or "=":
+                    await ZoomBy(1.5);
+                    return;
+                case "-" or "_":
+                    await ZoomBy(1 / 1.5);
+                    return;
+                case "0" or "Home":
+                    await ResetZoom();
+                    return;
+                case "ArrowLeft" when e.ShiftKey:
+                    await PanBy(-0.1);
+                    return;
+                case "ArrowRight" when e.ShiftKey:
+                    await PanBy(0.1);
+                    return;
+            }
         }
 
         var series = NavigableSeries();
@@ -443,6 +658,11 @@ public partial class RioChart
             if (_chart.Series.Any(s => s.IsSelected && s.Visible))
             {
                 classes += " rio-has-selection";
+            }
+
+            if (EnablePanZoom && EnableInteractions && _layout.HasCartesian)
+            {
+                classes += " rio-pannable";
             }
 
             return classes;

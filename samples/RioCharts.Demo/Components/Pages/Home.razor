@@ -29,6 +29,8 @@
         <RioChart Title="Temperature" Width="560" Height="360"
                   XAxis="_dayAxis" YAxes="_tempAxis" Series="_areaSeries"
                   Tooltip="_tempTooltip"
+                  EnablePanZoom="true" EnableCrosshair="true"
+                  OnAxisRangeChanged="OnRange"
                   OnSeriesClick="OnClick" />
     </section>
 
@@ -63,10 +65,17 @@
     </section>
 
     <section>
-        <h2>Dates, 50 000 points (LTTB)</h2>
+        <h2>Dates, 50 000 points (LTTB), pan, zoom and crosshair</h2>
         <RioChart Title="Sensor readings" Width="560" Height="360"
                   XAxis="_dateAxis" Series="_bigSeries"
+                  EnablePanZoom="true" EnableCrosshair="true"
+                  @bind-XAxisRange="_sensorRange"
                   OnSeriesClick="OnClick" />
+        <p class="hint">
+            Drag to pan, scroll or pinch to zoom, double-click to reset.
+            Keyboard: + / − zoom, Shift+arrows pan, 0 resets.<br />
+            Visible range: @RangeText(_sensorRange)
+        </p>
     </section>
 
     <section>
@@ -290,6 +299,15 @@
 
     private void OnClick(ChartEventArgs e) =>
         _lastEvent = $"click on {e.Series?.Name}, point {e.PointIndex} (x={e.X:0.##}, y={e.Y:0.##})";
+
+    private AxisRange? _sensorRange;
+
+    private static string RangeText(AxisRange? range) => range is null
+        ? "all data"
+        : $"{DateTime.FromOADate(range.Minimum):yyyy-MM-dd HH:mm} – {DateTime.FromOADate(range.Maximum):yyyy-MM-dd HH:mm}";
+
+    private void OnRange(AxisRangeChangedArgs e) =>
+        _lastEvent = $"X range {e.OldMinimum:0.#}–{e.OldMaximum:0.#} → {e.NewMinimum:0.#}–{e.NewMaximum:0.#}";
 
     private void OnLegend(ISeries series) =>
         _lastEvent = $"legend toggled {series.Name} (now {(series.Visible ? "shown" : "hidden")})";

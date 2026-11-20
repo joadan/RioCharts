@@ -100,6 +100,58 @@
     cursor: pointer;
 }
 
+/* ---------- Pan, zoom and crosshair ---------- */
+
+.rio-pannable .rio-plot {
+    cursor: grab;
+}
+
+.rio-panning,
+.rio-panning .rio-plot,
+.rio-panning .rio-hit circle {
+    cursor: grabbing;
+}
+
+.rio-crosshair line {
+    stroke: #666666;
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    shape-rendering: crispEdges;
+}
+
+.rio-crosshair rect {
+    fill: #333333;
+}
+
+.rio-crosshair text {
+    fill: white;
+    font-size: 11px;
+}
+
+.rio-reset-zoom {
+    cursor: pointer;
+}
+
+.rio-reset-zoom rect {
+    fill: #ffffff;
+    stroke: #bbbbbb;
+}
+
+.rio-reset-zoom:hover rect,
+.rio-reset-zoom:focus-visible rect {
+    fill: #f0f4fa;
+    stroke: #1a73e8;
+}
+
+.rio-reset-zoom:focus {
+    outline: none;
+}
+
+.rio-reset-zoom text {
+    font-size: 12px;
+    fill: #333333;
+}
+
 .rio-legend-item:focus {
     outline: none;
 }

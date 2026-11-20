@@ -63,6 +63,14 @@ public sealed class AxisLayout
     /// <summary>Index into the chart's Y axes, or -1 for the X axis.</summary>
     public int Index { get; init; } = -1;
 
+    /// <summary>The range the axis would have without zoom (pan/zoom limits).</summary>
+    public double FullMin { get; init; }
+
+    public double FullMax { get; init; }
+
+    /// <summary>True when a zoom/pan range overrides the data range.</summary>
+    public bool IsZoomed { get; init; }
+
     public double ToPixel(double value) => PixelStart + (value - Min) / (Max - Min) * (PixelEnd - PixelStart);
 
     public double FromPixel(double pixel) => Min + (pixel - PixelStart) / (PixelEnd - PixelStart) * (Max - Min);

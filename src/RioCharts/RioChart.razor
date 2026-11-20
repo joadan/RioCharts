@@ -9,7 +9,8 @@
 }
 
 <div class="rio-chart @CssClass" style="@ContainerStyle">
-    <svg class="@SvgClass"
+    <svg @ref="_svg"
+         class="@SvgClass"
          xmlns="http://www.w3.org/2000/svg"
          viewBox="0 0 @N(Width) @N(Height)"
          width="@N(Width)" height="@N(Height)"
@@ -126,6 +127,8 @@
 
         @* ---------- Cartesian series (clipped to the plot area) ---------- *@
         <g class="rio-plot" clip-path="url(#@ClipId)">
+            @* Pan/zoom previews transform this group until Blazor re-renders at the new range. *@
+            <g class="rio-plot-content">
             @foreach (var s in _layout.Series)
             {
                 if (!s.Series.Visible || s.IsEmpty)
@@ -222,7 +225,35 @@
             {
                 <circle class="rio-focus-ring" cx="@N(fp.X)" cy="@N(fp.Y)" r="8" fill="none" />
             }
+            </g>
         </g>
+
+        @if (EnableCrosshair && EnableInteractions && _layout.HasCartesian)
+        {
+            <g class="rio-crosshair" visibility="hidden" pointer-events="none" aria-hidden="true">
+                <line class="rio-crosshair-v" />
+                <line class="rio-crosshair-h" />
+                <g class="rio-crosshair-xlabel">
+                    <rect rx="2" />
+                    <text dominant-baseline="central"></text>
+                </g>
+                <g class="rio-crosshair-ylabel">
+                    <rect rx="2" />
+                    <text dominant-baseline="central"></text>
+                </g>
+            </g>
+        }
+
+        @if (EnablePanZoom && IsZoomed)
+        {
+            var bx = plot.Right - 84;
+            var by = plot.Top - 26;
+            <g class="rio-reset-zoom" role="button" tabindex="0" aria-label="Reset zoom"
+               @onclick="ResetZoom" @onkeydown="ResetZoomKey" @onkeydown:stopPropagation="true">
+                <rect x="@N(bx)" y="@N(by)" width="84" height="22" rx="4" />
+                <text x="@N(bx + 42)" y="@N(by + 11)" text-anchor="middle" dominant-baseline="central">Reset zoom</text>
+            </g>
+        }
 
         @* ---------- Pie, donut and funnel series ---------- *@
         @foreach (var s in _layout.Series)
@@ -343,6 +374,14 @@
 </div>
 
 @code {
+    private async Task ResetZoomKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " " or "Spacebar")
+        {
+            await ResetZoom();
+        }
+    }
+
     private static string AxisAriaLabel(string name, AxisLayout axis)
     {
         var title = string.IsNullOrWhiteSpace(axis.Axis.Title) ? name : $"{name}: {axis.Axis.Title}";

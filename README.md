@@ -8,6 +8,9 @@ SVG charts for Blazor, rendered directly in Razor with no JavaScript.
 - Tooltips, click to select, click the legend to show or hide series
 - Keyboard navigation and screen reader descriptions
 - Large datasets are downsampled with LTTB (over 1000 points by default)
+- Optional pan, zoom (wheel, pinch, keyboard) and crosshair on the X axis
+
+Charts render without JavaScript. Pan/zoom and crosshair load a small JS module only when turned on.
 
 The full specification is in [Design.md](Design.md).
 
@@ -49,6 +52,18 @@ Dates: use `new XYPoint(DateTime, y)` and an axis with `LabelFormat = AxisLabelF
 (or `Custom` with a format string such as `"MMM dd"`).
 
 Live data: change `Points` in place and call `Refresh()` on the component (via `@ref`).
+
+Pan, zoom and crosshair:
+
+```razor
+<RioChart Series="series" EnablePanZoom="true" EnableCrosshair="true" @bind-XAxisRange="visible" />
+
+@code {
+    private AxisRange? visible; // null = all data
+}
+```
+
+Drag to pan, scroll or pinch to zoom, double-click to reset. Keyboard: `+`/`-` zoom, Shift+arrows pan, `0` resets.
 
 ## Projects
 

@@ -59,14 +59,16 @@ public static class ChartLayoutEngine
         var yLayouts = new List<AxisLayout>();
         var seriesLayouts = new List<SeriesLayout>();
         var hasData = false;
+        (double Min, double Max)? xFilter = null;
 
         if (hasCartesian)
         {
             xLayout = BuildXAxis(xAxis, visibleCartesian, plot, xRangeOverride, warnings);
+            xFilter = xLayout.IsZoomed ? (xLayout.Min, xLayout.Max) : null;
             for (var i = 0; i < yAxes.Count; i++)
             {
                 var axisSeries = visibleCartesian.Where(s => ResolveYAxisIndex(s, yAxes.Count) == i).ToList();
-                yLayouts.Add(BuildYAxis(yAxes[i], i, axisSeries, plot, warnings));
+                yLayouts.Add(BuildYAxis(yAxes[i], i, axisSeries, plot, xFilter, warnings));
             }
 
             foreach (var s in allSeries.OfType<ISeries>().Where(s => s is XYSeries or XYZSeries))
@@ -96,10 +98,10 @@ public static class ChartLayoutEngine
             switch (series)
             {
                 case XYSeries xy when hasCartesian:
-                    layout = LayoutXY(chart, xy, i, color, xLayout!, yLayouts[ResolveYAxisIndex(xy, yLayouts.Count)]);
+                    layout = LayoutXY(chart, xy, i, color, xLayout!, yLayouts[ResolveYAxisIndex(xy, yLayouts.Count)], xFilter);
                     break;
                 case XYZSeries xyz when hasCartesian:
-                    layout = LayoutXYZ(xyz, i, color, xLayout!, yLayouts[ResolveYAxisIndex(xyz, yLayouts.Count)]);
+                    layout = LayoutXYZ(xyz, i, color, xLayout!, yLayouts[ResolveYAxisIndex(xyz, yLayouts.Count)], xFilter);
                     break;
                 case ValueSeries value when value.Visible:
                     layout = LayoutValue(chart, value, i, color, valueSlots[valueSlot++]);
@@ -175,19 +177,19 @@ public static class ChartLayoutEngine
 
     private static AxisLayout BuildXAxis(Axis axis, List<ISeries> series, PlotArea plot, AxisRange? overrideRange, List<string> warnings)
     {
-        var extent = DataExtent(series, horizontal: true);
+        var extent = DataExtent(series, horizontal: true, xFilter: null);
+        var (fullMin, fullMax, fullStep) = ResolveRange(axis, extent.Min, extent.Max, includeZero: false, "X", warnings,
+            tight: extent.Tight || AxisLabelFormatter.IsDateFormat(axis));
 
-        double min, max, step;
-        if (overrideRange is not null && overrideRange.Minimum < overrideRange.Maximum)
+        double min = fullMin, max = fullMax, step = fullStep;
+        var zoomed = false;
+        if (overrideRange is not null && IsFinite(overrideRange.Minimum) && IsFinite(overrideRange.Maximum)
+            && overrideRange.Minimum < overrideRange.Maximum)
         {
             min = overrideRange.Minimum;
             max = overrideRange.Maximum;
             step = AxisStep(axis, max - min);
-        }
-        else
-        {
-            (min, max, step) = ResolveRange(axis, extent.Min, extent.Max, includeZero: false, "X", warnings,
-                tight: extent.Tight || AxisLabelFormatter.IsDateFormat(axis));
+            zoomed = true;
         }
 
         return new AxisLayout
@@ -196,6 +198,9 @@ public static class ChartLayoutEngine
             Side = AxisSide.Bottom,
             Min = min,
             Max = max,
+            FullMin = fullMin,
+            FullMax = fullMax,
+            IsZoomed = zoomed,
             TickStep = step,
             Ticks = AxisTicks(axis, min, max, step),
             PixelStart = plot.Left,
@@ -204,9 +209,16 @@ public static class ChartLayoutEngine
         };
     }
 
-    private static AxisLayout BuildYAxis(Axis axis, int index, List<ISeries> series, PlotArea plot, List<string> warnings)
+    private static AxisLayout BuildYAxis(Axis axis, int index, List<ISeries> series, PlotArea plot, (double Min, double Max)? xFilter,
+        List<string> warnings)
     {
-        var extent = DataExtent(series, horizontal: false);
+        // When zoomed, Y fits the data inside the visible X range.
+        var extent = DataExtent(series, horizontal: false, xFilter);
+        if (xFilter is not null && extent.Min is null)
+        {
+            extent = DataExtent(series, horizontal: false, xFilter: null);
+        }
+
         var (min, max, step) = ResolveRange(axis, extent.Min, extent.Max, extent.IncludeZero, $"Y[{index}]", warnings,
             tight: extent.Tight || AxisLabelFormatter.IsDateFormat(axis));
 
@@ -224,6 +236,8 @@ public static class ChartLayoutEngine
             Index = index,
             Min = min,
             Max = max,
+            FullMin = min,
+            FullMax = max,
             TickStep = step,
             Ticks = AxisTicks(axis, min, max, step),
             PixelStart = plot.Bottom,
@@ -239,8 +253,11 @@ public static class ChartLayoutEngine
     /// Data range along one direction for the given series, with padding for heatmap cells
     /// (half a cell, range kept tight) and bubbles (so large bubbles are not cut off).
     /// </summary>
-    private static (double? Min, double? Max, bool IncludeZero, bool Tight) DataExtent(List<ISeries> series, bool horizontal)
+    private static (double? Min, double? Max, bool IncludeZero, bool Tight) DataExtent(List<ISeries> series, bool horizontal,
+        (double Min, double Max)? xFilter)
     {
+        bool InRange(double x) => xFilter is not { } f || (x >= f.Min && x <= f.Max);
+
         double? min = null, max = null;
         var includeZero = false;
         var tight = false;
@@ -254,7 +271,10 @@ public static class ChartLayoutEngine
                 case XYSeries xy:
                     foreach (var p in xy.Points)
                     {
-                        Extend(ref min, ref max, horizontal ? p.X : p.Y, horizontal ? p.Y : p.X);
+                        if (InRange(p.X))
+                        {
+                            Extend(ref min, ref max, horizontal ? p.X : p.Y, horizontal ? p.Y : p.X);
+                        }
                     }
 
                     includeZero |= !horizontal && !string.IsNullOrEmpty(xy.FillColor) && xy.Points.Count > 0;
@@ -262,7 +282,10 @@ public static class ChartLayoutEngine
                 case XYZSeries xyz:
                     foreach (var p in xyz.Points)
                     {
-                        Extend(ref min, ref max, horizontal ? p.X : p.Y, horizontal ? p.Y : p.X);
+                        if (InRange(p.X))
+                        {
+                            Extend(ref min, ref max, horizontal ? p.X : p.Y, horizontal ? p.Y : p.X);
+                        }
                     }
 
                     if (xyz.Type == XYZSeriesType.Heatmap)
@@ -415,13 +438,22 @@ public static class ChartLayoutEngine
 
     // ---------- Series ----------
 
-    private static SeriesLayout LayoutXY(Chart chart, XYSeries series, int index, string color, AxisLayout x, AxisLayout y)
+    private static SeriesLayout LayoutXY(Chart chart, XYSeries series, int index, string color, AxisLayout x, AxisLayout y,
+        (double Min, double Max)? xFilter)
     {
         var points = series.Points ?? [];
         var indices = new List<int>(points.Count);
+        bool InRange(int i) => i >= 0 && i < points.Count && points[i].X >= xFilter!.Value.Min && points[i].X <= xFilter.Value.Max;
         for (var i = 0; i < points.Count; i++)
         {
-            if (IsFinite(points[i].X) && IsFinite(points[i].Y))
+            if (!IsFinite(points[i].X) || !IsFinite(points[i].Y))
+            {
+                continue;
+            }
+
+            // When zoomed, keep points in view plus their neighbours so lines run to the plot edge.
+            // Downsampling then works on the visible part only, so zooming in shows more detail.
+            if (xFilter is null || InRange(i) || InRange(i - 1) || InRange(i + 1))
             {
                 indices.Add(i);
             }
@@ -462,7 +494,8 @@ public static class ChartLayoutEngine
         };
     }
 
-    private static SeriesLayout LayoutXYZ(XYZSeries series, int index, string color, AxisLayout x, AxisLayout y)
+    private static SeriesLayout LayoutXYZ(XYZSeries series, int index, string color, AxisLayout x, AxisLayout y,
+        (double Min, double Max)? xFilter)
     {
         var points = series.Points ?? [];
         var indices = new List<int>(points.Count);

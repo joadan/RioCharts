@@ -32,10 +32,18 @@ Where the code differs from the sketches in this document:
   focus changes. In-place data changes need `Refresh()`.
 - **Tooltip `CustomFormat`** arguments: {0} series name, {1} Y/value, {2} X/label, {3} Z or slice fraction.
 
+- **Pan, zoom and crosshair** (`EnablePanZoom`, `EnableCrosshair`, both off by default) use the
+  collocated module `RioChart.razor.js`, loaded only when one of them is on. Zoom and pan act on the
+  X axis only and stay inside the full data range. During a gesture JS previews the change with an SVG
+  transform on the plot content; Blazor is called once when the gesture ends (wheel: after 250 ms idle)
+  and re-renders at the new range. Double-click or "Reset zoom" shows everything again. Keyboard:
+  `+`/`-` zoom, Shift+arrows pan, `0`/Home reset. When zoomed, the Y axis fits the visible points and
+  LTTB downsampling runs on the visible part only, so zooming in shows more detail. The visible range
+  is `XAxisRange` (two-way bindable); `OnAxisRangeChanged` reports old and new ranges. `ZoomTo`,
+  `ZoomBy`, `PanBy` and `ResetZoom` are public methods on the component.
+
 Not yet implemented:
 
-- Pan, zoom and crosshair (the JS interop part). `XAxisRange`/`XAxisRangeChanged` already drive the
-  visible X range, so zoom buttons can be built on top today.
 - Pattern fills for series.
 - `ObservableCollection`/`INotifyPropertyChanged` auto-refresh and update throttling.
 - Rendering only the visible viewport for very large datasets (data is downsampled and clipped instead).
