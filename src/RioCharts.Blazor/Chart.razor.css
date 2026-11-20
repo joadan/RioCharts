@@ -313,3 +313,22 @@
     width: 100%;
     pointer-events: none;
 }
+
+/* ---------- Spec errors ---------- */
+
+.rio-spec-errors {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    z-index: 2;
+    margin: 0;
+    padding: 8px 12px 8px 28px;
+    border: 1px solid var(--rio-grid, var(--_rio-grid));
+    border-left: 3px solid #d9480f;
+    border-radius: 6px;
+    background: var(--rio-surface, var(--_rio-surface));
+    color: var(--rio-text, var(--_rio-text));
+    font-size: 12px;
+    line-height: 1.5;
+}

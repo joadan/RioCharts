@@ -3,6 +3,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\RioCharts.Blazor\RioCharts.Blazor.csproj" />
     <ProjectReference Include="..\..\src\RioCharts.Skia\RioCharts.Skia.csproj" />
+    <ProjectReference Include="..\..\src\RioCharts.AI\RioCharts.AI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.4.0" />
   </ItemGroup>
 
   <PropertyGroup>

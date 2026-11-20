@@ -17,6 +17,8 @@ before adding or changing features. Record where the code differs from it in
   - `ChartSpec.cs` — the serializable chart model.
 - `src/RioCharts.Blazor/` — `Chart.razor` (+ `.cs`, `.css`, `.js`), `Series.cs`, `Annotations.cs`, `Rendering/` (SVG writer and scene renderer).
 - `src/RioCharts.Skia/` — server-side export: `ChartExport`, `SvgExporter`, `SkiaRenderer`, `SkiaFonts`/`SkiaTextMeasurer`, `ExportTheme`.
+- `src/RioCharts.AI/` — AI chart creation: `ChartTool` (create_chart as AIFunction), `RioChartsMcpTools` (MCP), `ChartRazor` (spec → Razor).
+- `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset`, `IChartDataSource`.
 - `tests/RioCharts.Tests/` — xUnit tests.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `docs/` — implementation notes.

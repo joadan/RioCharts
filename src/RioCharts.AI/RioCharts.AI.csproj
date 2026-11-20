@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Description>AI chart creation for RioCharts: a create_chart tool for agents (Microsoft.Extensions.AI AIFunction and MCP server tools) that validates a JSON chart spec against your datasets with actionable errors, renders it on the server and summarizes it; plus the JSON schema and spec-to-Razor export.</Description>
+    <PackageTags>charts;dataviz;ai;agents;mcp;json-schema</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RioCharts.Core\RioCharts.Core.csproj" />
+    <ProjectReference Include="..\RioCharts.Skia\RioCharts.Skia.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="11.0.0" />
+    <PackageReference Include="ModelContextProtocol" Version="2.4.0" />
+  </ItemGroup>
+
+</Project>

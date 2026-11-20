@@ -5,7 +5,23 @@ changes are called out under **Breaking**.
 
 ## 0.1.0-preview (unreleased)
 
-Restructured to the new design ([Design.md](Design.md)), milestones 1 to 5.
+Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
+
+### Milestone 6
+
+- JSON chart specs (`RioCharts.Core.Specs`): series name dataset fields (`dataset`, `x`, `y`) with
+  `filter`, `timeBucket`, `aggregate`, `groupBy`, `sort` and `limit`; inline `data` for small sets;
+  `"type": "auto"` picks line, bar or donut. `ChartSpecJson.Parse` is tolerant (letter case,
+  unknown fields, synonyms such as column or doughnut, a single series object) and returns errors
+  that name the path and the valid options; `ChartSpecJson.Schema()` gives the JSON schema with
+  descriptions. `ChartSpecBinder` binds a spec to `ChartDataset`s or an `IChartDataSource`.
+- Blazor: `<Chart Spec="spec" Datasets="datasets" />`; binding errors show on the chart.
+- New package `RioCharts.AI`: `ChartTool` (create_chart, list_datasets, get_chart_schema) as
+  Microsoft.Extensions.AI functions and MCP server tools (`WithRioChartsTools`), rendering with
+  RioCharts.Skia; `ChartRazor.FromSpec` turns a spec into component markup.
+- Demo: spec playground at `/spec`, the schema at `/ai/schema.json`, an MCP server at `/mcp`.
+- **Breaking:** the chart's `Spec` property is now the `Spec` parameter; use `GetSpec()` to read
+  the model. `SeriesSpec.Id` is optional (generated for JSON specs).
 
 ### Milestone 5
 

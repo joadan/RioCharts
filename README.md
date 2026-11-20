@@ -12,7 +12,7 @@ Razor renders SVG, and a tiny JS module only measures the container and the font
 
 Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
-## What works today (milestones 1–5)
+## What works today (milestones 1–6)
 
 - Line, area and bar series (grouped bars), with linear, monotone and step lines
 - Linear, time and category axes, picked automatically from the data
@@ -37,11 +37,14 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Point markers, callouts and draggable reference lines (`@bind-Value`)
 - Display time zone (`TimeZone`): plotted on instants, labelled in the zone, DST-safe
 - Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
-
 - Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
+- JSON chart specs for AI agents: tolerant parsing, JSON schema, validation with actionable errors,
+  dataset fields with filter, time buckets, aggregation, groupBy, sort and limit, `"type": "auto"`
+- `create_chart` tool as a Microsoft.Extensions.AI `AIFunction` and as MCP server tools (`RioCharts.AI`),
+  spec → Razor export, `<Chart Spec="...">`
 
-Not yet: the AI chart spec (JSON schema, validation, `create_chart` tool). See [Design.md](Design.md)
-for the design and milestones.
+All six milestones of [Design.md](Design.md) are in. Later topics there (keyboard navigation,
+client-side export, a WASM demo site) are not done yet.
 
 ## Usage
 
@@ -94,6 +97,19 @@ Pie, donut and radial bar (the x value names each slice; the legend lists slices
 </Chart>
 ```
 
+AI chart creation, with `RioCharts.AI`: agents write a small JSON spec against your datasets; the
+tool validates it (errors name the path and the valid options), renders it and describes it:
+
+```csharp
+var tool = new ChartTool(new InMemoryDataSource([ChartDataset.FromItems("ahu", readings, "Air handling units, hourly")]));
+var chat = new ChatOptions { Tools = tool.AsAIFunctions() };          // Microsoft.Extensions.AI
+builder.Services.AddMcpServer().WithHttpTransport().WithRioChartsTools(tool); // or as an MCP server
+tool.ChartCreated += result => Show(result.Png);
+```
+
+The same specs work in Blazor: `<Chart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
+`{"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}]}`.
+
 Server-side export (no browser), with `RioCharts.Skia`: the same spec and data, as PNG or SVG:
 
 ```csharp
@@ -126,6 +142,7 @@ plot on instants and label in that zone.
 | `src/RioCharts.Core` | Scales, ticks, layout, path builders, scene, hit-testing, chart spec. No UI dependencies. |
 | `src/RioCharts.Blazor` | `<Chart>` and series components, SVG scene renderer, JS module. |
 | `src/RioCharts.Skia` | Server-side export to SVG and PNG with SkiaSharp (`ChartExport`). |
+| `src/RioCharts.AI` | `create_chart` tool for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
 | `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
 | `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
 

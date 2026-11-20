@@ -138,3 +138,53 @@ img.export {
     max-width: 720px;
     height: auto;
 }
+
+/* ---------- Spec playground ---------- */
+
+.spec-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr));
+    gap: 16px;
+}
+
+.spec-editor {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 340px;
+    padding: 10px;
+    border: 1px solid #d0d5dc;
+    border-radius: 6px;
+    font: 13px/1.45 ui-monospace, Consolas, monospace;
+    resize: vertical;
+}
+
+.examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.examples button.small {
+    margin-left: 0;
+}
+
+.spec-messages {
+    margin: 10px 0 0;
+    padding-left: 20px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.spec-messages.errors {
+    color: #c2410c;
+}
+
+pre.razor {
+    overflow-x: auto;
+    padding: 10px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    font-size: 12px;
+    white-space: pre-wrap;
+}

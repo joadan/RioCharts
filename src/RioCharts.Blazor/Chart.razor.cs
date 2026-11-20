@@ -6,6 +6,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
+using RioCharts.Core.Specs;
 using RioCharts.Core.Text;
 
 namespace RioCharts.Blazor;
@@ -143,8 +144,27 @@ public partial class Chart<TItem> : IChartContext
     /// <summary>The latest layout: scene, scales, hit-test index and warnings.</summary>
     public ChartLayoutResult? Layout => _layout;
 
-    /// <summary>The chart model built from the parameters and child components.</summary>
-    public ChartSpec Spec => BuildSpec();
+    /// <summary>
+    /// A chart spec (e.g. from JSON or an AI agent) instead of child components: series read their
+    /// x and y fields from <see cref="Datasets"/> or the spec's inline data. Layout options such as
+    /// Height, Culture and HiddenSeries still come from the component.
+    /// </summary>
+    [Parameter] public ChartSpec? Spec { get; set; }
+
+    /// <summary>Datasets that a <see cref="Spec"/> refers to, by name.</summary>
+    [Parameter] public IReadOnlyDictionary<string, ChartDataset>? Datasets { get; set; }
+
+    /// <summary>Problems binding <see cref="Spec"/> to the data (missing fields, wrong types); empty when fine.</summary>
+    public IReadOnlyList<SpecError> SpecErrors => _bound?.Errors ?? [];
+
+    /// <summary>The chart model: the <see cref="Spec"/> parameter, or one built from the parameters and child components (for saving, or as a starting point for edits).</summary>
+    public ChartSpec GetSpec() => Spec ?? BuildSpec();
+
+    private SpecBindResult? _bound;
+    private (ChartSpec?, object?) _boundFrom;
+
+    /// <summary>The spec being drawn: the bound <see cref="Spec"/>, or the one from parameters and child components.</summary>
+    private ChartSpec CurrentSpec() => Spec is not null && _bound is not null ? _bound.Spec : BuildSpec();
 
     private string ContainerStyle => string.Create(CultureInfo.InvariantCulture,
         $"height:{Height:0.##}px;{(Width is { } w ? $"width:{w:0.##}px;" : "")}");
@@ -260,7 +280,7 @@ public partial class Chart<TItem> : IChartContext
             _dirty = true;
         }
 
-        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold);
+        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -292,13 +312,31 @@ public partial class Chart<TItem> : IChartContext
             return _layout;
         }
 
-        var data = new Dictionary<string, SeriesData>(StringComparer.Ordinal);
-        foreach (var s in _series)
+        IReadOnlyDictionary<string, SeriesData> data;
+        if (Spec is not null)
         {
-            data.TryAdd(s.Spec.Id, s.Data);
+            // Bind once per spec/datasets pair; legend toggles and resizes reuse it.
+            if (_bound is null || !Equals(_boundFrom, (Spec, (object?)Datasets)))
+            {
+                _bound = ChartSpecBinder.Bind(Spec, Datasets ?? new Dictionary<string, ChartDataset>());
+                _boundFrom = (Spec, Datasets);
+            }
+
+            data = _bound.Data;
+        }
+        else
+        {
+            _bound = null;
+            var collected = new Dictionary<string, SeriesData>(StringComparer.Ordinal);
+            foreach (var s in _series)
+            {
+                collected.TryAdd(s.Spec.Id, s.Data);
+            }
+
+            data = collected;
         }
 
-        _layout = ChartLayout.Compute(BuildSpec(), data, new LayoutOptions
+        _layout = ChartLayout.Compute(CurrentSpec(), data, new LayoutOptions
         {
             Width = Width ?? _measuredWidth ?? FallbackWidth,
             Height = Height,
@@ -320,7 +358,7 @@ public partial class Chart<TItem> : IChartContext
     {
         if (interaction.Kind == "annotation")
         {
-            var label = BuildSpec().Annotations.Select((a, i) => (a, i)).FirstOrDefault(t => (t.a.Id ?? $"annotation-{t.i + 1}") == interaction.Id).a?.Label;
+            var label = CurrentSpec().Annotations.Select((a, i) => (a, i)).FirstOrDefault(t => (t.a.Id ?? $"annotation-{t.i + 1}") == interaction.Id).a?.Label;
             await OnAnnotationClick.InvokeAsync(new AnnotationClickEventArgs(interaction.Id, label));
             return;
         }
@@ -354,7 +392,7 @@ public partial class Chart<TItem> : IChartContext
     [JSInvokable]
     public async Task OnAnnotationDragged(string id, double value)
     {
-        var all = BuildSpec().Annotations;
+        var all = CurrentSpec().Annotations;
         var index = -1;
         for (var i = 0; i < all.Count && index < 0; i++)
         {

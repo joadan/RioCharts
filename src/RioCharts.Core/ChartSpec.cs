@@ -38,6 +38,12 @@ public sealed record ChartSpec
 
     [Description("With a display zone: how to read times without a zone (DateTime with Kind Unspecified). Utc or DisplayZone.")]
     public RioCharts.Core.Data.UnspecifiedTimes? UnspecifiedTimes { get; init; }
+
+    [Description("Dataset (by id from the data source) that series read their x and y fields from, unless a series names its own.")]
+    public string? Dataset { get; init; }
+
+    [Description("Inline rows for small data, e.g. [{\"month\":\"Jan\",\"mwh\":42}]. At most 1000 rows; prefer a dataset id for real data.")]
+    public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Data { get; init; }
 }
 
 public sealed record AxisSpec
@@ -86,10 +92,38 @@ public sealed record TooltipSpec
 
 public sealed record SeriesSpec
 {
-    [Description("Unique id of the series; data is supplied by this id.")]
-    public required string Id { get; init; }
+    [Description("Unique id of the series. Optional in JSON specs (generated from the y field).")]
+    public string Id { get; init; } = "";
 
+    [Description("Chart type: line, area, bar, pie (donut with innerRadius), radialBar, or auto to pick from the data.")]
     public SeriesType Type { get; init; } = SeriesType.Line;
+
+    [Description("Dataset id to read fields from. Defaults to the chart's dataset (or its inline data).")]
+    public string? Dataset { get; init; }
+
+    [Description("Field for the x axis: a time, number or text (category; the slice name for pies).")]
+    public string? X { get; init; }
+
+    [Description("Numeric field for the y value. Optional with aggregate count.")]
+    public string? Y { get; init; }
+
+    [Description("Keep only rows that match all of these conditions.")]
+    public IReadOnlyList<FilterSpec>? Filter { get; init; }
+
+    [Description("Time x: group rows into buckets (hour, day, week, month, quarter, year) and aggregate y per bucket.")]
+    public TimeBucket? TimeBucket { get; init; }
+
+    [Description("Combine rows with the same x (or time bucket): sum, average, min, max, count or last.")]
+    public Aggregate? Aggregate { get; init; }
+
+    [Description("Field to split by: one series per distinct value (e.g. one line per unit).")]
+    public string? GroupBy { get; init; }
+
+    [Description("Order points by y (for categories, e.g. a ranking): ascending or descending.")]
+    public SortOrder? Sort { get; init; }
+
+    [Description("Keep only the first N points after sorting (e.g. top 10).")]
+    public int? Limit { get; init; }
 
     [Description("Name shown in the legend and tooltips. Defaults to the id.")]
     public string? Name { get; init; }
@@ -195,7 +229,17 @@ public sealed record AnnotationSpec
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<SeriesType>))]
-public enum SeriesType { Line, Area, Bar, Pie, RadialBar }
+public enum SeriesType
+{
+    Line,
+    Area,
+    Bar,
+    Pie,
+    RadialBar,
+
+    /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
+    Auto,
+}
 
 /// <summary>Line shape. Step holds each value until the next point.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<CurveType>))]
@@ -224,3 +268,28 @@ public enum LabelPosition { Start, Middle, End }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AnnotationLayer>))]
 public enum AnnotationLayer { Below, Above }
+
+/// <summary>A condition on a field, e.g. { "field": "unit", "op": "eq", "value": "AHU 1" }.</summary>
+public sealed record FilterSpec
+{
+    [Description("Field name.")]
+    public string Field { get; init; } = "";
+
+    [Description("Comparison: eq, ne, gt, gte, lt, lte or contains (text).")]
+    public FilterOp Op { get; init; } = FilterOp.Eq;
+
+    [Description("Value to compare with: a number, a time (ISO 8601) or text.")]
+    public object? Value { get; init; }
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<FilterOp>))]
+public enum FilterOp { Eq, Ne, Gt, Gte, Lt, Lte, Contains }
+
+[JsonConverter(typeof(JsonStringEnumConverter<TimeBucket>))]
+public enum TimeBucket { Minute, Hour, Day, Week, Month, Quarter, Year }
+
+[JsonConverter(typeof(JsonStringEnumConverter<Aggregate>))]
+public enum Aggregate { Sum, Average, Min, Max, Count, Last }
+
+[JsonConverter(typeof(JsonStringEnumConverter<SortOrder>))]
+public enum SortOrder { Ascending, Descending }

@@ -161,3 +161,39 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Fonts on Linux servers:** the package brings `SkiaSharp.NativeAssets.Linux.NoDependencies`;
   install fonts in the container (e.g. `fonts-dejavu`) for good text.
 - **Not yet:** Blazor's `ExportSvgAsync`/`ExportPngAsync` and client-side download, and PDF.
+
+## Milestone 6
+
+- **One model.** JSON specs are `ChartSpec` with data bindings added (`ChartSpec.Dataset`, `Data`;
+  `SeriesSpec.Dataset`, `X`, `Y` and the transforms). `ChartSpecBinder` turns them into the
+  ordinary model (concrete series, generated ids, `groupBy` expanded) plus `SeriesData`, which
+  then goes through the same layout as the components. The binder lives in Core so the Blazor
+  `<Chart Spec>` and the AI tool share it.
+- **Tolerant reading** happens on the JSON before deserializing: letter case, comments and
+  trailing commas, a single series object or top-level x/y, and synonyms (column, stackedBar,
+  doughnut/donut/ring → pie with innerRadius 0.6, spline/smooth → monotone, gauge → radialBar,
+  avg/mean, daily/monthly, asc/desc, >=, ...). Unknown fields are ignored. Unknown enum values
+  are errors listing the valid ones. Limits: 20 series (after groupBy), 1000 inline rows, 50
+  annotations.
+- **Errors** are `SpecError(path, message)`. Field errors list the dataset's fields with their
+  types and suggest a close name ("did you mean 'supplyTemp'?"). Parsing errors come first; binding
+  errors appear once the spec parses, so a model fixes problems in two rounds at most.
+- **Defaults the binder fills in** (reported as warnings): x = the first time, else text field;
+  y = the only numeric field; aggregate average with a timeBucket; sum when a text x repeats.
+- **"auto"**: time or numeric x → line (bar with a time bucket); text x → bar, or a donut when
+  there is one series of 2–6 positive values adding up to 100 (or 1). Deliberately conservative:
+  a donut only when the data is clearly shares of a whole.
+- **Datasets** are columns of double, DateTime/DateTimeOffset or string, with the type inferred
+  from the values (mixed columns become text; ISO 8601 strings become times; quoted numbers stay
+  text). `ChartDataset.FromItems` uses reflection (camelCase property names): fine for setup,
+  not for hot paths.
+- **create_chart** takes the spec as a JSON object (or a string holding one) and returns success,
+  errors, warnings, a summary (the chart's text description) and the normalized spec. The PNG,
+  SVG and bound spec are for the app (`ChartCreated`) and are not sent to the model; over MCP
+  the PNG is returned as an image block. The tool description lists the datasets with their
+  fields and descriptions, the spec shape and three examples; the full schema is a separate tool
+  (`get_chart_schema`) to keep the description short.
+- **Spec → Razor** writes component markup with field names as PascalCase properties; transforms
+  that components do not do become comments to implement in the query.
+- **Not yet:** a time zone-aware `timeBucket` (buckets are on wall-clock time), declarative joins,
+  and streaming specs.

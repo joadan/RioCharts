@@ -1,0 +1,163 @@
+@page "/spec"
+@using RioCharts.AI
+@using RioCharts.Core.Specs
+
+<PageTitle>RioCharts spec playground</PageTitle>
+
+<header class="top">
+    <div>
+        <h1>Spec playground</h1>
+        <p class="lead">
+            JSON chart specs, as an AI agent would write them: <code>&lt;Chart Spec="spec" Datasets="datasets" /&gt;</code>.
+            <a href="/">Back to the demo</a> · <a href="/ai/schema.json" target="_blank">JSON schema</a> ·
+            <a href="/ai/tool.txt" target="_blank">create_chart tool description</a> · MCP server: <code>http://localhost:5030/mcp</code>
+        </p>
+    </div>
+</header>
+
+<main class="rio-theme-light">
+    <div class="spec-layout">
+        <section>
+            <h2>Spec</h2>
+            <div class="examples">
+                @foreach (var (name, json) in Examples)
+                {
+                    <button class="small" @onclick="() => Load(json)">@name</button>
+                }
+            </div>
+            <textarea class="spec-editor" spellcheck="false" @bind="_json" @bind:event="oninput" @bind:after="Render"></textarea>
+            <p class="note">
+                Datasets: @string.Join("; ", DemoDatasets.All.Select(d => $"{d.Name} ({string.Join(", ", d.Fields.Select(f => f.Name))})"))
+            </p>
+        </section>
+
+        <section>
+            <h2>Chart</h2>
+            @if (_spec is not null)
+            {
+                <Chart TItem="object" Spec="_spec" Datasets="DemoDatasets.ByName" Height="340" Zoomable="true" @ref="_chart" />
+            }
+
+            @if (_errors.Count > 0)
+            {
+                <ul class="spec-messages errors">
+                    @foreach (var error in _errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            }
+
+            @if (_warnings.Count > 0)
+            {
+                <ul class="spec-messages">
+                    @foreach (var warning in _warnings)
+                    {
+                        <li>@warning</li>
+                    }
+                </ul>
+            }
+
+            @if (_razor is not null)
+            {
+                <h3>As Razor components</h3>
+                <pre class="razor">@_razor</pre>
+            }
+        </section>
+    </div>
+</main>
+
+@code {
+    private static readonly (string Name, string Json)[] Examples =
+    [
+        ("Minimal", """
+            {
+              "dataset": "ahu",
+              "series": [{ "type": "line", "x": "timestamp", "y": "supplyTemp" }]
+            }
+            """),
+        ("One line per unit", """
+            {
+              "dataset": "ahu",
+              "title": "Supply air per unit",
+              "y": { "title": "°C" },
+              "series": [{ "type": "spline", "x": "timestamp", "y": "supplyTemp", "groupBy": "unit" }],
+              "annotations": [{ "value": 19, "label": "Setpoint 19 °C" }]
+            }
+            """),
+        ("Energy per day", """
+            {
+              "dataset": "ahu",
+              "title": "Heating energy per day",
+              "y": { "title": "kWh" },
+              "series": [{ "type": "column", "x": "timestamp", "y": "energy", "timeBucket": "daily",
+                           "aggregate": "sum", "groupBy": "unit", "stack": "units" }]
+            }
+            """),
+        ("Energy mix (auto)", """
+            {
+              "dataset": "energy",
+              "title": "Energy use per system, 2026",
+              "series": [{ "type": "auto", "x": "system", "y": "mwh", "aggregate": "sum", "sort": "desc" }]
+            }
+            """),
+        ("Shares (auto donut)", """
+            {
+              "data": [ { "use": "Heating", "share": 48 }, { "use": "Ventilation", "share": 27 },
+                        { "use": "Cooling", "share": 15 }, { "use": "Lighting", "share": 10 } ],
+              "series": [{ "type": "auto", "x": "use", "y": "share" }]
+            }
+            """),
+        ("Two axes", """
+            {
+              "dataset": "ahu",
+              "y": { "title": "°C" },
+              "yAxes": [{ "id": "kwh", "title": "kWh" }],
+              "series": [
+                { "type": "bar", "x": "timestamp", "y": "energy", "timeBucket": "day", "aggregate": "sum", "yAxisId": "kwh", "name": "Energy" },
+                { "type": "line", "x": "timestamp", "y": "outdoorTemp", "timeBucket": "day", "aggregate": "average", "name": "Outdoor" }
+              ],
+              "filter": "ignored: filters go on series"
+            }
+            """),
+        ("With errors", """
+            {
+              "dataset": "ahu",
+              "series": [{ "type": "scatter", "x": "time", "y": "supplyTemps" }]
+            }
+            """),
+    ];
+
+    private string _json = "";
+    private ChartSpec? _spec;
+    private List<string> _errors = [];
+    private List<string> _warnings = [];
+    private string? _razor;
+    private Chart<object>? _chart;
+
+    protected override void OnInitialized() => Load(Examples[1].Json);
+
+    private void Load(string json)
+    {
+        _json = json;
+        Render();
+    }
+
+    private void Render()
+    {
+        var parsed = ChartSpecJson.Parse(_json);
+        _errors = parsed.Errors.Select(e => e.ToString()).ToList();
+        _warnings = [.. parsed.Warnings];
+        _spec = parsed.Spec;
+        _razor = null;
+        if (_spec is null)
+        {
+            return;
+        }
+
+        var bound = ChartSpecBinder.Bind(_spec, DemoDatasets.ByName);
+        _errors.AddRange(bound.Errors.Select(e => e.ToString()));
+        _warnings.AddRange(bound.Warnings);
+        _razor = ChartRazor.FromSpec(_spec, "Reading", "readings");
+    }
+}
