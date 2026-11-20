@@ -34,6 +34,16 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   default, and a branded loading screen. The JSON spec playground editor highlights its JSON as you
   type.
 
+### Fixed
+
+- Pie and donut labels inside slices no longer spill over the ring. The fit test now checks the
+  horizontal label box against the slice, so on the sides of a thin donut a label that would run
+  across the ring is placed outside with a leader line instead.
+- Leader lines of outside pie labels no longer cross or run over each other when tiny slices
+  crowd the top or bottom. Each runs from its slice to a bend at its label's height and then
+  straight across to the text; labels keep slice order, and a bend moves outward only where the
+  leader would otherwise pass over a neighbour's.
+
 ### Milestone 6
 
 - JSON chart specs (`RioCharts.Core.Specs`): series name dataset fields (`dataset`, `x`, `y`) with

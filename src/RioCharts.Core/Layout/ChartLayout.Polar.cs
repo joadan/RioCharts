@@ -310,10 +310,42 @@ public static partial class ChartLayout
             return Fit(plot.Width - 2 * (widest + 30), plot.Height - 2 * textHeight);
         }
 
+        // Labels are horizontal, so test the label's box (not its width along the arc): on the sides of a
+        // thin donut the text runs across the ring and must not spill over its edges.
         bool FitsInside(double r0, double r1, double a0, double a1, double w)
         {
             var rm = r0 > 0 ? (r0 + r1) / 2 : r1 * 0.62;
-            return Math.Abs(a1 - a0) * rm >= w + 8 && r1 - r0 >= textHeight + 4 && (Math.Abs(a1 - a0) >= 0.25 || r0 > 0);
+            if (Math.Abs(a1 - a0) * rm < w + 8 || r1 - r0 < textHeight + 4 || (Math.Abs(a1 - a0) < 0.25 && r0 <= 0))
+            {
+                return false;
+            }
+
+            var mid = (a0 + a1) / 2;
+            var (lx, ly) = Polar(0, 0, rm, mid);
+            var (lo, hi) = (Math.Min(a0, a1), Math.Max(a0, a1));
+            const double pad = 2;
+            var halfW = w / 2 + pad;
+            var halfH = small * 0.4 + pad; // digits and % sit within about 0.8 em
+            foreach (var (x, y) in new[] { (lx - halfW, ly - halfH), (lx + halfW, ly - halfH), (lx - halfW, ly + halfH), (lx + halfW, ly + halfH) })
+            {
+                var d = Math.Sqrt(x * x + y * y);
+                if (d > r1 || (r0 > 0 && d < r0))
+                {
+                    return false;
+                }
+
+                if (hi - lo < Math.PI * 2 - 1e-6 && d > 0)
+                {
+                    var angle = Math.Atan2(x, -y);
+                    angle += Math.Round((mid - angle) / (Math.PI * 2)) * Math.PI * 2;
+                    if (angle < lo || angle > hi)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         var radius = full;
@@ -444,7 +476,7 @@ public static partial class ChartLayout
         {
             var side = labels
                 .Where(l => Math.Sin(l.Angle) >= 0 == right)
-                .Select(l => (l.Angle, l.Text, l.Width, Elbow: Polar(cx, cy, radius + 10, l.Angle), Y: Polar(cx, cy, radius + 10, l.Angle).Y))
+                .Select(l => (l.Angle, l.Text, l.Width, Y: Polar(cx, cy, radius + 10, l.Angle).Y))
                 .OrderBy(l => l.Y)
                 .ToList();
             if (side.Count == 0)
@@ -468,18 +500,148 @@ public static partial class ChartLayout
                 }
             }
 
-            var textX = cx + (right ? 1 : -1) * (radius + 22);
+            // A leader runs from its slice to a bend at its label's height, then across to the text. The
+            // bend sits just outside the pie (on the slice's radial line when the label is level with
+            // it). Where tiny slices crowd the top or bottom, labels stack away from their slices and a
+            // horizontal run could pass over a neighbour's leader: move that bend outward until it
+            // clears. Only if that cannot work, swap the two labels' slots.
+            var sign = right ? 1 : -1;
+            var textX = cx + sign * (radius + 26);
+            var endX = textX - sign * 4;
+            var points = side.Select(l => Polar(cx, cy, radius + 2, l.Angle)).ToArray();
+            var natural = side.Select(l => Polar(cx, cy, radius + 10, l.Angle).X).ToArray();
+            var bend = new double[side.Count];
+            var slot = Enumerable.Range(0, side.Count).ToArray();
+            (double X, double Y)[] Route(int i) => [points[i], (bend[i], ys[slot[i]]), (endX, ys[slot[i]])];
+
+            void PlaceBends()
+            {
+                // A label stacked toward the pie's center from its slice (below a slice in the top half,
+                // above one in the bottom half) would make the leader dive back along the pie: leave
+                // at a shallow outward slant instead.
+                for (var i = 0; i < side.Count; i++)
+                {
+                    var dy = ys[slot[i]] - points[i].Y;
+                    var inward = points[i].Y < cy ? dy > 0 : dy < 0;
+                    var slant = inward ? points[i].X + sign * 2 * Math.Abs(dy) : natural[i];
+                    var limit = endX - sign * 4;
+                    bend[i] = sign > 0 ? Math.Min(Math.Max(natural[i], slant), limit) : Math.Max(Math.Min(natural[i], slant), limit);
+                }
+                for (var pass = 0; pass <= side.Count; pass++)
+                {
+                    var moved = false;
+                    for (var i = 0; i < side.Count; i++)
+                    {
+                        var y = ys[slot[i]];
+                        for (var j = 0; j < side.Count; j++)
+                        {
+                            var (p, q) = (points[j], (X: bend[j], Y: ys[slot[j]]));
+                            if (j == i || y <= Math.Min(p.Y, q.Y) || y >= Math.Max(p.Y, q.Y))
+                            {
+                                continue;
+                            }
+
+                            var x = p.X + (q.X - p.X) * (y - p.Y) / (q.Y - p.Y) + sign * 3;
+                            var limit = endX - sign * 4;
+                            var wanted = sign > 0 ? Math.Min(Math.Max(bend[i], x), limit) : Math.Max(Math.Min(bend[i], x), limit);
+                            if (wanted != bend[i])
+                            {
+                                bend[i] = wanted;
+                                moved = true;
+                            }
+                        }
+                    }
+
+                    if (!moved)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            bool Crosses(int a, int b)
+            {
+                var (ra, rb) = (Route(a), Route(b));
+                for (var s = 1; s < ra.Length; s++)
+                {
+                    for (var t = 1; t < rb.Length; t++)
+                    {
+                        if (SegmentsCross(ra[s - 1], ra[s], rb[t - 1], rb[t]))
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            PlaceBends();
+            for (var step = 0; step < 40 * side.Count * side.Count; step++)
+            {
+                var pair = Enumerable.Range(0, side.Count).SelectMany(a => Enumerable.Range(a + 1, side.Count - a - 1).Select(b => (a: a, b: b)))
+                    .FirstOrDefault(p => Crosses(p.a, p.b), (a: -1, b: -1));
+                if (pair.a < 0)
+                {
+                    break;
+                }
+
+                // Move a bend outward first (one, else both); swap slots only when neither can move.
+                var limit = endX - sign * 4;
+                bool Out(int i)
+                {
+                    var moved = sign > 0 ? Math.Min(bend[i] + 4, limit) : Math.Max(bend[i] - 4, limit);
+                    var changed = moved != bend[i];
+                    bend[i] = moved;
+                    return changed;
+                }
+
+                var (oldA, oldB) = (bend[pair.a], bend[pair.b]);
+                if (Out(pair.a) && !Crosses(pair.a, pair.b))
+                {
+                    continue;
+                }
+
+                bend[pair.a] = oldA;
+                if (Out(pair.b) && !Crosses(pair.a, pair.b))
+                {
+                    continue;
+                }
+
+                if (!Out(pair.a) & bend[pair.b] == oldB)
+                {
+                    (slot[pair.a], slot[pair.b]) = (slot[pair.b], slot[pair.a]);
+                    PlaceBends();
+                }
+            }
+
             for (var i = 0; i < side.Count; i++)
             {
-                var (angle, text, _, elbow, _) = side[i];
-                var (px, py) = Polar(cx, cy, radius + 2, angle);
-                var leader = new PathBuilder().MoveTo(px, py).LineTo(elbow.X, ys[i]).LineTo(textX + (right ? -4 : 4), ys[i]).Build();
+                var text = side[i].Text;
+                var y = ys[slot[i]];
+                var path = new PathBuilder();
+                var r = Route(i);
+                path.MoveTo(r[0].X, r[0].Y);
+                foreach (var (x, py) in r.Skip(1))
+                {
+                    path.LineTo(x, py);
+                }
+
+                var leader = path.Build();
                 nodes.Add(new PathNode(leader, new StyleRef("leader")) { Class = "rio-leader" });
-                nodes.Add(new TextNode(text, new PointF((float)textX, (float)ys[i]), new TextStyle("slice-label"), right ? Anchor.Start : Anchor.End));
+                nodes.Add(new TextNode(text, new PointF((float)textX, (float)y), new TextStyle("slice-label"), right ? Anchor.Start : Anchor.End));
             }
         }
 
         return nodes;
+    }
+
+    private static bool SegmentsCross((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, (double X, double Y) d)
+    {
+        static double Side((double X, double Y) p, (double X, double Y) q, (double X, double Y) r) =>
+            (q.X - p.X) * (r.Y - p.Y) - (q.Y - p.Y) * (r.X - p.X);
+
+        return Side(a, b, c) * Side(a, b, d) < 0 && Side(c, d, a) * Side(c, d, b) < 0;
     }
 
     // ---------- Radial bar ----------

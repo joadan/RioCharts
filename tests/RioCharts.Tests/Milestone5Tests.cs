@@ -115,6 +115,75 @@ public class Milestone5Tests
     }
 
     [Fact]
+    public void Inside_slice_labels_stay_within_a_thin_donut_ring()
+    {
+        static IEnumerable<Node> All(Node node) => node is GroupNode g ? g.Children.SelectMany(All).Prepend(g) : [node];
+        var shares = SeriesData.FromCategories(["Heating", "Ventilation", "Cooling", "Lighting", "Pumps", "Elevators", "Controls"], [412.0, 236, 148, 97, 31, 9, 6]);
+        var donut = new ChartSpec { Legend = new LegendSpec { Mode = LegendMode.Hide }, Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }] };
+        var measurer = new SkiaTextMeasurer(new SkiaFonts("Segoe UI, Arial, sans-serif"));
+        var inside = 0;
+
+        // Small tiles, where the ring is barely thicker than a label is tall.
+        for (var height = 140; height <= 200; height += 5)
+        {
+            var layout = ChartExport.Layout(donut, new Dictionary<string, SeriesData> { ["p"] = shares }, Options with { Width = 360, Height = height });
+            var labels = new[] { layout.Scene.Static, layout.Scene.Series, layout.Scene.Overlay }.SelectMany(All).OfType<TextNode>()
+                .Where(t => t.Style.Name == "data-label-inverse").ToList();
+            var ring = layout.Tooltip.Slices[0];
+            inside += labels.Count;
+            Assert.All(labels, t =>
+            {
+                var halfW = measurer.Measure(t.Text, 11) / 2;
+                foreach (var (dx, dy) in new[] { (-halfW, -4.0), (halfW, -4.0), (-halfW, 4.0), (halfW, 4.0) })
+                {
+                    var d = Math.Sqrt(Math.Pow(t.At.X + dx - ring.Cx, 2) + Math.Pow(t.At.Y + dy - ring.Cy, 2));
+                    Assert.InRange(d, ring.R0, ring.R1);
+                }
+            });
+        }
+
+        Assert.True(inside > 0); // larger tiles still keep labels inside
+    }
+
+    [Fact]
+    public void Leader_lines_of_a_label_stack_never_cross()
+    {
+        static IEnumerable<Node> All(Node node) => node is GroupNode g ? g.Children.SelectMany(All).Prepend(g) : [node];
+        static bool Cross((float X, float Y) a, (float X, float Y) b, (float X, float Y) c, (float X, float Y) d)
+        {
+            static double Side((float X, float Y) p, (float X, float Y) q, (float X, float Y) r) => (q.X - p.X) * (r.Y - p.Y) - (q.Y - p.Y) * (r.X - p.X);
+            return Side(a, b, c) * Side(a, b, d) < 0 && Side(c, d, a) * Side(c, d, b) < 0;
+        }
+
+        // Small slices at the end of the sweep share the top of the left side; their labels stack downward.
+        var shares = SeriesData.FromCategories(["Heating", "Ventilation", "Cooling", "Lighting", "Pumps", "Elevators", "Controls"], [412.0, 236, 148, 97, 31, 9, 6]);
+        foreach (var (inner, height) in new[] { 0, 0.6 }.SelectMany(inner => new[] { 150, 170, 220, 300 }.Select(h => (inner, h))))
+        {
+            var donut = new ChartSpec { Legend = new LegendSpec { Mode = LegendMode.Hide }, Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = inner }] };
+            var layout = ChartExport.Layout(donut, new Dictionary<string, SeriesData> { ["p"] = shares }, Options with { Width = 360, Height = height });
+            var leaders = new[] { layout.Scene.Static, layout.Scene.Series, layout.Scene.Overlay }.SelectMany(All).OfType<PathNode>()
+                .Where(p => p.Class == "rio-leader")
+                .Select(p => Enumerable.Range(0, p.Path.Coords.Count / 2).Select(i => (p.Path.Coords[2 * i], p.Path.Coords[2 * i + 1])).ToList())
+                .ToList();
+
+            Assert.True(leaders.Count >= 3);
+            for (var i = 0; i < leaders.Count; i++)
+            {
+                for (var j = i + 1; j < leaders.Count; j++)
+                {
+                    for (var s = 1; s < leaders[i].Count; s++)
+                    {
+                        for (var t = 1; t < leaders[j].Count; t++)
+                        {
+                            Assert.False(Cross(leaders[i][s - 1], leaders[i][s], leaders[j][t - 1], leaders[j][t]), $"leaders {i} and {j} cross at height {height}, inner radius {inner}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void Skia_measurer_gives_real_text_widths()
     {
         var measurer = new SkiaTextMeasurer(new SkiaFonts("Segoe UI, Arial, sans-serif"));
