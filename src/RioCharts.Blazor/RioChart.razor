@@ -53,7 +53,7 @@
     }
     @if (Zoomable && layout.Zoomed)
     {
-        <button type="button" class="rio-reset-zoom" @onclick="ResetZoomAsync"
+        <button type="button" class="rio-reset-zoom" @onclick="OnResetZoomClick"
                 style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4)}px")">Reset zoom</button>
     }
 </div>

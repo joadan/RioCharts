@@ -664,6 +664,27 @@ public partial class RioChart<TItem> : IChartContext
     [JSInvokable]
     public Task OnZoomReset() => ApplyRangeAsync(null);
 
+    // The Reset zoom button: linked charts (same Group) reset together, as with a double-click.
+    private async Task OnResetZoomClick()
+    {
+        if (Group is not null && _module is not null)
+        {
+            try
+            {
+                if (await _module.InvokeAsync<bool>("resetZoom", _container))
+                {
+                    return;
+                }
+            }
+            catch (JSDisconnectedException)
+            {
+                return;
+            }
+        }
+
+        await ResetZoomAsync();
+    }
+
     private async Task ApplyRangeAsync((double Min, double Max)? range)
     {
         if (range is { } r)

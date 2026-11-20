@@ -132,6 +132,17 @@ export function update(container, model) {
     }
 }
 
+// The Reset zoom button: resets this chart and the zoomable charts linked to it.
+export function resetZoom(container) {
+    const state = states.get(container);
+    if (!state) {
+        return false;
+    }
+
+    commitReset(state);
+    return true;
+}
+
 export function dispose(container) {
     const state = states.get(container);
     if (state) {

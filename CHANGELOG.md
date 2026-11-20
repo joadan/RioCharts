@@ -12,6 +12,8 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Fix: the Reset zoom button now resets every zoomable chart in the same `Group`, as
+  double-click already did; before it reset only the chart it was on.
 - Series components combine items with the same x into one point: `Aggregate` (`Sum`,
   `Average`, `Min`, `Max`, `Count` or `Last` of `YValue`) or `YAggregate`, a function of the
   group's items (e.g. `g => g.Sum(o => o.Amount)`), in the spirit of Blazor-ApexCharts. Grouping
