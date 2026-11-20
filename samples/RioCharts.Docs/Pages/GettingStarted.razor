@@ -80,16 +80,16 @@
 
     private static readonly Package[] Packages =
     [
-        new("RioCharts.Blazor", "The <RioChart> component for Blazor apps."),
         new("RioCharts.Core", "The chart engine alone, with no UI dependencies."),
+        new("RioCharts.Blazor", "The <RioChart> component for Blazor apps."),
         new("RioCharts.Skia", "PNG and SVG export on the server."),
         new("RioCharts.AI", "create_chart and render_chart tools for AI agents."),
         new("RioCharts.Mcp", "riocharts-mcp, a local MCP server for agents (a .NET tool)."),
     ];
 
     private const string InstallCode = """
-        dotnet add package RioCharts.Blazor --prerelease
         dotnet add package RioCharts.Core --prerelease
+        dotnet add package RioCharts.Blazor --prerelease
         dotnet add package RioCharts.Skia --prerelease
         dotnet add package RioCharts.AI --prerelease
         dotnet tool install -g RioCharts.Mcp --prerelease
