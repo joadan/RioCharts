@@ -42,7 +42,40 @@
 <body>
     <div id="app">
         <div class="boot">
-            <img src="favicon.svg" alt="" width="64" height="64" />
+            <!-- The logo, a copy of Layout/RioLogo.razor (keep them in sync). -->
+            <svg class="rio-logo" viewBox="0 0 256 256" width="64" height="64" aria-hidden="true">
+                <rect width="256" height="256" rx="56" fill="#efb118" />
+                <path d="M30 212 L64 180 L90 196 L126 160" fill="none" stroke="#4269d0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+                <g class="rio-logo-side">
+                    <path d="M100 178 C68 144,80 66,140 60 C178 56,198 74,204 96 L198 148 C176 164,146 166,114 182 Z" fill="#4269d0" />
+                    <path d="M196 90 C236 86,248 140,220 176 C214 152,206 142,190 138 Z" fill="#1f2328" />
+                    <path d="M190 138 C204 140,212 150,214 164 C200 162,192 154,188 146 Z" fill="#1f2328" />
+                    <ellipse cx="164" cy="104" rx="26" ry="22" fill="#ffffff" />
+                    <circle cx="167" cy="102" r="8.5" fill="#1f2328" />
+                    <circle cx="170" cy="99" r="2.5" fill="#ffffff" />
+                </g>
+                <g class="rio-logo-quarter">
+                    <path d="M100 178 C68 144,80 66,140 60 C190 56,212 90,210 116 C208 140,184 160,150 166 C138 170,124 176,114 182 Z" fill="#4269d0" />
+                    <ellipse cx="146" cy="102" rx="22" ry="20" fill="#ffffff" />
+                    <ellipse cx="196" cy="100" rx="11" ry="17" fill="#ffffff" />
+                    <circle cx="152" cy="104" r="8" fill="#1f2328" />
+                    <circle cx="198" cy="103" r="5.5" fill="#1f2328" />
+                    <circle cx="155" cy="101" r="2.4" fill="#ffffff" />
+                    <path d="M170 116 C176 104,206 104,210 118 C214 138,204 154,190 166 C180 152,168 134,170 116 Z" fill="#1f2328" />
+                </g>
+                <g class="rio-logo-front">
+                    <path d="M100 178 C68 144,80 66,140 60 C190 56,212 90,210 116 C208 140,184 160,150 166 C138 170,124 176,114 182 Z" fill="#4269d0" />
+                    <g class="rio-logo-eyes">
+                        <ellipse cx="118" cy="102" rx="20" ry="19" fill="#ffffff" />
+                        <ellipse cx="178" cy="102" rx="20" ry="19" fill="#ffffff" />
+                        <circle cx="120" cy="104" r="8" fill="#1f2328" />
+                        <circle cx="176" cy="104" r="8" fill="#1f2328" />
+                        <circle cx="123" cy="101" r="2.4" fill="#ffffff" />
+                        <circle cx="179" cy="101" r="2.4" fill="#ffffff" />
+                    </g>
+                    <path d="M130 116 C132 104,164 104,166 116 C168 136,160 152,148 164 C136 152,128 136,130 116 Z" fill="#1f2328" />
+                </g>
+            </svg>
             <div class="boot-title">Rio<b>Charts</b></div>
             <div class="boot-bar"><span></span></div>
             <div class="loading-progress-text"></div>

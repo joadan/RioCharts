@@ -80,9 +80,35 @@ html.dark-boot, html.dark-boot body {
     font-family: var(--doc-sans);
 }
 
-.boot img {
-    border-radius: 14px;
-    animation: boot-pulse 1.6s ease-in-out infinite;
+/* The loading logo repeats the hover turn (.rio-logo below), resting in profile between turns. */
+.boot .rio-logo-side { animation: boot-logo-side 2.4s step-end infinite; }
+.boot .rio-logo-quarter { animation: boot-logo-quarter 2.4s step-end infinite; }
+.boot .rio-logo-front { animation: boot-logo-front 2.4s step-end infinite; }
+.boot .rio-logo-eyes { animation: boot-logo-blink 2.4s ease-in-out infinite; }
+
+@keyframes boot-logo-side {
+    0% { opacity: 1; }
+    30% { opacity: 0; }
+    84%, 100% { opacity: 1; }
+}
+
+@keyframes boot-logo-quarter {
+    0% { opacity: 0; }
+    30% { opacity: 1; }
+    34% { opacity: 0; }
+    80% { opacity: 1; }
+    84%, 100% { opacity: 0; }
+}
+
+@keyframes boot-logo-front {
+    0% { opacity: 0; }
+    34% { opacity: 1; }
+    80%, 100% { opacity: 0; }
+}
+
+@keyframes boot-logo-blink {
+    0%, 54%, 62%, 100% { transform: none; }
+    58% { transform: scaleY(0.1); }
 }
 
 .boot-title {
@@ -116,10 +142,6 @@ html.dark-boot, html.dark-boot body {
 
 .loading-progress-text:after {
     content: var(--blazor-load-percentage-text, "Loading");
-}
-
-@keyframes boot-pulse {
-    50% { transform: scale(0.94); opacity: 0.8; }
 }
 
 /* ----- Shell ----- */
@@ -362,7 +384,7 @@ html.dark-boot, html.dark-boot body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .doc, .boot img { animation: none; }
+    .doc { animation: none; }
 }
 
 .doc h1 {
