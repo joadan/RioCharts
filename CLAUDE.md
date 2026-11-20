@@ -16,6 +16,10 @@ before adding or changing features, and keep it in sync when the design changes.
 dotnet build RioCharts.sln
 ```
 
+## Git
+
+- Commit and push directly to `master`; no feature branches or PRs for now.
+
 ## Architecture (from Design.md)
 
 Keep these layers separate:
