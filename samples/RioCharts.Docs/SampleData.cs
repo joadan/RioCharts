@@ -18,16 +18,16 @@ public static class SampleData
     private static List<Reading> Series(Func<int, DateTime, double?> value, int count = 2 * 96, int minutes = 15) =>
         Enumerable.Range(0, count).Select(i => Start.AddMinutes(minutes * i)).Select((t, i) => new Reading(t, value(i, t))).ToList();
 
-    public static readonly List<Reading> Supply = Series((i, t) => Math.Round(19 + 1.5 * Cycle(t) + Noise(i, 1) * 0.4, 1));
+    public static readonly List<Reading> Supply = Series((i, t) => Math.Round(19 + 1.5 * Cycle(t) + Drift(i, 1) * 0.8, 2));
 
-    public static readonly List<Reading> Extract = Series((i, t) => Math.Round(22 + 0.8 * Cycle(t) + Noise(i, 2) * 0.3, 1));
+    public static readonly List<Reading> Extract = Series((i, t) => Math.Round(22 + 0.8 * Cycle(t) + Drift(i, 2) * 0.6, 2));
 
     /// <summary>Outdoor temperature with a sensor gap.</summary>
-    public static readonly List<Reading> Outdoor = Series((i, t) => i is >= 60 and < 75 ? null : Math.Round(4 + 5 * Cycle(t) + Noise(i, 3), 1));
+    public static readonly List<Reading> Outdoor = Series((i, t) => i is >= 60 and < 75 ? null : Math.Round(4 + 5 * Cycle(t) + Drift(i, 3, 6) * 2, 2));
 
-    public static readonly List<Reading> Heating = Series((i, t) => Math.Round(Math.Max(0, 14 - 9 * Cycle(t) + Noise(i, 4) * 2), 1));
+    public static readonly List<Reading> Heating = Series((i, t) => Math.Round(Math.Max(0, 14 - 9 * Cycle(t) + Drift(i, 4) * 3), 2));
 
-    public static readonly List<Reading> Ventilation = Series((i, t) => Math.Round(t.Hour is >= 7 and < 18 ? 6 + Noise(i, 5) : 2 + Noise(i, 6) * 0.5, 1));
+    public static readonly List<Reading> Ventilation = Series((i, t) => Math.Round(t.Hour is >= 7 and < 18 ? 6 + Drift(i, 5) * 1.5 : 2 + Drift(i, 6) * 0.8, 2));
 
     public static readonly List<Reading> Daily = Enumerable.Range(0, 35)
         .Select(d => Start.AddDays(d - 34))
@@ -77,6 +77,17 @@ public static class SampleData
         }
 
         return (times, values);
+    }
+
+    /// <summary>
+    /// Repeatable, smooth noise in [-0.5, 0.5]: <see cref="Noise"/> at every <paramref name="span"/>th sample, eased between.
+    /// Per-sample noise at 15-minute steps draws a ragged, pixelated-looking line; real sensors drift instead.
+    /// </summary>
+    public static double Drift(int i, int seed, int span = 8)
+    {
+        var k = Math.DivRem(i, span, out var r);
+        var f = (1 - Math.Cos(Math.PI * r / span)) / 2;
+        return Noise(k, seed) * (1 - f) + Noise(k + 1, seed) * f;
     }
 
     /// <summary>Repeatable noise in [-0.5, 0.5).</summary>
