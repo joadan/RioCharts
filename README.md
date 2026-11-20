@@ -63,8 +63,8 @@ dotnet add package RioCharts.Blazor --prerelease
 
 | Package | For |
 | --- | --- |
-| [RioCharts.Blazor](https://www.nuget.org/packages/RioCharts.Blazor) | The `<RioChart>` component and series (includes Core) |
 | [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | Chart model, scales and layout, no UI dependencies |
+| [RioCharts.Blazor](https://www.nuget.org/packages/RioCharts.Blazor) | The `<RioChart>` component and series (includes Core) |
 | [RioCharts.Skia](https://www.nuget.org/packages/RioCharts.Skia) | Server-side export to SVG and PNG |
 | [RioCharts.AI](https://www.nuget.org/packages/RioCharts.AI) | `create_chart` and `render_chart` tools for AI agents |
 | [RioCharts.Mcp](https://www.nuget.org/packages/RioCharts.Mcp) | `riocharts-mcp`, a local MCP server (`dotnet tool install -g RioCharts.Mcp --prerelease`) |
