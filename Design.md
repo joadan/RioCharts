@@ -2,6 +2,44 @@
 
 The chart component is designed to be modular, extensible, and SVG-renderer friendly. It separates data model, layout, and rendering, supporting multiple chart types and axes.
 
+## Implementation Status
+
+Implemented: everything below except the items under "Not yet implemented".
+
+Where the code differs from the sketches in this document:
+
+- **Colors:** `XYSeries.StrokeColor` and `XYZSeries.FillColor` default to null, meaning "next color from
+  `Chart.Palette`" (`ChartPalette.Default` or `ChartPalette.HighContrast`), instead of "blue" for everything.
+- **ISeries:** `Visible` and `IsSelected` are settable on the interface so the legend and clicks can change them.
+- **Points:** `XYPoint` and `XYZPoint` are `readonly record struct`s (cheaper for large datasets).
+  Date values are OLE Automation dates; `new XYPoint(DateTime, y)` converts.
+- **Additions:** `XYSeries.ShowLine` (false = scatter), `XYSeries.FillOpacity` (`FillColor = "auto"` uses the
+  line color), `ValueSeries.Type` (Pie/Donut/Funnel), `ValueSeries.InnerRadiusRatio`, `ValueSeries.ShowLabels`,
+  `ValuePoint.Visible`, `XYZSeries.Type` (Bubble/Heatmap), `Chart.Palette`, `Chart.DownsampleThreshold`.
+- **Layout output:** the layout engine does not mutate `Axis`. It returns a `ChartLayout` with `AxisLayout`
+  objects (computed min/max, ticks, pixel mapping) and `SeriesLayout`/`SliceLayout` per series.
+  Screen points are `ScreenPoint` (doubles) rather than `PointF`.
+- **Multiple Y axes:** even indexes are drawn on the left, odd on the right, stacking outward.
+  Only the first Y axis draws horizontal grid lines.
+- **Legend:** Top/Bottom/Left/Right take space from the plot; corner positions overlay the plot
+  (for pie/donut/funnel-only charts they sit beside it instead). Pie slices with the same label across
+  several series share one legend item.
+- **Ranges:** heatmap and date axes use the data range as is (no rounding out); date ticks of a month or
+  more land on the first of the month. Bubble axes get 10% padding so bubbles are not cut off.
+- **Errors:** layout problems (invalid range, missing Y axis) are collected in `ChartLayout.Warnings`
+  rather than logged.
+- **Caching:** layout is recomputed when parameters change or `Refresh()` is called, not on hover or
+  focus changes. In-place data changes need `Refresh()`.
+- **Tooltip `CustomFormat`** arguments: {0} series name, {1} Y/value, {2} X/label, {3} Z or slice fraction.
+
+Not yet implemented:
+
+- Pan, zoom and crosshair (the JS interop part). `XAxisRange`/`XAxisRangeChanged` already drive the
+  visible X range, so zoom buttons can be built on top today.
+- Pattern fills for series.
+- `ObservableCollection`/`INotifyPropertyChanged` auto-refresh and update throttling.
+- Rendering only the visible viewport for very large datasets (data is downsampled and clipped instead).
+
 ## Chart Model
 
 ### Chart Container

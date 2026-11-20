@@ -7,14 +7,24 @@ before adding or changing features, and keep it in sync when the design changes.
 
 - `src/RioCharts/` — the component library (Razor class library, `net10.0`,
   nullable and implicit usings enabled).
+  - `Model/` — chart model and series types (namespace `RioCharts`).
+  - `Layout/` — layout engine, scales, LTTB, formatting, accessibility summary (`RioCharts.Layout`).
+  - `Rendering/Svg.cs` — SVG path/number helpers (`RioCharts.Rendering`).
+  - `RioChart.razor` (+ `.razor.cs`, `.razor.css`) — the component.
+- `tests/RioCharts.Tests/` — xUnit tests.
+- `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `docs/` — documentation.
 - `RioCharts.sln` — solution file.
 
-## Build
+## Build and test
 
 ```
 dotnet build RioCharts.sln
+dotnet test
+dotnet run --project samples/RioCharts.Demo --launch-profile http
 ```
+
+Stop the running demo before rebuilding; it locks `RioCharts.dll`.
 
 ## Git
 
@@ -43,3 +53,8 @@ Keep these layers separate:
 - Use `@key` on series elements so Blazor diffs efficiently.
 - Component styles go in scoped CSS (`RioChart.razor.css`).
 - Layout engine logic should be plain C# and unit-testable without Blazor.
+- Format every number written into SVG with `Svg.N` (invariant culture); labels shown to
+  users use the current culture.
+- In Razor, an SVG `<text>` directly inside a code block (`@if`, `@foreach`) is parsed as
+  Razor's `<text>` tag; wrap it in a `<g>`.
+- Record differences from the design in Design.md "Implementation Status".
