@@ -5,7 +5,9 @@
 //   nearest x by binary search and draw the crosshair and tooltip without a server round trip.
 // - Zoom and pan preview locally; only the final range goes to .NET. Linked charts (same group)
 //   share the crosshair here in the browser and the zoom through each chart's .NET side.
-// Only clicks and finished zooms call back into .NET.
+// - With a TooltipTemplate, .NET renders the tooltip content: JS asks for it only when the hovered
+//   points change (one call in flight, the latest wins) and places the card when it arrives.
+// Only clicks, finished zooms and (with a template) hovered-point changes call back into .NET.
 
 const states = new WeakMap();
 const groups = new Map(); // group name -> Set of chart states
@@ -43,6 +45,12 @@ export function init(container, dotnet) {
         state.timer = setTimeout(() => dotnet.invokeMethodAsync('OnResize', width).catch(() => { }), 60);
     });
     state.observer.observe(container);
+
+    // Template tooltips: place the card when .NET has rendered new content.
+    state.tipObserver = new MutationObserver(() => showTemplate(state));
+    if (state.tip) {
+        state.tipObserver.observe(state.tip, { childList: true, subtree: true, characterData: true });
+    }
 
     state.onMove = e => {
         if (state.drag) {
@@ -105,6 +113,7 @@ export function update(container, model) {
     }
 
     state.model = model;
+    state.tipKey = null; // new layout: indexes may point at other data
     if (!state.drag) {
         resetPreview(state);
     }
@@ -134,6 +143,7 @@ export function dispose(container) {
 
         cancelAnimationFrame(state.frame);
         state.observer.disconnect();
+        state.tipObserver.disconnect();
         joinGroup(state, null);
         const svg = state.svg;
         if (svg) {
@@ -586,6 +596,11 @@ function movePolar(state, m, pos) {
         return;
     }
 
+    if (m.template) {
+        requestTemplate(state, [[s.id, s.index]], pos, pos.x, pos.y);
+        return;
+    }
+
     tip.replaceChildren();
     if (s.header) {
         const head = document.createElement('div');
@@ -670,6 +685,11 @@ function drawTooltip(state, rows, pos) {
     }
 
     const first = rows[0];
+    if (state.model && state.model.template) {
+        requestTemplate(state, rows.map(({ s, i }) => [s.id, s.index[i]]), pos, first.s.x[first.i], pos.y);
+        return;
+    }
+
     tip.replaceChildren();
     const head = document.createElement('div');
     head.className = 'rio-tooltip-head';
@@ -714,6 +734,44 @@ function placeTooltip(state, pos, x, y) {
     tip.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
 }
 
+// Template tooltips: ask .NET for content when the hovered points change. One call at a time;
+// points hovered meanwhile are sent when it returns (only the latest).
+function requestTemplate(state, points, pos, x, y) {
+    state.tipAnchor = { pos, x, y };
+    const key = points.map(p => p[0] + '' + p[1]).join('');
+    if (key !== state.tipKey) {
+        state.tipKey = key;
+        state.tipWanted = points;
+        sendTemplate(state);
+    }
+
+    showTemplate(state);
+}
+
+function sendTemplate(state) {
+    const points = state.tipWanted;
+    if (state.tipBusy || !points) {
+        return;
+    }
+
+    state.tipWanted = null;
+    state.tipBusy = true;
+    state.dotnet.invokeMethodAsync('OnTooltipHover', points.map(p => p[0]), points.map(p => p[1]))
+        .catch(() => { })
+        .finally(() => {
+            state.tipBusy = false;
+            sendTemplate(state);
+        });
+}
+
+// Shows the card at the hovered point once it has content (the previous point's until the new arrives).
+function showTemplate(state) {
+    const a = state.tipAnchor, tip = state.tip;
+    if (a && tip && state.model && state.model.template && (tip.firstElementChild || tip.textContent.trim())) {
+        placeTooltip(state, a.pos, a.x, a.y);
+    }
+}
+
 function clearHover(state) {
     if (state.hover) {
         state.hover.replaceChildren();
@@ -725,6 +783,7 @@ function hide(state) {
         state.hover.replaceChildren();
     }
 
+    state.tipAnchor = null;
     if (state.tip) {
         state.tip.classList.remove('rio-tooltip-visible');
     }

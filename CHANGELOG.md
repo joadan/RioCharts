@@ -21,6 +21,15 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   (with a `timeBucket` it stays a comment).
 - Layout warns when a category, bar or pie series has the same x more than once and nothing
   combines them (the points are drawn on top of each other).
+- Custom tooltips. `TooltipValue` on a series and `TooltipHeader` on the chart set the text of
+  the value and the header from the hovered point (`TooltipPoint<TItem>`: x, y, item(s), default
+  text); they run once per layout, so hover stays in the browser. `TooltipTemplate` renders any
+  Razor in the tooltip card from a `TooltipContext<TItem>` (header, x and the hovered points);
+  its content comes from .NET when the hovered x changes, one round trip behind on Blazor Server.
+- Fixed: on time axes without a display time zone, `PointClickEventArgs.X` was a
+  `DateTimeOffset` with the server's offset instead of a `DateTime`.
+- Fixed: a point click on a live-data series could report the wrong point when the buffer had
+  changed since the last layout.
 
 ### Packaging
 

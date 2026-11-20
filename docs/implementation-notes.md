@@ -42,9 +42,23 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   the pointer).
 - **Tooltip values** use the series `Format`, then the axis `Format`, then two decimals with
   trailing zeros dropped (compact from 1M). Time x values show at the resolution of the data:
-  date, date and minutes, or date and seconds. Tooltip templates (`RenderFragment`) come later.
+  date, date and minutes, or date and seconds.
+- **Custom tooltips.** `TooltipValue` (series) and `TooltipHeader` (chart) are
+  `Func<TooltipPoint<TItem>, string?>` formatters rather than separate tooltip/axis delegates;
+  the point carries x, y, the item(s) and the default text. They run in the Blazor layer once per
+  layout over the points that can be hovered (`TooltipBuilder.Customize`), replacing the
+  model's strings, so hover stays in JS. A new lambda on each render does not re-run them; only
+  a layout change or adding/removing one does.
+- **Tooltip template** (`TooltipTemplate`, a `RenderFragment<TooltipContext<TItem>>`) departs
+  from the interaction model's "JS calls .NET only on meaningful events": with a template, JS
+  calls `OnTooltipHover` whenever the hovered points change (one call in flight, the latest
+  wins). The crosshair stays local; the content is rendered by a small internal component inside
+  `.rio-tooltip` (only it re-renders), and a MutationObserver places the card when it arrives.
+  So on Blazor Server the content lags one round trip, and the previous point's content shows
+  until the new one arrives. The card keeps `pointer-events: none`, so links in a template are
+  not clickable.
 - **Point clicks** only count on or next to a point (16 px) or a bar, and win over an annotation
-  underneath. Hover events are not raised to .NET.
+  underneath. Hover events are not raised to .NET (except with a tooltip template).
 - **Stacking.** Series stack when they share `Stack`, axis and kind (bars, or lines/areas),
   matched by exact x value (or category). Positive values stack up and negative values down.
   Hidden series leave the stack. Stacked bars are square with a 1 px gap; stacked areas fill

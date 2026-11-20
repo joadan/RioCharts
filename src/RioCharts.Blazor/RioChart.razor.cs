@@ -41,6 +41,9 @@ public partial class RioChart<TItem> : IChartContext
     private ChartRange? _lastVisibleRangeParameter;
     private string? _viewerZone;
     private bool _disposed;
+    private IReadOnlyDictionary<string, SeriesData> _layoutData = new Dictionary<string, SeriesData>();
+    private (ChartLayoutResult Layout, TooltipModel Model)? _tooltip;
+    private TooltipHost<TItem>? _tooltipHost;
 
     [Inject] private IJSRuntime JS { get; set; } = null!;
 
@@ -69,6 +72,21 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>Tooltip settings. On and shared across series by default.</summary>
     [Parameter] public TooltipSpec? Tooltip { get; set; }
+
+    /// <summary>
+    /// Text for the tooltip header from the hovered point, e.g. <c>p =&gt; $"Week {Iso(p.X)}"</c>;
+    /// null keeps the default (the formatted x, or the series name for nested pies). Runs once per
+    /// layout for the points that can be hovered, not on pointer moves.
+    /// </summary>
+    [Parameter] public Func<TooltipPoint<TItem>, string?>? TooltipHeader { get; set; }
+
+    /// <summary>
+    /// Custom tooltip content (Razor), rendered inside the tooltip card. The crosshair still follows
+    /// the pointer in the browser; the content is rendered by .NET when the hovered x changes, so on
+    /// Blazor Server it follows one network round trip behind. Prefer <see cref="TooltipHeader"/>
+    /// and the series' <c>TooltipValue</c> when text is enough.
+    /// </summary>
+    [Parameter] public RenderFragment<TooltipContext<TItem>>? TooltipTemplate { get; set; }
 
     /// <summary>Annotations as data (in addition to &lt;ReferenceLine&gt; and &lt;ReferenceBand&gt; children).</summary>
     [Parameter] public IReadOnlyList<AnnotationSpec>? Annotations { get; set; }
@@ -280,7 +298,8 @@ public partial class RioChart<TItem> : IChartContext
             _dirty = true;
         }
 
-        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets);
+        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets,
+            TooltipHeader is not null, TooltipTemplate is not null);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -336,6 +355,7 @@ public partial class RioChart<TItem> : IChartContext
             data = collected;
         }
 
+        _layoutData = data;
         _layout = ChartLayout.Compute(CurrentSpec(), data, new LayoutOptions
         {
             Width = Width ?? _measuredWidth ?? FallbackWidth,
@@ -427,21 +447,15 @@ public partial class RioChart<TItem> : IChartContext
     [JSInvokable]
     public async Task OnPointClicked(string seriesId, int index)
     {
-        var series = _series.FirstOrDefault(s => s.Spec.Id == seriesId);
-        if (series is null || index < 0 || index >= series.Data.Count)
+        // The data the layout was computed from: a live buffer may have moved on since.
+        var series = SourceOf(seriesId);
+        if (series is null || DataOf(seriesId) is not { } data || index < 0 || index >= data.Count)
         {
             return;
         }
 
-        var data = series.Data;
         var source = data.ToSourceIndex(index);
-        var x = data.X[index];
-        object? xValue = data.Kind switch
-        {
-            XKind.Time => _layout?.Time is { } time ? time.ToDateTimeOffset(x) : TimeValue.ToDateTime(x),
-            XKind.Category => (int)x >= 0 && (int)x < data.Categories.Count ? data.Categories[(int)x] : null,
-            _ => x,
-        };
+        var xValue = TooltipBuilder.XValueOf(data, index, _layout?.Time);
         var inputs = series.InputIndexes(source);
         var items = inputs.Select(series.ItemAt).OfType<TItem>().ToList();
         var input = inputs.Count > 0 ? inputs[0] : source;
@@ -449,6 +463,46 @@ public partial class RioChart<TItem> : IChartContext
         {
             Items = items,
         });
+    }
+
+    // ---------- Custom tooltips ----------
+
+    private ISeriesSource? SourceOf(string seriesId) => Spec is null ? _series.FirstOrDefault(s => s.Spec.Id == seriesId) : null;
+
+    private SeriesData? DataOf(string seriesId) => _layoutData.TryGetValue(seriesId, out var data) ? data : null;
+
+    /// <summary>The layout's tooltip model with TooltipHeader and the series' TooltipValue applied (once per layout).</summary>
+    private TooltipModel CustomTooltip(ChartLayoutResult layout)
+    {
+        if (_tooltip is { } cached && ReferenceEquals(cached.Layout, layout))
+        {
+            return cached.Model;
+        }
+
+        var model = TooltipBuilder.Customize(layout.Tooltip, DataOf, SourceOf, layout.Time, TooltipHeader);
+        _tooltip = (layout, model);
+        return model;
+    }
+
+    private RenderFragment TooltipHostFragment => builder =>
+    {
+        builder.OpenComponent<TooltipHost<TItem>>(0);
+        builder.AddComponentParameter(1, nameof(TooltipHost<TItem>.Template), TooltipTemplate);
+        builder.AddComponentReferenceCapture(2, host => _tooltipHost = (TooltipHost<TItem>)host);
+        builder.CloseComponent();
+    };
+
+    /// <summary>Called by JS when the hovered points change and the chart has a TooltipTemplate.</summary>
+    [JSInvokable]
+    public Task OnTooltipHover(string[] seriesIds, int[] indexes)
+    {
+        if (TooltipTemplate is null || _tooltipHost is null || _layout is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var context = TooltipBuilder.Context<TItem>(CustomTooltip(_layout), DataOf, SourceOf, _layout.Time, seriesIds, indexes);
+        return context is null ? Task.CompletedTask : _tooltipHost.ShowAsync(context);
     }
 
     // ---------- Responsive sizing, font metrics and pointer interaction (JS) ----------
@@ -513,7 +567,7 @@ public partial class RioChart<TItem> : IChartContext
             return;
         }
 
-        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group, SeriesLayer);
+        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group, SeriesLayer, TooltipTemplate is not null);
         if (Equals(key, _sentInteraction))
         {
             return;
@@ -525,7 +579,7 @@ public partial class RioChart<TItem> : IChartContext
             await _module.InvokeVoidAsync("paint", _container, CanvasSeriesWriter.Build(_layout.Scene));
         }
 
-        var model = _layout.Tooltip;
+        var model = CustomTooltip(_layout);
         var click = OnPointClick.HasDelegate;
         var scale = _layout.XScale;
         var zoom = Zoomable && scale is not null && _layout.HasData;
@@ -536,6 +590,7 @@ public partial class RioChart<TItem> : IChartContext
                 drags = drags.Select(d => new { id = d.Id, x = d.IsX, pos = d.Pixel, s = new { d0 = d.DomainMin, d1 = d.DomainMax, r0 = d.RangeStart, r1 = d.RangeEnd } }),
                 plot = new { x = model.Plot.X, y = model.Plot.Y, w = model.Plot.Width, h = model.Plot.Height },
                 tooltip = model.Enabled,
+                template = model.Enabled && TooltipTemplate is not null,
                 shared = model.Shared,
                 band = model.BandWidth,
                 click,

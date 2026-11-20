@@ -32,10 +32,16 @@
         @* Painted by the JS module; Blazor renders it empty. *@
         <canvas class="rio-canvas" aria-hidden="true" style="@($"height:{SvgWriter.N(scene.Height)}px")"></canvas>
     }
-    @* Filled by the JS module on hover; Blazor renders them empty and never touches their content. *@
+    @* Filled by the JS module on hover; Blazor renders them empty and never touches their content.
+       With a TooltipTemplate, Blazor fills the tooltip and JS only shows and places it. *@
     <svg class="rio-hover" aria-hidden="true" width="100%" height="@SvgWriter.N(scene.Height)"
          viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"></svg>
-    <div class="rio-tooltip" aria-hidden="true"></div>
+    <div class="rio-tooltip" aria-hidden="true">
+        @if (TooltipTemplate is not null)
+        {
+            @TooltipHostFragment
+        }
+    </div>
     @if (SpecErrors.Count > 0)
     {
         <ul class="rio-spec-errors" role="alert">

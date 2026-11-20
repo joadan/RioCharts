@@ -18,6 +18,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     private (Aggregate?, bool) _lastAggregate;
     private IReadOnlyList<int[]>? _groups;
     private bool _registered;
+    private bool _hadTooltipValue;
     private string _id = "";
 
     [CascadingParameter] internal IChartContext? Chart { get; set; }
@@ -76,7 +77,20 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>.NET format string for values in tooltips and data labels, e.g. "0.0".</summary>
     [Parameter] public string? Format { get; set; }
 
+    /// <summary>
+    /// Text for this series' value in the tooltip, e.g. <c>p =&gt; $"{p.Y:0.0} °C"</c> or
+    /// <c>p =&gt; $"{p.Y:0.0} °C (setpoint {p.Item!.Setpoint} °C)"</c>; null keeps the default
+    /// (<see cref="Format"/>). Runs once per layout for the points that can be hovered, not on
+    /// pointer moves.
+    /// </summary>
+    [Parameter] public Func<TooltipPoint<TItem>, string?>? TooltipValue { get; set; }
+
     protected abstract SeriesType Type { get; }
+
+    bool ISeriesSource.HasTooltipValue => TooltipValue is not null;
+
+    string? ISeriesSource.FormatTooltipValue(TooltipPointInfo point) =>
+        TooltipValue?.Invoke(TooltipBuilder.Point<TItem>(point, this));
 
     protected virtual SeriesSpec CreateSpec(string id) => new()
     {
@@ -207,6 +221,13 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         if (spec != Spec)
         {
             Spec = spec;
+            changed = true;
+        }
+
+        // Adding or removing a formatter re-applies tooltips (a new lambda each render does not).
+        if ((TooltipValue is not null) != _hadTooltipValue)
+        {
+            _hadTooltipValue = TooltipValue is not null;
             changed = true;
         }
 

@@ -5,7 +5,7 @@
 <h1>Tooltips, clicks and zoom</h1>
 <p class="lead">
     The chart sends its points to the browser once per layout; hover, crosshair and zoom previews run there. Only clicks and finished zooms
-    call back into .NET, so charts stay responsive on Blazor Server too.
+    (and hovers with a tooltip template) call back into .NET, so charts stay responsive on Blazor Server too.
 </p>
 
 <Example Title="Tooltip, legend and point clicks" Code="@ClickCode">
@@ -21,6 +21,54 @@
             Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden)).
             Clicked: @(_point is null ? "nothing yet" : $"{_point.SeriesName} {_point.Item?.Value:0.0} °C at {_point.Item?.Time:g}")
         </p>
+    </ChildContent>
+</Example>
+
+<Example Title="Custom tooltip text" Code="@FormatCode">
+    <Description>
+        <p>
+            <code>TooltipValue</code> on a series and <code>TooltipHeader</code> on the chart replace the text of the value and the header.
+            They get the hovered point (<code>X</code>, <code>Y</code>, <code>Item</code>, <code>Items</code>, the default text) and run once per
+            layout, not on pointer moves, so the tooltip stays fully in the browser. Return null to keep the default.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" YAxis="Celsius" TooltipHeader="@(p => p.X is DateTime t ? t.ToString("dddd HH:mm") : null)">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value"
+                        TooltipValue="@(p => $"{p.Y:0.0} °C ({Extract[p.Index].Value - p.Y:0.0} °C below extract)")" />
+            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Tooltip template" Code="@TemplateCode">
+    <Description>
+        <p>
+            <code>TooltipTemplate</code> renders any Razor inside the tooltip card. Its <code>context</code> has the <code>Header</code>, the
+            <code>X</code> value and the hovered <code>Points</code>, each with its items. The built-in classes (<code>rio-tooltip-head</code>,
+            <code>-row</code>, <code>-dot</code>, <code>-name</code>, <code>-value</code>) keep the default look.
+        </p>
+        <p>
+            The crosshair still follows the pointer in the browser, but the content is rendered by .NET when the hovered x changes: on Blazor
+            Server it lags one round trip behind. Prefer <code>TooltipValue</code> and <code>TooltipHeader</code> when text is enough.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Alarm" Items="Alarms" Height="240" YAxis="Minutes">
+            <ChildContent>
+                <BarSeries Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+            </ChildContent>
+            <TooltipTemplate>
+                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count alarms</div>
+                @foreach (var alarm in context.Points[0].Items)
+                {
+                    <div class="rio-tooltip-row">
+                        <span class="rio-tooltip-name">@alarm.Text</span>
+                        <span class="rio-tooltip-value">@alarm.Minutes min</span>
+                    </div>
+                }
+            </TooltipTemplate>
+        </RioChart>
     </ChildContent>
 </Example>
 
@@ -54,6 +102,7 @@
 @code {
     private static readonly AxisSpec Celsius = new() { Title = "°C" };
     private static readonly AxisSpec Kwh = new() { Title = "kWh" };
+    private static readonly AxisSpec Minutes = new() { Title = "min" };
     private IReadOnlyCollection<string> _hidden = [];
     private PointClickEventArgs<Reading>? _point;
     private ChartRange? _range;
@@ -62,6 +111,32 @@
         <RioChart TItem="Reading" @bind-HiddenSeries="hidden" OnPointClick="e => clicked = e">
             <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
             <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        """;
+
+    private const string FormatCode = """
+        <RioChart TItem="Reading" TooltipHeader="@(p => p.X is DateTime t ? t.ToString("dddd HH:mm") : null)">
+            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value"
+                        TooltipValue="@(p => $"{p.Y:0.0} °C ({extract[p.Index].Value - p.Y:0.0} °C below extract)")" />
+            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        """;
+
+    private const string TemplateCode = """
+        <RioChart TItem="Alarm" Items="alarms">
+            <ChildContent>
+                <BarSeries Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+            </ChildContent>
+            <TooltipTemplate>
+                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count alarms</div>
+                @foreach (var alarm in context.Points[0].Items)
+                {
+                    <div class="rio-tooltip-row">
+                        <span class="rio-tooltip-name">@alarm.Text</span>
+                        <span class="rio-tooltip-value">@alarm.Minutes min</span>
+                    </div>
+                }
+            </TooltipTemplate>
         </RioChart>
         """;
 

@@ -17,6 +17,12 @@ internal interface ISeriesSource
     /// aggregates; empty when unknown.
     /// </summary>
     IReadOnlyList<int> InputIndexes(int sourceIndex);
+
+    /// <summary>True when the series has a <c>TooltipValue</c> formatter.</summary>
+    bool HasTooltipValue { get; }
+
+    /// <summary>The series' <c>TooltipValue</c> text for a point, or null for the default.</summary>
+    string? FormatTooltipValue(TooltipPointInfo point);
 }
 
 /// <summary>An annotation component as the chart sees it.</summary>
