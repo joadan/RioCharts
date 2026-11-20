@@ -78,3 +78,7 @@ dotnet run --project samples/RioCharts.Demo --launch-profile http
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for changes.
+
+## License
+
+[MIT](LICENSE) © 2026 Joakim Dangården

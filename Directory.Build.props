@@ -10,5 +10,8 @@
     <PackageProjectUrl>https://github.com/joadan/RioCharts</PackageProjectUrl>
     <RepositoryUrl>https://github.com/joadan/RioCharts</RepositoryUrl>
     <PackageTags>charts;blazor;svg</PackageTags>
+    <Authors>Joakim Dangården</Authors>
+    <Copyright>Copyright (c) 2026 Joakim Dangården</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

@@ -24,3 +24,4 @@ Restructured to the new design ([Design.md](Design.md)), milestone 1.
 - `RioCharts.Blazor`: responsive `<Chart>` (ResizeObserver, measured font widths), SVG scene
   renderer, legend with `@bind-HiddenSeries` and `OnLegendClick`, CSS-variable theming with
   light and dark defaults.
+- MIT license.
