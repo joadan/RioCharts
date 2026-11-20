@@ -198,8 +198,100 @@ function find(m, pos) {
 
 // ---------- Hover drawing ----------
 
+// ---------- Pie slices and radial bars ----------
+
+const TAU = Math.PI * 2;
+
+// The slice under the pointer: between its radii and its angles (clockwise from 12 o'clock).
+function findSlice(m, pos) {
+    for (const s of m.slices) {
+        const dx = pos.x - s.cx, dy = pos.y - s.cy;
+        const d = Math.hypot(dx, dy);
+        if (d < s.r0 - 1 || d > s.r1 + 3) {
+            continue;
+        }
+
+        const angle = ((Math.atan2(dx, -dy) - s.a0) % TAU + TAU) % TAU;
+        if (angle <= s.end - s.a0 + 1e-6 || s.end - s.a0 >= TAU - 1e-6) {
+            return s;
+        }
+    }
+
+    return null;
+}
+
+function arcPoint(cx, cy, r, a) {
+    return [cx + Math.sin(a) * r, cy - Math.cos(a) * r];
+}
+
+// SVG path of a ring segment between two radii.
+function ringPath(cx, cy, r0, r1, a0, a1) {
+    const f = v => Math.round(v * 100) / 100;
+    const arc = (r, from, to) => {
+        const sweep = to - from;
+        if (Math.abs(sweep) >= TAU - 1e-6) {
+            const mid = from + sweep / 2;
+            return arc(r, from, mid) + arc(r, mid, to);
+        }
+
+        const [x, y] = arcPoint(cx, cy, r, to);
+        return ` A${f(r)} ${f(r)} 0 ${Math.abs(sweep) > Math.PI ? 1 : 0} ${sweep > 0 ? 1 : 0} ${f(x)} ${f(y)}`;
+    };
+    const [x0, y0] = arcPoint(cx, cy, r1, a0);
+    const [x1, y1] = arcPoint(cx, cy, r0, a1);
+    return `M${f(x0)} ${f(y0)}` + arc(r1, a0, a1) + ` L${f(x1)} ${f(y1)}` + (r0 > 0 ? arc(r0, a1, a0) : '') + ' Z';
+}
+
+function movePolar(state, m, pos) {
+    const s = pos ? findSlice(m, pos) : null;
+    if (!s) {
+        hide(state);
+        return;
+    }
+
+    if (state.hover) {
+        // A thin halo just outside the hovered slice.
+        state.hover.replaceChildren(el('path', {
+            class: 'rio-hover-halo', d: ringPath(s.cx, s.cy, s.r1 + 1.5, s.r1 + 5, s.a0, s.a1), style: `fill:${s.color}`,
+        }));
+    }
+
+    const tip = state.tip;
+    if (!tip) {
+        return;
+    }
+
+    tip.replaceChildren();
+    if (s.header) {
+        const head = document.createElement('div');
+        head.className = 'rio-tooltip-head';
+        head.textContent = s.header;
+        tip.appendChild(head);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'rio-tooltip-row';
+    const dot = document.createElement('span');
+    dot.className = 'rio-tooltip-dot';
+    dot.style.background = s.color;
+    const name = document.createElement('span');
+    name.className = 'rio-tooltip-name';
+    name.textContent = s.label;
+    const value = document.createElement('span');
+    value.className = 'rio-tooltip-value';
+    value.textContent = s.value;
+    row.append(dot, name, value);
+    tip.appendChild(row);
+    placeTooltip(state, pos, pos.x, pos.y);
+}
+
 function move(state, e) {
     const m = state.model;
+    if (m && m.slices && m.slices.length > 0) {
+        movePolar(state, m, m.tooltip ? toChart(state, e) : null);
+        return;
+    }
+
     const pos = m && m.tooltip ? toChart(state, e) : null;
     const rows = pos ? find(m, pos) : [];
     if (rows.length === 0) {
@@ -270,11 +362,16 @@ function drawTooltip(state, rows, pos) {
         tip.appendChild(row);
     }
 
-    // Beside the hovered x (right, or left when there is no room), vertically near the pointer.
+    placeTooltip(state, pos, first.s.x[first.i], pos.y);
+}
+
+// Beside x (right, or left when there is no room), vertically centered on y (chart units).
+function placeTooltip(state, pos, x, y) {
+    const tip = state.tip;
     const containerRect = state.container.getBoundingClientRect();
     const offsetX = pos.rect.left - containerRect.left;
     const offsetY = pos.rect.top - containerRect.top;
-    const anchorX = offsetX + first.s.x[first.i] / pos.k;
+    const anchorX = offsetX + x / pos.k;
     tip.classList.add('rio-tooltip-visible');
     const w = tip.offsetWidth, h = tip.offsetHeight;
     const cw = state.container.clientWidth, ch = state.container.clientHeight;
@@ -284,7 +381,7 @@ function drawTooltip(state, rows, pos) {
     }
 
     left = Math.max(0, Math.min(left, cw - w));
-    const top = Math.max(0, Math.min(offsetY + pos.y / pos.k - h / 2, ch - h));
+    const top = Math.max(0, Math.min(offsetY + y / pos.k - h / 2, ch - h));
     tip.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
 }
 
@@ -317,6 +414,16 @@ function click(state, e) {
 
     const pos = toChart(state, e);
     if (!pos) {
+        return;
+    }
+
+    if (m.slices && m.slices.length > 0) {
+        const s = findSlice(m, pos);
+        if (s && s.index >= 0) {
+            e.stopPropagation();
+            state.dotnet.invokeMethodAsync('OnPointClicked', s.id, s.index).catch(() => { });
+        }
+
         return;
     }
 

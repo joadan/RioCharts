@@ -131,6 +131,11 @@
     fill-opacity: 0.06;
 }
 
+.rio-chart ::deep .rio-hover-halo {
+    fill-opacity: 0.4;
+}
+
+
 .rio-chart ::deep .rio-hover-point {
     stroke: var(--rio-surface, var(--_rio-surface));
     stroke-width: 2;

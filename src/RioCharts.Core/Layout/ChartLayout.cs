@@ -127,6 +127,11 @@ public static partial class ChartLayout
             resolved.Add(r);
         }
 
+        if (resolved.Any(r => r.Type.CoordinateSystem == CoordinateSystem.Polar))
+        {
+            return ComputePolar(spec, resolved, options, warnings, styles);
+        }
+
         var xKind = ResolveXKind(spec.X.Scale, resolved);
         foreach (var r in resolved.Where(r => r.Data.Count > 0 && r.Data.Kind != xKind))
         {

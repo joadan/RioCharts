@@ -106,8 +106,23 @@ public sealed record SeriesSpec
     [Description("Stack group name. Series of the same type with the same stack name (and axis) are stacked on top of each other.")]
     public string? Stack { get; init; }
 
-    [Description("Show the value next to each point or bar.")]
-    public bool DataLabels { get; init; }
+    [Description("Show values on the chart. Null uses the default: on for pie, donut and radial bar, off otherwise.")]
+    public bool? DataLabels { get; init; }
+
+    [Description("Pie, donut and radial bar: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut).")]
+    public double? InnerRadius { get; init; }
+
+    [Description("Pie, donut and radial bar: start angle in degrees, clockwise from 12 o'clock. Default 0.")]
+    public double? StartAngle { get; init; }
+
+    [Description("Pie, donut and radial bar: end angle in degrees. Default: start + 360 for pies, 270 for radial bars.")]
+    public double? EndAngle { get; init; }
+
+    [Description("Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one \"Other\" slice.")]
+    public double? GroupSmallSlices { get; init; }
+
+    [Description("Radial bar: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.")]
+    public double? Max { get; init; }
 
     [Description(".NET format string for values in tooltips and data labels, e.g. \"0.0\" or \"P0\". Null: the axis format, else automatic.")]
     public string? Format { get; init; }
@@ -159,7 +174,7 @@ public sealed record AnnotationSpec
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<SeriesType>))]
-public enum SeriesType { Line, Area, Bar }
+public enum SeriesType { Line, Area, Bar, Pie, RadialBar }
 
 /// <summary>Line shape. Step holds each value until the next point.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<CurveType>))]

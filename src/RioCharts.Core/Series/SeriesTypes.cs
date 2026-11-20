@@ -31,6 +31,7 @@ internal interface ISeriesType
     {
         SeriesType.Area => AreaSeriesType.Instance,
         SeriesType.Bar => BarSeriesType.Instance,
+        SeriesType.Pie or SeriesType.RadialBar => new PolarSeriesType(type),
         _ => LineSeriesType.Instance,
     };
 }
@@ -192,7 +193,7 @@ internal sealed class LineSeriesType : ISeriesType
 
     internal static void AddLabels(SeriesBuildContext c, double[] xs, double[] ys, int[] indices)
     {
-        if (!c.Spec.DataLabels)
+        if (c.Spec.DataLabels != true)
         {
             return;
         }
@@ -292,12 +293,29 @@ internal sealed class BarSeriesType : ISeriesType
             hy.Add((float)y);
             hi.Add(i);
             hs.Add(c.Data.ToSourceIndex(i));
-            if (c.Spec.DataLabels)
+            if (c.Spec.DataLabels == true)
             {
                 c.Labels.Add(new LabelAnchor(value, left + width / 2, y, y0, width, c.Stacked));
             }
         }
 
         c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
+    }
+}
+
+/// <summary>
+/// Pie, donut and radial bar. They need the whole chart in polar coordinates, so the layout
+/// draws them in its polar pass instead of through <see cref="Build"/>.
+/// </summary>
+internal sealed class PolarSeriesType(SeriesType type) : ISeriesType
+{
+    public SeriesType Type => type;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Polar;
+    public int DefaultLayer => 1;
+    public bool IncludesZero => true;
+    public bool UsesSlots => false;
+
+    public void Build(SeriesBuildContext context)
+    {
     }
 }

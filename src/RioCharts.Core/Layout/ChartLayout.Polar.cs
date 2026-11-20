@@ -1,0 +1,568 @@
+using System.Globalization;
+using RioCharts.Core.Data;
+using RioCharts.Core.Formatting;
+using RioCharts.Core.Scales;
+using RioCharts.Core.Scene;
+using RioCharts.Core.Series;
+using RioCharts.Core.Text;
+
+namespace RioCharts.Core.Layout;
+
+public static partial class ChartLayout
+{
+    private const string OtherLabel = "Other";
+
+    private sealed record Slice(string Label, int Index, double Value, string Color);
+
+    /// <summary>
+    /// The polar pass: pie and donut rings (one ring per series, slices per category) or radial
+    /// bars (one track per category). The legend lists categories; hiding one removes its slice.
+    /// </summary>
+    private static ChartLayoutResult ComputePolar(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
+    {
+        var culture = options.Culture;
+        var measure = options.Measurer;
+        var width = Math.Max(50, options.Width);
+        var height = Math.Max(50, options.Height);
+        var font = options.FontSize;
+        var lineHeight = font * 1.3;
+
+        foreach (var r in resolved.Where(r => r.Type.CoordinateSystem != CoordinateSystem.Polar))
+        {
+            warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} series cannot be mixed with pie or radial bar series; the series is skipped.");
+        }
+
+        var polar = resolved.Where(r => r.Type.CoordinateSystem == CoordinateSystem.Polar).ToList();
+        var type = polar[0].Spec.Type;
+        foreach (var r in polar.Where(r => r.Spec.Type != type))
+        {
+            warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} cannot be mixed with {type}; the series is skipped.");
+        }
+
+        polar = polar.Where(r => r.Spec.Type == type).ToList();
+        if (type == SeriesType.RadialBar && polar.Count > 1)
+        {
+            warnings.Add("only one radial bar series is drawn; the others are skipped.");
+            polar = [polar[0]];
+        }
+
+        // ---------- Categories (the legend items) ----------
+        var labelsPerSeries = polar.ToDictionary(r => r, r => SliceLabels(r.Data, culture));
+        var categories = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var label in labelsPerSeries.Values.SelectMany(l => l))
+        {
+            if (seen.Add(label))
+            {
+                categories.Add(label);
+            }
+        }
+
+        string ColorOf(string category) => ThemeTokens.Series(categories.IndexOf(category));
+        bool Hidden(string category) => options.HiddenSeries?.Contains(category) == true;
+
+        var legendEntries = categories.Select(c => new LegendEntry(c, c, ColorOf(c), type, !Hidden(c), false)).ToList();
+        var showLegend = spec.Legend.Mode switch
+        {
+            LegendMode.Show => legendEntries.Count > 0,
+            LegendMode.Hide => false,
+            _ => legendEntries.Count > 1,
+        };
+
+        // ---------- Title and legend ----------
+        var statics = new List<Node>();
+        var y0 = PadTop;
+        if (!string.IsNullOrWhiteSpace(spec.Title))
+        {
+            var titleHeight = options.TitleFontSize * 1.3;
+            statics.Add(new TextNode(spec.Title!, new PointF((float)PadLeft, (float)(y0 + titleHeight / 2)), new TextStyle("title"), Anchor.Start)
+            {
+                Class = "rio-title",
+            });
+            y0 += titleHeight + 6;
+        }
+
+        var legendItems = showLegend ? MeasureLegend(legendEntries, measure, font) : [];
+        double legendTop = 0, legendBottom = 0, legendRight = 0;
+        List<List<(LegendEntry Entry, double Width)>> legendRows = [];
+        if (showLegend)
+        {
+            if (spec.Legend.Position == LegendPosition.Right)
+            {
+                legendRight = legendItems.Max(i => i.Width) + 16;
+            }
+            else
+            {
+                legendRows = WrapRows(legendItems, width - PadLeft - PadRight);
+                var legendHeight = legendRows.Count * (lineHeight + 4);
+                (legendTop, legendBottom) = spec.Legend.Position == LegendPosition.Top ? (legendHeight + 8, 0.0) : (0.0, legendHeight + 8);
+            }
+        }
+
+        var plotTop = y0 + legendTop + 4;
+        var plotBottom = height - PadBottom - legendBottom - 4;
+        var plotRight = width - PadRight - legendRight;
+        var plot = new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
+        if (showLegend)
+        {
+            statics.Add(BuildLegend(legendItems, legendRows, spec.Legend.Position, width - PadRight - legendRight + 16, plot, y0,
+                plotBottom + 8, lineHeight, styles));
+        }
+
+        styles.Add("slice-label", new TextStyleDef { FontSize = (float)Math.Max(9, font - 1), Fill = ThemeTokens.Text });
+        styles.Add("leader", new Style { Stroke = ThemeTokens.Axis, StrokeWidth = 1, Fill = "none" });
+        styles.Add("center-value", new TextStyleDef { FontSize = (float)(font * 1.75), FontWeight = 600, Fill = ThemeTokens.Text });
+        styles.Add("center-caption", new TextStyleDef { FontSize = (float)Math.Max(9, font - 1), Fill = ThemeTokens.TextMuted });
+        styles.Add("track", new Style { Stroke = ThemeTokens.Grid, Fill = "none" });
+
+        var seriesNodes = new List<Node>();
+        var labelNodes = new List<Node>();
+        var tooltipSlices = new List<TooltipSlice>();
+        var described = new List<(string Label, double Value)>();
+        var hasData = type == SeriesType.Pie
+            ? LayoutPies(polar, labelsPerSeries, plot, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, described)
+            : LayoutRadialBars(polar[0], labelsPerSeries[polar[0]], plot, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes,
+                tooltipSlices, described);
+
+        var overlay = new List<Node>();
+        if (!hasData)
+        {
+            var allHidden = categories.Count > 0 && categories.All(Hidden);
+            overlay.Add(new TextNode(allHidden ? "All slices are hidden" : "No data available", new PointF(plot.CenterX, plot.CenterY),
+                new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
+        }
+
+        var kind = type == SeriesType.Pie ? (polar.Any(r => (r.Spec.InnerRadius ?? 0) > 0) ? "Donut" : "Pie") : "Radial bar";
+        var description = (string.IsNullOrWhiteSpace(spec.Title) ? "" : spec.Title + ". ") + kind + " chart"
+            + (described.Count == 0 ? ", no data." : $" with {described.Count} items: "
+                + string.Join(", ", described.Take(8).Select(d => $"{d.Label} {ValueFormatter.Format(d.Value, culture)}"))
+                + (described.Count > 8 ? $" and {described.Count - 8} more." : "."));
+
+        var scene = new Scene.Scene(
+            new GroupNode(statics) { Class = "rio-static" },
+            new GroupNode(
+            [
+                new GroupNode(seriesNodes) { Class = "rio-plot" },
+                new GroupNode(labelNodes) { Class = "rio-labels" },
+            ])
+            { Class = "rio-series-layer rio-polar" },
+            new GroupNode(overlay) { Class = "rio-overlay" })
+        {
+            Width = (float)width,
+            Height = (float)height,
+            Styles = styles,
+            Description = description,
+        };
+
+        var unit = new LinearScale(0, 1, plot.Bottom, plot.Y);
+        return new ChartLayoutResult
+        {
+            Scene = scene,
+            Plot = plot,
+            HitTest = new HitTestIndex(),
+            Tooltip = new TooltipModel(plot, spec.Tooltip.Enabled && hasData, false, 0, []) { Slices = tooltipSlices },
+            Legend = legendEntries,
+            Warnings = warnings,
+            XKind = XKind.Category,
+            YScale = unit,
+            YScales = new Dictionary<string, LinearScale>(StringComparer.Ordinal) { [spec.Y.Id ?? "y"] = unit },
+            HasData = hasData,
+        };
+    }
+
+    /// <summary>The name of each data point: its category, or its formatted x.</summary>
+    private static string[] SliceLabels(SeriesData data, CultureInfo culture)
+    {
+        var format = ValueFormatter.ForX(data.Kind, data.X, culture);
+        var labels = new string[data.Count];
+        for (var i = 0; i < data.Count; i++)
+        {
+            labels[i] = data.Kind == XKind.Category
+                ? ((int)data.X[i] is var c && c >= 0 && c < data.Categories.Count ? data.Categories[c] : "")
+                : format(data.X[i]);
+        }
+
+        return labels;
+    }
+
+    private static double Radians(double degrees) => degrees * Math.PI / 180;
+
+    private readonly record struct UnitBox(double MinX, double MaxX, double MinY, double MaxY);
+
+    /// <summary>
+    /// Bounds of a unit-radius sector (center included) in screen orientation (y down): the arc's
+    /// end points plus every 90° extreme it passes.
+    /// </summary>
+    private static UnitBox ArcBounds(double start, double sweep)
+    {
+        double minX = 0, maxX = 0, minY = 0, maxY = 0;
+        void Add(double a)
+        {
+            var (x, y) = (Math.Sin(a), -Math.Cos(a));
+            (minX, maxX, minY, maxY) = (Math.Min(minX, x), Math.Max(maxX, x), Math.Min(minY, y), Math.Max(maxY, y));
+        }
+
+        Add(start);
+        Add(start + sweep);
+        var (lo, hi) = sweep >= 0 ? (start, start + sweep) : (start + sweep, start);
+        for (var k = (int)Math.Ceiling(lo / (Math.PI / 2) - 1e-9); k * Math.PI / 2 <= hi + 1e-9; k++)
+        {
+            Add(k * Math.PI / 2);
+        }
+
+        return new UnitBox(minX, maxX, minY, maxY);
+    }
+
+    private static (double X, double Y) Polar(double cx, double cy, double r, double angle) => (cx + Math.Sin(angle) * r, cy - Math.Cos(angle) * r);
+
+    private static string Percent(double share, CultureInfo culture) =>
+        share > 0 && share < 0.005 ? "<1%" : (share * 100).ToString("0", culture) + "%";
+
+    // ---------- Pie and donut ----------
+
+    private static bool LayoutPies(List<Resolved> rings, Dictionary<Resolved, string[]> labels, RectF plot, Func<string, string> colorOf,
+        Func<string, bool> hidden, CultureInfo culture, ITextMeasurer measure, double font, StyleTable styles, List<string> warnings,
+        List<Node> seriesNodes, List<Node> labelNodes, List<TooltipSlice> tooltip, List<(string, double)> described)
+    {
+        // Slices per ring: positive values of visible categories, small ones grouped when asked.
+        var slicesPerRing = new List<(Resolved Ring, List<Slice> Slices, double Total)>();
+        foreach (var r in rings)
+        {
+            var slices = new List<Slice>();
+            var skipped = false;
+            for (var i = 0; i < r.Data.Count; i++)
+            {
+                var v = r.Data.Y[i];
+                var label = labels[r][i];
+                if (!double.IsFinite(v) || hidden(label))
+                {
+                    continue;
+                }
+
+                if (v <= 0)
+                {
+                    skipped |= v < 0;
+                    continue;
+                }
+
+                slices.Add(new Slice(label, i, v, colorOf(label)));
+            }
+
+            if (skipped)
+            {
+                warnings.Add($"series '{r.Spec.Id}': negative values cannot be shown in a pie and are left out.");
+            }
+
+            var total = slices.Sum(s => s.Value);
+            if (r.Spec.GroupSmallSlices is > 0 and var threshold && total > 0)
+            {
+                var tiny = slices.Where(s => s.Value / total < threshold).ToList();
+                if (tiny.Count > 1)
+                {
+                    slices = slices.Except(tiny).Append(new Slice(OtherLabel, -1, tiny.Sum(s => s.Value), ThemeTokens.Series(ThemeTokens.SeriesColorCount - 1))).ToList();
+                }
+            }
+
+            if (slices.Count > 0)
+            {
+                slicesPerRing.Add((r, slices, total));
+            }
+        }
+
+        if (slicesPerRing.Count == 0)
+        {
+            return false;
+        }
+
+        var first = slicesPerRing[0].Ring.Spec;
+        var start = Radians(first.StartAngle ?? 0);
+        var end = Radians(first.EndAngle ?? (first.StartAngle ?? 0) + 360);
+        var sweep = Math.Clamp(end - start, -Math.PI * 2, Math.PI * 2);
+        var n = slicesPerRing.Count;
+        var innerFraction = Math.Clamp(first.InnerRadius ?? (n > 1 ? 0.4 : 0), 0, 0.95);
+        var small = Math.Max(9, font - 1);
+        var textHeight = small * 1.25;
+
+        // Fit the drawn sweep, not the whole circle: a half donut uses the full plot height.
+        var box = ArcBounds(start, sweep);
+        if (innerFraction > 0 && n == 1)
+        {
+            box = box with { MaxY = Math.Max(box.MaxY, 0.25) }; // room for the center total under a half donut
+        }
+
+        double Fit(double w, double h) => Math.Min(w / (box.MaxX - box.MinX), h / (box.MaxY - box.MinY));
+
+        // The radius leaves room for outside labels only when some slice needs one.
+        var outer = slicesPerRing[0];
+        var showLabels = outer.Ring.Spec.DataLabels ?? true;
+        var full = Math.Max(10.0, Fit(plot.Width - 8, plot.Height - 8));
+        string LabelText(Resolved ring, Slice s, double total) =>
+            ring.Spec.Format is { } f ? ValueFormatter.Format(s.Value, culture, f) : Percent(s.Value / total, culture);
+
+        double RadiusFor(bool outside)
+        {
+            if (!outside)
+            {
+                return full;
+            }
+
+            var widest = outer.Slices.Max(s => measure.Measure(LabelText(outer.Ring, s, outer.Total), small));
+            return Fit(plot.Width - 2 * (widest + 30), plot.Height - 2 * textHeight);
+        }
+
+        bool FitsInside(double r0, double r1, double a0, double a1, double w)
+        {
+            var rm = r0 > 0 ? (r0 + r1) / 2 : r1 * 0.62;
+            return Math.Abs(a1 - a0) * rm >= w + 8 && r1 - r0 >= textHeight + 4 && (Math.Abs(a1 - a0) >= 0.25 || r0 > 0);
+        }
+
+        var radius = full;
+        var outsideAllowed = false;
+        if (showLabels)
+        {
+            var needsOutside = false;
+            double acc = 0;
+            foreach (var s in outer.Slices)
+            {
+                var a0 = start + sweep * acc / outer.Total;
+                acc += s.Value;
+                var a1 = start + sweep * acc / outer.Total;
+                var r0 = full * (innerFraction + (1 - innerFraction) * (n - 1) / n);
+                needsOutside |= !FitsInside(r0, full, a0, a1, measure.Measure(LabelText(outer.Ring, s, outer.Total), small));
+            }
+
+            if (needsOutside && RadiusFor(true) >= Math.Max(30, full * 0.55))
+            {
+                radius = RadiusFor(true);
+                outsideAllowed = true;
+            }
+        }
+
+        var cx = (float)(plot.CenterX - (box.MinX + box.MaxX) / 2 * radius);
+        var cy = (float)(plot.CenterY - (box.MinY + box.MaxY) / 2 * radius);
+        var gap = n > 1 ? 3 : 0;
+        var outsideLabels = new List<(double Angle, string Text, double Width)>();
+        for (var k = 0; k < n; k++)
+        {
+            var (ring, slices, total) = slicesPerRing[k];
+            var sum = slices.Sum(s => s.Value);
+
+            // The first series is the outer ring.
+            var r1 = radius * (innerFraction + (1 - innerFraction) * (n - k) / n);
+            var r0 = radius * (innerFraction + (1 - innerFraction) * (n - k - 1) / n) + (k < n - 1 ? gap : 0);
+            r0 = Math.Max(0, Math.Min(r0, r1 - 2));
+            var nodes = new List<Node>();
+            double acc = 0;
+            foreach (var s in slices)
+            {
+                var a0 = start + sweep * acc / sum;
+                acc += s.Value;
+                var a1 = start + sweep * acc / sum;
+                var style = styles.Add("slice-" + s.Color, new Style { Fill = s.Color, Stroke = ThemeTokens.Surface, StrokeWidth = slices.Count > 1 ? 1.5f : 0 });
+                var path = new PathBuilder().Arc(cx, cy, r1, a0, a1);
+                if (r0 > 0)
+                {
+                    path.Arc(cx, cy, r0, a1, a0);
+                }
+                else if (Math.Abs(a1 - a0) < Math.PI * 2 - 1e-6)
+                {
+                    path.LineTo(cx, cy);
+                }
+
+                nodes.Add(new PathNode(path.Close().Build(), style) { Class = "rio-slice" });
+                var share = s.Value / sum;
+                var valueText = ValueFormatter.Format(s.Value, culture, ring.Spec.Format ?? "");
+                tooltip.Add(new TooltipSlice(ring.Spec.Id, s.Index, n > 1 || ring.Spec.Name is not null ? ring.Spec.DisplayName : "", s.Label,
+                    $"{valueText} ({Percent(share, culture)})", s.Color, cx, cy, (float)r0, (float)r1, (float)Math.Min(a0, a1), (float)Math.Max(a0, a1),
+                    (float)Math.Max(a0, a1)));
+                if (k == 0)
+                {
+                    described.Add((s.Label, s.Value));
+                }
+
+                if (!(ring.Spec.DataLabels ?? true))
+                {
+                    continue;
+                }
+
+                var text = LabelText(ring, s, sum);
+                var w = measure.Measure(text, small);
+                var mid = (a0 + a1) / 2;
+                if (FitsInside(r0, r1, a0, a1, w))
+                {
+                    var (lx, ly) = Polar(cx, cy, r0 > 0 ? (r0 + r1) / 2 : r1 * 0.62, mid);
+                    labelNodes.Add(new TextNode(text, new PointF((float)lx, (float)ly), new TextStyle("data-label-inverse"), Anchor.Middle));
+                }
+                else if (k == 0 && outsideAllowed)
+                {
+                    outsideLabels.Add((mid, text, w));
+                }
+            }
+
+            seriesNodes.Add(new GroupNode(nodes)
+            {
+                Key = "series:" + ring.Spec.Id,
+                Class = "rio-series rio-series-pie",
+                AriaLabel = $"{ring.Spec.DisplayName}: " + string.Join(", ", slices.Select(s => $"{s.Label} {Percent(s.Value / sum, culture)}")),
+            });
+
+            // Donut center: the total, when there is room for it.
+            if (n == 1 && r0 >= 30)
+            {
+                var totalText = ValueFormatter.Format(sum, culture, ring.Spec.Format, compactFrom: 1e5);
+                if (measure.Measure(totalText, font * 1.75) <= r0 * 1.6)
+                {
+                    labelNodes.Add(new TextNode(totalText, new PointF(cx, (float)(cy - font * 0.4)), new TextStyle("center-value"), Anchor.Middle)
+                    {
+                        Class = "rio-center-value",
+                    });
+                    labelNodes.Add(new TextNode("Total", new PointF(cx, (float)(cy + font * 1.1)), new TextStyle("center-caption"), Anchor.Middle)
+                    {
+                        Class = "rio-center-caption",
+                    });
+                }
+            }
+        }
+
+        if (outsideLabels.Count > 0)
+        {
+            labelNodes.AddRange(PlaceOutsideLabels(outsideLabels, cx, cy, radius, plot, textHeight));
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Labels outside the pie with leader lines. Each side is stacked top to bottom so labels
+    /// never overlap, then shifted up if the stack runs past the plot.
+    /// </summary>
+    private static List<Node> PlaceOutsideLabels(List<(double Angle, string Text, double Width)> labels, double cx, double cy, double radius,
+        RectF plot, double textHeight)
+    {
+        var nodes = new List<Node>();
+        foreach (var right in new[] { true, false })
+        {
+            var side = labels
+                .Where(l => Math.Sin(l.Angle) >= 0 == right)
+                .Select(l => (l.Angle, l.Text, l.Width, Elbow: Polar(cx, cy, radius + 10, l.Angle), Y: Polar(cx, cy, radius + 10, l.Angle).Y))
+                .OrderBy(l => l.Y)
+                .ToList();
+            if (side.Count == 0)
+            {
+                continue;
+            }
+
+            var ys = side.Select(l => Math.Max(l.Y, plot.Y + textHeight / 2)).ToArray();
+            for (var i = 1; i < ys.Length; i++)
+            {
+                ys[i] = Math.Max(ys[i], ys[i - 1] + textHeight);
+            }
+
+            var overflow = ys[^1] - (plot.Bottom - textHeight / 2);
+            if (overflow > 0)
+            {
+                ys[^1] -= overflow;
+                for (var i = ys.Length - 2; i >= 0; i--)
+                {
+                    ys[i] = Math.Min(ys[i], ys[i + 1] - textHeight);
+                }
+            }
+
+            var textX = cx + (right ? 1 : -1) * (radius + 22);
+            for (var i = 0; i < side.Count; i++)
+            {
+                var (angle, text, _, elbow, _) = side[i];
+                var (px, py) = Polar(cx, cy, radius + 2, angle);
+                var leader = new PathBuilder().MoveTo(px, py).LineTo(elbow.X, ys[i]).LineTo(textX + (right ? -4 : 4), ys[i]).Build();
+                nodes.Add(new PathNode(leader, new StyleRef("leader")) { Class = "rio-leader" });
+                nodes.Add(new TextNode(text, new PointF((float)textX, (float)ys[i]), new TextStyle("slice-label"), right ? Anchor.Start : Anchor.End));
+            }
+        }
+
+        return nodes;
+    }
+
+    // ---------- Radial bar ----------
+
+    private static bool LayoutRadialBars(Resolved series, string[] labels, RectF plot, Func<string, string> colorOf, Func<string, bool> hidden,
+        CultureInfo culture, ITextMeasurer measure, double font, StyleTable styles, List<string> warnings,
+        List<Node> seriesNodes, List<Node> labelNodes, List<TooltipSlice> tooltip, List<(string, double)> described)
+    {
+        var bars = new List<Slice>();
+        for (var i = 0; i < series.Data.Count; i++)
+        {
+            var v = series.Data.Y[i];
+            if (double.IsFinite(v) && !hidden(labels[i]))
+            {
+                bars.Add(new Slice(labels[i], i, Math.Max(0, v), colorOf(labels[i])));
+            }
+        }
+
+        if (bars.Count == 0)
+        {
+            return false;
+        }
+
+        if (series.Data.Y.Any(v => v < 0))
+        {
+            warnings.Add($"series '{series.Spec.Id}': negative values are shown as empty radial bars.");
+        }
+
+        var spec = series.Spec;
+        var max = spec.Max is > 0 and var m ? m : NiceTicks.NiceDomain(0, Math.Max(bars.Max(b => b.Value), 1e-9), 5).Max;
+        var start = Radians(spec.StartAngle ?? 0);
+        var sweep = Math.Clamp(Radians((spec.EndAngle ?? 270) - (spec.StartAngle ?? 0)), -Math.PI * 2, Math.PI * 2);
+        var cx = plot.CenterX;
+        var cy = plot.CenterY;
+        var radius = Math.Max(10.0, Math.Min(plot.Width, plot.Height) / 2.0 - 4);
+        var inner = radius * Math.Clamp(spec.InnerRadius ?? 0.3, 0, 0.9);
+        var band = (radius - inner) / bars.Count;
+        var thickness = Math.Max(2, Math.Min(band * 0.72, 28));
+        var small = Math.Max(9, font - 1);
+        var showLabels = (spec.DataLabels ?? true) && band >= small * 1.1;
+
+        var nodes = new List<Node>();
+        for (var k = 0; k < bars.Count; k++)
+        {
+            var b = bars[k];
+            var rm = radius - band * k - band / 2;
+            var trackStyle = styles.Add("track-" + SvgSafe(thickness), new Style { Stroke = ThemeTokens.Grid, StrokeWidth = (float)thickness, Fill = "none" });
+            nodes.Add(new PathNode(new PathBuilder().Arc(cx, cy, rm, start, start + sweep).Build(), trackStyle) { Class = "rio-track" });
+
+            var share = Math.Clamp(b.Value / max, 0, 1);
+            var a1 = start + sweep * share;
+            if (share > 0)
+            {
+                var style = styles.Add($"radial-{b.Color}-{SvgSafe(thickness)}", new Style { Stroke = b.Color, StrokeWidth = (float)thickness, Fill = "none" });
+                nodes.Add(new PathNode(new PathBuilder().Arc(cx, cy, rm, start, a1).Build(), style) { Class = "rio-radial-bar" });
+            }
+
+            var valueText = ValueFormatter.Format(b.Value, culture, spec.Format);
+            tooltip.Add(new TooltipSlice(spec.Id, b.Index, spec.Name ?? "", b.Label, valueText, b.Color, cx, cy,
+                (float)(rm - thickness / 2), (float)(rm + thickness / 2), (float)Math.Min(start, a1), (float)Math.Max(start, a1),
+                (float)Math.Max(start, start + sweep)));
+            described.Add((b.Label, b.Value));
+
+            if (showLabels)
+            {
+                // Name and value just before the start of the track.
+                var (sx, sy) = Polar(cx, cy, rm, start);
+                var text = $"{b.Label} {valueText}";
+                if (measure.Measure(text, small) <= sx - plot.X - 10)
+                {
+                    labelNodes.Add(new TextNode(text, new PointF((float)(sx - 10), (float)sy), new TextStyle("slice-label"), Anchor.End));
+                }
+            }
+        }
+
+        seriesNodes.Add(new GroupNode(nodes)
+        {
+            Key = "series:" + spec.Id,
+            Class = "rio-series rio-series-radialbar",
+            AriaLabel = spec.DisplayName + ": " + string.Join(", ", bars.Select(b => $"{b.Label} {ValueFormatter.Format(b.Value, culture, spec.Format)}")),
+        });
+        return true;
+    }
+
+    private static string SvgSafe(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+}

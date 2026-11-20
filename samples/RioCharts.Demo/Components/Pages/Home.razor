@@ -112,6 +112,43 @@
             <p class="note">This chart uses a per-bar tooltip (<code>Shared = false</code>).</p>
         </section>
 
+        <section>
+            <h2>Pie</h2>
+            <Chart TItem="Share" Title="Energy use by system" OnPointClick="SliceClicked">
+                <PieSeries Items="_use" Name="Energy use" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 MWh" />
+            </Chart>
+            <p class="note">Slices under 3% are grouped into "Other"; small slices get outside labels. Click a slice or a legend item. @_sliceClicked</p>
+        </section>
+
+        <section>
+            <h2>Donut</h2>
+            <Chart TItem="Share" Legend="_rightLegend">
+                <DonutSeries Items="_supplyShare" Name="Heat supply" XValue="s => s.Name" YValue="s => s.Value" />
+            </Chart>
+            <p class="note">The total sits in the middle; the legend is on the right.</p>
+        </section>
+
+        <section>
+            <h2>Half donut and nested rings</h2>
+            <div class="edge two">
+                <Chart TItem="Share" Height="220">
+                    <DonutSeries Items="_supplyShare" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
+                </Chart>
+                <Chart TItem="Share" Height="220">
+                    <PieSeries Items="_supplyShare" Name="2026" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.35" />
+                    <PieSeries Items="_supplyShareLastYear" Name="2025" XValue="s => s.Name" YValue="s => s.Value" />
+                </Chart>
+            </div>
+            <p class="note">Rings: the first series is the outer ring (2026), the inner ring is 2025.</p>
+        </section>
+
+        <section>
+            <h2>Radial bars</h2>
+            <Chart TItem="Share" Title="Component health">
+                <RadialBarSeries Items="_health" Name="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+            </Chart>
+        </section>
+
         <section class="wide">
             <h2>Columnar fast path: 200 000 points</h2>
             <Chart TItem="double" Height="260">
@@ -157,6 +194,22 @@
     private sealed record Reading(DateTime Time, double? Value);
     private sealed record QuarterSales(string Quarter, double Last, double This);
     private sealed record EnergyMix(string Month, double District, double HeatPump, double Solar);
+    private sealed record Share(string Name, double Value);
+
+    private readonly LegendSpec _rightLegend = new() { Position = LegendPosition.Right };
+    private string _sliceClicked = "";
+
+    private readonly List<Share> _use =
+    [
+        new("Heating", 412), new("Ventilation", 236), new("Cooling", 148), new("Lighting", 97), new("Pumps", 31),
+        new("Elevators", 9), new("Controls", 6),
+    ];
+
+    private readonly List<Share> _supplyShare = [new("District heating", 214), new("Heat pump", 96), new("Solar", 38)];
+    private readonly List<Share> _supplyShareLastYear = [new("District heating", 251), new("Heat pump", 71), new("Solar", 22)];
+    private readonly List<Share> _health = [new("Supply fan", 87), new("Extract fan", 74), new("Filter", 41), new("Heat recovery", 92)];
+
+    private void SliceClicked(PointClickEventArgs<Share> e) => _sliceClicked = $"Clicked {e.Item?.Name}: {e.Item?.Value} MWh.";
 
     private bool _dark;
     private IReadOnlyCollection<string> _hidden = [];

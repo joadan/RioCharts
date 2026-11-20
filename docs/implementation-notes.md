@@ -62,3 +62,32 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `DateTimeOffset`, `DateOnly`, category names, or strings (ISO 8601 times, numbers) so JSON
   specs work. Labels stay inside the plot. Hover text is an SVG `<title>`; they become focusable
   buttons only when `OnAnnotationClick` is set. Point annotations and callouts are milestone 4.
+
+## Milestone 3
+
+- **Polar charts** are laid out in their own pass (`ChartLayout.Polar.cs`). A chart is polar
+  when any series is `Pie` or `RadialBar`; cartesian series in it are skipped with a warning, as
+  are series of the other polar type and extra radial bar series.
+- **Donut is a pie with `InnerRadius`.** `<DonutSeries>` only changes the default to 0.6.
+- **Slices are categories.** The x value names each slice (numbers and times are formatted). The
+  legend lists categories, colored by category in order of first appearance, and `HiddenSeries`
+  holds category names for polar charts. Hidden slices leave the total.
+- **Nested rings:** several pie series become rings, the first outermost, with a 3 px gap; the
+  innermost ring starts at 0.4 of the radius unless `InnerRadius` is set.
+- **Gaps between slices** are a 1.5 px stroke in the surface color, not a pad angle.
+- **Pie labels:** percentages by default (`Format` switches to values). A label goes inside when
+  the arc at mid radius is wide enough, else outside with a leader line (outer ring only). Outside
+  labels are stacked per side; the pie shrinks to make room only when some slice needs one, and
+  outside labels are dropped when the pie would get too small. Labels show values only; names
+  are in the legend and tooltip.
+- **Fit:** pies fit the bounding box of their sweep, so a half donut uses the whole plot.
+- **"Other"** (`GroupSmallSlices`) groups two or more slices under the threshold; it uses the
+  last palette color, is not in the legend, and is not clickable. Grouped categories stay in the
+  legend.
+- **Radial bars** are stroked arcs with round caps on a track in the grid color. The full track
+  is `Max`, else a nice value above the largest. The first category is the outer track. Labels
+  ("Name value") sit left of the track start and are dropped when they do not fit.
+- **Hover** draws a thin halo outside the slice in the JS overlay (no explode, no DOM changes to
+  the rendered slices); the donut center keeps showing the total. Entry motion is the shared
+  fade, not an angle animation.
+- **Negative pie values** are left out with a warning; negative radial bar values show as empty.

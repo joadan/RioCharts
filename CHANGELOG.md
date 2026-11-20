@@ -5,7 +5,20 @@ changes are called out under **Breaking**.
 
 ## 0.1.0-preview (unreleased)
 
-Restructured to the new design ([Design.md](Design.md)), milestones 1 and 2.
+Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3.
+
+### Milestone 3
+
+- `<PieSeries>`, `<DonutSeries>` and `<RadialBarSeries>`. The x value names each slice and the
+  legend lists slices; clicking one hides it.
+- Pie labels: percentages (or values with `Format`) inside slices that fit, otherwise outside
+  with leader lines, stacked per side so they never overlap. Donuts show the total in the middle.
+- `StartAngle`/`EndAngle` (half donuts fit their space), `InnerRadius`, `GroupSmallSlices`
+  ("Other"), and nested rings from several pie series.
+- Radial bars: one track per category, `Max` for the full track, name and value at the start.
+- Slice tooltips with a hover halo, and `OnPointClick` for slices and radial bars.
+- **Breaking:** `SeriesSpec.DataLabels` and the series `DataLabels` parameter are now `bool?`
+  (null: on for pie, donut and radial bar, off otherwise).
 
 ### Milestone 2
 

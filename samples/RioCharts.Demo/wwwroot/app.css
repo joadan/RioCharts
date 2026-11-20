@@ -100,6 +100,10 @@ section.resizable {
     gap: 8px;
 }
 
+.edge.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 /* Theme tokens can be set anywhere above the chart. */
 .custom-palette {
     --rio-series-1: #0f766e;

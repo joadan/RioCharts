@@ -371,6 +371,22 @@ public partial class Chart<TItem> : IChartContext
                     xl = s.XLabels,
                     v = s.Values,
                 }),
+                slices = model.Slices.Select(s => new
+                {
+                    id = s.SeriesId,
+                    index = s.Index,
+                    header = s.Header,
+                    label = s.Label,
+                    value = s.Value,
+                    color = SvgWriter.Color(s.Color),
+                    cx = s.Cx,
+                    cy = s.Cy,
+                    r0 = s.R0,
+                    r1 = s.R1,
+                    a0 = s.A0,
+                    a1 = s.A1,
+                    end = s.HitEnd,
+                }),
             }
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);

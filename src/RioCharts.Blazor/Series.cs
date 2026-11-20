@@ -53,8 +53,8 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>Stack group: series of the same type with the same stack name are stacked.</summary>
     [Parameter] public string? Stack { get; set; }
 
-    /// <summary>Show the value next to each point or bar.</summary>
-    [Parameter] public bool DataLabels { get; set; }
+    /// <summary>Show values on the chart. Default: off, except for pie, donut and radial bar.</summary>
+    [Parameter] public bool? DataLabels { get; set; }
 
     /// <summary>.NET format string for values in tooltips and data labels, e.g. "0.0".</summary>
     [Parameter] public string? Format { get; set; }
@@ -177,4 +177,65 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 public sealed class BarSeries<TItem> : SeriesBase<TItem>
 {
     protected override SeriesType Type => SeriesType.Bar;
+}
+
+/// <summary>
+/// Pie: one slice per category (the x value), sized by its share of the total. Several pie
+/// series in one chart are drawn as nested rings, the first one outermost.
+/// </summary>
+public class PieSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>Inner radius as a fraction of the outer radius; above 0 makes a donut.</summary>
+    [Parameter] public double InnerRadius { get; set; }
+
+    /// <summary>Start angle in degrees, clockwise from 12 o'clock.</summary>
+    [Parameter] public double StartAngle { get; set; }
+
+    /// <summary>End angle in degrees. Default: a full circle. 180 with StartAngle -90 makes a half donut.</summary>
+    [Parameter] public double? EndAngle { get; set; }
+
+    /// <summary>Group slices below this share of the total (e.g. 0.03) into one "Other" slice.</summary>
+    [Parameter] public double? GroupSmallSlices { get; set; }
+
+    protected override SeriesType Type => SeriesType.Pie;
+
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
+    {
+        InnerRadius = InnerRadius,
+        StartAngle = StartAngle,
+        EndAngle = EndAngle,
+        GroupSmallSlices = GroupSmallSlices,
+    };
+}
+
+/// <summary>A pie with a hole (inner radius 0.6 by default); shows the total in the middle.</summary>
+public sealed class DonutSeries<TItem> : PieSeries<TItem>
+{
+    public DonutSeries() => InnerRadius = 0.6;
+}
+
+/// <summary>Radial bars: one circular track per category, filled up to its value.</summary>
+public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>The value of a full track, e.g. 100 for percentages. Default: a nice value above the largest.</summary>
+    [Parameter] public double? Max { get; set; }
+
+    /// <summary>Inner radius as a fraction of the outer radius. Default 0.3.</summary>
+    [Parameter] public double? InnerRadius { get; set; }
+
+    /// <summary>Start angle in degrees, clockwise from 12 o'clock. Default 0.</summary>
+    [Parameter] public double StartAngle { get; set; }
+
+    /// <summary>End angle in degrees. Default 270.</summary>
+    [Parameter] public double EndAngle { get; set; } = 270;
+
+    protected override SeriesType Type => SeriesType.RadialBar;
+
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
+    {
+        Max = Max,
+        InnerRadius = InnerRadius,
+        StartAngle = StartAngle,
+        EndAngle = EndAngle,
+    };
 }

@@ -8,7 +8,7 @@ Razor renders SVG, and a tiny JS module only measures the container and the font
 
 Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
-## What works today (milestones 1 and 2)
+## What works today (milestones 1–3)
 
 - Line, area and bar series (grouped bars), with linear, monotone and step lines
 - Linear, time and category axes, picked automatically from the data
@@ -25,8 +25,10 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Data labels with collision avoidance
 - Reference lines and bands (setpoints, comfort zones, fault periods)
 - Point and annotation click events
+- Pie, donut (also half donut and nested rings) and radial bar, with inside and outside labels,
+  leader lines and "Other" grouping
 
-Not yet: pie and donut, zoom and pan, display time zones, streaming. See [Design.md](Design.md)
+Not yet: zoom and pan, display time zones, streaming, linked charts. See [Design.md](Design.md)
 for the design and milestones.
 
 ## Usage
@@ -65,6 +67,18 @@ Stacking, a second axis, data labels and annotations:
     <BarSeries Items="heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" />
     <BarSeries Items="fans" Name="Fans" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" DataLabels="true" />
     <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+</Chart>
+```
+
+Pie, donut and radial bar (the x value names each slice; the legend lists slices):
+
+```razor
+<Chart Items="use">
+    <DonutSeries Name="Energy use" XValue="u => u.System" YValue="u => u.MWh" GroupSmallSlices="0.03" />
+</Chart>
+
+<Chart Items="health">
+    <RadialBarSeries XValue="h => h.Component" YValue="h => h.Percent" Max="100" Format="0'%'" />
 </Chart>
 ```
 
