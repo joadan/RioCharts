@@ -113,3 +113,13 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   every `RefreshInterval` ms, taking a copy of the buffer (O(n) per redraw). Extents are not
   updated incrementally and the whole layout runs again, which is fine for tens of thousands of
   points. Out-of-order points are sorted in the copy (the window then is not trimmed).
+- **Points and callouts** are annotations with `X` and `Y`; both expand their axes by default and
+  are hidden when outside the plot. A point's label goes above the marker (below near the top).
+  A callout's box sits at `OffsetX`/`OffsetY` from the point, kept inside the plot, with a
+  connector to the nearest point on the box edge. They take part in label collision avoidance
+  as obstacles for data labels, but are not moved themselves.
+- **Dragging** works for reference lines (not bands, points or callouts, and not vertical lines
+  on category axes). The layout reports `DragHandles` (pixel position and scale); the renderer
+  marks annotation groups with `data-key`, and JS moves the group while dragging (mouse or touch)
+  and sends only the dropped value. The line snaps back unless the app stores the new value
+  (`@bind-Value` or `OnAnnotationChanged`).

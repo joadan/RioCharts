@@ -8,6 +8,13 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
+/// <summary>
+/// A draggable reference line: where it is and the scale to turn a dragged pixel position back
+/// into a value (data units; milliseconds on time axes).
+/// </summary>
+/// <param name="IsX">True for a vertical line (x axis).</param>
+public sealed record DragHandle(string Id, bool IsX, float Pixel, double DomainMin, double DomainMax, double RangeStart, double RangeEnd);
+
 public static partial class ChartLayout
 {
     private sealed class ResolvedAnnotation
@@ -15,19 +22,30 @@ public static partial class ChartLayout
         public required AnnotationSpec Spec { get; init; }
         public required string Id { get; init; }
         public required int Index { get; init; }
+
+        /// <summary>A vertical line or band (on the x axis).</summary>
         public required bool IsX { get; init; }
-        public required bool IsBand { get; init; }
+
+        public required AnnotationType Type { get; init; }
+        public bool IsBand => Type == AnnotationType.Band;
+        public bool IsPoint => Type is AnnotationType.Point or AnnotationType.Callout;
+
+        /// <summary>The y axis of horizontal lines, bands and points; null for x lines and bands.</summary>
         public YAxisLayout? Axis { get; init; }
 
-        /// <summary>The line's value, or the band's lower end (data units; category index on category axes).</summary>
+        /// <summary>The line's value, the band's lower end, or a point's x (data units; category index on category axes).</summary>
         public required double A { get; init; }
 
-        /// <summary>The band's upper end; NaN for lines.</summary>
+        /// <summary>The band's upper end, or a point's y; NaN for lines.</summary>
         public required double B { get; init; }
 
         public required bool ExpandsDomain { get; init; }
 
-        public double[] Values => IsBand ? [A, B] : [A];
+        /// <summary>Values on the x axis that the domain should include.</summary>
+        public double[] XValues => IsPoint ? [A] : IsX ? (IsBand ? [A, B] : [A]) : [];
+
+        /// <summary>Values on the annotation's y axis that the domain should include.</summary>
+        public double[] YValues => IsPoint ? [B] : IsX ? [] : (IsBand ? [A, B] : [A]);
     }
 
     private static List<ResolvedAnnotation> ResolveAnnotations(ChartSpec spec, List<YAxisLayout> axes, XKind xKind, IReadOnlyList<string> categories,
@@ -37,12 +55,21 @@ public static partial class ChartLayout
         for (var i = 0; i < spec.Annotations.Count; i++)
         {
             var a = spec.Annotations[i];
-            var isX = a.Axis == AnnotationAxis.X;
+            var isPoint = a.Type is AnnotationType.Point or AnnotationType.Callout;
+            var isX = !isPoint && a.Axis == AnnotationAxis.X;
             var kind = isX ? xKind : XKind.Numeric;
             var axis = isX ? null : FindAxis(axes, a.YAxisId, $"annotations[{i}].yAxisId", warnings) ?? axes[0];
-            var isBand = a.Type == AnnotationType.Band;
             double first, second;
-            if (isBand)
+            if (isPoint)
+            {
+                (first, second) = (AxisValue.ToDouble(a.X, xKind, categories), AxisValue.ToDouble(a.Y, XKind.Numeric));
+                if (!double.IsFinite(first) || !double.IsFinite(second))
+                {
+                    warnings.Add($"annotations[{i}]: x '{a.X}' must be a valid {Describe(xKind)} value and y '{a.Y}' a number; the {a.Type.ToString().ToLowerInvariant()} is skipped.");
+                    continue;
+                }
+            }
+            else if (a.Type == AnnotationType.Band)
             {
                 (first, second) = (AxisValue.ToDouble(a.From, kind, categories), AxisValue.ToDouble(a.To, kind, categories));
                 if (!double.IsFinite(first) || !double.IsFinite(second))
@@ -63,17 +90,19 @@ public static partial class ChartLayout
                 }
             }
 
+            // Lines and points stay in view by default; bands only mark what is already there.
+            var expands = (a.ExpandsDomain ?? a.Type != AnnotationType.Band) && !(isX && xKind == XKind.Category);
             result.Add(new ResolvedAnnotation
             {
                 Spec = a,
                 Id = a.Id ?? $"annotation-{i + 1}",
                 Index = i,
                 IsX = isX,
-                IsBand = isBand,
+                Type = a.Type,
                 Axis = axis,
                 A = first,
                 B = second,
-                ExpandsDomain = (a.ExpandsDomain ?? !isBand) && !(isX && xKind == XKind.Category),
+                ExpandsDomain = expands,
             });
         }
 
@@ -88,12 +117,13 @@ public static partial class ChartLayout
     }
 
     /// <summary>
-    /// Reference lines and bands with their labels. Shapes are clamped to the plot and labels
-    /// stay inside it; label rectangles go into <paramref name="placed"/> so data labels avoid them.
+    /// Reference lines, bands, points and callouts with their labels. Shapes are clamped to the
+    /// plot and labels stay inside it; label rectangles go into <paramref name="placed"/> so data
+    /// labels avoid them. Draggable lines are reported in <paramref name="handles"/>.
     /// </summary>
     private static void BuildAnnotations(List<ResolvedAnnotation> annotations, RectF plot, XKind xKind, LinearScale? xScale, BandScale? xBand,
         CultureInfo culture, ITextMeasurer measure, double font, StyleTable styles, bool interactive,
-        List<Node> below, List<Node> above, List<Node> labels, List<RectF> placed, string? xFormat)
+        List<Node> below, List<Node> above, List<RectF> placed, List<DragHandle> handles, string? xFormat)
     {
         var small = Math.Max(9, font - 1);
         var textHeight = small * 1.25;
@@ -107,105 +137,83 @@ public static partial class ChartLayout
             var color = a.Spec.Color;
             var lineStyle = color is null ? new StyleRef("annotation-line")
                 : styles.Add($"annotation-{a.Index}-line", new Style { Stroke = color, StrokeWidth = 1.25f, DashArray = "4 3" });
-            var bandStyle = color is null ? new StyleRef("annotation-band")
-                : styles.Add($"annotation-{a.Index}-band", new Style { Fill = color, FillOpacity = 0.12f });
             var labelStyle = color is null ? new TextStyle("annotation-label")
                 : styles.Add($"annotation-{a.Index}-label", new TextStyleDef { FontSize = (float)small, Fill = color });
 
+            double MapX(double v) => xKind == XKind.Category ? xBand!.Center((int)v) : xScale!.Map(v);
+
             var nodes = new List<Node>();
-            double x1, x2, y1, y2; // the shape's extent, clamped to the plot
-            if (a.IsX)
+            if (a.IsPoint)
             {
-                var (p1, p2) = xKind == XKind.Category
-                    ? (xBand!.Center((int)a.A) - (a.IsBand ? xBand.Step / 2 : 0), xBand.Center((int)(a.IsBand ? a.B : a.A)) + (a.IsBand ? xBand.Step / 2 : 0))
-                    : (xScale!.Map(a.A), a.IsBand ? xScale.Map(a.B) : xScale.Map(a.A));
-                (x1, x2, y1, y2) = (Math.Max(plot.X, Math.Min(p1, p2)), Math.Min(plot.Right, Math.Max(p1, p2)), plot.Y, plot.Bottom);
-                if (x2 < x1 - 0.5 || (a.IsBand && x2 - x1 < 0.5))
-                {
-                    continue; // outside the visible range
-                }
-            }
-            else
-            {
-                var scale = a.Axis!.Scale;
-                var (p1, p2) = (scale.Map(a.A), a.IsBand ? scale.Map(a.B) : scale.Map(a.A));
-                (x1, x2, y1, y2) = (plot.X, plot.Right, Math.Max(plot.Y, Math.Min(p1, p2)), Math.Min(plot.Bottom, Math.Max(p1, p2)));
-                if (y2 < y1 - 0.5 || (a.IsBand && y2 - y1 < 0.5))
+                if (!BuildPoint(a, MapX(a.A), a.Axis!.Scale.Map(a.B), plot, measure, small, textHeight, color, labelStyle, styles, nodes, placed))
                 {
                     continue;
                 }
             }
-
-            if (a.IsBand)
-            {
-                nodes.Add(new RectNode(new RectF((float)x1, (float)y1, (float)(x2 - x1), (float)(y2 - y1)), bandStyle) { Class = "rio-annotation-band" });
-            }
-            else if (a.IsX)
-            {
-                nodes.Add(new PathNode(new PathBuilder().MoveTo(x1, plot.Y).LineTo(x1, plot.Bottom).Build(), lineStyle) { Class = "rio-annotation-line" });
-            }
             else
             {
-                nodes.Add(new PathNode(new PathBuilder().MoveTo(plot.X, y1).LineTo(plot.Right, y1).Build(), lineStyle) { Class = "rio-annotation-line" });
-            }
-
-            if (!string.IsNullOrWhiteSpace(a.Spec.Label))
-            {
-                var text = a.Spec.Label!;
-                var w = measure.Measure(text, small);
-                var position = a.Spec.LabelPosition ?? (a.IsBand ? LabelPosition.Start : LabelPosition.End);
-                double lx, ly;
-                Anchor anchor;
-                Baseline baseline;
-                if (!a.IsX)
+                double x1, x2, y1, y2; // the shape's extent, clamped to the plot
+                if (a.IsX)
                 {
-                    (lx, anchor) = position switch
+                    var (p1, p2) = xKind == XKind.Category
+                        ? (xBand!.Center((int)a.A) - (a.IsBand ? xBand.Step / 2 : 0), xBand.Center((int)(a.IsBand ? a.B : a.A)) + (a.IsBand ? xBand.Step / 2 : 0))
+                        : (xScale!.Map(a.A), a.IsBand ? xScale.Map(a.B) : xScale.Map(a.A));
+                    (x1, x2, y1, y2) = (Math.Max(plot.X, Math.Min(p1, p2)), Math.Min(plot.Right, Math.Max(p1, p2)), plot.Y, plot.Bottom);
+                    if (x2 < x1 - 0.5 || (a.IsBand && x2 - x1 < 0.5))
                     {
-                        LabelPosition.Start => (plot.X + 4, Anchor.Start),
-                        LabelPosition.Middle => (plot.CenterX, Anchor.Middle),
-                        _ => (plot.Right - 4, Anchor.End),
-                    };
-                    if (a.IsBand)
-                    {
-                        (ly, baseline) = (y1 + 3, Baseline.Top);
-                    }
-                    else
-                    {
-                        // Above the line, or below it when there is no room at the top.
-                        (ly, baseline) = y1 - 3 - textHeight >= plot.Y ? (y1 - 3, Baseline.Bottom) : (y1 + 3, Baseline.Top);
+                        continue; // outside the visible range
                     }
                 }
                 else
                 {
-                    (ly, baseline) = a.IsBand || position == LabelPosition.End ? (plot.Y + 3, Baseline.Top)
-                        : position == LabelPosition.Start ? (plot.Bottom - 3, Baseline.Bottom)
-                        : (plot.CenterY, Baseline.Middle);
-                    if (a.IsBand)
+                    var scale = a.Axis!.Scale;
+                    var (p1, p2) = (scale.Map(a.A), a.IsBand ? scale.Map(a.B) : scale.Map(a.A));
+                    (x1, x2, y1, y2) = (plot.X, plot.Right, Math.Max(plot.Y, Math.Min(p1, p2)), Math.Min(plot.Bottom, Math.Max(p1, p2)));
+                    if (y2 < y1 - 0.5 || (a.IsBand && y2 - y1 < 0.5))
                     {
-                        (lx, anchor) = position switch
-                        {
-                            LabelPosition.Middle => ((x1 + x2) / 2, Anchor.Middle),
-                            LabelPosition.End => (x2 - 4, Anchor.End),
-                            _ => (x1 + 4, Anchor.Start),
-                        };
-                    }
-                    else
-                    {
-                        // Beside the line, on the side with room.
-                        (lx, anchor) = x1 + 4 + w <= plot.Right ? (x1 + 4, Anchor.Start) : (x1 - 4, Anchor.End);
+                        continue;
                     }
                 }
 
-                var rect = TextRect(lx, ly, w, textHeight, anchor, baseline);
-                placed.Add(rect);
-                nodes.Add(new TextNode(text, new PointF((float)lx, (float)ly), labelStyle, anchor) { Baseline = baseline, Class = "rio-annotation-label" });
+                if (a.IsBand)
+                {
+                    var bandStyle = color is null ? new StyleRef("annotation-band")
+                        : styles.Add($"annotation-{a.Index}-band", new Style { Fill = color, FillOpacity = 0.12f });
+                    nodes.Add(new RectNode(new RectF((float)x1, (float)y1, (float)(x2 - x1), (float)(y2 - y1)), bandStyle) { Class = "rio-annotation-band" });
+                }
+                else
+                {
+                    var line = a.IsX
+                        ? new PathBuilder().MoveTo(x1, plot.Y).LineTo(x1, plot.Bottom).Build()
+                        : new PathBuilder().MoveTo(plot.X, y1).LineTo(plot.Right, y1).Build();
+                    nodes.Add(new PathNode(line, lineStyle) { Class = "rio-annotation-line" });
+                    if (a.Spec.Draggable && !(a.IsX && xKind == XKind.Category))
+                    {
+                        // A wide transparent stroke makes a thin line easy to grab.
+                        var hit = a.IsX
+                            ? new PathBuilder().MoveTo(x1, plot.Y).LineTo(x1, plot.Bottom).Build()
+                            : new PathBuilder().MoveTo(plot.X, y1).LineTo(plot.Right, y1).Build();
+                        nodes.Add(new PathNode(hit, new StyleRef("annotation-grip")) { Class = "rio-annotation-grip" });
+                        var s = a.IsX ? xScale! : a.Axis!.Scale;
+                        handles.Add(new DragHandle(a.Id, a.IsX, (float)(a.IsX ? x1 : y1), s.DomainMin, s.DomainMax, s.RangeStart, s.RangeEnd));
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(a.Spec.Label))
+                {
+                    var text = a.Spec.Label!;
+                    var w = measure.Measure(text, small);
+                    var (lx, ly, anchor, baseline) = LineLabelPosition(a, plot, x1, x2, y1, w, textHeight);
+                    placed.Add(TextRect(lx, ly, w, textHeight, anchor, baseline));
+                    nodes.Add(new TextNode(text, new PointF((float)lx, (float)ly), labelStyle, anchor) { Baseline = baseline, Class = "rio-annotation-label" });
+                }
             }
 
             var title = AnnotationTitle(a, xKind, xBand, culture, xFormat);
             var group = new GroupNode(nodes)
             {
                 Key = "annotation:" + a.Id,
-                Class = "rio-annotation rio-annotation-" + (a.IsBand ? "band" : "line"),
+                Class = "rio-annotation rio-annotation-" + a.Type.ToString().ToLowerInvariant() + (a.Spec.Draggable && !a.IsBand && !a.IsPoint ? (a.IsX ? " rio-draggable rio-draggable-x" : " rio-draggable rio-draggable-y") : ""),
                 Title = title,
                 AriaLabel = title,
                 Interaction = interactive ? new NodeInteraction("annotation", a.Id) : null,
@@ -214,25 +222,107 @@ public static partial class ChartLayout
         }
     }
 
+    private static (double X, double Y, Anchor Anchor, Baseline Baseline) LineLabelPosition(ResolvedAnnotation a, RectF plot,
+        double x1, double x2, double y1, double w, double textHeight)
+    {
+        var position = a.Spec.LabelPosition ?? (a.IsBand ? LabelPosition.Start : LabelPosition.End);
+        if (!a.IsX)
+        {
+            var (lx, anchor) = position switch
+            {
+                LabelPosition.Start => (plot.X + 4.0, Anchor.Start),
+                LabelPosition.Middle => (plot.CenterX, Anchor.Middle),
+                _ => (plot.Right - 4.0, Anchor.End),
+            };
+
+            // Bands: inside at the top. Lines: above the line, or below it when there is no room.
+            var (ly, baseline) = a.IsBand ? (y1 + 3, Baseline.Top)
+                : y1 - 3 - textHeight >= plot.Y ? (y1 - 3, Baseline.Bottom) : (y1 + 3, Baseline.Top);
+            return (lx, ly, anchor, baseline);
+        }
+
+        var (y, b) = a.IsBand || position == LabelPosition.End ? (plot.Y + 3.0, Baseline.Top)
+            : position == LabelPosition.Start ? (plot.Bottom - 3.0, Baseline.Bottom)
+            : (plot.CenterY, Baseline.Middle);
+        if (a.IsBand)
+        {
+            return position switch
+            {
+                LabelPosition.Middle => ((x1 + x2) / 2, y, Anchor.Middle, b),
+                LabelPosition.End => (x2 - 4, y, Anchor.End, b),
+                _ => (x1 + 4, y, Anchor.Start, b),
+            };
+        }
+
+        // Beside the line, on the side with room.
+        return x1 + 4 + w <= plot.Right ? (x1 + 4, y, Anchor.Start, b) : (x1 - 4, y, Anchor.End, b);
+    }
+
+    /// <summary>
+    /// A point annotation: a marker with its label above (or below near the top). A callout puts
+    /// the label in a box at an offset, with a connector line to the point.
+    /// </summary>
+    private static bool BuildPoint(ResolvedAnnotation a, double px, double py, RectF plot, ITextMeasurer measure, double small, double textHeight,
+        string? color, TextStyle labelStyle, StyleTable styles, List<Node> nodes, List<RectF> placed)
+    {
+        if (!plot.Contains((float)px, (float)py))
+        {
+            return false; // outside the visible range
+        }
+
+        var fill = color ?? ThemeTokens.Annotation;
+        var markerStyle = styles.Add($"annotation-{a.Index}-marker", new Style { Fill = fill, Stroke = ThemeTokens.Surface, StrokeWidth = 2 });
+        var label = a.Spec.Label;
+        if (a.Type == AnnotationType.Callout && !string.IsNullOrWhiteSpace(label))
+        {
+            var w = measure.Measure(label, small);
+            var (boxW, boxH) = (w + 14, textHeight + 8);
+            var bx = Math.Clamp(px + (a.Spec.OffsetX ?? 24) - (a.Spec.OffsetX < 0 ? boxW : 0), plot.X, plot.Right - boxW);
+            var by = Math.Clamp(py + (a.Spec.OffsetY ?? -32) - boxH / 2, plot.Y, plot.Bottom - boxH);
+            var box = new RectF((float)bx, (float)by, (float)boxW, (float)boxH);
+
+            // Connector from the point to the nearest point on the box edge.
+            var cx = Math.Clamp(px, bx, bx + boxW);
+            var cy = Math.Clamp(py, by, by + boxH);
+            var connectorStyle = styles.Add($"annotation-{a.Index}-connector", new Style { Stroke = fill, StrokeWidth = 1 });
+            nodes.Add(new PathNode(new PathBuilder().MoveTo(px, py).LineTo(cx, cy).Build(), connectorStyle) { Class = "rio-callout-connector" });
+            var boxStyle = styles.Add($"annotation-{a.Index}-box", new Style { Fill = ThemeTokens.Surface, Stroke = fill, StrokeWidth = 1 });
+            nodes.Add(new RectNode(box, boxStyle) { CornerRadius = 4, Class = "rio-callout-box" });
+            nodes.Add(new TextNode(label, new PointF((float)(bx + 7), box.CenterY), new TextStyle("callout-label"), Anchor.Start) { Class = "rio-callout-label" });
+            placed.Add(box);
+        }
+        else if (!string.IsNullOrWhiteSpace(label))
+        {
+            var w = measure.Measure(label, small);
+            var (ly, baseline) = py - 8 - textHeight >= plot.Y ? (py - 8, Baseline.Bottom) : (py + 8, Baseline.Top);
+            var (lx, anchor) = px - w / 2 < plot.X ? (px - 4, Anchor.Start) : px + w / 2 > plot.Right ? (px + 4, Anchor.End) : (px, Anchor.Middle);
+            placed.Add(TextRect(lx, ly, w, textHeight, anchor, baseline));
+            nodes.Add(new TextNode(label, new PointF((float)lx, (float)ly), labelStyle, anchor) { Baseline = baseline, Class = "rio-annotation-label" });
+        }
+
+        nodes.Add(new PathNode(new PathBuilder().MoveTo(px, py - 4.5).Arc(px, py, 4.5, 0, Math.PI * 2).Close().Build(), markerStyle) { Class = "rio-annotation-marker" });
+        placed.Add(new RectF((float)(px - 5), (float)(py - 5), 10, 10));
+        return true;
+    }
+
     private static string AnnotationTitle(ResolvedAnnotation a, XKind xKind, BandScale? xBand, CultureInfo culture, string? xFormat)
     {
-        string Format(double v)
+        string FormatX(double v)
         {
-            if (!a.IsX)
-            {
-                return ValueFormatter.Format(v, culture, a.Axis!.Spec.Format);
-            }
-
             if (xKind == XKind.Category)
             {
                 var i = (int)v;
                 return xBand is not null && i >= 0 && i < xBand.Categories.Count ? xBand.Categories[i] : "";
             }
 
-            return ValueFormatter.ForX(xKind, a.Values, culture, xFormat)(v);
+            return ValueFormatter.ForX(xKind, [v], culture, xFormat)(v);
         }
 
-        var value = a.IsBand ? $"{Format(a.A)} – {Format(a.B)}" : Format(a.A);
+        string FormatY(double v) => ValueFormatter.Format(v, culture, a.Axis!.Spec.Format);
+
+        var value = a.IsPoint ? $"{FormatX(a.A)}, {FormatY(a.B)}"
+            : a.IsX ? (a.IsBand ? $"{FormatX(a.A)} – {FormatX(a.B)}" : FormatX(a.A))
+            : a.IsBand ? $"{FormatY(a.A)} – {FormatY(a.B)}" : FormatY(a.A);
         return string.IsNullOrWhiteSpace(a.Spec.Label) ? value : $"{a.Spec.Label}: {value}";
     }
 

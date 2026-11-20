@@ -17,6 +17,9 @@ internal interface ISeriesSource
 internal interface IAnnotationSource
 {
     AnnotationSpec Spec { get; }
+
+    /// <summary>The user dropped a draggable annotation at a new value.</summary>
+    Task DraggedAsync(object value);
 }
 
 /// <summary>Cascaded from <see cref="Chart{TItem}"/> to its series and annotation components.</summary>
@@ -73,6 +76,10 @@ public sealed class ZoomChangingEventArgs
     public ChartRange? Range { get; set; }
     public bool Cancel { get; set; }
 }
+
+/// <summary>Raised when the user has dragged a reference line to a new value.</summary>
+/// <param name="Value">The new value: DateTime on time axes, else double.</param>
+public sealed record AnnotationChangedEventArgs(string AnnotationId, string? Label, object Value);
 
 /// <summary>Raised when a reference line or band is clicked.</summary>
 public sealed record AnnotationClickEventArgs(string AnnotationId, string? Label);

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using RioCharts.Core;
+using RioCharts.Core.Data;
 
 namespace RioCharts.Blazor;
 
@@ -11,27 +12,21 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
 {
     [CascadingParameter] internal IChartContext? Chart { get; set; }
 
-    /// <summary>Optional id, reported by <c>Chart.OnAnnotationClick</c>.</summary>
+    /// <summary>Optional id, reported by <c>Chart.OnAnnotationClick</c> and <c>OnAnnotationChanged</c>.</summary>
     [Parameter] public string? Id { get; set; }
 
-    /// <summary>X for a vertical line or band; Y (default) for a horizontal one.</summary>
-    [Parameter] public AnnotationAxis Axis { get; set; } = AnnotationAxis.Y;
-
-    /// <summary>Vertical axis id for Y annotations. Default: the primary axis.</summary>
+    /// <summary>Vertical axis id for Y annotations, points and callouts. Default: the primary axis.</summary>
     [Parameter] public string? YAxisId { get; set; }
 
     [Parameter] public string? Label { get; set; }
 
-    /// <summary>Where the label sits. Default: End for lines, Start for bands.</summary>
-    [Parameter] public LabelPosition? LabelPosition { get; set; }
-
     /// <summary>CSS color. Default: the muted annotation color (<c>--rio-annotation</c>).</summary>
     [Parameter] public string? Color { get; set; }
 
-    /// <summary>Grow the axis range to include the annotation. Default: lines yes, bands no.</summary>
+    /// <summary>Grow the axis range to include the annotation. Default: yes, except for bands.</summary>
     [Parameter] public bool? ExpandsDomain { get; set; }
 
-    /// <summary>Draw below or above the series. Default: bands below, lines above.</summary>
+    /// <summary>Draw below or above the series. Default: bands below, the rest above.</summary>
     [Parameter] public AnnotationLayer? Layer { get; set; }
 
     public AnnotationSpec Spec { get; private set; } = new();
@@ -42,10 +37,8 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
     {
         Id = Id,
         Type = type,
-        Axis = Axis,
         YAxisId = YAxisId,
         Label = Label,
-        LabelPosition = LabelPosition,
         Color = Color,
         ExpandsDomain = ExpandsDomain,
         Layer = Layer,
@@ -69,6 +62,11 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
         }
     }
 
+    Task IAnnotationSource.DraggedAsync(object value) => OnDraggedAsync(value);
+
+    /// <summary>A draggable annotation was dropped at a new value (DateTime on time axes, else double).</summary>
+    protected virtual Task OnDraggedAsync(object value) => Task.CompletedTask;
+
     protected override bool ShouldRender() => false;
 
     public void Dispose()
@@ -80,14 +78,36 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
 
 /// <summary>
 /// A horizontal (Axis="Y", default) or vertical (Axis="X") line, e.g. a setpoint or "today".
-/// <code>&lt;ReferenceLine Value="21" Label="Setpoint" /&gt;</code>
+/// With <see cref="Draggable"/> the user can move it; bind the value with <c>@bind-Value</c>.
+/// <code>&lt;ReferenceLine @bind-Value="setpoint" Label="Setpoint" Draggable="true" /&gt;</code>
 /// </summary>
-public sealed class ReferenceLine : AnnotationBase
+/// <typeparam name="TValue">A number type, DateTime, DateTimeOffset, DateOnly or string (category).</typeparam>
+public sealed class ReferenceLine<TValue> : AnnotationBase
 {
-    /// <summary>Position in data units: a number, DateTime, DateTimeOffset, DateOnly or category name.</summary>
-    [Parameter, EditorRequired] public object? Value { get; set; }
+    /// <summary>Position in data units.</summary>
+    [Parameter, EditorRequired] public TValue? Value { get; set; }
 
-    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Line) with { Value = Value };
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+
+    /// <summary>X for a vertical line; Y (default) for a horizontal one.</summary>
+    [Parameter] public AnnotationAxis Axis { get; set; } = AnnotationAxis.Y;
+
+    /// <summary>Where the label sits along the line. Default: End.</summary>
+    [Parameter] public LabelPosition? LabelPosition { get; set; }
+
+    /// <summary>Let the user drag the line; the new value goes to <see cref="ValueChanged"/>.</summary>
+    [Parameter] public bool Draggable { get; set; }
+
+    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Line) with
+    {
+        Value = Value,
+        Axis = Axis,
+        LabelPosition = LabelPosition,
+        Draggable = Draggable,
+    };
+
+    protected override Task OnDraggedAsync(object value) =>
+        AxisValues.TryConvert<TValue>(value, Value, out var converted) ? ValueChanged.InvokeAsync(converted) : Task.CompletedTask;
 }
 
 /// <summary>
@@ -100,5 +120,92 @@ public sealed class ReferenceBand : AnnotationBase
 
     [Parameter, EditorRequired] public object? To { get; set; }
 
-    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Band) with { From = From, To = To };
+    /// <summary>X for a time period or category range; Y (default) for a value range.</summary>
+    [Parameter] public AnnotationAxis Axis { get; set; } = AnnotationAxis.Y;
+
+    /// <summary>Where the label sits. Default: Start.</summary>
+    [Parameter] public LabelPosition? LabelPosition { get; set; }
+
+    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Band) with
+    {
+        From = From,
+        To = To,
+        Axis = Axis,
+        LabelPosition = LabelPosition,
+    };
+}
+
+/// <summary>
+/// A marker at a data point with an optional label above it, e.g. "Alarm".
+/// <code>&lt;PointAnnotation X="alarmTime" Y="26.5" Label="Alarm" /&gt;</code>
+/// </summary>
+public sealed class PointAnnotation : AnnotationBase
+{
+    /// <summary>The x value: a number, DateTime, DateTimeOffset, DateOnly or category name.</summary>
+    [Parameter, EditorRequired] public object? X { get; set; }
+
+    /// <summary>The y value on the annotation's vertical axis.</summary>
+    [Parameter, EditorRequired] public double Y { get; set; }
+
+    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Point) with { X = X, Y = Y };
+}
+
+/// <summary>
+/// A text box with a connector line to a data point.
+/// <code>&lt;Callout X="t" Y="18.2" Label="Filter changed" OffsetX="30" OffsetY="-40" /&gt;</code>
+/// </summary>
+public sealed class Callout : AnnotationBase
+{
+    [Parameter, EditorRequired] public object? X { get; set; }
+
+    [Parameter, EditorRequired] public double Y { get; set; }
+
+    /// <summary>Horizontal offset of the box from the point in pixels (negative: to the left). Default 24.</summary>
+    [Parameter] public double? OffsetX { get; set; }
+
+    /// <summary>Vertical offset of the box from the point in pixels (negative: up). Default -32.</summary>
+    [Parameter] public double? OffsetY { get; set; }
+
+    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Callout) with { X = X, Y = Y, OffsetX = OffsetX, OffsetY = OffsetY };
+}
+
+/// <summary>Converts a dragged value (double or DateTime) to the type of the bound value.</summary>
+internal static class AxisValues
+{
+    public static bool TryConvert<TValue>(object value, TValue? current, out TValue result)
+    {
+        result = default!;
+        var target = Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TValue);
+        try
+        {
+            object? converted = (value, target) switch
+            {
+                (DateTime t, var type) when type == typeof(DateTime) => t,
+                (DateTime t, var type) when type == typeof(DateTimeOffset) =>
+                    new DateTimeOffset(t, current is DateTimeOffset original ? original.Offset : TimeSpan.Zero),
+                (DateTime t, var type) when type == typeof(DateOnly) => DateOnly.FromDateTime(t),
+                (double d, var type) when type == typeof(int) || type == typeof(long) || type == typeof(short) =>
+                    Convert.ChangeType(Math.Round(d), type, System.Globalization.CultureInfo.InvariantCulture),
+                (double d, var type) when type == typeof(double) || type == typeof(float) || type == typeof(decimal) =>
+                    Convert.ChangeType(d, type, System.Globalization.CultureInfo.InvariantCulture),
+                (double d, var type) when type == typeof(object) => d,
+                (DateTime t, var type) when type == typeof(object) => t,
+                _ => null,
+            };
+            if (converted is null)
+            {
+                return false;
+            }
+
+            result = (TValue)converted;
+            return true;
+        }
+        catch (Exception e) when (e is InvalidCastException or OverflowException or FormatException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>A value in data units as the user sees it: DateTime on time axes, else double.</summary>
+    public static object FromAxis(double value, XKind kind) => kind == XKind.Time ? TimeValue.ToDateTime(value) : value;
 }

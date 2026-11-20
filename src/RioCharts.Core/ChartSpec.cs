@@ -157,6 +157,21 @@ public sealed record AnnotationSpec
     [Description("End of a band.")]
     public object? To { get; init; }
 
+    [Description("Point and callout: the x value (a number, a time or a category).")]
+    public object? X { get; init; }
+
+    [Description("Point and callout: the y value on the annotation's vertical axis.")]
+    public object? Y { get; init; }
+
+    [Description("Callout: horizontal offset of the text box from the point, in pixels. Default 24.")]
+    public double? OffsetX { get; init; }
+
+    [Description("Callout: vertical offset of the text box from the point, in pixels (negative is up). Default -32.")]
+    public double? OffsetY { get; init; }
+
+    [Description("Line: the user can drag it to a new value (e.g. to edit a threshold); the chart reports the new value.")]
+    public bool Draggable { get; init; }
+
     [Description("Optional label.")]
     public string? Label { get; init; }
 
@@ -193,7 +208,7 @@ public enum LegendMode { Auto, Show, Hide }
 public enum LegendPosition { Top, Bottom, Right }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AnnotationType>))]
-public enum AnnotationType { Line, Band }
+public enum AnnotationType { Line, Band, Point, Callout }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AnnotationAxis>))]
 public enum AnnotationAxis { X, Y }

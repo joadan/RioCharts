@@ -230,7 +230,36 @@ function toChart(state, e) {
 
 // ---------- Zoom and pan ----------
 
+function capture(state, e) {
+    try {
+        state.svg.setPointerCapture(e.pointerId);
+    } catch {
+        // not an active pointer (e.g. synthetic events)
+    }
+}
+
+// A draggable reference line under the pointer: move it (mouse or touch).
+function annotationDragStart(state, e) {
+    const m = state.model;
+    const group = e.target && e.target.closest ? e.target.closest('[data-key^="annotation:"]') : null;
+    const handle = group && m && m.drags ? m.drags.find(d => 'annotation:' + d.id === group.getAttribute('data-key')) : null;
+    const pos = handle ? pointer(state, e) : null;
+    if (!pos || e.button !== 0) {
+        return false;
+    }
+
+    state.suppressClick = false;
+    state.drag = { mode: 'annotation', handle, group, start: handle.x ? pos.x : pos.y, to: handle.pos, moved: false, id: e.pointerId };
+    capture(state, e);
+    e.preventDefault();
+    return true;
+}
+
 function dragStart(state, e) {
+    if (annotationDragStart(state, e)) {
+        return true;
+    }
+
     const m = state.model;
     if (!m || !m.zoom || !m.xscale || e.button !== 0 || e.pointerType !== 'mouse') {
         return false;
@@ -257,6 +286,16 @@ function dragMove(state, e) {
     const m = state.model;
     const pos = pointer(state, e);
     if (!pos) {
+        return;
+    }
+
+    if (d.mode === 'annotation') {
+        const h = d.handle;
+        const lo = Math.min(h.s.r0, h.s.r1), hi = Math.max(h.s.r0, h.s.r1);
+        d.to = Math.max(lo, Math.min(hi, h.pos + (h.x ? pos.x : pos.y) - d.start));
+        d.moved = d.moved || Math.abs(d.to - h.pos) > 1;
+        d.group.style.transform = h.x ? `translateX(${d.to - h.pos}px)` : `translateY(${d.to - h.pos}px)`;
+        hide(state);
         return;
     }
 
@@ -289,6 +328,16 @@ function dragEnd(state) {
 
     if (state.hover) {
         state.hover.replaceChildren();
+    }
+
+    if (d.mode === 'annotation') {
+        if (d.moved) {
+            state.suppressClick = true;
+            const value = toData(d.handle.s, d.to);
+            state.dotnet.invokeMethodAsync('OnAnnotationDragged', d.handle.id, value).catch(() => { });
+        }
+
+        return; // the line stays where it was dropped until .NET lays out again
     }
 
     const s = state.model.xscale;

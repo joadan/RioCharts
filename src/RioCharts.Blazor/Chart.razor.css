@@ -285,3 +285,21 @@
     outline: 2px solid var(--rio-focus, var(--_rio-focus));
     outline-offset: 1px;
 }
+
+/* ---------- Draggable reference lines ---------- */
+
+.rio-chart ::deep .rio-draggable-y {
+    cursor: ns-resize;
+}
+
+.rio-chart ::deep .rio-draggable-x {
+    cursor: ew-resize;
+}
+
+.rio-chart ::deep .rio-draggable:hover .rio-annotation-line {
+    stroke-width: 2;
+}
+
+.rio-chart ::deep .rio-draggable {
+    touch-action: none;
+}

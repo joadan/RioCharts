@@ -18,6 +18,13 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3, mile
 - Live data: `SeriesBuffer` (append from any thread, capacity and time window) on a series'
   `Buffer` parameter; the chart redraws at most every `RefreshInterval` ms (default 100) and keeps
   the tooltip open while it updates. `ConsumeAsync` feeds a buffer from an `IAsyncEnumerable`.
+- Annotations: `<PointAnnotation>` (a marker with a label) and `<Callout>` (a text box with a
+  connector line); `AnnotationType.Point` and `Callout` with `X`, `Y`, `OffsetX`, `OffsetY`.
+- Draggable reference lines: `Draggable="true"`, with `@bind-Value` on `<ReferenceLine>` and
+  `OnAnnotationChanged` on the chart.
+- **Breaking:** `<ReferenceLine>` is generic (`ReferenceLine<TValue>`, inferred from `Value`) so
+  it can bind its value. `Axis` and `LabelPosition` moved from `AnnotationBase` to the line and
+  band components.
 
 ### Milestone 3
 

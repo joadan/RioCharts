@@ -89,6 +89,12 @@ public partial class Chart<TItem> : IChartContext
     [Parameter] public EventCallback<AnnotationClickEventArgs> OnAnnotationClick { get; set; }
 
     /// <summary>
+    /// Raised when the user has dragged a reference line (<c>Draggable</c>). For lines in
+    /// <see cref="Annotations"/>, update the spec's value here; components use <c>@bind-Value</c>.
+    /// </summary>
+    [Parameter] public EventCallback<AnnotationChangedEventArgs> OnAnnotationChanged { get; set; }
+
+    /// <summary>
     /// Zoom and pan on the x axis: drag to zoom in, Shift+drag to pan, Ctrl/⌘+wheel to zoom at the
     /// pointer, double-click or the reset button to zoom out. Not for category axes.
     /// </summary>
@@ -320,6 +326,41 @@ public partial class Chart<TItem> : IChartContext
         await OnLegendClick.InvokeAsync(new LegendClickEventArgs(id, name, visible));
     }
 
+    /// <summary>Called by JS when a draggable line is dropped (value in data units).</summary>
+    [JSInvokable]
+    public async Task OnAnnotationDragged(string id, double value)
+    {
+        var all = BuildSpec().Annotations;
+        var index = -1;
+        for (var i = 0; i < all.Count && index < 0; i++)
+        {
+            if ((all[i].Id ?? $"annotation-{i + 1}") == id)
+            {
+                index = i;
+            }
+        }
+
+        if (index < 0 || !double.IsFinite(value))
+        {
+            return;
+        }
+
+        var spec = all[index];
+        var kind = spec.Axis == AnnotationAxis.X ? _layout?.XKind ?? XKind.Numeric : XKind.Numeric;
+        var result = AxisValues.FromAxis(value, kind);
+
+        // Components bound with @bind-Value update themselves; the event is raised either way.
+        var offset = (Annotations ?? []).Count;
+        if (index >= offset && index - offset < _annotations.Count)
+        {
+            await _annotations[index - offset].DraggedAsync(result);
+        }
+
+        await OnAnnotationChanged.InvokeAsync(new AnnotationChangedEventArgs(id, spec.Label, result));
+        _dirty = true;
+        StateHasChanged();
+    }
+
     /// <summary>Called by JS when a point or bar is clicked.</summary>
     [JSInvokable]
     public async Task OnPointClicked(string seriesId, int index)
@@ -415,9 +456,11 @@ public partial class Chart<TItem> : IChartContext
         var click = OnPointClick.HasDelegate;
         var scale = _layout.XScale;
         var zoom = Zoomable && scale is not null && _layout.HasData;
-        object? payload = model.Enabled || click || zoom || (Group is not null && scale is not null)
+        var drags = _layout.DragHandles;
+        object? payload = model.Enabled || click || zoom || drags.Count > 0 || (Group is not null && scale is not null)
             ? new
             {
+                drags = drags.Select(d => new { id = d.Id, x = d.IsX, pos = d.Pixel, s = new { d0 = d.DomainMin, d1 = d.DomainMax, r0 = d.RangeStart, r1 = d.RangeEnd } }),
                 plot = new { x = model.Plot.X, y = model.Plot.Y, w = model.Plot.Width, h = model.Plot.Height },
                 tooltip = model.Enabled,
                 shared = model.Shared,

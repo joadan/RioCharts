@@ -118,6 +118,61 @@ public class Milestone4Tests
         }
     }
 
+    // ---------- Annotations ----------
+
+    private static IEnumerable<Core.Scene.Node> All(Core.Scene.Node node) =>
+        node is Core.Scene.GroupNode g ? g.Children.SelectMany(All).Prepend(g) : [node];
+
+    [Fact]
+    public void Point_and_callout_annotations_are_drawn_and_kept_in_view()
+    {
+        var start = new DateTime(2026, 3, 1);
+        var data = new Dictionary<string, SeriesData>
+        {
+            ["a"] = SeriesData.From(Enumerable.Range(0, 24).Select(h => start.AddHours(h)).ToArray(), Enumerable.Range(0, 24).Select(h => 20.0 + h % 3).ToArray()),
+        };
+        var spec = new ChartSpec
+        {
+            Series = [new SeriesSpec { Id = "a" }],
+            Annotations =
+            [
+                new AnnotationSpec { Type = AnnotationType.Point, X = start.AddHours(5), Y = 30.0, Label = "Alarm" },
+                new AnnotationSpec { Type = AnnotationType.Callout, X = "2026-03-01T10:00", Y = 21.0, Label = "Filter changed" },
+            ],
+        };
+
+        var result = ChartLayout.Compute(spec, data, Options);
+        var nodes = All(result.Scene.Series).ToList();
+
+        Assert.True(result.YScale.DomainMax >= 30); // the point expands the y domain
+        Assert.Equal(2, nodes.Count(n => n.Class == "rio-annotation-marker"));
+        Assert.Contains(nodes, n => n is Core.Scene.TextNode { Text: "Alarm" });
+        var box = nodes.OfType<Core.Scene.RectNode>().Single(r => r.Class == "rio-callout-box");
+        Assert.True(result.Plot.Contains(box.Bounds.X, box.Bounds.Y));
+        Assert.Contains(nodes, n => n.Class == "rio-callout-connector");
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void Draggable_lines_report_a_handle_with_their_scale()
+    {
+        var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([0.0, 10], [10.0, 30]) };
+        var spec = new ChartSpec
+        {
+            Series = [new SeriesSpec { Id = "a" }],
+            Annotations = [new AnnotationSpec { Id = "sp", Value = 21, Draggable = true }, new AnnotationSpec { Value = 15 }],
+        };
+
+        var result = ChartLayout.Compute(spec, data, Options);
+        var handle = Assert.Single(result.DragHandles);
+
+        Assert.Equal("sp", handle.Id);
+        Assert.False(handle.IsX);
+        Assert.Equal(result.YScale.Map(21), handle.Pixel, 0.01);
+        Assert.Equal(result.YScale.DomainMin, handle.DomainMin);
+        Assert.Contains(All(result.Scene.Series), n => n is Core.Scene.GroupNode { Key: "annotation:sp" } g && g.Class!.Contains("rio-draggable-y"));
+    }
+
     [Fact]
     public void Visible_range_is_ignored_on_category_axes()
     {

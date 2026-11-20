@@ -90,7 +90,7 @@ public static partial class ChartLayout
         {
             foreach (var a in annotations)
             {
-                foreach (var v in a.Values)
+                foreach (var v in a.YValues)
                 {
                     min = Math.Min(min, v);
                     max = Math.Max(max, v);

@@ -65,6 +65,9 @@ public sealed class ChartLayoutResult
     public required IReadOnlyDictionary<string, LinearScale> YScales { get; init; }
 
     public required bool HasData { get; init; }
+
+    /// <summary>Draggable reference lines (for the interactive layer).</summary>
+    public IReadOnlyList<DragHandle> DragHandles { get; init; } = [];
 }
 
 /// <summary>
@@ -171,7 +174,7 @@ public static partial class ChartLayout
         var hasBars = drawable.Any(r => r.Type.UsesSlots);
         var (xMin, xMax, barSpacing) = xKind == XKind.Category
             ? (0, 0, 0)
-            : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.IsX && a.ExpandsDomain));
+            : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.ExpandsDomain));
         (double Min, double Max)? fullX = xKind == XKind.Category ? null : (xMin, xMax);
         (double Min, double Max)? window = null;
         if (fullX is not null && options.XRange is { } range && range.Max > range.Min && double.IsFinite(range.Min) && double.IsFinite(range.Max))
@@ -182,7 +185,7 @@ public static partial class ChartLayout
 
         foreach (var axis in axes)
         {
-            YExtent(axis, annotations.Where(a => !a.IsX && a.ExpandsDomain && a.Axis == axis), window);
+            YExtent(axis, annotations.Where(a => a.ExpandsDomain && a.Axis == axis), window);
         }
 
         // ---------- Title and legend ----------
@@ -445,13 +448,14 @@ public static partial class ChartLayout
 
         // ---------- Annotations and labels ----------
         var placedLabels = new List<RectF>();
+        var dragHandles = new List<DragHandle>();
         var below = new List<Node>();
         var above = new List<Node>();
         var labelNodes = new List<Node>();
         if (hasData)
         {
             BuildAnnotations(annotations, plot, xKind, xScale, xBand, culture, measure, font, styles, options.InteractiveAnnotations,
-                below, above, labelNodes, placedLabels, spec.X.Format);
+                below, above, placedLabels, dragHandles, spec.X.Format);
             labelNodes.AddRange(BuildDataLabels(labelAnchors, plot, culture, measure, font, styles, placedLabels, warnings));
         }
 
@@ -499,6 +503,7 @@ public static partial class ChartLayout
             YScale = gridAxis.Scale,
             YScales = axes.ToDictionary(a => a.Id, a => a.Scale, StringComparer.Ordinal),
             HasData = hasData,
+            DragHandles = dragHandles,
         };
     }
 
@@ -523,6 +528,8 @@ public static partial class ChartLayout
         styles.Add("annotation-line", new Style { Stroke = ThemeTokens.Annotation, StrokeWidth = 1.25f, DashArray = "4 3" });
         styles.Add("annotation-band", new Style { Fill = ThemeTokens.Annotation, FillOpacity = 0.1f });
         styles.Add("annotation-label", new TextStyleDef { FontSize = small, Fill = ThemeTokens.Annotation });
+        styles.Add("annotation-grip", new Style { Stroke = "transparent", StrokeWidth = 12 });
+        styles.Add("callout-label", new TextStyleDef { FontSize = small, Fill = ThemeTokens.Text });
         return styles;
     }
 
@@ -632,7 +639,7 @@ public static partial class ChartLayout
         {
             foreach (var a in annotations)
             {
-                foreach (var v in a.Values)
+                foreach (var v in a.XValues)
                 {
                     min = Math.Min(min, v);
                     max = Math.Max(max, v);

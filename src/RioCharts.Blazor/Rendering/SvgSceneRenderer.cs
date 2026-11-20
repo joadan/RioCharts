@@ -134,10 +134,15 @@ public sealed class SvgSceneRenderer : ComponentBase
             }
         }
 
+        if (g.Key is not null && g.Key.StartsWith("annotation:", StringComparison.Ordinal))
+        {
+            b.AddAttribute(61, "data-key", g.Key);
+        }
+
         if (g.Title is not null)
         {
-            b.OpenElement(61, "title");
-            b.AddContent(62, g.Title);
+            b.OpenElement(66, "title");
+            b.AddContent(67, g.Title);
             b.CloseElement();
         }
 

@@ -68,12 +68,14 @@
             <Chart TItem="Reading" YAxis="_celsius" OnPointClick="PointClicked" OnAnnotationClick="AnnotationClicked">
                 <ReferenceBand From="20" To="24" Label="Comfort zone" />
                 <ReferenceBand Axis="AnnotationAxis.X" From="_faultStart" To="_faultEnd" Label="Fan fault" Color="#d9480f" />
-                <ReferenceLine Value="21" Label="Setpoint 21 °C" />
+                <ReferenceLine @bind-Value="_setpoint" Label="@($"Setpoint {_setpoint:0.0} °C")" Draggable="true" />
+                <PointAnnotation X="_alarm" Y="23.4" Label="High temp alarm" Color="#d9480f" />
+                <Callout X="_filterChange" Y="20.6" Label="Filter changed" OffsetX="-30" OffsetY="-36" />
                 <ReferenceLine Axis="AnnotationAxis.X" Value="_now" Label="Now" />
                 <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
                 <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
             </Chart>
-            <p class="note">Hover for the shared tooltip; click a point or an annotation. @_clicked</p>
+            <p class="note">Hover for the shared tooltip; click a point or an annotation; drag the setpoint line (bound with <code>@@bind-Value</code>: @_setpoint.ToString("0.0") °C). @_clicked</p>
         </section>
 
         <section>
@@ -303,7 +305,8 @@
     private readonly IReadOnlyList<AxisSpec> _energyAxis = [new() { Id = "energy", Title = "kWh" }];
     private readonly TooltipSpec _singleTooltip = new() { Shared = false };
 
-    private DateTime _faultStart, _faultEnd, _now;
+    private DateTime _faultStart, _faultEnd, _now, _alarm, _filterChange;
+    private double _setpoint = 21;
     private List<Reading> _hourlyEnergy = [];
     private List<Reading> _hourlyOutdoor = [];
     private List<Reading> _heating = [];
@@ -373,6 +376,8 @@
         _faultStart = start.AddHours(26);
         _faultEnd = start.AddHours(31);
         _now = start.AddHours(44);
+        _alarm = start.AddHours(34.5);
+        _filterChange = start.AddHours(9);
 
         // Hourly values over two days.
         for (var h = 0; h < 48; h++)
