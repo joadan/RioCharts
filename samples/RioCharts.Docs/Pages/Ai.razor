@@ -29,6 +29,21 @@
 </p>
 <CodeBlock Language="csharp" Code="@RenderCode" />
 
+<h2>Local agents: riocharts-mcp</h2>
+<p>
+    For agents on your machine, such as Claude Code, Claude Desktop or GitHub Copilot in VS Code, there is a ready-made MCP server. It runs over stdio,
+    so the agent starts it; you write no host app. CSV and JSON files in the <code>--data</code> folder become datasets (read again when they change),
+    and every chart is saved to <code>--out</code> as PNG or SVG, with the path returned to the agent. Tools: <code>render_chart</code>,
+    <code>list_datasets</code> and <code>get_chart_schema</code>.
+</p>
+<CodeBlock Language="shell" Code="@ToolInstallCode" />
+<CodeBlock Language="json" Code="@ToolConfigCode" />
+<p>
+    Options: <code>--data</code>, <code>--out</code> (default <code>./charts</code>), <code>--width</code>, <code>--height</code>,
+    <code>--theme light|dark</code> and <code>--culture</code> (e.g. <code>sv-SE</code>). CSV files may use comma, semicolon or tab, and a decimal comma
+    with semicolons, as Excel writes them.
+</p>
+
 <h2>From chat to code</h2>
 <CodeBlock Language="csharp" Code="@RazorCode" />
 
@@ -72,6 +87,19 @@
         // Or from code:
         var result = await tool.RenderChartAsync(json, new ChartImageRequest { Format = ChartImageFormat.Png, Width = 640, Height = 320 });
         byte[] png = result.Png!;
+        """;
+
+    private const string ToolInstallCode = """
+        dotnet tool install -g RioCharts.Mcp --prerelease
+        """;
+
+    private const string ToolConfigCode = """
+        // .mcp.json (Claude Code), or the MCP settings of your agent
+        {
+          "mcpServers": {
+            "riocharts": { "command": "riocharts-mcp", "args": ["--data", "data", "--out", "charts"] }
+          }
+        }
         """;
 
     private const string RazorCode = """

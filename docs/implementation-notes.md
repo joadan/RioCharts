@@ -203,6 +203,19 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   unsafe characters replaced and the extension forced to the format, so the agent cannot write
   outside the directory. Whether a model can see an SVG it gets back depends on the provider; most
   only look at raster images, so PNG is the default.
+- **riocharts-mcp** (`src/RioCharts.Mcp`) is a stdio MCP server packed as a .NET tool. It offers
+  only render_chart, list_datasets and get_chart_schema: with no app to show a chart, create_chart
+  makes no sense. render_chart there uses `ChartTool.StandaloneRenderDescription`, which carries
+  the spec format and points to list_datasets instead of listing datasets, since files may change
+  while the server runs. Logging goes to stderr; stdout is the protocol. Images always go to
+  `--out` (default `./charts` under the agent's working directory). There is no `--data` default:
+  scanning the working directory would list unrelated JSON files.
+- **CSV and folder data:** `ChartDataset.FromCsv` detects the delimiter (comma, semicolon, tab)
+  from the header row, reads quoted cells per RFC 4180, numbers with a decimal point, and a
+  decimal comma only with a semicolon or tab delimiter (Excel's export in many locales); empty
+  headers become `column<n>` and duplicates get `_2`. `FolderDataSource` reads `.csv`, `.tsv` and
+  `.json` (an array of objects, or an object with one array) in one folder, caches by write time
+  and size, skips files over 100 MB and lists unreadable files with the reason and no fields.
 - **Spec → Razor** writes component markup with field names as PascalCase properties; transforms
   that components do not do become comments to implement in the query.
 - **Not yet:** a time zone-aware `timeBucket` (buckets are on wall-clock time), declarative joins,

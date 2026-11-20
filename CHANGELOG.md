@@ -14,6 +14,12 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   image at the size and theme it asks for, e.g. for reports, emails or documents. Set
   `ChartToolOptions.OutputDirectory` to also save the images as files and return their paths.
 - **Breaking:** `AsAIFunctions()` and `WithRioChartsTools` now include `render_chart`.
+- New package `RioCharts.Mcp`: `riocharts-mcp`, a local MCP server over stdio, installed as a .NET
+  tool, for agents such as Claude Code, Claude Desktop or GitHub Copilot. It offers render_chart,
+  list_datasets and get_chart_schema; CSV and JSON files in `--data` are the datasets, images are
+  saved to `--out`. Options for default size, theme and culture.
+- `ChartDataset.FromCsv` (delimiter detection, quoted cells, decimal comma with `;` or tab) and
+  `FolderDataSource` (one dataset per CSV or JSON file, read again when a file changes).
 
 ### Docs site
 

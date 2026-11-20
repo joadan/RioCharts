@@ -373,13 +373,31 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         Warnings = [.. warnings],
     };
 
-    internal static string BuildDescription(IReadOnlyList<ChartDataset> datasets)
+    /// <summary>
+    /// A self-contained description of render_chart for servers that offer it without create_chart
+    /// (e.g. the riocharts-mcp command-line server): the spec format and examples, and a pointer to
+    /// list_datasets instead of a dataset list (datasets may change while the server runs).
+    /// </summary>
+    public static string StandaloneRenderDescription { get; } = BuildDescription(null, renderOnly: true);
+
+    internal static string BuildDescription(IReadOnlyList<ChartDataset>? datasets, bool renderOnly = false)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Creates a chart from a JSON spec. The chart is shown to the user; you get back a short description of it, or errors to fix (then call again).");
-        sb.AppendLine();
-        sb.AppendLine("Datasets you can chart:");
-        sb.Append(DescribeDatasets(datasets));
+        if (renderOnly)
+        {
+            sb.AppendLine("Renders a chart from a JSON spec as a PNG or SVG image, returns it to you with a short description of the chart, and saves it as a file (the path is in \"file\"). On errors, fix the spec and call again.");
+            sb.AppendLine("Arguments: spec, and optionally format (png|svg, default png), width and height in pixels (default 800 × 400), theme (light|dark), fileName.");
+            sb.AppendLine();
+            sb.AppendLine("Data: call list_datasets for the datasets (CSV and JSON files) and their fields, or put small data inline in the spec as \"data\" rows.");
+        }
+        else
+        {
+            sb.AppendLine("Creates a chart from a JSON spec. The chart is shown to the user; you get back a short description of it, or errors to fix (then call again).");
+            sb.AppendLine();
+            sb.AppendLine("Datasets you can chart:");
+            sb.Append(DescribeDatasets(datasets ?? []));
+        }
+
         sb.AppendLine();
         sb.AppendLine("Spec (only series with x and y are required; everything else has good defaults):");
         sb.AppendLine("{ \"dataset\": \"<id>\", \"title\": \"...\", \"series\": [ { \"type\": \"line|area|bar|pie|radialBar|auto\", \"x\": \"<field>\", \"y\": \"<numeric field>\",");
@@ -395,7 +413,12 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         sb.AppendLine("{\"dataset\":\"ahu\",\"title\":\"Energy per day\",\"series\":[{\"type\":\"bar\",\"x\":\"timestamp\",\"y\":\"energy\",\"timeBucket\":\"day\",\"aggregate\":\"sum\"}]}");
         sb.AppendLine("{\"data\":[{\"system\":\"Heating\",\"share\":45},{\"system\":\"Fans\",\"share\":55}],\"series\":[{\"type\":\"auto\",\"x\":\"system\",\"y\":\"share\"}]}");
         sb.AppendLine();
-        sb.AppendLine("Tips: time on x gives a line; categories give bars; shares of a whole give a donut (\"auto\" picks). Use timeBucket + aggregate for long time ranges, sort + limit for top-N, groupBy for one line per unit. Call get_chart_schema for every option. To get the image yourself (PNG or SVG, e.g. for a report), call render_chart with the same spec.");
+        sb.AppendLine("Tips: time on x gives a line; categories give bars; shares of a whole give a donut (\"auto\" picks). Use timeBucket + aggregate for long time ranges, sort + limit for top-N, groupBy for one line per unit. Call get_chart_schema for every option.");
+        if (!renderOnly)
+        {
+            sb.AppendLine("To get the image yourself (PNG or SVG, e.g. for a report), call render_chart with the same spec.");
+        }
+
         return sb.ToString();
     }
 
@@ -421,6 +444,11 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
             }
 
             sb.AppendLine();
+            if (d.Fields.Count == 0)
+            {
+                continue; // unreadable or empty: the description says why
+            }
+
             sb.Append("  fields: ").AppendLine(string.Join(", ", d.Fields.Select(f =>
                 $"{f.Name} ({f.Type.ToString().ToLowerInvariant()}{(string.IsNullOrWhiteSpace(f.Description) ? "" : ", " + f.Description)})")));
         }

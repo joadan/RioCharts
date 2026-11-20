@@ -45,6 +45,8 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - `create_chart` and `render_chart` (the image as PNG or SVG for the agent itself) as Microsoft.Extensions.AI
   `AIFunction`s and as MCP server tools (`RioCharts.AI`),
   spec → Razor export, `<Chart Spec="...">`
+- `riocharts-mcp`: a local MCP server (.NET tool) so agents such as Claude Code, Claude Desktop or
+  Copilot render charts to PNG or SVG files from CSV/JSON files or inline data (`RioCharts.Mcp`)
 
 All six milestones of [Design.md](Design.md) are in. Later topics there (keyboard navigation,
 client-side export, a WASM demo site) are not done yet.
@@ -114,6 +116,18 @@ When the agent needs the image itself (for a report, an email, a document), it c
 with the same spec plus `format` (png or svg), `width`, `height` and `theme`; the image comes back
 as content (and is saved to `ChartToolOptions.OutputDirectory` when set).
 
+For local agents (Claude Code, Claude Desktop, GitHub Copilot in VS Code) there is a ready-made
+MCP server. Install it and register it with the agent; CSV and JSON files in `--data` become
+datasets, and charts are saved to `--out` (default `./charts`):
+
+```
+dotnet tool install -g RioCharts.Mcp --prerelease
+```
+
+```json
+{ "mcpServers": { "riocharts": { "command": "riocharts-mcp", "args": ["--data", "data", "--out", "charts"] } } }
+```
+
 The same specs work in Blazor: `<Chart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
 `{"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}]}`.
 
@@ -150,6 +164,7 @@ plot on instants and label in that zone.
 | `src/RioCharts.Blazor` | `<Chart>` and series components, SVG scene renderer, JS module. |
 | `src/RioCharts.Skia` | Server-side export to SVG and PNG with SkiaSharp (`ChartExport`). |
 | `src/RioCharts.AI` | `create_chart` and `render_chart` tools for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
+| `src/RioCharts.Mcp` | `riocharts-mcp`: local MCP server (stdio, .NET tool) that renders charts to PNG/SVG files. |
 | `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
 | `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
 | `samples/RioCharts.Docs` | Docs site with live examples (Blazor WebAssembly, published to GitHub Pages). |

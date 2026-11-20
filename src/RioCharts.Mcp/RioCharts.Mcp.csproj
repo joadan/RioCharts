@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>riocharts-mcp</ToolCommandName>
+    <PackageId>RioCharts.Mcp</PackageId>
+    <Description>A local MCP server (stdio) that lets AI agents such as Claude Code, Claude Desktop or GitHub Copilot render charts as PNG or SVG files from a JSON spec, with data from CSV and JSON files or inline rows. Install with dotnet tool install -g RioCharts.Mcp and run riocharts-mcp.</Description>
+    <PackageTags>charts;dataviz;ai;agents;mcp;png;svg</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RioCharts.AI\RioCharts.AI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+  </ItemGroup>
+
+</Project>

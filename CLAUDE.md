@@ -18,7 +18,8 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.Blazor/` — `Chart.razor` (+ `.cs`, `.css`, `.js`), `Series.cs`, `Annotations.cs`, `Rendering/` (SVG writer and scene renderer).
 - `src/RioCharts.Skia/` — server-side export: `ChartExport`, `SvgExporter`, `SkiaRenderer`, `SkiaFonts`/`SkiaTextMeasurer`, `ExportTheme`.
 - `src/RioCharts.AI/` — AI chart creation: `ChartTool` (create_chart as AIFunction), `RioChartsMcpTools` (MCP), `ChartRazor` (spec → Razor).
-- `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset`, `IChartDataSource`.
+- `src/RioCharts.Mcp/` — `riocharts-mcp`, a local stdio MCP server packed as a .NET tool: `ServerOptions` (arguments), `LocalServer` (tools: render_chart, list_datasets, get_chart_schema).
+- `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
 - `tests/RioCharts.Tests/` — xUnit tests.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `samples/RioCharts.Docs/` — docs site, Blazor WebAssembly (http://localhost:5031); `.github/workflows/docs.yml` publishes it to GitHub Pages. Add new features there with a live example.
