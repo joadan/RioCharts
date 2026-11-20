@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\RioCharts.Core\RioCharts.Core.csproj" />
     <ProjectReference Include="..\..\src\RioCharts.Blazor\RioCharts.Blazor.csproj" />
+    <ProjectReference Include="..\..\src\RioCharts.Skia\RioCharts.Skia.csproj" />
   </ItemGroup>
 
 </Project>

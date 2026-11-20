@@ -5,7 +5,15 @@ changes are called out under **Breaking**.
 
 ## 0.1.0-preview (unreleased)
 
-Restructured to the new design ([Design.md](Design.md)), milestones 1 to 4.
+Restructured to the new design ([Design.md](Design.md)), milestones 1 to 5.
+
+### Milestone 5
+
+- New package `RioCharts.Skia`: `ChartExport.ToPng` and `ChartExport.ToSvg` render a `ChartSpec`
+  and data on the server with SkiaSharp, using the same layout as the Blazor components and real
+  font metrics (`SkiaTextMeasurer`). `ExportOptions` sets size, pixel density, theme
+  (`ExportTheme.Light`/`Dark`, with per-token overrides), background, fonts and culture.
+  `ChartExport.Layout` returns the layout for further use; `ToSvg`/`ToPng` also take a scene.
 
 ### Milestone 4
 

@@ -1,3 +1,4 @@
+using RioCharts.Demo;
 using RioCharts.Demo.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapChartExport();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

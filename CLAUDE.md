@@ -16,6 +16,7 @@ before adding or changing features. Record where the code differs from it in
   - `Layout/` — `ChartLayout.Compute` (spec + data → scene), hit-test index, describer.
   - `ChartSpec.cs` — the serializable chart model.
 - `src/RioCharts.Blazor/` — `Chart.razor` (+ `.cs`, `.css`, `.js`), `Series.cs`, `Annotations.cs`, `Rendering/` (SVG writer and scene renderer).
+- `src/RioCharts.Skia/` — server-side export: `ChartExport`, `SvgExporter`, `SkiaRenderer`, `SkiaFonts`/`SkiaTextMeasurer`, `ExportTheme`.
 - `tests/RioCharts.Tests/` — xUnit tests.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `docs/` — implementation notes.

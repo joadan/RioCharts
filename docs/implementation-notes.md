@@ -143,3 +143,21 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   changes anywhere in the page or the OS color scheme changes. Downsampling defaults to four times
   the plot width (at least 2000 points) in canvas mode. Pan previews by redrawing with an offset.
   There is no entry fade on the canvas.
+
+## Milestone 5
+
+- **`RioCharts.Skia`** renders the same scene as the Blazor SVG renderer. Layout uses
+  `SkiaTextMeasurer` (real widths of the first installed font in `ExportOptions.FontFamily`, else
+  Skia's default font), so labels fit as in the browser.
+- **Colors:** an image has no CSS, so theme tokens resolve through `ExportTheme` (light and dark
+  match the component's built-in defaults; `With` overrides a token). SVG export writes concrete
+  colors, or `var(--rio-…, color)` with `CssVariables`. The faded look of hidden legend items
+  (CSS in the component) is reproduced as 40% opacity.
+- **SVG export** has its own small writer (`SvgExporter`) instead of sharing the Blazor
+  `SvgWriter`, so the package does not depend on ASP.NET; both write the same path data.
+- **PNG:** text baselines follow SVG's `hanging`, `central` and `alphabetic` from the font
+  metrics; arcs convert from clockwise-from-12-o'clock radians to Skia's degrees. Full circles are
+  drawn as two halves. `Scale` sets the pixel density (default 2).
+- **Fonts on Linux servers:** the package brings `SkiaSharp.NativeAssets.Linux.NoDependencies`;
+  install fonts in the container (e.g. `fonts-dejavu`) for good text.
+- **Not yet:** Blazor's `ExportSvgAsync`/`ExportPngAsync` and client-side download, and PDF.

@@ -201,6 +201,16 @@
         </section>
 
         <section class="wide">
+            <h2>Server-side export (RioCharts.Skia)</h2>
+            <img class="export" src="@($"/export/ahu.png?theme={(_dark ? "dark" : "light")}")" alt="Air handling unit chart rendered on the server" />
+            <p class="note">
+                A PNG from <code>ChartExport.ToPng(spec, data)</code>: the same chart model and layout, rendered with SkiaSharp on the
+                server, with real font metrics. Also as
+                <a href="/export/ahu.svg" target="_blank">SVG</a> and <a href="/export/ahu.png?theme=dark" target="_blank">dark PNG</a>.
+            </p>
+        </section>
+
+        <section class="wide">
             <h2>Columnar fast path: 200 000 points</h2>
             <Chart TItem="double" Height="260" Zoomable="true" SeriesLayer="_bigLayer">
                 <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />

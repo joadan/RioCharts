@@ -131,3 +131,10 @@ button.small {
     padding: 2px 8px;
     font-size: 12px;
 }
+
+img.export {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+}

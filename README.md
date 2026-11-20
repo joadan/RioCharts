@@ -12,7 +12,7 @@ Razor renders SVG, and a tiny JS module only measures the container and the font
 
 Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
-## What works today (milestones 1–4)
+## What works today (milestones 1–5)
 
 - Line, area and bar series (grouped bars), with linear, monotone and step lines
 - Linear, time and category axes, picked automatically from the data
@@ -38,8 +38,10 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Display time zone (`TimeZone`): plotted on instants, labelled in the zone, DST-safe
 - Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
 
-Not yet: server-side export (Skia) and the AI chart spec. See [Design.md](Design.md) for the design
-and milestones.
+- Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
+
+Not yet: the AI chart spec (JSON schema, validation, `create_chart` tool). See [Design.md](Design.md)
+for the design and milestones.
 
 ## Usage
 
@@ -92,6 +94,15 @@ Pie, donut and radial bar (the x value names each slice; the legend lists slices
 </Chart>
 ```
 
+Server-side export (no browser), with `RioCharts.Skia`: the same spec and data, as PNG or SVG:
+
+```csharp
+var spec = new ChartSpec { Title = "Supply air", Series = [new SeriesSpec { Id = "supply", Name = "Supply" }] };
+var data = new Dictionary<string, SeriesData> { ["supply"] = SeriesData.From(times, values) };
+byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320, Theme = ExportTheme.Dark });
+string svg = ChartExport.ToSvg(spec, data);
+```
+
 Large data, as plain arrays (no per-item cost):
 
 ```razor
@@ -114,6 +125,7 @@ plot on instants and label in that zone.
 |------|------|
 | `src/RioCharts.Core` | Scales, ticks, layout, path builders, scene, hit-testing, chart spec. No UI dependencies. |
 | `src/RioCharts.Blazor` | `<Chart>` and series components, SVG scene renderer, JS module. |
+| `src/RioCharts.Skia` | Server-side export to SVG and PNG with SkiaSharp (`ChartExport`). |
 | `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
 | `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
 
