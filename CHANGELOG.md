@@ -15,6 +15,9 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3, mile
 - `@bind-VisibleRange` (`ChartRange`), `OnZoomChanging` (clamp or cancel), and
   `ZoomToAsync`, `PanAsync`, `ResetZoomAsync`, `GetVisibleRange` on the chart reference.
 - Linked charts: `Group="name"` shares the crosshair (in the browser) and the zoom.
+- Live data: `SeriesBuffer` (append from any thread, capacity and time window) on a series'
+  `Buffer` parameter; the chart redraws at most every `RefreshInterval` ms (default 100) and keeps
+  the tooltip open while it updates. `ConsumeAsync` feeds a buffer from an `IAsyncEnumerable`.
 
 ### Milestone 3
 

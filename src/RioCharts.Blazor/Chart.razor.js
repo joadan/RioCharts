@@ -51,6 +51,7 @@ export function init(container, dotnet) {
         }
 
         state.lastEvent = e;
+        state.hovering = true;
         if (!state.frame) {
             state.frame = requestAnimationFrame(() => {
                 state.frame = 0;
@@ -65,6 +66,7 @@ export function init(container, dotnet) {
     };
     state.onUp = e => dragEnd(state, e);
     state.onLeave = () => {
+        state.hovering = false;
         if (!state.drag) {
             hide(state);
             broadcastHover(state, null);
@@ -103,9 +105,17 @@ export function update(container, model) {
     }
 
     state.model = model;
-    state.drag = null;
-    resetPreview(state);
-    hide(state);
+    if (!state.drag) {
+        resetPreview(state);
+    }
+    // Live data redraws often: keep the tooltip where the pointer is instead of hiding it.
+    if (state.drag) {
+        // keep the selection or pan preview
+    } else if (state.hovering && state.lastEvent && model) {
+        move(state, state.lastEvent);
+    } else {
+        hide(state);
+    }
     joinGroup(state, model && model.group);
     if (state.svg) {
         state.svg.classList.toggle('rio-clickable', !!(model && model.click));

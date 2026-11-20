@@ -33,6 +33,9 @@ internal interface IChartContext
     /// <summary>The series' spec or data changed; the chart lays out again.</summary>
     void SeriesChanged(ISeriesSource series);
 
+    /// <summary>A live buffer changed (any thread); the chart redraws at its refresh rate.</summary>
+    void DataArrived();
+
     /// <summary>Adds an annotation (once), or lays out again after its spec changed.</summary>
     void AnnotationChanged(IAnnotationSource annotation);
 

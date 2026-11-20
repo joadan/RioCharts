@@ -108,6 +108,9 @@ public partial class Chart<TItem> : IChartContext
     /// </summary>
     [Parameter] public string? Group { get; set; }
 
+    /// <summary>Live data (series with a <c>Buffer</c>): the shortest time between redraws, in milliseconds. Default 100.</summary>
+    [Parameter] public int RefreshInterval { get; set; } = 100;
+
     /// <summary>Extra CSS class on the container.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -150,6 +153,38 @@ public partial class Chart<TItem> : IChartContext
     }
 
     void IChartContext.SeriesChanged(ISeriesSource series) => Invalidate();
+
+    private int _refreshPending;
+
+    /// <summary>Coalesces live updates: at most one layout per <see cref="RefreshInterval"/>.</summary>
+    void IChartContext.DataArrived()
+    {
+        if (_disposed || Interlocked.Exchange(ref _refreshPending, 1) == 1)
+        {
+            return;
+        }
+
+        _ = RefreshLaterAsync();
+    }
+
+    private async Task RefreshLaterAsync()
+    {
+        try
+        {
+            await Task.Delay(Math.Max(16, RefreshInterval));
+            await InvokeAsync(() =>
+            {
+                Interlocked.Exchange(ref _refreshPending, 0);
+                if (!_disposed)
+                {
+                    Invalidate();
+                }
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
 
     void IChartContext.AnnotationChanged(IAnnotationSource annotation)
     {

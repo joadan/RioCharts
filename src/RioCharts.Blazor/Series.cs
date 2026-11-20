@@ -79,9 +79,32 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
     public SeriesSpec Spec { get; private set; } = new() { Id = "" };
 
-    SeriesData ISeriesSource.Data => _data;
+    SeriesData ISeriesSource.Data
+    {
+        get
+        {
+            // Live data: take a fresh snapshot only when the buffer changed since the last layout.
+            if (_buffer is { } buffer && buffer.Version != _bufferVersion)
+            {
+                _bufferVersion = buffer.Version;
+                _data = buffer.ToSeriesData();
+            }
+
+            return _data;
+        }
+    }
 
     private SeriesData _data = SeriesData.Empty;
+    private SeriesBuffer? _buffer;
+    private long _bufferVersion = -1;
+
+    /// <summary>
+    /// Live data (used instead of Items and Data when set). Append to it from any thread; the
+    /// chart redraws at most every <c>Chart.RefreshInterval</c> milliseconds.
+    /// </summary>
+    [Parameter] public SeriesBuffer? Buffer { get; set; }
+
+    private void OnBufferChanged() => Chart?.DataArrived();
 
     /// <summary>The items behind the plotted points (index = the point's source index).</summary>
     public IReadOnlyList<TItem> ItemList { get; private set; } = [];
@@ -100,8 +123,31 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         }
 
         var changed = false;
+        if (!ReferenceEquals(Buffer, _buffer))
+        {
+            if (_buffer is not null)
+            {
+                _buffer.Changed -= OnBufferChanged;
+            }
+
+            _buffer = Buffer;
+            _bufferVersion = -1;
+            if (_buffer is not null)
+            {
+                _buffer.Changed += OnBufferChanged;
+                ItemList = [];
+            }
+            else
+            {
+                _lastItems = _lastData = null; // fall back to Items/Data below
+                _lastVersion = new object();
+            }
+
+            changed = true;
+        }
+
         var items = Items ?? Chart.DefaultItems as IEnumerable<TItem>;
-        if (!ReferenceEquals(items, _lastItems) || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
+        if (_buffer is null && !ReferenceEquals(items, _lastItems) || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
         {
             _lastItems = items;
             _lastData = Data;
@@ -143,6 +189,11 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
     public void Dispose()
     {
+        if (_buffer is not null)
+        {
+            _buffer.Changed -= OnBufferChanged;
+        }
+
         Chart?.Unregister(this);
         GC.SuppressFinalize(this);
     }

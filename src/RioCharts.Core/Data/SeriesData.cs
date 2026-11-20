@@ -182,6 +182,9 @@ public sealed class SeriesData
         return ys;
     }
 
+    /// <summary>Takes ownership of the arrays (x in data units: numbers, or milliseconds for time).</summary>
+    internal static SeriesData FromColumns(double[] x, double[] y, XKind kind) => Create(x, y, kind);
+
     /// <summary>Drops points without a usable x, then sorts by x if needed (checked once).</summary>
     private static SeriesData Create(double[] x, double[] y, XKind kind)
     {

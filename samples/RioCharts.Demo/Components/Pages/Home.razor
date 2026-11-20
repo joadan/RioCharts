@@ -1,4 +1,5 @@
 ﻿@page "/"
+@implements IDisposable
 
 <PageTitle>RioCharts demo</PageTitle>
 
@@ -150,6 +151,20 @@
         </section>
 
         <section class="wide">
+            <h2>Live data</h2>
+            <Chart TItem="double" Height="220" YAxis="_celsius" RefreshInterval="250">
+                <ReferenceLine Value="21" Label="Setpoint" />
+                <LineSeries Name="Supply" Buffer="_liveSupply" Curve="CurveType.Monotone" Format="0.00 °C" />
+                <LineSeries Name="Room" Buffer="_liveRoom" Curve="CurveType.Monotone" Format="0.00 °C" />
+            </Chart>
+            <p class="note">
+                Two <code>SeriesBuffer</code>s with a 2-minute window, fed four times a second from a timer; the chart redraws at
+                most every 250 ms.
+                <button class="small" @onclick="ToggleLive">@(_liveTimer is null ? "Start" : "Stop")</button>
+            </p>
+        </section>
+
+        <section class="wide">
             <h2>Zoom, pan and linked charts</h2>
             <Chart TItem="Reading" Height="220" YAxis="_celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
                 <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
@@ -231,6 +246,56 @@
     private IReadOnlyCollection<string> _hidden = [];
     private string _clicked = "";
     private ChartRange? _range;
+
+    // ---------- Live data ----------
+
+    private readonly SeriesBuffer _liveSupply = new(timeWindow: TimeSpan.FromMinutes(2));
+    private readonly SeriesBuffer _liveRoom = new(timeWindow: TimeSpan.FromMinutes(2));
+    private readonly Random _liveRandom = new(7);
+    private Timer? _liveTimer;
+    private double _supplyValue = 19.5, _roomValue = 21.2;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Two minutes of history, then live values.
+            var now = DateTime.Now;
+            for (var i = 480; i > 0; i--)
+            {
+                AppendLive(now.AddMilliseconds(-250 * i));
+            }
+
+            ToggleLive();
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleLive()
+    {
+        if (_liveTimer is null)
+        {
+            _liveTimer = new Timer(_ => AppendLive(DateTime.Now), null, 0, 250);
+        }
+        else
+        {
+            _liveTimer.Dispose();
+            _liveTimer = null;
+        }
+    }
+
+    private void AppendLive(DateTime t)
+    {
+        lock (_liveRandom)
+        {
+            _supplyValue += (_liveRandom.NextDouble() - 0.5) * 0.12 + (19.5 - _supplyValue) * 0.02;
+            _roomValue += (_liveRandom.NextDouble() - 0.5) * 0.05 + (21.2 - _roomValue) * 0.02;
+            _liveSupply.Append(t, _supplyValue);
+            _liveRoom.Append(t, _roomValue);
+        }
+    }
+
+    public void Dispose() => _liveTimer?.Dispose();
 
     private readonly AxisSpec _celsius = new() { Title = "°C" };
     private readonly AxisSpec _kwh = new() { Title = "kWh" };

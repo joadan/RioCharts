@@ -107,3 +107,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Linked charts:** charts with the same `Group` find each other in the JS module. Hover shows the
   crosshair and markers at the same x in the others (no tooltip there). A zoom or pan in one is sent
   to every zoomable chart in the group, each applying it through its own .NET side.
+- **Streaming:** `SeriesBuffer` is a locked ring buffer (it grows up to `Capacity`, then drops the
+  oldest point; a `TimeWindow` drops points older than the newest minus the window). Each change
+  raises `Changed` on the appending thread; the chart coalesces them and lays out again at most
+  every `RefreshInterval` ms, taking a copy of the buffer (O(n) per redraw). Extents are not
+  updated incrementally and the whole layout runs again, which is fine for tens of thousands of
+  points. Out-of-order points are sorted in the copy (the window then is not trimmed).
