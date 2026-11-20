@@ -29,6 +29,10 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 3, mile
 - **Breaking:** `SeriesSpec.DataLabels` and the series `DataLabels` parameter are now `bool?`
   (null: on for pie, donut and radial bar, off otherwise).
 
+### Project
+
+- Project icon (`assets/icon.svg`, `assets/icon.png`), used as the NuGet package icon and the demo favicon.
+
 ### Milestone 2
 
 - Tooltip and crosshair, on by default: one tooltip per x across series, or per point with
