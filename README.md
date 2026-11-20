@@ -42,7 +42,8 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
 - JSON chart specs for AI agents: tolerant parsing, JSON schema, validation with actionable errors,
   dataset fields with filter, time buckets, aggregation, groupBy, sort and limit, `"type": "auto"`
-- `create_chart` tool as a Microsoft.Extensions.AI `AIFunction` and as MCP server tools (`RioCharts.AI`),
+- `create_chart` and `render_chart` (the image as PNG or SVG for the agent itself) as Microsoft.Extensions.AI
+  `AIFunction`s and as MCP server tools (`RioCharts.AI`),
   spec → Razor export, `<Chart Spec="...">`
 
 All six milestones of [Design.md](Design.md) are in. Later topics there (keyboard navigation,
@@ -109,6 +110,10 @@ builder.Services.AddMcpServer().WithHttpTransport().WithRioChartsTools(tool); //
 tool.ChartCreated += result => Show(result.Png);
 ```
 
+When the agent needs the image itself (for a report, an email, a document), it calls `render_chart`
+with the same spec plus `format` (png or svg), `width`, `height` and `theme`; the image comes back
+as content (and is saved to `ChartToolOptions.OutputDirectory` when set).
+
 The same specs work in Blazor: `<Chart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
 `{"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}]}`.
 
@@ -144,7 +149,7 @@ plot on instants and label in that zone.
 | `src/RioCharts.Core` | Scales, ticks, layout, path builders, scene, hit-testing, chart spec. No UI dependencies. |
 | `src/RioCharts.Blazor` | `<Chart>` and series components, SVG scene renderer, JS module. |
 | `src/RioCharts.Skia` | Server-side export to SVG and PNG with SkiaSharp (`ChartExport`). |
-| `src/RioCharts.AI` | `create_chart` tool for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
+| `src/RioCharts.AI` | `create_chart` and `render_chart` tools for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
 | `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
 | `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
 | `samples/RioCharts.Docs` | Docs site with live examples (Blazor WebAssembly, published to GitHub Pages). |

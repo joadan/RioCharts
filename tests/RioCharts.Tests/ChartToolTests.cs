@@ -75,7 +75,7 @@ public class ChartToolTests
         Assert.Contains("\"success\":true", JsonSerializer.Serialize(fromObject));
         Assert.Contains("\"success\":true", JsonSerializer.Serialize(fromString));
         Assert.Contains("spec", create.JsonSchema.GetRawText());
-        Assert.Equal(["create_chart", "list_datasets", "get_chart_schema"], functions.Select(f => f.Name));
+        Assert.Equal(["create_chart", "render_chart", "list_datasets", "get_chart_schema"], functions.Select(f => f.Name));
     }
 
     [Fact]
@@ -90,6 +90,93 @@ public class ChartToolTests
         Assert.True(bad.IsError);
         Assert.Contains("available: ahu", ((TextContentBlock)bad.Content[0]).Text);
         Assert.Contains("\"title\"", tools.GetChartSchema());
+    }
+
+    [Fact]
+    public async Task Render_chart_returns_png_or_svg_at_the_requested_size_and_theme()
+    {
+        var created = false;
+        var tool = Tool();
+        tool.ChartCreated += _ => created = true;
+        const string spec = """{"dataset":"ahu","series":[{"x":"timestamp","y":"supplyTemp"}]}""";
+
+        var png = await tool.RenderChartAsync(spec, new ChartImageRequest { Width = 400, Height = 200 });
+        var svg = await tool.RenderChartAsync(spec, new ChartImageRequest { Format = ChartImageFormat.Svg, Theme = "dark" });
+
+        Assert.True(png.Success, string.Join("; ", png.Errors));
+        Assert.Equal([0x89, (byte)'P', (byte)'N', (byte)'G'], png.Png![..4]);
+        Assert.Equal(800, BitConverter.ToInt32([.. png.Png[16..20].Reverse()])); // 400 × scale 2
+        Assert.Null(png.Svg);
+        Assert.Equal("png", png.Format);
+        Assert.Equal("svg", svg.Format);
+        Assert.Null(svg.Png);
+        Assert.StartsWith("<svg", svg.Svg!.TrimStart());
+        Assert.Contains("width=\"800\"", svg.Svg);
+        Assert.False(created); // render_chart is for the agent, not shown to the user
+        Assert.Null(png.File);
+    }
+
+    [Fact]
+    public async Task Render_chart_rejects_bad_options_and_names_itself_in_errors()
+    {
+        var tool = Tool();
+
+        var bad = await tool.RenderChartAsync("""{"dataset":"ahu","series":[{"x":"timestamp","y":"supplyTemp"}]}""",
+            new ChartImageRequest { Width = 20000, Theme = "neon" });
+        var badSpec = await tool.RenderChartAsync("""{"dataset":"nope","series":[{"x":"a","y":"b"}]}""");
+
+        Assert.False(bad.Success);
+        Assert.Contains(bad.Errors, e => e.StartsWith("width: 20000 is out of range", StringComparison.Ordinal));
+        Assert.Contains(bad.Errors, e => e.StartsWith("theme: 'neon'", StringComparison.Ordinal));
+        Assert.Contains(badSpec.Errors, e => e.Contains("call render_chart again", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Render_chart_saves_to_the_output_directory_with_a_safe_name()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "riocharts-tests-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var tool = new ChartTool(new InMemoryDataSource([Ahu]), new ChartToolOptions { OutputDirectory = directory });
+            const string spec = """{"dataset":"ahu","title":"Supply air / AHU 1","series":[{"x":"timestamp","y":"supplyTemp"}]}""";
+
+            var fromTitle = await tool.RenderChartAsync(spec);
+            var named = await tool.RenderChartAsync(spec, new ChartImageRequest { Format = ChartImageFormat.Svg, FileName = "../../evil.png" });
+
+            Assert.Equal(Path.Combine(directory, "supply-air---ahu-1.png"), fromTitle.File);
+            Assert.Equal(Path.Combine(directory, "evil.svg"), named.File);
+            Assert.Equal(fromTitle.Png, await File.ReadAllBytesAsync(fromTitle.File!));
+            Assert.Equal(named.Svg, await File.ReadAllTextAsync(named.File!));
+            Assert.Contains("\"file\":", JsonSerializer.Serialize(fromTitle, JsonSerializerOptions.Web));
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Render_chart_as_ai_function_and_mcp_tool_returns_the_image()
+    {
+        var tool = Tool();
+        var render = (AIFunction)tool.AsAIFunctions().Single(f => f.Name == "render_chart");
+        var spec = JsonDocument.Parse("""{"data":[{"system":"Heating","share":45},{"system":"Fans","share":55}],"series":[{"type":"auto","x":"system","y":"share"}]}""").RootElement;
+
+        var aiResult = await render.InvokeAsync(new AIFunctionArguments { ["spec"] = spec, ["format"] = "svg" });
+        var mcp = new RioChartsMcpTools(tool);
+        var mcpPng = await mcp.RenderChart(spec, cancellationToken: default);
+        var mcpSvg = await mcp.RenderChart(spec, ChartImageFormat.Svg, cancellationToken: default);
+
+        var contents = Assert.IsAssignableFrom<IEnumerable<AIContent>>(aiResult).ToList();
+        Assert.Contains("\"success\":true", ((TextContent)contents[0]).Text);
+        Assert.Equal("image/svg+xml", Assert.IsType<DataContent>(contents[1]).MediaType);
+        Assert.Contains(mcpPng.Content, c => c is ImageContentBlock { MimeType: "image/png" });
+        var resource = Assert.IsType<TextResourceContents>(mcpSvg.Content.OfType<EmbeddedResourceBlock>().Single().Resource);
+        Assert.Equal("image/svg+xml", resource.MimeType);
+        Assert.StartsWith("<svg", resource.Text.TrimStart());
     }
 
     [Fact]

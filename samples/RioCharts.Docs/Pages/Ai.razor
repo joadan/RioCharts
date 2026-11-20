@@ -6,7 +6,7 @@
 <p class="lead">
     <code>RioCharts.AI</code> gives agents a <code>create_chart</code> tool. The agent writes a small <a href="specs">JSON spec</a> against your datasets;
     the tool validates it, renders it on the server and returns a short description, or errors that name the path and the valid options so the
-    model can fix the spec and call again. The image goes to your app, not to the model.
+    model can fix the spec and call again. The image goes to your app; <code>render_chart</code> returns it to the agent instead.
 </p>
 
 <h2>Your data</h2>
@@ -18,7 +18,16 @@
 
 <h2>MCP server</h2>
 <CodeBlock Language="csharp" Code="@McpCode" />
-<p>Tools: <code>create_chart</code> (returns text and a PNG image), <code>list_datasets</code> and <code>get_chart_schema</code>.</p>
+<p>Tools: <code>create_chart</code> (returns text and a PNG image), <code>render_chart</code> (PNG or SVG for the agent), <code>list_datasets</code> and <code>get_chart_schema</code>.</p>
+
+<h2>Images for the agent</h2>
+<p>
+    <code>create_chart</code> shows a chart to the user. When the agent needs the image itself, for a report, an email or a document,
+    it calls <code>render_chart</code> with the same spec plus <code>format</code> (<code>png</code> or <code>svg</code>), <code>width</code>,
+    <code>height</code> and <code>theme</code>. The image comes back as content: <code>DataContent</code> with Microsoft.Extensions.AI, an image block
+    (PNG) or an embedded <code>image/svg+xml</code> resource (SVG) over MCP.
+</p>
+<CodeBlock Language="csharp" Code="@RenderCode" />
 
 <h2>From chat to code</h2>
 <CodeBlock Language="csharp" Code="@RazorCode" />
@@ -50,6 +59,19 @@
             .WithRioChartsTools(tool);
 
         app.MapMcp("/mcp");
+        """;
+
+    private const string RenderCode = """
+        // Optional: also save each image to a folder and return its path (for local agents).
+        var tool = new ChartTool(source, new ChartToolOptions { OutputDirectory = "charts" });
+
+        // The model calls render_chart with e.g.
+        // {"spec":{"dataset":"ahu","title":"Energy per day","series":[{"type":"bar","x":"timestamp","y":"energy","timeBucket":"day","aggregate":"sum"}]},
+        //  "format":"svg","width":640,"height":320}
+
+        // Or from code:
+        var result = await tool.RenderChartAsync(json, new ChartImageRequest { Format = ChartImageFormat.Png, Width = 640, Height = 320 });
+        byte[] png = result.Png!;
         """;
 
     private const string RazorCode = """

@@ -7,6 +7,14 @@ changes are called out under **Breaking**.
 
 Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
+### AI
+
+- `render_chart` tool (`ChartTool.RenderChartAsync`, `AsRenderFunction`, and in
+  `RioChartsMcpTools`): the same spec as `create_chart`, returned to the agent as a PNG or SVG
+  image at the size and theme it asks for, e.g. for reports, emails or documents. Set
+  `ChartToolOptions.OutputDirectory` to also save the images as files and return their paths.
+- **Breaking:** `AsAIFunctions()` and `WithRioChartsTools` now include `render_chart`.
+
 ### Docs site
 
 - Blazor WebAssembly docs site (`samples/RioCharts.Docs`) with a live example and its code for every
