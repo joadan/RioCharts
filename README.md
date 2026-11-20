@@ -4,6 +4,8 @@
 
 <br clear="left" />
 
+[![NuGet](https://img.shields.io/nuget/vpre/RioCharts.Blazor?label=NuGet)](https://www.nuget.org/packages/RioCharts.Blazor)
+
 A pure .NET chart library, with Blazor as the first target. C# does the math and layout,
 Razor renders SVG, and a tiny JS module only measures the container and the font.
 
@@ -50,6 +52,22 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 
 All six milestones of [Design.md](Design.md) are in. Later topics there (keyboard navigation,
 client-side export, a WASM demo site) are not done yet.
+
+## Install
+
+The packages are on [NuGet](https://www.nuget.org/packages?q=RioCharts) (prerelease):
+
+```
+dotnet add package RioCharts.Blazor --prerelease
+```
+
+| Package | For |
+| --- | --- |
+| [RioCharts.Blazor](https://www.nuget.org/packages/RioCharts.Blazor) | The `<RioChart>` component and series (includes Core) |
+| [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | Chart model, scales and layout, no UI dependencies |
+| [RioCharts.Skia](https://www.nuget.org/packages/RioCharts.Skia) | Server-side export to SVG and PNG |
+| [RioCharts.AI](https://www.nuget.org/packages/RioCharts.AI) | `create_chart` and `render_chart` tools for AI agents |
+| [RioCharts.Mcp](https://www.nuget.org/packages/RioCharts.Mcp) | `riocharts-mcp`, a local MCP server (`dotnet tool install -g RioCharts.Mcp --prerelease`) |
 
 ## Usage
 
