@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>Chart engine for RioCharts with no UI dependencies. It turns a serializable chart spec plus data into a render-agnostic scene. It includes scales, nice and calendar-aware time ticks, culture-aware label formatting, line/area/bar layout, LTTB downsampling and hit-testing.</Description>
+    <PackageTags>$(PackageTags);dataviz;time-series</PackageTags>
   </PropertyGroup>
 
 </Project>

@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Description>Blazor charts rendered as SVG, built on RioCharts.Core. Provides a responsive &lt;Chart&gt; with line, area and bar series, an interactive legend, light and dark themes through CSS variables, and a tiny JS module used only for measurement.</Description>
+    <PackageTags>$(PackageTags);dataviz;time-series;razor</PackageTags>
   </PropertyGroup>
 
 
