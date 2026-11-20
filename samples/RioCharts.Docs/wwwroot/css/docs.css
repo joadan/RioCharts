@@ -167,7 +167,7 @@ html.dark-boot, html.dark-boot body {
     font-weight: 700;
 }
 
-.brand img {
+.brand .rio-logo {
     border-radius: 8px;
 }
 
@@ -703,7 +703,7 @@ table.docs tr:last-child td {
     font-weight: 600;
 }
 
-.footer-brand img {
+.footer-brand .rio-logo {
     border-radius: 5px;
 }
 
@@ -1307,4 +1307,69 @@ table.docs tr:last-child td {
 
 .playground .example-live {
     padding: 16px 4px 0;
+}
+
+/* Logo hover: the parrot turns to face the viewer, blinks and turns back. The poses are
+   swapped with step-end, never faded, so two heads never show at once. */
+.rio-logo {
+    flex: none;
+}
+
+.rio-logo-quarter,
+.rio-logo-front {
+    opacity: 0;
+}
+
+.rio-logo-eyes {
+    transform-box: view-box;
+    transform-origin: 148px 102px;
+}
+
+.brand:hover .rio-logo-side,
+.footer-brand:hover .rio-logo-side {
+    animation: rio-logo-side 1.5s step-end;
+}
+
+.brand:hover .rio-logo-quarter,
+.footer-brand:hover .rio-logo-quarter {
+    animation: rio-logo-quarter 1.5s step-end;
+}
+
+.brand:hover .rio-logo-front,
+.footer-brand:hover .rio-logo-front {
+    animation: rio-logo-front 1.5s step-end;
+}
+
+.brand:hover .rio-logo-eyes,
+.footer-brand:hover .rio-logo-eyes {
+    animation: rio-logo-blink 1.5s ease-in-out;
+}
+
+@keyframes rio-logo-side {
+    0% { opacity: 1; }
+    5% { opacity: 0; }
+    89%, 100% { opacity: 1; }
+}
+
+@keyframes rio-logo-quarter {
+    0% { opacity: 0; }
+    5% { opacity: 1; }
+    12% { opacity: 0; }
+    82% { opacity: 1; }
+    89%, 100% { opacity: 0; }
+}
+
+@keyframes rio-logo-front {
+    0% { opacity: 0; }
+    12% { opacity: 1; }
+    82%, 100% { opacity: 0; }
+}
+
+@keyframes rio-logo-blink {
+    0%, 40%, 52%, 100% { transform: none; }
+    46% { transform: scaleY(0.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rio-logo * { animation: none !important; }
 }
