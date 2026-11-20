@@ -4,8 +4,29 @@
     {
       "name": "demo",
       "runtimeExecutable": "dotnet",
-      "runtimeArgs": ["run", "--project", "samples/RioCharts.Demo", "--launch-profile", "http"],
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "samples/RioCharts.Demo",
+        "--launch-profile",
+        "http"
+      ],
       "port": 5030
+    },
+    {
+      "name": "docs",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "samples/RioCharts.Docs",
+        "--launch-profile",
+        "http",
+        "--",
+        "--urls",
+        "http://localhost:5032"
+      ],
+      "port": 5032
     }
   ]
 }

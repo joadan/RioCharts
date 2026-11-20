@@ -2,7 +2,7 @@
 <section class="example" id="@Anchor">
     @if (Title is not null)
     {
-        <h2><a href="@($"#{Anchor}")" class="anchor">@Title</a></h2>
+        <h2><a href="@($"#{Anchor}")" class="anchor">@Title<span class="anchor-mark" aria-hidden="true">#</span></a></h2>
     }
 
     @if (Description is not null)
@@ -10,15 +10,20 @@
         <div class="example-text">@Description</div>
     }
 
-    <div class="example-live">@ChildContent</div>
+    <div class="example-card">
+        <div class="example-live">@ChildContent</div>
 
-    @if (Code is not null)
-    {
-        <details class="example-code" open="@CodeOpen">
-            <summary>Code</summary>
-            <pre><code>@Code.Trim()</code></pre>
-        </details>
-    }
+        @if (Code is not null)
+        {
+            <details class="example-code" open="@CodeOpen">
+                <summary>
+                    <svg class="chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    Code
+                </summary>
+                <CodeBlock Code="@Code" Language="@Language" />
+            </details>
+        }
+    </div>
 </section>
 
 @code {
@@ -29,6 +34,8 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     [Parameter] public string? Code { get; set; }
+
+    [Parameter] public string Language { get; set; } = "razor";
 
     [Parameter] public bool CodeOpen { get; set; } = true;
 

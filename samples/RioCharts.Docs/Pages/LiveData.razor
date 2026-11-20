@@ -22,7 +22,7 @@
 </Example>
 
 <h2>From a stream</h2>
-<pre><code>await buffer.ConsumeAsync(sensor.ReadingsAsync(token), r => r.Time, r => r.Temperature, token);</code></pre>
+<CodeBlock Language="csharp" Code="await buffer.ConsumeAsync(sensor.ReadingsAsync(token), r => r.Time, r => r.Temperature, token);" />
 <p>Buffers keep at most <code>Capacity</code> points (100 000 by default) and, with a <code>timeWindow</code>, only the latest span of time.</p>
 
 @code {

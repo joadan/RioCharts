@@ -2,54 +2,190 @@
 
 <PageTitle>RioCharts: charts for Blazor</PageTitle>
 
-<h1>RioCharts</h1>
-<p class="lead">
-    A pure .NET chart library, Blazor first. C# does the math and layout, Razor renders SVG, and a tiny JS module only
-    measures and handles the pointer. Every chart on these pages runs live in your browser.
-</p>
+<section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-inner">
+        <div class="hero-copy">
+            <a class="pill" href="ai"><span class="pill-dot"></span> New: AI agents can write charts <span aria-hidden="true">→</span></a>
+            <h1>Beautiful charts.<br /><span class="gradient-text">Pure .NET.</span></h1>
+            <p class="hero-lead">
+                A Blazor-first chart library. C# does the math and layout, Razor renders crisp SVG, and a tiny JS module only
+                measures and follows the pointer. Good defaults, zero configuration.
+            </p>
+            <div class="hero-actions">
+                <a class="button primary" href="getting-started">Get started <span aria-hidden="true">→</span></a>
+                <a class="button" href="lines-and-areas">Browse examples</a>
+            </div>
+            <CodeBlock Class="install" Language="shell" Code="dotnet add package RioCharts.Blazor --prerelease" />
+        </div>
 
-<Example Code="@HeroCode">
-    <Chart TItem="Reading" Title="Air handling unit" YAxis="Celsius" Height="320">
-        <ReferenceBand From="20" To="24" Label="Comfort zone" />
-        <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-        <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-        <LineSeries Items="Outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-    </Chart>
-</Example>
+        <div class="hero-visual">
+            <div class="window">
+                <div class="window-bar"><i></i><i></i><i></i><span>AirHandlingUnit.razor</span></div>
+                <div class="window-body">
+                    <Chart TItem="Reading" Title="Air handling unit" YAxis="Celsius" Height="300">
+                        <ReferenceBand From="20" To="24" Label="Comfort zone" />
+                        <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+                        <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+                        <LineSeries Items="Outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+                    </Chart>
+                </div>
+            </div>
+            <p class="hero-hint">Live. Hover it, click the legend.</p>
+        </div>
+    </div>
+</section>
 
-<h2>What you get</h2>
-<ul>
-    <li><b>Charts:</b> line, area, bar (grouped and stacked), pie, donut and radial bar.</li>
-    <li><b>Good defaults:</b> nice ticks, calendar-aware time axes, compact culture-aware labels, gaps for missing values, a clean empty state.</li>
-    <li><b>Interaction:</b> shared tooltips and crosshair, legend toggles, zoom and pan, linked charts, click events. Handled in the browser, so Blazor Server stays fast.</li>
-    <li><b>Annotations:</b> reference lines and bands, points and callouts, draggable thresholds.</li>
-    <li><b>Data:</b> items with selectors, plain arrays for big data, live buffers, display time zones.</li>
-    <li><b>Beyond Blazor:</b> server-side PNG/SVG export and a JSON spec that AI agents can write.</li>
-</ul>
+<section class="band">
+    <div class="band-inner">
+        <div class="section-head">
+            <h2>One component, many charts</h2>
+            <p>Line, area, bar, pie, donut and radial bar. Every card below is a live chart.</p>
+        </div>
+        <div class="gallery">
+            <a class="tile" href="lines-and-areas">
+                <Chart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                    <AreaSeries Items="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+                </Chart>
+                <span class="tile-label">Areas <span aria-hidden="true">→</span></span>
+            </a>
+            <a class="tile" href="bars">
+                <Chart TItem="Monthly" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                    <BarSeries Items="Mix" Name="Heating" XValue="m => m.Month" YValue="m => m.Heating" Stack="mix" />
+                    <BarSeries Items="Mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" />
+                    <BarSeries Items="Mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" />
+                </Chart>
+                <span class="tile-label">Stacked bars <span aria-hidden="true">→</span></span>
+            </a>
+            <a class="tile" href="pies">
+                <Chart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                    <DonutSeries Items="EnergyUse" XValue="s => s.Name" YValue="s => s.Value" />
+                </Chart>
+                <span class="tile-label">Donuts <span aria-hidden="true">→</span></span>
+            </a>
+            <a class="tile" href="pies#radial-bars">
+                <Chart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+                    <RadialBarSeries Items="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+                </Chart>
+                <span class="tile-label">Radial bars <span aria-hidden="true">→</span></span>
+            </a>
+        </div>
+    </div>
+</section>
 
-<h2>Packages</h2>
-<table class="docs">
-    <tr><th>Package</th><th>What</th></tr>
-    <tr><td><code>RioCharts.Blazor</code></td><td>The <code>&lt;Chart&gt;</code> component and series, annotations, SVG renderer.</td></tr>
-    <tr><td><code>RioCharts.Core</code></td><td>Scales, ticks, layout, chart spec, JSON specs. No UI dependencies.</td></tr>
-    <tr><td><code>RioCharts.Skia</code></td><td>Server-side export to SVG and PNG.</td></tr>
-    <tr><td><code>RioCharts.AI</code></td><td>The <code>create_chart</code> tool for agents (Microsoft.Extensions.AI and MCP).</td></tr>
-</table>
+<section class="band">
+    <div class="band-inner">
+        <div class="section-head">
+            <h2>Everything a dashboard needs</h2>
+            <p>Built for real data: time series, gaps, live streams and a lot of points.</p>
+        </div>
+        <div class="features">
+            @foreach (var f in Features)
+            {
+                <a class="feature" href="@f.Href">
+                    <span class="feature-icon" aria-hidden="true">@((MarkupString)f.Icon)</span>
+                    <b>@f.Title</b>
+                    <span>@f.Text</span>
+                </a>
+            }
+        </div>
+    </div>
+</section>
 
-<div class="callout">
-    <b>Early preview.</b> RioCharts is built for our own teams' needs; APIs will change before 1.0. Issues are welcome on
-    <a href="https://github.com/joadan/RioCharts">GitHub</a>. Named after Rio, and <i>río</i> means river: fitting for flowing lines and time series.
-</div>
+<section class="band">
+    <div class="band-inner split">
+        <div class="split-copy">
+            <h2>Three lines to a finished chart</h2>
+            <p>
+                Pass items and say which property is x and which is y. The axis type follows the data, ticks land on nice
+                numbers and calendar boundaries, and labels follow the culture.
+            </p>
+            <ul class="checks">
+                <li>No JavaScript to write, no chart library to load</li>
+                <li>Works on Blazor Server, WebAssembly and static SSR</li>
+                <li>Light and dark themes from CSS variables</li>
+                <li>Accessible: keyboard focus and a text description</li>
+            </ul>
+            <a class="button" href="getting-started">Read the guide <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="split-code">
+            <CodeBlock Code="@QuickCode" />
+        </div>
+    </div>
+</section>
+
+<section class="band">
+    <div class="band-inner">
+        <div class="section-head">
+            <h2>Packages</h2>
+            <p>Take the parts you need. Core has no UI dependencies at all.</p>
+        </div>
+        <div class="packages">
+            @foreach (var p in Packages)
+            {
+                <div class="package">
+                    <code>@p.Name</code>
+                    <span>@p.Text</span>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="band">
+    <div class="band-inner">
+        <div class="cta">
+            <div>
+                <h2>Early preview</h2>
+                <p>
+                    RioCharts is built for our own teams' needs, and APIs will change before 1.0. Named after Rio, and
+                    <i>río</i> means river: fitting for flowing lines and time series.
+                </p>
+            </div>
+            <div class="hero-actions">
+                <a class="button primary" href="getting-started">Get started</a>
+                <a class="button" href="https://github.com/joadan/RioCharts">Star on GitHub</a>
+            </div>
+        </div>
+    </div>
+</section>
 
 @code {
     private static readonly AxisSpec Celsius = new() { Title = "°C" };
+    private static readonly LegendSpec NoLegend = new() { Mode = LegendMode.Hide };
+    private static readonly TooltipSpec NoTooltip = new() { Enabled = false };
 
-    private const string HeroCode = """
-        <Chart TItem="Reading" Title="Air handling unit" YAxis="new AxisSpec { Title = "°C" }">
-            <ReferenceBand From="20" To="24" Label="Comfort zone" />
-            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-            <LineSeries Items="outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+    private const string QuickCode = """
+        <Chart Items="readings">
+            <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
         </Chart>
         """;
+
+    private sealed record Feature(string Href, string Title, string Text, string Icon);
+
+    private static readonly Feature[] Features =
+    [
+        new("axes", "Smart axes", "Nice ticks, calendar-aware time axes, display time zones and compact culture-aware labels.",
+            """<svg viewBox="0 0 24 24"><path d="M4 4v16h16" /><path d="M8 16l4-5 3 3 5-7" /></svg>"""),
+        new("interaction", "Interaction", "Shared tooltips, crosshair, legend toggles, zoom and pan, linked charts and click events.",
+            """<svg viewBox="0 0 24 24"><path d="M6 3l12 7-5 1.5L10.5 17z" /><path d="M13 12l5 6" /></svg>"""),
+        new("annotations", "Annotations", "Reference lines and bands, points and callouts, and thresholds you can drag.",
+            """<svg viewBox="0 0 24 24"><path d="M3 9h18" stroke-dasharray="3 3" /><path d="M4 18l5-6 4 3 7-9" /></svg>"""),
+        new("live-data", "Live data", "Append to a buffer and the chart follows, refreshing at most every 100 ms.",
+            """<svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4" /></svg>"""),
+        new("large-data", "Large data", "Plain arrays, LTTB downsampling and a canvas layer for hundreds of thousands of points.",
+            """<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg>"""),
+        new("specs", "JSON specs and AI", "A serializable chart spec that agents can write, with a create_chart tool for MCP.",
+            """<svg viewBox="0 0 24 24"><path d="M8 4H6a2 2 0 0 0-2 2v4l-2 2 2 2v4a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2h-2" /></svg>"""),
+    ];
+
+    private sealed record Package(string Name, string Text);
+
+    private static readonly Package[] Packages =
+    [
+        new("RioCharts.Blazor", "The <Chart> component, series, annotations and the SVG renderer."),
+        new("RioCharts.Core", "Scales, ticks, layout, the chart spec and JSON specs."),
+        new("RioCharts.Skia", "Server-side export to SVG and PNG, for reports and e-mail."),
+        new("RioCharts.AI", "The create_chart tool for agents: Microsoft.Extensions.AI and MCP."),
+    ];
 }

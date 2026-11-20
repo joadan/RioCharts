@@ -1,50 +1,145 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
-<div class="site @(_dark ? "rio-theme-dark dark" : "rio-theme-light")">
+<div class="site @(_dark ? "rio-theme-dark dark" : "rio-theme-light") @(IsHome ? "is-home" : "")">
     <header class="site-header">
-        <button class="menu" aria-label="Menu" @onclick="() => _menuOpen = !_menuOpen">☰</button>
+        @if (!IsHome)
+        {
+            <button class="icon-button menu" aria-label="Menu" aria-expanded="@_menuOpen" @onclick="() => _menuOpen = !_menuOpen">
+                <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+            </button>
+        }
         <a class="brand" href="">
-            <img src="favicon.svg" alt="" width="28" height="28" />
-            <span>RioCharts</span>
+            <img src="favicon.svg" alt="" width="30" height="30" />
+            <span>Rio<b>Charts</b></span>
         </a>
         <span class="badge">preview</span>
         <span class="spacer"></span>
-        <a class="header-link" href="https://github.com/joadan/RioCharts">GitHub</a>
-        <button class="theme-toggle" @onclick="() => _dark = !_dark" aria-label="Toggle dark theme">@(_dark ? "☀ Light" : "☾ Dark")</button>
+        <nav class="header-nav">
+            <a href="getting-started">Docs</a>
+            <a href="lines-and-areas">Examples</a>
+            <a href="specs">Playground</a>
+        </nav>
+        <a class="icon-button" href="https://github.com/joadan/RioCharts" aria-label="RioCharts on GitHub" title="GitHub">
+            <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" /></svg>
+        </a>
+        <button class="icon-button" @onclick="ToggleTheme" aria-label="@(_dark ? "Switch to light theme" : "Switch to dark theme")" title="@(_dark ? "Light theme" : "Dark theme")">
+            @if (_dark)
+            {
+                <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 1.8v2M10 16.2v2M1.8 10h2M16.2 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+            }
+            else
+            {
+                <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M16.5 12.3A7 7 0 0 1 7.7 3.5a7 7 0 1 0 8.8 8.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+            }
+        </button>
     </header>
 
-    <div class="site-body">
-        <nav class="sidebar @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false">
-            @foreach (var (group, links) in Navigation)
-            {
-                <div class="nav-group">@group</div>
-                @foreach (var (href, text) in links)
-                {
-                    <NavLink href="@href" Match="@(href.Length == 0 ? NavLinkMatch.All : NavLinkMatch.Prefix)">@text</NavLink>
-                }
-            }
-        </nav>
-
-        <main class="content">
+    @if (IsHome)
+    {
+        <main class="home">
             @Body
-            <footer class="site-footer">
-                RioCharts is open source (MIT) and an early preview: APIs change before 1.0.
-                Rendered live in your browser with Blazor WebAssembly.
-            </footer>
+            <SiteFooter />
         </main>
-    </div>
+    }
+    else
+    {
+        <div class="site-body">
+            <div class="scrim @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false"></div>
+            <nav class="sidebar @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false">
+                @foreach (var group in DocsNav.Groups)
+                {
+                    <div class="nav-group">@group.Name</div>
+                    @foreach (var item in group.Pages)
+                    {
+                        <NavLink href="@item.Href" Match="@(item.Href.Length == 0 ? NavLinkMatch.All : NavLinkMatch.Prefix)">@item.Title</NavLink>
+                    }
+                }
+            </nav>
+
+            <main class="content">
+                <article class="doc">
+                    @Body
+                </article>
+
+                @if (_index >= 0)
+                {
+                    <nav class="pager" aria-label="Previous and next page">
+                        @if (_index > 0)
+                        {
+                            var prev = DocsNav.All[_index - 1];
+                            <a class="pager-link prev" href="@prev.Href"><span>Previous</span><b>← @prev.Title</b></a>
+                        }
+                        else
+                        {
+                            <span></span>
+                        }
+                        @if (_index < DocsNav.All.Length - 1)
+                        {
+                            var next = DocsNav.All[_index + 1];
+                            <a class="pager-link next" href="@next.Href"><span>Next</span><b>@next.Title →</b></a>
+                        }
+                    </nav>
+                }
+
+                <SiteFooter />
+            </main>
+        </div>
+    }
 </div>
 
 @code {
     private bool _dark;
     private bool _menuOpen;
+    private int _index;
 
-    private static readonly (string Group, (string Href, string Text)[] Links)[] Navigation =
-    [
-        ("Start", [("", "Overview"), ("getting-started", "Getting started")]),
-        ("Charts", [("lines-and-areas", "Lines and areas"), ("bars", "Bars and stacking"), ("pies", "Pie, donut and radial")]),
-        ("Features", [("axes", "Axes and time"), ("annotations", "Annotations"), ("interaction", "Tooltips, clicks and zoom"),
-            ("live-data", "Live data"), ("large-data", "Large data"), ("theming", "Theming")]),
-        ("Beyond Blazor", [("specs", "JSON specs (playground)"), ("server-export", "Server-side export"), ("ai", "AI agents and MCP")]),
-    ];
+    private bool IsHome => _index == 0;
+
+    protected override void OnInitialized()
+    {
+        _index = DocsNav.IndexOf(Nav.ToBaseRelativePath(Nav.Uri));
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var dark = await JS.InvokeAsync<bool>("rioDocs.isDark");
+            if (dark != _dark)
+            {
+                _dark = dark;
+                StateHasChanged();
+            }
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        _dark = !_dark;
+        try
+        {
+            await JS.InvokeVoidAsync("rioDocs.setDark", _dark);
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var index = DocsNav.IndexOf(Nav.ToBaseRelativePath(e.Location));
+        _menuOpen = false;
+        if (index == _index) return;
+        _index = index;
+        StateHasChanged();
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }

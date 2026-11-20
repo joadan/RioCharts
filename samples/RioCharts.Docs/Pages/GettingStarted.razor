@@ -6,10 +6,9 @@
 <p class="lead">Add the package, two usings, and a chart. Zero configuration gives a finished chart.</p>
 
 <h2>Install</h2>
-<pre><code>dotnet add package RioCharts.Blazor --prerelease</code></pre>
+<CodeBlock Language="shell" Code="dotnet add package RioCharts.Blazor --prerelease" />
 <p>Then in <code>_Imports.razor</code>:</p>
-<pre><code>@@using RioCharts.Blazor
-@@using RioCharts.Core</code></pre>
+<CodeBlock Code="@ImportsCode" />
 <p>Styles come with your app's <code>{App}.styles.css</code> bundle automatically; there is nothing else to register.</p>
 
 <Example Title="Your first chart" Code="@FirstCode">
@@ -63,6 +62,9 @@
         var (times, values) = Big(20_000);
         return SeriesData.From(times, values);
     }
+
+    // "@" is '@': a line starting with @using inside @code would be read as a Razor directive.
+    private const string ImportsCode = "@using RioCharts.Blazor\n@using RioCharts.Core";
 
     private const string FirstCode = """
         <Chart Items="readings">

@@ -11,6 +11,7 @@
 </p>
 
 <section class="example">
+<div class="example-card playground">
     <div class="examples-buttons">
         @foreach (var (name, json) in Examples)
         {
@@ -47,6 +48,7 @@
             }
         </ul>
     }
+</div>
 </section>
 
 <h2>What a spec can say</h2>
@@ -68,7 +70,7 @@
 <h3>The spec as read</h3>
 @if (_normalized is not null)
 {
-    <pre><code>@_normalized</code></pre>
+    <CodeBlock Language="json" Code="@_normalized" />
 }
 
 @code {

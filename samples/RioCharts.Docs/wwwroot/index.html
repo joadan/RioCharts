@@ -6,21 +6,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RioCharts: charts for Blazor</title>
     <meta name="description" content="RioCharts: a pure .NET chart library for Blazor. Live examples and documentation." />
+    <meta name="theme-color" content="#4269d0" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <base href="/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="preload" id="webassembly" />
     <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/docs.css" />
     <link href="RioCharts.Docs.styles.css" rel="stylesheet" />
     <script type="importmap"></script>
+    <script>
+        // Theme before first paint (no flash), and the few helpers the site needs from the browser.
+        window.rioDocs = {
+            isDark() {
+                try {
+                    const saved = localStorage.getItem("rio-docs-theme");
+                    if (saved) return saved === "dark";
+                } catch { }
+                return matchMedia("(prefers-color-scheme: dark)").matches;
+            },
+            setDark(dark) {
+                document.documentElement.classList.toggle("dark-boot", dark);
+                try { localStorage.setItem("rio-docs-theme", dark ? "dark" : "light"); } catch { }
+            },
+            async copy(text) {
+                try { await navigator.clipboard.writeText(text); } catch { }
+            }
+        };
+        document.documentElement.classList.toggle("dark-boot", window.rioDocs.isDark());
+    </script>
 </head>
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div class="boot">
+            <img src="favicon.svg" alt="" width="64" height="64" />
+            <div class="boot-title">Rio<b>Charts</b></div>
+            <div class="boot-bar"><span></span></div>
+            <div class="loading-progress-text"></div>
+        </div>
     </div>
 
     <div id="blazor-error-ui">

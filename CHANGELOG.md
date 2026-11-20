@@ -12,6 +12,10 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - Blazor WebAssembly docs site (`samples/RioCharts.Docs`) with a live example and its code for every
   feature, a JSON spec playground that runs in the browser, and pages on server export and AI
   agents. Published to GitHub Pages by `.github/workflows/docs.yml`.
+- Redesigned docs site: a landing page (hero with a live chart, a gallery of live chart tiles,
+  features, packages), a frosted header, a sidebar with an active marker, previous/next links,
+  highlighted code blocks with a copy button, a remembered light/dark theme that follows the OS by
+  default, and a branded loading screen.
 
 ### Milestone 6
 
