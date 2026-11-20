@@ -15,18 +15,30 @@ public sealed record ChartSpec
     [Description("Horizontal axis.")]
     public AxisSpec X { get; init; } = new();
 
-    [Description("Vertical axis.")]
+    [Description("Primary vertical axis (id \"y\" unless set). Drawn on the left and owns the grid lines.")]
     public AxisSpec Y { get; init; } = new();
+
+    [Description("Additional vertical axes, e.g. a second unit. Drawn on the right unless Position is Left. Series bind to them with yAxisId.")]
+    public IReadOnlyList<AxisSpec> YAxes { get; init; } = [];
 
     [Description("Legend settings. By default it is shown only when there is more than one series.")]
     public LegendSpec Legend { get; init; } = new();
 
+    [Description("Tooltip settings. On by default, with one tooltip per x position across series.")]
+    public TooltipSpec Tooltip { get; init; } = new();
+
     [Description("Series to draw, in order. Colors are assigned from the palette in this order.")]
     public IReadOnlyList<SeriesSpec> Series { get; init; } = [];
+
+    [Description("Reference lines and bands, e.g. a setpoint or a fault period.")]
+    public IReadOnlyList<AnnotationSpec> Annotations { get; init; } = [];
 }
 
 public sealed record AxisSpec
 {
+    [Description("Axis id that series and annotations refer to (vertical axes only). The primary vertical axis defaults to \"y\".")]
+    public string? Id { get; init; }
+
     [Description("Axis title.")]
     public string? Title { get; init; }
 
@@ -42,8 +54,11 @@ public sealed record AxisSpec
     [Description(".NET format string for labels, e.g. \"P0\", \"C0\" or \"yyyy-MM-dd\". Null for automatic formatting.")]
     public string? Format { get; init; }
 
-    [Description("Draw grid lines. Null uses the default: on for the vertical axis, off for the horizontal axis.")]
+    [Description("Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.")]
     public bool? GridLines { get; init; }
+
+    [Description("Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.")]
+    public AxisPosition Position { get; init; } = AxisPosition.Auto;
 }
 
 public sealed record LegendSpec
@@ -52,6 +67,15 @@ public sealed record LegendSpec
     public LegendMode Mode { get; init; } = LegendMode.Auto;
 
     public LegendPosition Position { get; init; } = LegendPosition.Top;
+}
+
+public sealed record TooltipSpec
+{
+    [Description("Show a tooltip and crosshair when hovering the plot.")]
+    public bool Enabled { get; init; } = true;
+
+    [Description("True: one tooltip per x position listing every series. False: only the nearest point.")]
+    public bool Shared { get; init; } = true;
 }
 
 public sealed record SeriesSpec
@@ -76,8 +100,62 @@ public sealed record SeriesSpec
     [Description("Draw order override. By default areas are drawn first, then bars, then lines.")]
     public int? ZIndex { get; init; }
 
+    [Description("Id of the vertical axis this series uses. Null uses the primary axis.")]
+    public string? YAxisId { get; init; }
+
+    [Description("Stack group name. Series of the same type with the same stack name (and axis) are stacked on top of each other.")]
+    public string? Stack { get; init; }
+
+    [Description("Show the value next to each point or bar.")]
+    public bool DataLabels { get; init; }
+
+    [Description(".NET format string for values in tooltips and data labels, e.g. \"0.0\" or \"P0\". Null: the axis format, else automatic.")]
+    public string? Format { get; init; }
+
     [JsonIgnore]
     public string DisplayName => Name ?? Id;
+}
+
+/// <summary>
+/// A reference line or band. Values are in data units of the axis: numbers, times
+/// (DateTime, DateTimeOffset, DateOnly or an ISO 8601 string) or category names.
+/// </summary>
+public sealed record AnnotationSpec
+{
+    [Description("Optional id, reported in click events.")]
+    public string? Id { get; init; }
+
+    public AnnotationType Type { get; init; } = AnnotationType.Line;
+
+    [Description("Axis the value(s) refer to: Y for a horizontal line or band, X for a vertical one.")]
+    public AnnotationAxis Axis { get; init; } = AnnotationAxis.Y;
+
+    [Description("Vertical axis id for Y annotations. Null uses the primary axis.")]
+    public string? YAxisId { get; init; }
+
+    [Description("Position of a line: a number, a time (ISO 8601) or a category.")]
+    public object? Value { get; init; }
+
+    [Description("Start of a band.")]
+    public object? From { get; init; }
+
+    [Description("End of a band.")]
+    public object? To { get; init; }
+
+    [Description("Optional label.")]
+    public string? Label { get; init; }
+
+    [Description("Where the label sits along the line or band. Default: End for lines, Start for bands.")]
+    public LabelPosition? LabelPosition { get; init; }
+
+    [Description("CSS color. Null uses the muted annotation color.")]
+    public string? Color { get; init; }
+
+    [Description("Whether the axis range grows to include the annotation. Default: true for lines, false for bands.")]
+    public bool? ExpandsDomain { get; init; }
+
+    [Description("Draw below or above the series. Default: bands below, lines above.")]
+    public AnnotationLayer? Layer { get; init; }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<SeriesType>))]
@@ -90,8 +168,23 @@ public enum CurveType { Linear, Monotone, Step }
 [JsonConverter(typeof(JsonStringEnumConverter<ScaleType>))]
 public enum ScaleType { Auto, Linear, Time, Band }
 
+[JsonConverter(typeof(JsonStringEnumConverter<AxisPosition>))]
+public enum AxisPosition { Auto, Left, Right }
+
 [JsonConverter(typeof(JsonStringEnumConverter<LegendMode>))]
 public enum LegendMode { Auto, Show, Hide }
 
 [JsonConverter(typeof(JsonStringEnumConverter<LegendPosition>))]
 public enum LegendPosition { Top, Bottom, Right }
+
+[JsonConverter(typeof(JsonStringEnumConverter<AnnotationType>))]
+public enum AnnotationType { Line, Band }
+
+[JsonConverter(typeof(JsonStringEnumConverter<AnnotationAxis>))]
+public enum AnnotationAxis { X, Y }
+
+[JsonConverter(typeof(JsonStringEnumConverter<LabelPosition>))]
+public enum LabelPosition { Start, Middle, End }
+
+[JsonConverter(typeof(JsonStringEnumConverter<AnnotationLayer>))]
+public enum AnnotationLayer { Below, Above }

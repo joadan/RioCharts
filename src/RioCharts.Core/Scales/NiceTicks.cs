@@ -40,6 +40,40 @@ public static class NiceTicks
         return (Clean(niceMin), Clean(niceMax), step);
     }
 
+    /// <summary>
+    /// A domain with exactly <paramref name="intervals"/> nice steps that covers [min, max], so a
+    /// second axis can put its ticks on the first axis' grid lines. Null when none is found.
+    /// </summary>
+    public static (double Min, double Max, double Step)? AlignedDomain(double min, double max, int intervals)
+    {
+        if (intervals < 1 || !double.IsFinite(min) || !double.IsFinite(max))
+        {
+            return null;
+        }
+
+        if (max < min)
+        {
+            (min, max) = (max, min);
+        }
+
+        var step = Step(max - min, intervals);
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            var lo = Math.Floor(min / step + 1e-9) * step;
+            if (lo + intervals * step >= max - step * 1e-9)
+            {
+                return (Clean(lo), Clean(lo + intervals * step), step);
+            }
+
+            // Next nice step: 1, 2, 5, 10, ...
+            var magnitude = Math.Pow(10, Math.Floor(Math.Log10(step) + 1e-9));
+            var fraction = Math.Round(step / magnitude, 6);
+            step = (fraction < 2 ? 2 : fraction < 5 ? 5 : 10) * magnitude;
+        }
+
+        return null;
+    }
+
     /// <summary>Multiples of step within [min, max], rounded to avoid floating point noise.</summary>
     public static List<double> Ticks(double min, double max, double step)
     {

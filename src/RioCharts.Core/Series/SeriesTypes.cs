@@ -35,6 +35,11 @@ internal interface ISeriesType
     };
 }
 
+/// <summary>Where a data label goes: the value, its point, and for bars the bar's extent.</summary>
+/// <param name="Y0">Pixel y of the bar's base (NaN for points).</param>
+/// <param name="Width">Bar width (0 for points).</param>
+internal readonly record struct LabelAnchor(double Value, double X, double Y, double Y0, double Width, bool Stacked);
+
 /// <summary>Everything a series type needs to draw itself.</summary>
 internal sealed class SeriesBuildContext
 {
@@ -47,6 +52,14 @@ internal sealed class SeriesBuildContext
 
     /// <summary>X pixel for each data point (NaN when it cannot be placed).</summary>
     public required double[] PixelX { get; init; }
+
+    /// <summary>Value to draw for each point: the data value, or the top of its stack segment.</summary>
+    public required double[] Upper { get; init; }
+
+    /// <summary>Base of each stack segment; null when not stacked (the base is zero).</summary>
+    public double[]? Lower { get; init; }
+
+    public bool Stacked => Lower is not null;
 
     public required Func<double, double> MapY { get; init; }
 
@@ -63,6 +76,13 @@ internal sealed class SeriesBuildContext
     public List<Node> Output { get; } = [];
     public HitTestIndex.SeriesHits? Hits { get; set; }
 
+    /// <summary>Filled only when the series shows data labels.</summary>
+    public List<LabelAnchor> Labels { get; } = [];
+
+    /// <summary>Bar width and the bar center's offset from the x position (0 for points).</summary>
+    public double BarWidth { get; set; }
+    public double BarOffset { get; set; }
+
     public double StrokeWidth => Spec.StrokeWidth ?? 2;
 }
 
@@ -77,11 +97,12 @@ internal sealed class LineSeriesType : ISeriesType
 
     public void Build(SeriesBuildContext c)
     {
-        var (xs, ys, indices) = DrawnPoints(c);
+        var (xs, ys, _, indices) = DrawnPoints(c);
         var style = c.Styles.Add($"series-{c.ColorIndex}-line", new Style { Stroke = c.Color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" });
         c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), style) { Class = "rio-line" });
         AddLonePoints(c, xs, ys);
         c.Hits = Hits(c, xs, ys, indices);
+        AddLabels(c, xs, ys, indices);
     }
 
     /// <summary>
@@ -109,24 +130,44 @@ internal sealed class LineSeriesType : ISeriesType
         }
     }
 
-    /// <summary>Pixel coordinates of the points to draw, downsampled with LTTB when there are many.</summary>
-    internal static (double[] X, double[] Y, int[] Indices) DrawnPoints(SeriesBuildContext c)
+    /// <summary>
+    /// Pixel coordinates of the points to draw (downsampled with LTTB when there are many):
+    /// the line itself and, for stacked series, the base line.
+    /// </summary>
+    internal static (double[] X, double[] Y, double[]? Y0, int[] Indices) DrawnPoints(SeriesBuildContext c)
     {
         var data = c.Data;
         var indices = c.DownsampleThreshold > 0 && data.Count > c.DownsampleThreshold
-            ? Lttb.Downsample(data.X, data.Y, 0, data.Count, c.DownsampleThreshold)
+            ? Lttb.Downsample(data.X, c.Upper, 0, data.Count, c.DownsampleThreshold)
             : Enumerable.Range(0, data.Count).ToArray();
 
         var xs = new double[indices.Length];
         var ys = new double[indices.Length];
+        var y0 = c.Lower is null ? null : new double[indices.Length];
         for (var i = 0; i < indices.Length; i++)
         {
             var j = indices[i];
+            if (j < 0)
+            {
+                // Gap marker from LTTB.
+                xs[i] = ys[i] = double.NaN;
+                if (y0 is not null)
+                {
+                    y0[i] = double.NaN;
+                }
+
+                continue;
+            }
+
             xs[i] = c.PixelX[j];
-            ys[i] = double.IsFinite(data.Y[j]) ? c.MapY(data.Y[j]) : double.NaN;
+            ys[i] = double.IsFinite(c.Upper[j]) ? c.MapY(c.Upper[j]) : double.NaN;
+            if (y0 is not null)
+            {
+                y0[i] = double.IsFinite(c.Lower![j]) ? c.MapY(c.Lower[j]) : double.NaN;
+            }
         }
 
-        return (xs, ys, indices);
+        return (xs, ys, y0, indices);
     }
 
     internal static HitTestIndex.SeriesHits Hits(SeriesBuildContext c, double[] xs, double[] ys, int[] indices)
@@ -148,6 +189,22 @@ internal sealed class LineSeriesType : ISeriesType
 
         return new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
     }
+
+    internal static void AddLabels(SeriesBuildContext c, double[] xs, double[] ys, int[] indices)
+    {
+        if (!c.Spec.DataLabels)
+        {
+            return;
+        }
+
+        for (var i = 0; i < xs.Length; i++)
+        {
+            if (double.IsFinite(xs[i]) && double.IsFinite(ys[i]))
+            {
+                c.Labels.Add(new LabelAnchor(c.Data.Y[indices[i]], xs[i], ys[i], double.NaN, 0, c.Stacked));
+            }
+        }
+    }
 }
 
 internal sealed class AreaSeriesType : ISeriesType
@@ -161,13 +218,17 @@ internal sealed class AreaSeriesType : ISeriesType
 
     public void Build(SeriesBuildContext c)
     {
-        var (xs, ys, indices) = LineSeriesType.DrawnPoints(c);
-        var fill = c.Styles.Add($"series-{c.ColorIndex}-area", new Style { Fill = c.Color, FillOpacity = 0.18f });
+        var (xs, ys, y0, indices) = LineSeriesType.DrawnPoints(c);
+
+        // Stacked areas do not overlap, so they can be more opaque.
+        var fill = c.Styles.Add($"series-{c.ColorIndex}-area", new Style { Fill = c.Color, FillOpacity = c.Stacked ? 0.32f : 0.18f });
         var line = c.Styles.Add($"series-{c.ColorIndex}-line", new Style { Stroke = c.Color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" });
-        c.Output.Add(new PathNode(LineGenerator.Area(xs, ys, c.ZeroY, c.Spec.Curve), fill) { Class = "rio-area" });
+        var area = y0 is null ? LineGenerator.Area(xs, ys, c.ZeroY, c.Spec.Curve) : LineGenerator.AreaBetween(xs, ys, y0, c.Spec.Curve);
+        c.Output.Add(new PathNode(area, fill) { Class = "rio-area" });
         c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), line) { Class = "rio-line" });
         LineSeriesType.AddLonePoints(c, xs, ys);
         c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
+        LineSeriesType.AddLabels(c, xs, ys, indices);
     }
 }
 
@@ -186,7 +247,11 @@ internal sealed class BarSeriesType : ISeriesType
         var slot = c.SlotWidth / Math.Max(1, c.SlotCount);
         var gap = slot > 8 ? 2 : 0;
         var width = Math.Max(1, slot - gap);
-        var radius = (float)Math.Min(3, width / 4);
+
+        // Stacked segments are square, with a 1px gap between them; single bars get round corners.
+        var radius = c.Stacked ? 0 : (float)Math.Min(3, width / 4);
+        c.BarWidth = width;
+        c.BarOffset = -c.SlotWidth / 2 + c.SlotIndex * slot + gap / 2.0 + width / 2;
 
         var hx = new List<float>();
         var hy = new List<float>();
@@ -196,25 +261,41 @@ internal sealed class BarSeriesType : ISeriesType
         {
             var value = c.Data.Y[i];
             var center = c.PixelX[i];
-            if (!double.IsFinite(value) || !double.IsFinite(center))
+            if (!double.IsFinite(value) || !double.IsFinite(center) || !double.IsFinite(c.Upper[i]))
             {
                 continue;
             }
 
-            var left = center - c.SlotWidth / 2 + c.SlotIndex * slot + gap / 2.0;
-            var y = c.MapY(value);
-            var top = Math.Min(y, c.ZeroY);
-            var height = Math.Max(Math.Abs(y - c.ZeroY), value == 0 ? 0 : 1); // non-zero values stay visible
+            var left = center + c.BarOffset - width / 2;
+            var y = c.MapY(c.Upper[i]);
+            var y0 = c.Lower is { } lower ? c.MapY(lower[i]) : c.ZeroY;
+            var top = Math.Min(y, y0);
+            var height = Math.Max(Math.Abs(y - y0), value == 0 ? 0 : 1); // non-zero values stay visible
+            if (c.Stacked && height > 3)
+            {
+                // Leave a hairline gap on the side away from zero so segments read separately.
+                height -= 1;
+                if (value > 0)
+                {
+                    top += 1;
+                }
+            }
+
             c.Output.Add(new RectNode(new RectF((float)left, (float)top, (float)width, (float)height), style)
             {
                 CornerRadius = radius,
                 Class = "rio-bar",
             });
 
-            hx.Add((float)(left + width / 2));
+            // Hits sit at the x position (shared by grouped bars), so a shared tooltip lines them up.
+            hx.Add((float)center);
             hy.Add((float)y);
             hi.Add(i);
             hs.Add(c.Data.ToSourceIndex(i));
+            if (c.Spec.DataLabels)
+            {
+                c.Labels.Add(new LabelAnchor(value, left + width / 2, y, y0, width, c.Stacked));
+            }
         }
 
         c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);

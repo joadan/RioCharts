@@ -27,6 +27,38 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   reference or `DataVersion` changes. `Chart.Refresh()` forces a new layout.
 - **Downsampling.** Line and area series with more points than twice the plot width (at least
   500) are downsampled with LTTB; each run between gaps is downsampled separately.
-- **Hit-test index** is built in Core (sorted pixel x per series, binary search) but not used by
-  the Blazor side yet; tooltips in milestone 2 will send it to JS.
 - **Target framework** is net10.0 only for now.
+
+## Milestone 2
+
+- **Tooltip and crosshair.** Core builds a `TooltipModel` per layout: pixel x/y of the drawn
+  (downsampled) points plus their formatted x and y values. The Blazor chart sends it to JS once
+  per layout; JS handles pointer moves locally and draws into two elements Blazor renders empty
+  (an overlay `<svg class="rio-hover">` and a `<div class="rio-tooltip">`). So the scene's
+  Overlay layer only holds the empty-state message for now.
+- **Shared tooltip matching.** A series is listed when its nearest point is within half its median
+  point spacing of the hovered x (half a band for categories and bars), so series on different
+  time grids still line up. `Tooltip.Shared = false` shows only the nearest point (or the bar under
+  the pointer).
+- **Tooltip values** use the series `Format`, then the axis `Format`, then two decimals with
+  trailing zeros dropped (compact from 1M). Time x values show at the resolution of the data:
+  date, date and minutes, or date and seconds. Tooltip templates (`RenderFragment`) come later.
+- **Point clicks** only count on or next to a point (16 px) or a bar, and win over an annotation
+  underneath. Hover events are not raised to .NET.
+- **Stacking.** Series stack when they share `Stack`, axis and kind (bars, or lines/areas),
+  matched by exact x value (or category). Positive values stack up and negative values down.
+  Hidden series leave the stack. Stacked bars are square with a 1 px gap; stacked areas fill
+  between their base and top. No percent stacking yet.
+- **Multiple Y axes.** `ChartSpec.YAxes` adds axes (right side by default, outward when there are
+  several). The first axis with visible series owns the grid and the zero line; the others choose
+  a domain with the same number of nice steps, so their labels sit on its grid lines. An axis whose
+  series are all hidden is not shown. Zeros of different axes are not aligned.
+- **Data labels** are off by default (`DataLabels` per series). Bars: above the bar (below when
+  negative), or inside it in the inverse color when there is no room above; stacked segments only
+  inside, when the label fits. Points: above, else below. A label overlapping an earlier label or
+  an annotation label is dropped. More than 1000 points: no labels, with a warning.
+- **Annotations** are `AnnotationSpec` records (`<ReferenceLine>` and `<ReferenceBand>`
+  components, or `Chart.Annotations`). Values are `object`: numbers, `DateTime`,
+  `DateTimeOffset`, `DateOnly`, category names, or strings (ISO 8601 times, numbers) so JSON
+  specs work. Labels stay inside the plot. Hover text is an SVG `<title>`; they become focusable
+  buttons only when `OnAnnotationClick` is set. Point annotations and callouts are milestone 4.

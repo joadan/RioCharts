@@ -8,7 +8,7 @@ Razor renders SVG, and a tiny JS module only measures the container and the font
 
 Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
-## What works today (milestone 1)
+## What works today (milestones 1 and 2)
 
 - Line, area and bar series (grouped bars), with linear, monotone and step lines
 - Linear, time and category axes, picked automatically from the data
@@ -20,9 +20,14 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Light and dark themes through CSS variables; colorblind-aware palette
 - LTTB downsampling for large series, and a columnar fast path for big data
 - Screen-reader description of every chart (series, extremes, trend)
+- Tooltip and crosshair (shared across series by default), handled in the browser
+- Stacked bars, areas and lines; mixed series; multiple Y axes
+- Data labels with collision avoidance
+- Reference lines and bands (setpoints, comfort zones, fault periods)
+- Point and annotation click events
 
-Not yet: tooltips and crosshair, stacking, multiple Y axes, annotations, pie and donut,
-zoom and pan. See [Design.md](Design.md) for the design and milestones.
+Not yet: pie and donut, zoom and pan, display time zones, streaming. See [Design.md](Design.md)
+for the design and milestones.
 
 ## Usage
 
@@ -49,6 +54,20 @@ Several series, options and two-way bound legend state:
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` values to `double`.
 - Data is processed when `Items` is a new reference or `DataVersion` changes, not on every render.
 
+Stacking, a second axis, data labels and annotations:
+
+```razor
+<Chart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]"
+       OnPointClick="e => selected = e.Item">
+    <ReferenceBand From="20" To="24" Label="Comfort zone" />
+    <ReferenceLine Value="21" Label="Setpoint" />
+    <ReferenceBand Axis="AnnotationAxis.X" From="faultStart" To="faultEnd" Label="Fan fault" />
+    <BarSeries Items="heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" />
+    <BarSeries Items="fans" Name="Fans" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" DataLabels="true" />
+    <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+</Chart>
+```
+
 Large data, as plain arrays (no per-item cost):
 
 ```razor
@@ -57,7 +76,8 @@ Large data, as plain arrays (no per-item cost):
 </Chart>
 ```
 
-Theming: set any of `--rio-text`, `--rio-text-muted`, `--rio-grid`, `--rio-axis` and
+Theming: set any of `--rio-text`, `--rio-text-muted`, `--rio-grid`, `--rio-axis`,
+`--rio-surface` (tooltip), `--rio-annotation`, `--rio-data-label-inverse` and
 `--rio-series-1` … `--rio-series-10` anywhere above the chart. Dark mode follows
 `prefers-color-scheme`, or an ancestor with `data-theme="dark"` or class `dark`.
 

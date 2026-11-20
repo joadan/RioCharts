@@ -134,6 +134,13 @@ public sealed class SvgSceneRenderer : ComponentBase
             }
         }
 
+        if (g.Title is not null)
+        {
+            b.OpenElement(61, "title");
+            b.AddContent(62, g.Title);
+            b.CloseElement();
+        }
+
         foreach (var child in g.Children)
         {
             Render(b, child, styles);

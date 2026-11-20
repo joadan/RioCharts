@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using RioCharts.Blazor.Rendering;
 using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
@@ -20,6 +21,7 @@ public partial class Chart<TItem> : IChartContext
 
     private readonly string _id = "rio" + Guid.NewGuid().ToString("N")[..8];
     private readonly List<ISeriesSource> _series = [];
+    private readonly List<IAnnotationSource> _annotations = [];
     private readonly HashSet<string> _hidden = new(StringComparer.Ordinal);
     private int _generatedIds;
 
@@ -33,6 +35,7 @@ public partial class Chart<TItem> : IChartContext
     private ITextMeasurer _measurer = ApproximateTextMeasurer.Instance;
     private IJSObjectReference? _module;
     private DotNetObjectReference<Chart<TItem>>? _dotnet;
+    private object? _sentInteraction;
     private bool _disposed;
 
     [Inject] private IJSRuntime JS { get; set; } = null!;
@@ -52,9 +55,19 @@ public partial class Chart<TItem> : IChartContext
 
     [Parameter] public AxisSpec? XAxis { get; set; }
 
+    /// <summary>The primary vertical axis (id "y" unless set).</summary>
     [Parameter] public AxisSpec? YAxis { get; set; }
 
+    /// <summary>Additional vertical axes; series pick one with <c>YAxisId</c>.</summary>
+    [Parameter] public IReadOnlyList<AxisSpec>? YAxes { get; set; }
+
     [Parameter] public LegendSpec? Legend { get; set; }
+
+    /// <summary>Tooltip settings. On and shared across series by default.</summary>
+    [Parameter] public TooltipSpec? Tooltip { get; set; }
+
+    /// <summary>Annotations as data (in addition to &lt;ReferenceLine&gt; and &lt;ReferenceBand&gt; children).</summary>
+    [Parameter] public IReadOnlyList<AnnotationSpec>? Annotations { get; set; }
 
     /// <summary>Culture for labels. Default: the current culture.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
@@ -67,13 +80,19 @@ public partial class Chart<TItem> : IChartContext
     /// <summary>Raised after a legend click has toggled a series.</summary>
     [Parameter] public EventCallback<LegendClickEventArgs> OnLegendClick { get; set; }
 
+    /// <summary>Raised when a point or bar is clicked.</summary>
+    [Parameter] public EventCallback<PointClickEventArgs<TItem>> OnPointClick { get; set; }
+
+    /// <summary>Raised when a reference line or band is clicked (it becomes a focusable button).</summary>
+    [Parameter] public EventCallback<AnnotationClickEventArgs> OnAnnotationClick { get; set; }
+
     /// <summary>Extra CSS class on the container.</summary>
     [Parameter] public string? Class { get; set; }
 
     /// <summary>The latest layout: scene, scales, hit-test index and warnings.</summary>
     public ChartLayoutResult? Layout => _layout;
 
-    /// <summary>The chart model built from the parameters and series components.</summary>
+    /// <summary>The chart model built from the parameters and child components.</summary>
     public ChartSpec Spec => BuildSpec();
 
     private string ContainerStyle => string.Create(CultureInfo.InvariantCulture,
@@ -110,6 +129,24 @@ public partial class Chart<TItem> : IChartContext
 
     void IChartContext.SeriesChanged(ISeriesSource series) => Invalidate();
 
+    void IChartContext.AnnotationChanged(IAnnotationSource annotation)
+    {
+        if (!_annotations.Contains(annotation))
+        {
+            _annotations.Add(annotation);
+        }
+
+        Invalidate();
+    }
+
+    void IChartContext.Unregister(IAnnotationSource annotation)
+    {
+        if (!_disposed && _annotations.Remove(annotation))
+        {
+            Invalidate();
+        }
+    }
+
     private void Invalidate()
     {
         _dirty = true;
@@ -132,8 +169,8 @@ public partial class Chart<TItem> : IChartContext
             _dirty = true;
         }
 
-        // Re-layout only when the chart's own parameters changed (series report their own changes).
-        var parameters = (Height, Width, Title, XAxis, YAxis, Legend, Culture?.Name);
+        // Re-layout only when the chart's own parameters changed (child components report their own changes).
+        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -149,8 +186,11 @@ public partial class Chart<TItem> : IChartContext
         Title = Title,
         X = XAxis ?? new AxisSpec(),
         Y = YAxis ?? new AxisSpec(),
+        YAxes = YAxes ?? [],
         Legend = Legend ?? new LegendSpec(),
+        Tooltip = Tooltip ?? new TooltipSpec(),
         Series = _series.Select(s => s.Spec).ToList(),
+        Annotations = (Annotations ?? []).Concat(_annotations.Select(a => a.Spec)).ToList(),
     };
 
     private ChartLayoutResult EnsureLayout()
@@ -173,15 +213,23 @@ public partial class Chart<TItem> : IChartContext
             Measurer = _measurer,
             Culture = Culture ?? CultureInfo.CurrentCulture,
             HiddenSeries = _hidden,
+            InteractiveAnnotations = OnAnnotationClick.HasDelegate,
         });
         _dirty = false;
         return _layout;
     }
 
-    // ---------- Legend ----------
+    // ---------- Legend and annotation clicks ----------
 
     private async Task HandleInteraction(NodeInteraction interaction)
     {
+        if (interaction.Kind == "annotation")
+        {
+            var label = BuildSpec().Annotations.Select((a, i) => (a, i)).FirstOrDefault(t => (t.a.Id ?? $"annotation-{t.i + 1}") == interaction.Id).a?.Label;
+            await OnAnnotationClick.InvokeAsync(new AnnotationClickEventArgs(interaction.Id, label));
+            return;
+        }
+
         if (interaction.Kind != "legend")
         {
             return;
@@ -207,37 +255,66 @@ public partial class Chart<TItem> : IChartContext
         await OnLegendClick.InvokeAsync(new LegendClickEventArgs(id, name, visible));
     }
 
-    // ---------- Responsive sizing and font metrics (JS) ----------
+    /// <summary>Called by JS when a point or bar is clicked.</summary>
+    [JSInvokable]
+    public async Task OnPointClicked(string seriesId, int index)
+    {
+        var series = _series.FirstOrDefault(s => s.Spec.Id == seriesId);
+        if (series is null || index < 0 || index >= series.Data.Count)
+        {
+            return;
+        }
+
+        var data = series.Data;
+        var source = data.ToSourceIndex(index);
+        var x = data.X[index];
+        object? xValue = data.Kind switch
+        {
+            XKind.Time => TimeValue.ToDateTime(x),
+            XKind.Category => (int)x >= 0 && (int)x < data.Categories.Count ? data.Categories[(int)x] : null,
+            _ => x,
+        };
+        var item = series.ItemAt(source) is TItem t ? t : default;
+        await OnPointClick.InvokeAsync(new PointClickEventArgs<TItem>(seriesId, series.Spec.DisplayName, item, source, xValue, data.Y[index]));
+    }
+
+    // ---------- Responsive sizing, font metrics and pointer interaction (JS) ----------
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _disposed)
+        if (_disposed)
         {
             return;
         }
 
         try
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/Chart.razor.js");
-            _dotnet = DotNetObjectReference.Create(this);
-            var info = await _module.InvokeAsync<ContainerInfo>("init", _container, _dotnet);
-            var changed = false;
-            if (info.Widths is { Length: > 0 } widths)
+            if (firstRender)
             {
-                _measurer = new WidthTableTextMeasurer(widths);
-                changed = true;
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/Chart.razor.js");
+                _dotnet = DotNetObjectReference.Create(this);
+                var info = await _module.InvokeAsync<ContainerInfo>("init", _container, _dotnet);
+                var changed = false;
+                if (info.Widths is { Length: > 0 } widths)
+                {
+                    _measurer = new WidthTableTextMeasurer(widths);
+                    changed = true;
+                }
+
+                if (info.Width > 0 && Width is null)
+                {
+                    _measuredWidth = info.Width;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    Invalidate();
+                    return; // the next render sends the interaction data for the real layout
+                }
             }
 
-            if (info.Width > 0 && Width is null)
-            {
-                _measuredWidth = info.Width;
-                changed = true;
-            }
-
-            if (changed)
-            {
-                Invalidate();
-            }
+            await SyncInteractionAsync();
         }
         catch (JSDisconnectedException)
         {
@@ -247,8 +324,56 @@ public partial class Chart<TItem> : IChartContext
         }
         catch (JSException)
         {
-            // No JS (e.g. static rendering): keep the approximate layout.
+            // No JS (e.g. static rendering): keep the approximate layout, no tooltips.
         }
+    }
+
+    /// <summary>
+    /// Sends the drawn points (pixel positions and formatted values) to JS once per layout, so
+    /// pointer moves are handled in the browser without a round trip.
+    /// </summary>
+    private async Task SyncInteractionAsync()
+    {
+        if (_module is null || _layout is null)
+        {
+            return;
+        }
+
+        var key = (_layout, OnPointClick.HasDelegate);
+        if (Equals(key, _sentInteraction))
+        {
+            return;
+        }
+
+        _sentInteraction = key;
+        var model = _layout.Tooltip;
+        var click = OnPointClick.HasDelegate;
+        object? payload = model.Enabled || click
+            ? new
+            {
+                plot = new { x = model.Plot.X, y = model.Plot.Y, w = model.Plot.Width, h = model.Plot.Height },
+                tooltip = model.Enabled,
+                shared = model.Shared,
+                band = model.BandWidth,
+                click,
+                series = model.Series.Select(s => new
+                {
+                    id = s.Id,
+                    name = s.Name,
+                    color = SvgWriter.Color(s.Color),
+                    bar = s.Type == SeriesType.Bar,
+                    snap = s.Snap,
+                    barWidth = s.BarWidth,
+                    barOffset = s.BarOffset,
+                    x = s.X,
+                    y = s.Y,
+                    index = s.Index,
+                    xl = s.XLabels,
+                    v = s.Values,
+                }),
+            }
+            : null;
+        await _module.InvokeVoidAsync("update", _container, payload);
     }
 
     /// <summary>Called by the JS ResizeObserver when the container width changes.</summary>

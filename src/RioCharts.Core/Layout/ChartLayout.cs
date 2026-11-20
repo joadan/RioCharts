@@ -23,6 +23,9 @@ public sealed record LayoutOptions
 
     /// <summary>Line/area series with more points than this are downsampled. Null: twice the plot width (at least 500).</summary>
     public int? DownsampleThreshold { get; init; }
+
+    /// <summary>Make annotations clickable (focusable buttons in the scene).</summary>
+    public bool InteractiveAnnotations { get; init; }
 }
 
 public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty);
@@ -32,6 +35,7 @@ public sealed class ChartLayoutResult
     public required Scene.Scene Scene { get; init; }
     public required RectF Plot { get; init; }
     public required HitTestIndex HitTest { get; init; }
+    public required TooltipModel Tooltip { get; init; }
     public required IReadOnlyList<LegendEntry> Legend { get; init; }
     public required IReadOnlyList<string> Warnings { get; init; }
     public required XKind XKind { get; init; }
@@ -42,20 +46,43 @@ public sealed class ChartLayoutResult
     /// <summary>X scale for category axes.</summary>
     public BandScale? XBand { get; init; }
 
+    /// <summary>Scale of the primary vertical axis (the one with the grid lines).</summary>
     public required LinearScale YScale { get; init; }
+
+    /// <summary>Scales of all vertical axes by axis id, including hidden ones.</summary>
+    public required IReadOnlyDictionary<string, LinearScale> YScales { get; init; }
+
     public required bool HasData { get; init; }
 }
 
 /// <summary>
-/// The layout pass: resolves domains from series extents, picks ticks that fit the measured
-/// labels, places legend and plot, and emits the scene. Pure: no UI or browser dependency.
+/// The layout pass: resolves domains from series extents (stacked where asked), picks ticks
+/// that fit the measured labels, places legend, axes and plot, and emits the scene. Pure: no
+/// UI or browser dependency.
 /// </summary>
-public static class ChartLayout
+public static partial class ChartLayout
 {
     private const double PadTop = 8, PadRight = 12, PadBottom = 6, PadLeft = 6;
     private const double LabelGap = 8;
+    private const double AxisGap = 14;
 
-    private sealed record Resolved(SeriesSpec Spec, SeriesData Data, int ColorIndex, string Color, ISeriesType Type, bool Visible, bool Empty);
+    private sealed class Resolved
+    {
+        public required SeriesSpec Spec { get; init; }
+        public required SeriesData Data { get; init; }
+        public required int ColorIndex { get; init; }
+        public required string Color { get; init; }
+        public required ISeriesType Type { get; init; }
+        public required bool Visible { get; init; }
+        public required bool Empty { get; init; }
+        public YAxisLayout Axis { get; set; } = null!;
+
+        /// <summary>Values to draw: the data, or stack tops.</summary>
+        public double[] Upper { get; set; } = [];
+
+        /// <summary>Stack bases; null when not stacked.</summary>
+        public double[]? Lower { get; set; }
+    }
 
     public static ChartLayoutResult Compute(ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, LayoutOptions? options = null)
     {
@@ -70,7 +97,9 @@ public static class ChartLayout
         var lineHeight = font * 1.3;
         var styles = CreateStyles(options);
 
-        // ---------- Resolve series ----------
+        // ---------- Axes and series ----------
+        var axes = ResolveAxes(spec, warnings);
+        var primary = axes[0];
         var resolved = new List<Resolved>();
         var seenIds = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < spec.Series.Count; i++)
@@ -83,9 +112,19 @@ public static class ChartLayout
             }
 
             var d = data.TryGetValue(s.Id, out var found) ? found : SeriesData.Empty;
-            var visible = options.HiddenSeries?.Contains(s.Id) != true;
-            var empty = !d.Y.Any(double.IsFinite);
-            resolved.Add(new Resolved(s, d, i, s.Color ?? ThemeTokens.Series(i), ISeriesType.For(s.Type), visible, empty));
+            var r = new Resolved
+            {
+                Spec = s,
+                Data = d,
+                ColorIndex = i,
+                Color = s.Color ?? ThemeTokens.Series(i),
+                Type = ISeriesType.For(s.Type),
+                Visible = options.HiddenSeries?.Contains(s.Id) != true,
+                Empty = !d.Y.Any(double.IsFinite),
+                Upper = d.Y,
+            };
+            r.Axis = FindAxis(axes, s.YAxisId, $"series[{i}].yAxisId", warnings) ?? primary;
+            resolved.Add(r);
         }
 
         var xKind = ResolveXKind(spec.X.Scale, resolved);
@@ -96,12 +135,30 @@ public static class ChartLayout
 
         var drawable = resolved.Where(r => r.Visible && !r.Empty && (r.Data.Kind == xKind || r.Data.Count == 0)).ToList();
         var hasData = drawable.Count > 0;
+        foreach (var r in drawable)
+        {
+            r.Axis.Series.Add(r);
+        }
 
-        // ---------- Domains ----------
+        foreach (var axis in axes)
+        {
+            axis.Visible = axis.Series.Count > 0;
+        }
+
+        // ---------- Stacking, annotations and domains ----------
         var categories = xKind == XKind.Category ? MergeCategories(resolved) : [];
-        var (yMin, yMax) = YExtent(drawable, spec.Y);
+        var categoryIndex = categories.Select((c, i) => (c, i)).ToDictionary(t => t.c, t => t.i, StringComparer.Ordinal);
+        ApplyStacking(drawable, xKind, categoryIndex);
+
+        var annotations = ResolveAnnotations(spec, axes, xKind, categories, warnings);
         var hasBars = drawable.Any(r => r.Type.UsesSlots);
-        var (xMin, xMax, barSpacing) = xKind == XKind.Category ? (0, 0, 0) : XExtent(drawable, spec.X, xKind, hasBars);
+        var (xMin, xMax, barSpacing) = xKind == XKind.Category
+            ? (0, 0, 0)
+            : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.IsX && a.ExpandsDomain));
+        foreach (var axis in axes)
+        {
+            YExtent(axis, annotations.Where(a => !a.IsX && a.ExpandsDomain && a.Axis == axis));
+        }
 
         // ---------- Title and legend ----------
         var y0 = PadTop;
@@ -152,28 +209,44 @@ public static class ChartLayout
         }
 
         // ---------- Vertical layout ----------
+        var visibleAxes = axes.Where(a => a.Visible).ToList();
         var xLabelHeight = lineHeight + 6;
         var xTitleHeight = string.IsNullOrWhiteSpace(spec.X.Title) ? 0 : lineHeight + 4;
-        // The Y title sits above the axis labels, horizontally (easier to read than rotated text).
-        var yTitleHeight = string.IsNullOrWhiteSpace(spec.Y.Title) ? 0 : lineHeight + 2;
+
+        // Y titles sit above the axis labels, horizontally (easier to read than rotated text).
+        var yTitleHeight = visibleAxes.Any(a => !string.IsNullOrWhiteSpace(a.Spec.Title)) || (!hasData && !string.IsNullOrWhiteSpace(primary.Spec.Title))
+            ? lineHeight + 2
+            : 0;
         var plotTop = y0 + legendTop + yTitleHeight + font / 2; // room for the top label, centered on its grid line
         var plotBottom = height - PadBottom - legendBottom - xTitleHeight - xLabelHeight;
         var plotHeight = Math.Max(10, plotBottom - plotTop);
         plotBottom = plotTop + plotHeight;
 
-        // ---------- Y ticks (they decide the left margin) ----------
+        // ---------- Y ticks (they decide the side margins) ----------
         var yTarget = Math.Clamp((int)(plotHeight / 42), 2, 10);
-        var (yDomainMin, yDomainMax, yStep) = YDomain(yMin, yMax, spec.Y, yTarget);
-        var yTicks = NiceTicks.Ticks(yDomainMin, yDomainMax, yStep);
-        var yFormat = NumberFormatter.ForTicks(yTicks, yStep, culture, spec.Y.Format);
-        var yLabels = yTicks.Select(yFormat).ToList();
-        var yLabelWidth = hasData ? yLabels.Select(l => measure.Measure(l, font)).DefaultIfEmpty(0).Max() : 0;
-        var plotLeft = PadLeft + yLabelWidth + (hasData ? LabelGap : 0);
-        var plotRight = width - PadRight - legendRight;
+        // The first visible axis owns the grid and the zero line; the others align to its ticks.
+        var gridAxis = visibleAxes.FirstOrDefault() ?? primary;
+        ComputeYTicks(gridAxis, yTarget, culture, measure, font);
+        foreach (var axis in axes.Where(a => a != gridAxis))
+        {
+            ComputeYTicks(axis, yTarget, culture, measure, font, axis.Visible ? gridAxis : null);
+        }
+
+        var left = visibleAxes.Where(a => !a.Right).ToList();
+        var right = visibleAxes.Where(a => a.Right).ToList();
+        var plotLeft = PadLeft + (left.Count > 0 ? LabelGap + left.Sum(a => a.LabelWidth) + (left.Count - 1) * AxisGap : 0);
+        var plotRight = width - PadRight - legendRight - (right.Count > 0 ? LabelGap + right.Sum(a => a.LabelWidth) + (right.Count - 1) * AxisGap : 0);
         var plotWidth = Math.Max(10, plotRight - plotLeft);
+        plotRight = plotLeft + plotWidth;
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)plotWidth, (float)plotHeight);
 
-        var yScale = new LinearScale(yDomainMin, yDomainMax, plotBottom, plotTop);
+        PlaceAxisColumns(left, plotLeft - LabelGap, -1);
+        PlaceAxisColumns(right, plotRight + LabelGap, 1);
+        foreach (var axis in axes)
+        {
+            axis.Scale = new LinearScale(axis.DomainMin, axis.DomainMax, plotBottom, plotTop);
+        }
+
 
         // ---------- X scale and ticks ----------
         LinearScale? xScale = null;
@@ -203,18 +276,28 @@ public static class ChartLayout
         statics.AddRange(titleNodes);
 
         var grid = new List<Node>();
-        var zeroInDomain = yDomainMin < 0 && yDomainMax > 0;
-        if (spec.Y.GridLines ?? true)
+        var gridScale = gridAxis.Scale;
+        var zeroInDomain = gridAxis.DomainMin < 0 && gridAxis.DomainMax > 0;
+        if (gridAxis.Spec.GridLines ?? true)
         {
-            foreach (var t in yTicks)
+            foreach (var t in gridAxis.Ticks)
             {
                 if (hasData && t == 0 && zeroInDomain)
                 {
                     continue; // the zero line is drawn as the baseline
                 }
 
-                var py = (float)yScale.Map(t);
-                grid.Add(new PathNode(new PathBuilder().MoveTo(plotLeft, py).LineTo(plotLeft + plotWidth, py).Build(), new StyleRef("grid")));
+                var py = (float)gridScale.Map(t);
+                grid.Add(new PathNode(new PathBuilder().MoveTo(plotLeft, py).LineTo(plotRight, py).Build(), new StyleRef("grid")));
+            }
+        }
+
+        foreach (var axis in visibleAxes.Where(a => a != gridAxis && a.Spec.GridLines == true))
+        {
+            foreach (var t in axis.Ticks)
+            {
+                var py = (float)axis.Scale.Map(t);
+                grid.Add(new PathNode(new PathBuilder().MoveTo(plotLeft, py).LineTo(plotRight, py).Build(), new StyleRef("grid")));
             }
         }
 
@@ -228,21 +311,31 @@ public static class ChartLayout
 
         statics.Add(new GroupNode(grid) { Class = "rio-grid" });
 
-        var baselineY = zeroInDomain ? yScale.Map(0) : plotBottom;
-        statics.Add(new PathNode(new PathBuilder().MoveTo(plotLeft, baselineY).LineTo(plotLeft + plotWidth, baselineY).Build(), new StyleRef("axis"))
+        var baselineY = zeroInDomain ? gridScale.Map(0) : plotBottom;
+        statics.Add(new PathNode(new PathBuilder().MoveTo(plotLeft, baselineY).LineTo(plotRight, baselineY).Build(), new StyleRef("axis"))
         {
             Class = "rio-baseline",
         });
 
         if (hasData)
         {
-            var yLabelNodes = new List<Node>();
-            for (var i = 0; i < yTicks.Count; i++)
+            foreach (var axis in visibleAxes)
             {
-                yLabelNodes.Add(new TextNode(yLabels[i], new PointF((float)(plotLeft - LabelGap), (float)yScale.Map(yTicks[i])), new TextStyle("axis-label"), Anchor.End));
+                var nodes = new List<Node>();
+                for (var i = 0; i < axis.Ticks.Count; i++)
+                {
+                    nodes.Add(new TextNode(axis.Labels[i], new PointF((float)axis.LabelX, (float)axis.Scale.Map(axis.Ticks[i])), new TextStyle("axis-label"),
+                        axis.Right ? Anchor.Start : Anchor.End));
+                }
+
+                statics.Add(new GroupNode(nodes)
+                {
+                    Class = axis.Right ? "rio-axis-y rio-axis-y-right" : "rio-axis-y",
+                    Key = "axis:" + axis.Id,
+                    AriaLabel = AxisLabel(visibleAxes.Count > 1 ? $"Y axis {axis.Id}" : "Y axis", axis.Spec.Title, axis.Labels),
+                });
             }
 
-            statics.Add(new GroupNode(yLabelNodes) { Class = "rio-axis-y", AriaLabel = AxisLabel("Y axis", spec.Y.Title, yLabels) });
             statics.Add(new GroupNode(xTickNodes) { Class = "rio-axis-x", AriaLabel = "X axis" + (spec.X.Title is { } xt ? ": " + xt : "") });
         }
 
@@ -252,34 +345,39 @@ public static class ChartLayout
                 new TextStyle("axis-title"), Anchor.Middle) { Class = "rio-axis-title" });
         }
 
-        if (!string.IsNullOrWhiteSpace(spec.Y.Title))
+        var titleY = (float)(plotTop - font / 2 - yTitleHeight / 2 - 2);
+        foreach (var axis in hasData ? visibleAxes : [primary])
         {
-            var ty = (float)(plotTop - font / 2 - yTitleHeight / 2 - 2);
-            statics.Add(new TextNode(spec.Y.Title!, new PointF((float)PadLeft, ty), new TextStyle("axis-title"), Anchor.Start)
+            if (!string.IsNullOrWhiteSpace(axis.Spec.Title))
             {
-                Class = "rio-axis-title",
-            });
+                var (tx, anchor) = !hasData ? (PadLeft, Anchor.Start)
+                    : axis.Right ? (axis.LabelX + axis.LabelWidth, Anchor.End)
+                    : (axis.LabelX - axis.LabelWidth, Anchor.Start);
+                statics.Add(new TextNode(axis.Spec.Title!, new PointF((float)tx, titleY), new TextStyle("axis-title"), anchor) { Class = "rio-axis-title" });
+            }
         }
 
         if (showLegend)
         {
-            statics.Add(BuildLegend(legendEntries, legendItems, legendRows, legendPosition, plot, y0, plotBottom + xLabelHeight + xTitleHeight + 8,
-                width, lineHeight, font, styles));
+            statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
+                plotBottom + xLabelHeight + xTitleHeight + 8, lineHeight, styles));
         }
 
-        // ---------- Series layer ----------
-        var zeroY = Math.Clamp(yScale.Map(0), plotTop, plotBottom);
-        var barSeries = drawable.Where(r => r.Type.UsesSlots).ToList();
+        // ---------- Series ----------
+        var slotKeys = drawable.Where(r => r.Type.UsesSlots).Select(SlotKey).Distinct().ToList();
         var slotWidth = xKind == XKind.Category
             ? xBand!.Bandwidth
             : barSpacing > 0 ? Math.Abs(xScale!.Map(xScale.DomainMin + barSpacing) - xScale.Map(xScale.DomainMin)) * 0.8 : plotWidth * 0.1;
         var threshold = options.DownsampleThreshold ?? Math.Max(500, (int)(plotWidth * 2));
-        var categoryIndex = categories.Select((c, i) => (c, i)).ToDictionary(t => t.c, t => t.i, StringComparer.Ordinal);
 
         var hitTest = new HitTestIndex();
+        var tooltipSeries = new List<TooltipSeries>();
         var seriesNodes = new List<(int Order, int Index, Node Node)>();
+        var labelAnchors = new List<(Resolved Series, List<LabelAnchor> Anchors)>();
+        var formatX = ValueFormatter.ForX(xKind, drawable.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format);
         foreach (var r in drawable)
         {
+            var axisScale = r.Axis.Scale;
             var context = new SeriesBuildContext
             {
                 Spec = r.Spec,
@@ -289,17 +387,25 @@ public static class ChartLayout
                 Styles = styles,
                 Plot = plot,
                 PixelX = PixelX(r.Data, xKind, xScale, xBand, categoryIndex),
-                MapY = yScale.Map,
-                ZeroY = zeroY,
+                Upper = r.Upper,
+                Lower = r.Lower,
+                MapY = axisScale.Map,
+                ZeroY = Math.Clamp(axisScale.Map(0), plotTop, plotBottom),
                 SlotWidth = slotWidth,
-                SlotIndex = Math.Max(0, barSeries.IndexOf(r)),
-                SlotCount = Math.Max(1, barSeries.Count),
+                SlotIndex = r.Type.UsesSlots ? slotKeys.IndexOf(SlotKey(r)) : 0,
+                SlotCount = Math.Max(1, slotKeys.Count),
                 DownsampleThreshold = threshold,
             };
             r.Type.Build(context);
             if (context.Hits is { } hits)
             {
                 hitTest.Add(hits);
+                tooltipSeries.Add(TooltipFor(r, hitTest.Series[^1], context, formatX, culture, xKind, xBand, plotWidth));
+            }
+
+            if (context.Labels.Count > 0)
+            {
+                labelAnchors.Add((r, context.Labels));
             }
 
             var order = r.Spec.ZIndex ?? r.Type.DefaultLayer * 1000;
@@ -311,7 +417,26 @@ public static class ChartLayout
             }));
         }
 
-        var seriesLayer = new GroupNode(seriesNodes.OrderBy(t => t.Order).ThenBy(t => t.Index).Select(t => t.Node).ToList(), Clip: Inflate(plot, 2))
+        // ---------- Annotations and labels ----------
+        var placedLabels = new List<RectF>();
+        var below = new List<Node>();
+        var above = new List<Node>();
+        var labelNodes = new List<Node>();
+        if (hasData)
+        {
+            BuildAnnotations(annotations, plot, xKind, xScale, xBand, culture, measure, font, styles, options.InteractiveAnnotations,
+                below, above, labelNodes, placedLabels, spec.X.Format);
+            labelNodes.AddRange(BuildDataLabels(labelAnchors, plot, culture, measure, font, styles, placedLabels, warnings));
+        }
+
+        var plotNodes = new List<Node>(below);
+        plotNodes.AddRange(seriesNodes.OrderBy(t => t.Order).ThenBy(t => t.Index).Select(t => t.Node));
+        plotNodes.AddRange(above);
+        var seriesLayer = new GroupNode(
+        [
+            new GroupNode(plotNodes, Clip: Inflate(plot, 2)) { Class = "rio-plot" },
+            new GroupNode(labelNodes) { Class = "rio-labels" },
+        ])
         {
             Class = "rio-series-layer",
         };
@@ -331,25 +456,31 @@ public static class ChartLayout
             Description = ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture),
         };
 
+        var bandWidth = xKind == XKind.Category ? xBand!.Step : hasBars ? slotWidth / 0.8 : 0;
         return new ChartLayoutResult
         {
             Scene = scene,
             Plot = plot,
             HitTest = hitTest,
+            Tooltip = new TooltipModel(plot, spec.Tooltip.Enabled && hasData, spec.Tooltip.Shared, (float)bandWidth, tooltipSeries),
             Legend = legendEntries,
             Warnings = warnings,
             XKind = xKind,
             XScale = xScale,
             XBand = xBand,
-            YScale = yScale,
+            YScale = gridAxis.Scale,
+            YScales = axes.ToDictionary(a => a.Id, a => a.Scale, StringComparer.Ordinal),
             HasData = hasData,
         };
     }
+
+    private static string SlotKey(Resolved r) => r.Spec.Stack is { Length: > 0 } stack ? $"stack|{r.Axis.Id}|{stack}" : "series|" + r.Spec.Id;
 
     // ---------- Styles ----------
 
     private static StyleTable CreateStyles(LayoutOptions options)
     {
+        var small = (float)Math.Max(9, options.FontSize - 1);
         var styles = new StyleTable();
         styles.Add("grid", new Style { Stroke = ThemeTokens.Grid, StrokeWidth = 1 });
         styles.Add("axis", new Style { Stroke = ThemeTokens.Axis, StrokeWidth = 1 });
@@ -359,10 +490,15 @@ public static class ChartLayout
         styles.Add("title", new TextStyleDef { FontSize = (float)options.TitleFontSize, FontWeight = 600, Fill = ThemeTokens.Text });
         styles.Add("empty", new TextStyleDef { FontSize = (float)options.FontSize + 1, Fill = ThemeTokens.TextMuted });
         styles.Add("legend-hit", new Style { Fill = "transparent" });
+        styles.Add("data-label", new TextStyleDef { FontSize = small, Fill = ThemeTokens.Text });
+        styles.Add("data-label-inverse", new TextStyleDef { FontSize = small, FontWeight = 500, Fill = ThemeTokens.DataLabelInverse });
+        styles.Add("annotation-line", new Style { Stroke = ThemeTokens.Annotation, StrokeWidth = 1.25f, DashArray = "4 3" });
+        styles.Add("annotation-band", new Style { Fill = ThemeTokens.Annotation, FillOpacity = 0.1f });
+        styles.Add("annotation-label", new TextStyleDef { FontSize = small, Fill = ThemeTokens.Annotation });
         return styles;
     }
 
-    // ---------- Domains ----------
+    // ---------- Series helpers ----------
 
     private static XKind ResolveXKind(ScaleType scale, List<Resolved> series) => scale switch
     {
@@ -391,69 +527,51 @@ public static class ChartLayout
         return result;
     }
 
-    private static (double Min, double Max) YExtent(List<Resolved> series, AxisSpec axis)
+    /// <summary>
+    /// Stacks series that share a stack name, axis and kind (bars or not). Positive values stack
+    /// up from zero and negative values down, per x position. Hidden series are left out.
+    /// </summary>
+    private static void ApplyStacking(List<Resolved> drawable, XKind kind, Dictionary<string, int> categoryIndex)
     {
-        double min = double.PositiveInfinity, max = double.NegativeInfinity;
-        var includeZero = false;
-        foreach (var r in series)
+        var groups = drawable
+            .Where(r => r.Spec.Stack is { Length: > 0 })
+            .GroupBy(r => (r.Axis.Id, r.Spec.Stack, r.Type.UsesSlots));
+        foreach (var group in groups)
         {
-            includeZero |= r.Type.IncludesZero;
-            foreach (var y in r.Data.Y)
+            var positive = new Dictionary<double, double>();
+            var negative = new Dictionary<double, double>();
+            foreach (var r in group)
             {
-                if (double.IsFinite(y))
+                var d = r.Data;
+                var upper = new double[d.Count];
+                var lower = new double[d.Count];
+                for (var i = 0; i < d.Count; i++)
                 {
-                    min = Math.Min(min, y);
-                    max = Math.Max(max, y);
+                    var v = d.Y[i];
+                    var key = kind == XKind.Category
+                        ? (int)d.X[i] is var local && local >= 0 && local < d.Categories.Count && categoryIndex.TryGetValue(d.Categories[local], out var g) ? g : double.NaN
+                        : d.X[i];
+                    if (!double.IsFinite(v) || !double.IsFinite(key))
+                    {
+                        upper[i] = lower[i] = double.NaN;
+                        continue;
+                    }
+
+                    var sums = v >= 0 ? positive : negative;
+                    sums.TryGetValue(key, out var start);
+                    lower[i] = start;
+                    upper[i] = start + v;
+                    sums[key] = start + v;
                 }
+
+                r.Upper = upper;
+                r.Lower = lower;
             }
         }
-
-        if (!double.IsFinite(min))
-        {
-            (min, max) = (0, 1);
-        }
-
-        if (includeZero)
-        {
-            min = Math.Min(min, 0);
-            max = Math.Max(max, 0);
-        }
-
-        return (axis.Min ?? min, axis.Max ?? max);
     }
 
-    private static (double Min, double Max, double Step) YDomain(double min, double max, AxisSpec axis, int target)
-    {
-        if (max < min)
-        {
-            (min, max) = (max, min);
-        }
-
-        if (max == min)
-        {
-            // All values equal: pad so the axis does not collapse.
-            var pad = min == 0 ? 1 : Math.Abs(min) * 0.1;
-            if (axis.Min is null)
-            {
-                min -= pad;
-            }
-
-            if (axis.Max is null)
-            {
-                max += pad;
-            }
-
-            if (max <= min)
-            {
-                max = min + 1;
-            }
-        }
-
-        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(min, max, target);
-        return (axis.Min ?? niceMin, axis.Max ?? niceMax, step);
-    }
-
-    private static (double Min, double Max, double BarSpacing) XExtent(List<Resolved> series, AxisSpec axis, XKind kind, bool hasBars)
+    private static (double Min, double Max, double BarSpacing) XExtent(List<Resolved> series, AxisSpec axis, XKind kind, bool hasBars,
+        IEnumerable<ResolvedAnnotation> annotations)
     {
         double min = double.PositiveInfinity, max = double.NegativeInfinity;
         var spacing = double.PositiveInfinity;
@@ -478,6 +596,18 @@ public static class ChartLayout
                     {
                         spacing = Math.Min(spacing, dx);
                     }
+                }
+            }
+        }
+
+        if (double.IsFinite(min))
+        {
+            foreach (var a in annotations)
+            {
+                foreach (var v in a.Values)
+                {
+                    min = Math.Min(min, v);
+                    max = Math.Max(max, v);
                 }
             }
         }
@@ -530,219 +660,50 @@ public static class ChartLayout
         return px;
     }
 
-    // ---------- X labels ----------
-
-    /// <summary>Adds numeric or time tick labels, choosing the densest ticks whose labels do not overlap.</summary>
-    private static List<double> AddContinuousXLabels(LinearScale scale, XKind kind, AxisSpec axis, CultureInfo culture,
-        ITextMeasurer measure, double font, double plotBottom, double chartWidth, List<Node> output)
+    private static TooltipSeries TooltipFor(Resolved r, HitTestIndex.SeriesHits hits, SeriesBuildContext context, Func<double, string> formatX,
+        CultureInfo culture, XKind kind, BandScale? band, double plotWidth)
     {
-        var plotWidth = scale.RangeEnd - scale.RangeStart;
-        List<double> ticks = [];
-        List<string> labels = [];
-
-        if (kind == XKind.Time)
+        var n = hits.X.Length;
+        var xLabels = new string[n];
+        var values = new string[n];
+        var format = r.Spec.Format ?? r.Axis.Spec.Format;
+        for (var i = 0; i < n; i++)
         {
-            var maxCount = Math.Max(2, (int)(plotWidth / 50));
-            foreach (var interval in TimeTicks.FromSmallest(scale.DomainMin, scale.DomainMax, maxCount))
+            var j = hits.Index[i];
+            var x = r.Data.X[j];
+            xLabels[i] = kind == XKind.Category
+                ? ((int)x is var c && c >= 0 && c < r.Data.Categories.Count ? r.Data.Categories[c] : "")
+                : formatX(x);
+            values[i] = ValueFormatter.Format(r.Data.Y[j], culture, format);
+        }
+
+        float snap;
+        if (kind == XKind.Category)
+        {
+            snap = (float)(band!.Step / 2);
+        }
+        else if (r.Type.UsesSlots)
+        {
+            snap = (float)Math.Max(1, context.SlotWidth / 0.8 / 2);
+        }
+        else if (n > 1)
+        {
+            var gaps = new float[n - 1];
+            for (var i = 1; i < n; i++)
             {
-                ticks = TimeTicks.Generate(scale.DomainMin, scale.DomainMax, interval);
-                labels = ticks.Select(t => TimeFormatter.Format(t, interval, culture, axis.Format)).ToList();
-                if (Fits(ticks, labels, scale, measure, font, chartWidth))
-                {
-                    break;
-                }
+                gaps[i - 1] = hits.X[i] - hits.X[i - 1];
             }
+
+            Array.Sort(gaps);
+            snap = Math.Max(1, gaps[gaps.Length / 2] / 2 + 0.5f);
         }
         else
         {
-            for (var target = Math.Clamp((int)(plotWidth / 70), 2, 12); target >= 1; target--)
-            {
-                var step = NiceTicks.Step(scale.DomainMax - scale.DomainMin, target);
-                ticks = NiceTicks.Ticks(scale.DomainMin, scale.DomainMax, step);
-                var format = NumberFormatter.ForTicks(ticks, step, culture, axis.Format);
-                labels = ticks.Select(format).ToList();
-                if (Fits(ticks, labels, scale, measure, font, chartWidth))
-                {
-                    break;
-                }
-            }
+            snap = (float)plotWidth;
         }
 
-        var pixels = ticks.Select(scale.Map).ToList();
-        foreach (var label in PlaceLabels(ticks, labels, scale, measure, font, chartWidth))
-        {
-            if (label.Skip)
-            {
-                continue; // no room at all
-            }
-
-            output.Add(new TextNode(label.Text, new PointF((float)label.X, (float)(plotBottom + 6)), new TextStyle("axis-label"), label.Anchor)
-            {
-                Baseline = Baseline.Top,
-            });
-        }
-
-        return pixels;
-    }
-
-    private readonly record struct PlacedLabel(string Text, double X, Anchor Anchor, double Left, double Right, bool Skip);
-
-    /// <summary>
-    /// Positions labels under their ticks. Labels at the plot edges align to their tick instead
-    /// of centering, so they stay clear of the Y labels and inside the chart.
-    /// </summary>
-    private static List<PlacedLabel> PlaceLabels(List<double> ticks, List<string> labels, LinearScale scale, ITextMeasurer measure,
-        double font, double chartWidth)
-    {
-        var placed = new List<PlacedLabel>(ticks.Count);
-        for (var i = 0; i < ticks.Count; i++)
-        {
-            var px = scale.Map(ticks[i]);
-            var width = measure.Measure(labels[i], font);
-            var anchor = Anchor.Middle;
-            var (left, right) = (px - width / 2, px + width / 2);
-            if (left < scale.RangeStart - 4)
-            {
-                (anchor, left, right) = (Anchor.Start, px, px + width);
-            }
-            else if (right > Math.Min(chartWidth, scale.RangeEnd + 12))
-            {
-                (anchor, left, right) = (Anchor.End, px - width, px);
-            }
-
-            var skip = left < scale.RangeStart - 4 || right > chartWidth;
-            placed.Add(new PlacedLabel(labels[i], px, anchor, left, right, skip));
-        }
-
-        return placed;
-    }
-
-    private static bool Fits(List<double> ticks, List<string> labels, LinearScale scale, ITextMeasurer measure, double font, double chartWidth)
-    {
-        var placed = PlaceLabels(ticks, labels, scale, measure, font, chartWidth).Where(p => !p.Skip).ToList();
-        for (var i = 1; i < placed.Count; i++)
-        {
-            if (placed[i].Left - placed[i - 1].Right < 12)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static void AddCategoryLabels(BandScale band, ITextMeasurer measure, double font, double plotBottom, List<Node> output)
-    {
-        if (band.Categories.Count == 0)
-        {
-            return;
-        }
-
-        // Show every k-th label when they do not all fit.
-        var widest = band.Categories.Max(c => measure.Measure(c, font));
-        var every = Math.Max(1, (int)Math.Ceiling((widest + 8) / Math.Max(1, band.Step)));
-        for (var i = 0; i < band.Categories.Count; i += every)
-        {
-            output.Add(new TextNode(band.Categories[i], new PointF((float)band.Center(i), (float)(plotBottom + 6)), new TextStyle("axis-label"), Anchor.Middle)
-            {
-                Baseline = Baseline.Top,
-            });
-        }
-    }
-
-    // ---------- Legend ----------
-
-    private const double SwatchWidth = 12;
-    private const double SwatchGap = 6;
-    private const double ItemGap = 16;
-
-    private static List<(LegendEntry Entry, double Width)> MeasureLegend(List<LegendEntry> entries, ITextMeasurer measure, double font) =>
-        entries.Select(e => (e, SwatchWidth + SwatchGap + measure.Measure(e.Label, font))).ToList();
-
-    private static List<List<(LegendEntry Entry, double Width)>> WrapRows(List<(LegendEntry Entry, double Width)> items, double maxWidth)
-    {
-        var rows = new List<List<(LegendEntry, double)>>();
-        var row = new List<(LegendEntry, double)>();
-        double used = 0;
-        foreach (var item in items)
-        {
-            var add = row.Count == 0 ? item.Width : item.Width + ItemGap;
-            if (row.Count > 0 && used + add > maxWidth)
-            {
-                rows.Add(row);
-                row = [];
-                used = 0;
-                add = item.Width;
-            }
-
-            row.Add(item);
-            used += add;
-        }
-
-        if (row.Count > 0)
-        {
-            rows.Add(row);
-        }
-
-        return rows;
-    }
-
-    private static GroupNode BuildLegend(List<LegendEntry> entries, List<(LegendEntry Entry, double Width)> items,
-        List<List<(LegendEntry Entry, double Width)>> rows, LegendPosition position, RectF plot, double top, double bottomTop,
-        double chartWidth, double lineHeight, double font, StyleTable styles)
-    {
-        var nodes = new List<Node>();
-        var rowHeight = lineHeight + 4;
-        if (position == LegendPosition.Right)
-        {
-            var x = plot.Right + 16;
-            var y = plot.Y;
-            foreach (var (entry, w) in items)
-            {
-                nodes.Add(LegendItem(entry, x, y, w, rowHeight, styles));
-                y += (float)rowHeight;
-            }
-        }
-        else
-        {
-            var y = position == LegendPosition.Top ? top : bottomTop;
-            foreach (var row in rows)
-            {
-                double x = PadLeft;
-                foreach (var (entry, w) in row)
-                {
-                    nodes.Add(LegendItem(entry, x, y, w, rowHeight, styles));
-                    x += w + ItemGap;
-                }
-
-                y += rowHeight;
-            }
-        }
-
-        return new GroupNode(nodes) { Class = "rio-legend", AriaLabel = "Legend" };
-    }
-
-    private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles)
-    {
-        var cy = y + height / 2;
-        var swatchStyle = styles.Add("swatch-" + entry.SeriesId, new Style { Fill = entry.Color, Stroke = entry.Color, StrokeWidth = 2 });
-        Node swatch = entry.Type == SeriesType.Line
-            ? new PathNode(new PathBuilder().MoveTo(x, cy).LineTo(x + SwatchWidth, cy).Build(), swatchStyle) { Class = "rio-swatch rio-swatch-line" }
-            : new RectNode(new RectF((float)x, (float)(cy - 5), (float)SwatchWidth, 10), swatchStyle) { CornerRadius = 2, Class = "rio-swatch" };
-
-        var state = !entry.Visible ? ", hidden" : entry.IsEmpty ? ", no data" : "";
-        return new GroupNode(
-        [
-            new RectNode(new RectF((float)(x - 3), (float)y, (float)(width + 6), (float)height), new StyleRef("legend-hit")) { CornerRadius = 3, Class = "rio-legend-hit" },
-            swatch,
-            new TextNode(entry.Label, new PointF((float)(x + SwatchWidth + SwatchGap), (float)cy), new TextStyle("legend-label"), Anchor.Start),
-        ])
-        {
-            Key = "legend:" + entry.SeriesId,
-            Class = "rio-legend-item" + (entry.Visible ? "" : " rio-legend-off") + (entry.IsEmpty ? " rio-legend-empty" : ""),
-            Interaction = new NodeInteraction("legend", entry.SeriesId) { Pressed = entry.Visible },
-            AriaLabel = entry.Label + state,
-        };
+        return new TooltipSeries(r.Spec.Id, r.Spec.DisplayName, r.Color, r.Spec.Type, snap, (float)context.BarWidth, (float)context.BarOffset,
+            hits.X, hits.Y, hits.Index, xLabels, values);
     }
 
     // ---------- Helpers ----------

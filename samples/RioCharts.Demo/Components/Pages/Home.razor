@@ -5,7 +5,7 @@
 <header class="top">
     <div>
         <h1>RioCharts</h1>
-        <p class="lead">Milestone 1: line, area and bar series; linear, time and category axes; legend; responsive sizing; theming.</p>
+        <p class="lead">Line, area and bar series with tooltips, stacking, multiple Y axes, data labels and annotations; responsive and themeable.</p>
     </div>
     <button class="theme" @onclick="() => _dark = !_dark">@(_dark ? "Light" : "Dark") theme</button>
 </header>
@@ -62,6 +62,56 @@
             </Chart>
         </section>
 
+        <section>
+            <h2>Annotations, tooltip and clicks</h2>
+            <Chart TItem="Reading" YAxis="_celsius" OnPointClick="PointClicked" OnAnnotationClick="AnnotationClicked">
+                <ReferenceBand From="20" To="24" Label="Comfort zone" />
+                <ReferenceBand Axis="AnnotationAxis.X" From="_faultStart" To="_faultEnd" Label="Fan fault" Color="#d9480f" />
+                <ReferenceLine Value="21" Label="Setpoint 21 °C" />
+                <ReferenceLine Axis="AnnotationAxis.X" Value="_now" Label="Now" />
+                <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+                <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+            </Chart>
+            <p class="note">Hover for the shared tooltip; click a point or an annotation. @_clicked</p>
+        </section>
+
+        <section>
+            <h2>Two Y axes</h2>
+            <Chart TItem="Reading" YAxis="_celsius" YAxes="_energyAxis">
+                <BarSeries Items="_hourlyEnergy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Format="0 kWh" />
+                <LineSeries Items="_hourlyOutdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+            </Chart>
+            <p class="note">Energy uses the right axis (<code>YAxisId="energy"</code>); the grid follows the left axis.</p>
+        </section>
+
+        <section>
+            <h2>Stacked bars with data labels</h2>
+            <Chart TItem="EnergyMix" Title="Heat supply per month" YAxis="_mwh">
+                <BarSeries Items="_mix" Name="District heating" XValue="m => m.Month" YValue="m => m.District" Stack="heat" DataLabels="true" />
+                <BarSeries Items="_mix" Name="Heat pump" XValue="m => m.Month" YValue="m => m.HeatPump" Stack="heat" DataLabels="true" />
+                <BarSeries Items="_mix" Name="Solar" XValue="m => m.Month" YValue="m => m.Solar" Stack="heat" DataLabels="true" />
+            </Chart>
+            <p class="note">Labels show inside segments that are big enough. Toggle a series and the stack closes up.</p>
+        </section>
+
+        <section>
+            <h2>Stacked areas</h2>
+            <Chart TItem="Reading" YAxis="_kwh">
+                <AreaSeries Items="_heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
+                <AreaSeries Items="_ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
+                <AreaSeries Items="_lighting" Name="Lighting" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
+            </Chart>
+        </section>
+
+        <section>
+            <h2>Data labels on bars</h2>
+            <Chart TItem="QuarterSales" Tooltip="_singleTooltip">
+                <BarSeries Items="_sales" Name="2025" XValue="s => s.Quarter" YValue="s => s.Last" DataLabels="true" />
+                <BarSeries Items="_sales" Name="2026" XValue="s => s.Quarter" YValue="s => s.This" DataLabels="true" />
+            </Chart>
+            <p class="note">This chart uses a per-bar tooltip (<code>Shared = false</code>).</p>
+        </section>
+
         <section class="wide">
             <h2>Columnar fast path: 200 000 points</h2>
             <Chart TItem="double" Height="260">
@@ -106,12 +156,36 @@
 @code {
     private sealed record Reading(DateTime Time, double? Value);
     private sealed record QuarterSales(string Quarter, double Last, double This);
+    private sealed record EnergyMix(string Month, double District, double HeatPump, double Solar);
 
     private bool _dark;
     private IReadOnlyCollection<string> _hidden = [];
+    private string _clicked = "";
 
     private readonly AxisSpec _celsius = new() { Title = "°C" };
     private readonly AxisSpec _kwh = new() { Title = "kWh" };
+    private readonly AxisSpec _mwh = new() { Title = "MWh" };
+    private readonly IReadOnlyList<AxisSpec> _energyAxis = [new() { Id = "energy", Title = "kWh" }];
+    private readonly TooltipSpec _singleTooltip = new() { Shared = false };
+
+    private DateTime _faultStart, _faultEnd, _now;
+    private List<Reading> _hourlyEnergy = [];
+    private List<Reading> _hourlyOutdoor = [];
+    private List<Reading> _heating = [];
+    private List<Reading> _ventilation = [];
+    private List<Reading> _lighting = [];
+
+    private readonly List<EnergyMix> _mix =
+    [
+        new("Jan", 42, 18, 1), new("Feb", 38, 17, 2), new("Mar", 29, 15, 5), new("Apr", 17, 11, 8),
+        new("May", 8, 6, 11), new("Jun", 4, 3, 12),
+    ];
+
+    private void PointClicked(PointClickEventArgs<Reading> e) =>
+        _clicked = $"Clicked {e.SeriesName}: {e.Item?.Value:0.0} °C at {e.Item?.Time:g}.";
+
+    private void AnnotationClicked(AnnotationClickEventArgs e) =>
+        _clicked = $"Clicked annotation '{e.Label}'.";
 
     private List<Reading> _supply = [];
     private List<Reading> _extract = [];
@@ -160,6 +234,24 @@
             new(start.AddHours(18), 20), new(start.AddHours(30), 20), new(start.AddHours(31), 22.5), new(start.AddHours(41), 22.5),
             new(start.AddHours(42), 20), new(start.AddHours(48), 20),
         ];
+
+        _faultStart = start.AddHours(26);
+        _faultEnd = start.AddHours(31);
+        _now = start.AddHours(44);
+
+        // Hourly values over two days.
+        for (var h = 0; h < 48; h++)
+        {
+            var t = start.AddHours(h);
+            var dayCycle = Math.Sin((t.Hour - 9) / 24.0 * 2 * Math.PI);
+            var outdoor = Math.Round(4 + 5 * dayCycle + random.NextDouble(), 1);
+            _hourlyOutdoor.Add(new Reading(t, outdoor));
+            _hourlyEnergy.Add(new Reading(t, Math.Round(30 - 2.2 * outdoor + random.NextDouble() * 4, 0)));
+            var occupied = t.Hour is >= 7 and < 18;
+            _heating.Add(new Reading(t, Math.Round(Math.Max(2, 14 - 1.4 * outdoor + random.NextDouble() * 2), 1)));
+            _ventilation.Add(new Reading(t, Math.Round((occupied ? 6 : 2) + random.NextDouble(), 1)));
+            _lighting.Add(new Reading(t, Math.Round((occupied ? 3.5 : 0.6) + random.NextDouble() * 0.5, 1)));
+        }
 
         _onePoint = [new(start, 21.5)];
         _flat = Enumerable.Range(0, 24).Select(h => new Reading(start.AddHours(h), 21)).ToList();

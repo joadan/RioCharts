@@ -5,7 +5,20 @@ changes are called out under **Breaking**.
 
 ## 0.1.0-preview (unreleased)
 
-Restructured to the new design ([Design.md](Design.md)), milestone 1.
+Restructured to the new design ([Design.md](Design.md)), milestones 1 and 2.
+
+### Milestone 2
+
+- Tooltip and crosshair, on by default: one tooltip per x across series, or per point with
+  `Tooltip="new TooltipSpec { Shared = false }"`. Handled in the browser, no server round trips.
+- Stacked series: `Stack="name"` on bars, areas and lines.
+- Multiple Y axes: `YAxes` on the chart and `YAxisId` on series; extra axes align to the grid.
+- Data labels: `DataLabels="true"` on a series, with collision avoidance.
+- Annotations: `<ReferenceLine>` and `<ReferenceBand>` on either axis, or `Annotations` as data.
+- Events: `OnPointClick` (with the item) and `OnAnnotationClick`.
+- `Format` on series for tooltip and data label values.
+- **Breaking:** `ChartLayoutResult` gains `Tooltip` and `YScales`; `YScale` is now the scale of
+  the axis that owns the grid. The series layer is split into `rio-plot` and `rio-labels` groups.
 
 ### Breaking
 

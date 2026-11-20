@@ -95,6 +95,91 @@ public sealed class NumberFormatter
     }
 }
 
+/// <summary>Single values for tooltips and data labels (not tied to a tick grid).</summary>
+public static class ValueFormatter
+{
+    /// <summary>
+    /// Up to two decimals, trailing zeros dropped, group separators. Values from
+    /// <paramref name="compactFrom"/> up are compact (12.3k). A custom format string wins.
+    /// </summary>
+    public static string Format(double value, CultureInfo culture, string? customFormat = null, double compactFrom = 1e6)
+    {
+        if (!double.IsFinite(value))
+        {
+            return "";
+        }
+
+        if (!string.IsNullOrEmpty(customFormat))
+        {
+            try
+            {
+                return value.ToString(customFormat, culture);
+            }
+            catch (FormatException)
+            {
+                // fall through to the automatic format
+            }
+        }
+
+        var abs = Math.Abs(value);
+        if (abs >= compactFrom)
+        {
+            foreach (var (divisor, suffix) in new[] { (1e12, "T"), (1e9, "B"), (1e6, "M"), (1e3, "k") })
+            {
+                if (abs >= divisor)
+                {
+                    return (value / divisor).ToString("#,##0.#", culture) + suffix;
+                }
+            }
+        }
+
+        var text = value.ToString(abs >= 100 ? "#,##0.#" : "#,##0.##", culture);
+        return text == "-0" ? "0" : text;
+    }
+
+    /// <summary>An x value for tooltips: a time at the resolution of the data, a category or a number.</summary>
+    public static Func<double, string> ForX(XKind kind, IEnumerable<double> values, CultureInfo culture, string? customFormat = null)
+    {
+        if (kind == XKind.Time)
+        {
+            var pattern = "d";
+            foreach (var v in values)
+            {
+                var t = TimeValue.ToDateTime(v);
+                if (t.Second != 0 || t.Millisecond != 0)
+                {
+                    pattern = "G";
+                    break;
+                }
+
+                if (t.TimeOfDay != TimeSpan.Zero)
+                {
+                    pattern = "g";
+                }
+            }
+
+            return ms =>
+            {
+                var t = TimeValue.ToDateTime(ms);
+                if (!string.IsNullOrEmpty(customFormat))
+                {
+                    try
+                    {
+                        return t.ToString(customFormat, culture);
+                    }
+                    catch (FormatException)
+                    {
+                    }
+                }
+
+                return t.ToString(pattern, culture);
+            };
+        }
+
+        return v => Format(v, culture, customFormat, compactFrom: double.PositiveInfinity);
+    }
+}
+
 /// <summary>Time tick labels that adapt to the interval: times, days, months or years.</summary>
 public static class TimeFormatter
 {

@@ -35,6 +35,62 @@ public static class LineGenerator
         return builder.Build();
     }
 
+    /// <summary>
+    /// Closed area between an upper line and a lower line (stacked areas), one shape per segment.
+    /// Both lines use the same curve, so neighbouring stacked areas share their edges exactly.
+    /// </summary>
+    public static PathData AreaBetween(ReadOnlySpan<double> x, ReadOnlySpan<double> upper, ReadOnlySpan<double> lower, CurveType curve)
+    {
+        var both = new double[upper.Length];
+        for (var i = 0; i < both.Length; i++)
+        {
+            both[i] = double.IsFinite(lower[i]) ? upper[i] : double.NaN;
+        }
+
+        var builder = new PathBuilder();
+        foreach (var (start, end) in Segments(x, both))
+        {
+            builder.MoveTo(x[start], upper[start]);
+            AddCurve(builder, x, upper, start, end, curve, moveFirst: false);
+            builder.LineTo(x[end - 1], lower[end - 1]);
+            AddCurveReversed(builder, x, lower, start, end, curve);
+            builder.Close();
+        }
+
+        return builder.Build();
+    }
+
+    /// <summary>Traces the same curve as <see cref="AddCurve"/>, from the last point back to the first.</summary>
+    private static void AddCurveReversed(PathBuilder b, ReadOnlySpan<double> x, ReadOnlySpan<double> y, int start, int end, CurveType curve)
+    {
+        var n = end - start;
+        if (n == 1)
+        {
+            return;
+        }
+
+        if (curve == CurveType.Step)
+        {
+            for (var i = end - 1; i > start; i--)
+            {
+                b.LineTo(x[i], y[i - 1]);
+                b.LineTo(x[i - 1], y[i - 1]);
+            }
+
+            return;
+        }
+
+        var rx = new double[n];
+        var ry = new double[n];
+        for (var i = 0; i < n; i++)
+        {
+            rx[i] = x[end - 1 - i];
+            ry[i] = y[end - 1 - i];
+        }
+
+        AddCurve(b, rx, ry, 0, n, curve, moveFirst: false);
+    }
+
     /// <summary>Runs of consecutive finite points as [start, end) index pairs.</summary>
     public static List<(int Start, int End)> Segments(ReadOnlySpan<double> x, ReadOnlySpan<double> y)
     {

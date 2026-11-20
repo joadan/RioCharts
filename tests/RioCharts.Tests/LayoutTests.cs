@@ -131,7 +131,8 @@ public class LayoutTests
         var d = SeriesData.From([0.0, 1], [1.0, 2]);
 
         var result = Layout(spec, new() { ["line"] = d, ["bar"] = d, ["area"] = d });
-        var order = ((GroupNode)result.Scene.Series).Children.Select(n => n.Key);
+        var plot = All(result.Scene.Series).OfType<GroupNode>().Single(g => g.Class == "rio-plot");
+        var order = plot.Children.Select(n => n.Key);
 
         Assert.Equal(["series:area", "series:bar", "series:line"], order);
     }

@@ -60,6 +60,12 @@ public static class ThemeTokens
     public const string Grid = "--rio-grid";
     public const string Axis = "--rio-axis";
     public const string Surface = "--rio-surface";
+
+    /// <summary>Reference lines, bands and their labels (muted by default).</summary>
+    public const string Annotation = "--rio-annotation";
+
+    /// <summary>Data labels drawn on top of a bar's own color.</summary>
+    public const string DataLabelInverse = "--rio-data-label-inverse";
     public const int SeriesColorCount = 10;
 
     /// <summary>Token for the n-th palette color (wraps around).</summary>

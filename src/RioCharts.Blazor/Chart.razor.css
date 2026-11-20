@@ -9,6 +9,8 @@
     --_rio-axis: #c3c8d0;
     --_rio-surface: #ffffff;
     --_rio-focus: #2f6fde;
+    --_rio-annotation: #7c828c;
+    --_rio-data-label-inverse: #ffffff;
     /* Colorblind-aware categorical palette */
     --_rio-series-1: #4269d0;
     --_rio-series-2: #efb118;
@@ -36,6 +38,8 @@
         --_rio-axis: #4a515c;
         --_rio-surface: #16191d;
         --_rio-focus: #7aa7ff;
+        --_rio-annotation: #8f96a0;
+        --_rio-data-label-inverse: #ffffff;
         --_rio-series-1: #6b8ff0;
         --_rio-series-2: #f2c14e;
         --_rio-series-3: #ff8a76;
@@ -57,6 +61,8 @@
     --_rio-axis: #4a515c;
     --_rio-surface: #16191d;
     --_rio-focus: #7aa7ff;
+    --_rio-annotation: #8f96a0;
+    --_rio-data-label-inverse: #ffffff;
     --_rio-series-1: #6b8ff0;
     --_rio-series-2: #f2c14e;
     --_rio-series-3: #ff8a76;
@@ -76,6 +82,8 @@
     --_rio-axis: #c3c8d0;
     --_rio-surface: #ffffff;
     --_rio-focus: #2f6fde;
+    --_rio-annotation: #7c828c;
+    --_rio-data-label-inverse: #ffffff;
     --_rio-series-1: #4269d0;
     --_rio-series-2: #efb118;
     --_rio-series-3: #ff725c;
@@ -93,6 +101,109 @@
     overflow: visible;
     font-family: inherit;
     user-select: none;
+}
+
+/* ---------- Hover layer and tooltip (filled by the JS module) ---------- */
+
+.rio-chart-svg {
+    touch-action: pan-y;
+}
+
+.rio-chart-svg.rio-clickable {
+    cursor: pointer;
+}
+
+.rio-hover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.rio-chart ::deep .rio-crosshair {
+    stroke: var(--rio-axis, var(--_rio-axis));
+    stroke-width: 1;
+}
+
+.rio-chart ::deep .rio-hover-band {
+    fill: var(--rio-text, var(--_rio-text));
+    fill-opacity: 0.06;
+}
+
+.rio-chart ::deep .rio-hover-point {
+    stroke: var(--rio-surface, var(--_rio-surface));
+    stroke-width: 2;
+}
+
+.rio-tooltip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    min-width: 96px;
+    max-width: min(320px, 90%);
+    padding: 8px 10px;
+    border: 1px solid var(--rio-grid, var(--_rio-grid));
+    border-radius: 8px;
+    background: var(--rio-surface, var(--_rio-surface));
+    color: var(--rio-text, var(--_rio-text));
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.1);
+    font-size: 12px;
+    line-height: 1.45;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.1s ease-out;
+}
+
+.rio-chart ::deep .rio-tooltip-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.rio-chart ::deep .rio-tooltip-head {
+    margin-bottom: 4px;
+    color: var(--rio-text-muted, var(--_rio-text-muted));
+    white-space: nowrap;
+}
+
+.rio-chart ::deep .rio-tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rio-chart ::deep .rio-tooltip-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.rio-chart ::deep .rio-tooltip-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rio-chart ::deep .rio-tooltip-value {
+    margin-left: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ---------- Annotations ---------- */
+
+.rio-chart ::deep .rio-annotation[role="button"] {
+    cursor: pointer;
+    outline: none;
+}
+
+.rio-chart ::deep .rio-annotation[role="button"]:focus-visible .rio-annotation-line,
+.rio-chart ::deep .rio-annotation[role="button"]:hover .rio-annotation-line {
+    stroke-width: 2;
 }
 
 /* ---------- Legend ---------- */

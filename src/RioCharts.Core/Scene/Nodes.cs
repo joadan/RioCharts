@@ -38,6 +38,9 @@ public sealed record GroupNode(IReadOnlyList<Node> Children, RectF? Clip = null,
 
     /// <summary>Accessible name for the group.</summary>
     public string? AriaLabel { get; init; }
+
+    /// <summary>Hover text (e.g. an annotation's label and value); SVG renders it as &lt;title&gt;.</summary>
+    public string? Title { get; init; }
 }
 
 /// <summary>What happens when an interactive group is activated.</summary>

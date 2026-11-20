@@ -47,6 +47,18 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>Draw order override (default: areas, then bars, then lines).</summary>
     [Parameter] public int? ZIndex { get; set; }
 
+    /// <summary>Id of the vertical axis to use (see <c>Chart.YAxes</c>). Default: the primary axis.</summary>
+    [Parameter] public string? YAxisId { get; set; }
+
+    /// <summary>Stack group: series of the same type with the same stack name are stacked.</summary>
+    [Parameter] public string? Stack { get; set; }
+
+    /// <summary>Show the value next to each point or bar.</summary>
+    [Parameter] public bool DataLabels { get; set; }
+
+    /// <summary>.NET format string for values in tooltips and data labels, e.g. "0.0".</summary>
+    [Parameter] public string? Format { get; set; }
+
     protected abstract SeriesType Type { get; }
 
     protected virtual SeriesSpec CreateSpec(string id) => new()
@@ -56,7 +68,14 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         Name = Name,
         Color = Color,
         ZIndex = ZIndex,
+        YAxisId = YAxisId,
+        Stack = Stack,
+        DataLabels = DataLabels,
+        Format = Format,
     };
+
+    object? ISeriesSource.ItemAt(int sourceIndex) =>
+        sourceIndex >= 0 && sourceIndex < ItemList.Count ? ItemList[sourceIndex] : null;
 
     public SeriesSpec Spec { get; private set; } = new() { Id = "" };
 
