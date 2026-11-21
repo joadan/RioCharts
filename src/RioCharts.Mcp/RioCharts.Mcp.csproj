@@ -20,4 +20,16 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
   </ItemGroup>
 
+  <!--
+    SkiaSharp ships native Windows PDBs (about 100 MB each) next to libSkiaSharp.dll. A tool package
+    contains its publish output, so they would bloat the package and, being Windows PDBs rather than
+    portable ones, make NuGet reject the symbol package. Only native PDBs are dropped.
+  -->
+  <Target Name="DropNativePdbs" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Extension)' == '.pdb' and $([System.String]::Copy('%(RelativePath)').Replace('\', '/').StartsWith('runtimes/'))" />
+    </ItemGroup>
+  </Target>
+
 </Project>

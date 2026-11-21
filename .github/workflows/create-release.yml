@@ -56,6 +56,23 @@ jobs:
             dotnet pack "src/RioCharts.$p/RioCharts.$p.csproj" -c Release -o artifacts
           done
 
+      # NuGet rejects a symbol package with any Windows (non-portable) PDB, e.g. a dependency's
+      # native PDB copied into the tool. Portable PDBs start with "BSJB".
+      - name: Check that symbol packages hold only portable PDBs
+        run: |
+          bad=0
+          for f in artifacts/*.snupkg; do
+            dir="symbols/$(basename "$f" .snupkg)"
+            mkdir -p "$dir" && unzip -q -o "$f" -d "$dir"
+          done
+          while IFS= read -r pdb; do
+            if [ "$(head -c 4 "$pdb")" != "BSJB" ]; then
+              echo "::error::Not a portable PDB: $pdb"
+              bad=1
+            fi
+          done < <(find symbols -name '*.pdb')
+          exit $bad
+
       - name: NuGet login (Trusted Publishing, OIDC to a one-hour API key)
         id: login
         uses: NuGet/login@v1

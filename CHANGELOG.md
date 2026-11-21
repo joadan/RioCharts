@@ -183,6 +183,11 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   workflow (`.github/workflows/create-release.yml`) tests, packs and publishes them to nuget.org
   (Trusted Publishing), then tags the commit and creates a GitHub release. Versions come from
   `version.json` and the git height (Nerdbank.GitVersioning).
+- Fixed: the `RioCharts.Mcp` tool package carried SkiaSharp's native Windows PDBs (about 100 MB
+  each for x86, x64 and arm64). They made the package 162 MB and, not being portable PDBs, made
+  nuget.org reject its symbol package (0.1.14-preview has no symbols). The tool now leaves native
+  PDBs out: 88 MB, symbols 0.2 MB. The release workflow checks that every PDB in a symbol package
+  is portable before pushing.
 
 ### AI
 
