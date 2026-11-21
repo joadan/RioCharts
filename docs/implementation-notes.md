@@ -618,6 +618,33 @@ Design.md "Box plot" (milestone 7).
 - **Not yet:** `Horizontal` box plots, hovering a single outlier (with its item), notches, and a
   box plot description for screen readers beyond the medians.
 
+## Candlestick
+
+Design.md "Candlestick" (milestone 7).
+
+- **Data:** `SeriesData.Candles` (`CandleColumns`): open, high, low and count per point; `Y` is the
+  close. `WithCandles` (input order, placed by `SourceIndex`; an incomplete candle is a gap) and
+  `WithX` carry them. `CandleSummary.FromValues` takes values in time order (first, highest,
+  lowest, last); `Merge` joins candles.
+- **Raw readings:** `FromCandleBuckets` (and `CandlestickSeries` with `Bucket`, JSON with
+  `timeBucket`, a day when not set) groups per `TimeBucket` on wall-clock time, sorted by time
+  inside each bucket. The bucket floor moved from the spec binder to the public
+  `TimeBuckets.Floor`, which now keeps the DateTime's `Kind`. The component wraps `XValue` to
+  floor it and keeps the caller's selector; a `DataSettings` hook in `SeriesBase` rebuilds the
+  data when `Bucket` changes (before, only new `Items`, aggregates or `DataVersion` did).
+- **Drawing:** a band slot per series like bars (never stacked), bodies at most 32 px. Rising
+  (close ≥ open) is hollow with a `--rio-positive` outline, falling is filled `--rio-negative`, so
+  the direction does not depend on color alone. New theme tokens with light and dark defaults in
+  the CSS and `ExportTheme`. The legend swatch is a small falling and rising body.
+- **Zoomed out:** when a slot is under 3 px, consecutive candles merge into one per group of k
+  (groups start at multiples of k, so they stay put while panning). The merged candle keeps the
+  first open, highest high, lowest low and last close; its tooltip says from when to when. Not
+  for category axes. A selected candle is outlined from high to low, but not while merged.
+- **Tooltip:** the close as the row's value, then Open, High, Low, Close and Change ("+0.3 (+1.4%)")
+  as smaller rows (`ChartTexts`, all languages).
+- **Not yet:** live data (`SeriesBuffer`) with candles, a hollow/filled option, a volume pane
+  helper (use a bar series on a second axis), and `Horizontal` candles.
+
 ## Horizontal bars
 
 - **A chart option, not a series type** (`ChartSpec.Horizontal`): orientation is a property of the

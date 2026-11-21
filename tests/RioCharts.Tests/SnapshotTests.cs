@@ -244,6 +244,29 @@ public class SnapshotTests
             ]),
         }),
 
+        // Supply air temperature in °C as daily candles (first, highest, lowest, last reading), with
+        // the daily average as a line on top.
+        ["candles"] = new(new ChartSpec
+        {
+            Y = new AxisSpec { Title = "Supply air °C", Format = "0.0" },
+            Series =
+            [
+                new SeriesSpec { Id = "c", Name = "Daily range", Type = SeriesType.Candlestick },
+                new SeriesSpec { Id = "m", Name = "Average", Curve = CurveType.Monotone },
+            ],
+        }, new()
+        {
+            ["c"] = SeriesData.From(Enumerable.Range(0, 21).Select(d => Start.AddDays(d)).ToArray(), new double[21]).WithCandles(
+                Enumerable.Range(0, 21).Select(d =>
+                {
+                    var open = Math.Round(20 + Math.Sin(d * 0.6) * 1.6, 1);
+                    var close = Math.Round(open + Math.Sin(d * 1.9) * 0.9, 1);
+                    return new CandleSummary(open, Math.Max(open, close) + 0.4 + d % 3 * 0.2, Math.Min(open, close) - 0.3 - d % 4 * 0.15, close);
+                }).ToArray()),
+            ["m"] = SeriesData.From(Enumerable.Range(0, 21).Select(d => Start.AddDays(d)).ToArray(),
+                Enumerable.Range(0, 21).Select(d => Math.Round(20 + Math.Sin(d * 0.6) * 1.6 + Math.Sin(d * 1.9) * 0.45, 1)).ToArray()),
+        }),
+
         ["bars-horizontal"] = new(new ChartSpec
         {
             Horizontal = true,

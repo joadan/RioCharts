@@ -43,7 +43,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
 - Compact charts and sparklines (`Compact`), auto-compact for small charts, highlight dots, and plain SVG without JS (`Interactive="false"`)
 - Works with static server rendering, prerendering, trimming and native AOT
-- Scatter charts with trend lines, heatmaps, range areas, box plots and horizontal bars
+- Scatter charts with trend lines, heatmaps, range areas, box plots, candlesticks and horizontal bars
 - Built-in texts in eight languages (`ChartTexts`), with your own wording or languages from code, resx or `IStringLocalizer`
 - Download as PNG, SVG or CSV from the browser (`Exportable`, `DownloadPngAsync`, `ExportCsv`, ...)
 - Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
@@ -176,7 +176,8 @@ Large data, as plain arrays (no per-item cost):
 ```
 
 Theming: set any of `--rio-text`, `--rio-text-muted`, `--rio-grid`, `--rio-axis`,
-`--rio-surface` (tooltip), `--rio-annotation`, `--rio-data-label-inverse` and
+`--rio-surface` (tooltip), `--rio-annotation`, `--rio-data-label-inverse`, `--rio-positive` and
+`--rio-negative` (rising and falling candlesticks) and
 `--rio-series-1` … `--rio-series-10` anywhere above the chart. Dark mode follows
 `prefers-color-scheme`, or an ancestor with `data-theme="dark"` or class `dark`.
 

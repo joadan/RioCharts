@@ -36,6 +36,7 @@ internal interface ISeriesType
         SeriesType.Heatmap => HeatmapSeriesType.Instance,
         SeriesType.RangeArea => RangeAreaSeriesType.Instance,
         SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
+        SeriesType.Candlestick => CandlestickSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar => new PolarSeriesType(type),
         _ => LineSeriesType.Instance,
     };
@@ -127,6 +128,12 @@ internal sealed class SeriesBuildContext
     public double BarOffset { get; set; }
 
     public double StrokeWidth => Spec.StrokeWidth ?? 2;
+
+    /// <summary>
+    /// Candlesticks: the points each hit stands for (first to last data index), more than one when
+    /// narrow candles were merged; null for other series.
+    /// </summary>
+    public List<(int First, int Last)>? CandleGroups { get; set; }
 }
 
 internal sealed class LineSeriesType : ISeriesType
@@ -617,6 +624,102 @@ internal sealed class BoxPlotSeriesType : ISeriesType
             c.Output.Add(new PathNode(outliers.Build(), outlierStyle) { Class = "rio-outliers" });
         }
 
+        c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
+    }
+}
+
+/// <summary>
+/// Candlesticks: a thin wick from low to high and a body from open to close, hollow in the rising
+/// color when the close is at or above the open, filled in the falling color below. Several series
+/// share the x band like grouped bars. When candles would be narrower than a few pixels (zoomed
+/// out), consecutive candles merge into one per group, so highs and lows are never lost.
+/// </summary>
+internal sealed class CandlestickSeriesType : ISeriesType
+{
+    /// <summary>Narrower candles merge with their neighbours.</summary>
+    internal const double MinWidth = 3;
+    private const double MaxWidth = 32;
+
+    public static CandlestickSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.Candlestick;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 1;
+    public bool IncludesZero => false;
+    public bool UsesSlots => true;
+
+    public void Build(SeriesBuildContext c)
+    {
+        if (c.Data.Candles is not { } candles)
+        {
+            return; // no candles (the layout warns)
+        }
+
+        var slot = c.SlotWidth / Math.Max(1, c.SlotCount);
+        var merge = slot >= MinWidth || c.Data.Kind == XKind.Category ? 1 : (int)Math.Ceiling(MinWidth / Math.Max(0.01, slot));
+        var span = slot * merge;
+        var width = Math.Clamp(span - (span > 6 ? Math.Max(1.5, span * 0.3) : 0), 1, MaxWidth);
+        c.BarWidth = width;
+        c.BarOffset = -c.SlotWidth / 2 + c.SlotIndex * slot + slot / 2;
+
+        var upBody = c.Styles.Add("candle-up", new Style { Fill = ThemeTokens.Surface, Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f });
+        var downBody = c.Styles.Add("candle-down", new Style { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f });
+        var upWick = c.Styles.Add("candle-up-wick", new Style { Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f, Fill = "none" });
+        var downWick = c.Styles.Add("candle-down-wick", new Style { Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f, Fill = "none" });
+
+        var up = new PathBuilder();
+        var down = new PathBuilder();
+        var (hasUp, hasDown) = (false, false);
+        var bodies = new List<Node>();
+        var hx = new List<float>();
+        var hy = new List<float>();
+        var hi = new List<int>();
+        var hs = new List<int>();
+        var groups = new List<(int, int)>();
+        for (var first = 0; first < c.Data.Count; first += merge)
+        {
+            // Groups start at multiples of the merge count, so they stay put while panning.
+            var last = Math.Min(c.Data.Count, first + merge) - 1;
+            var candle = merge == 1
+                ? candles.At(first, c.Data.Y[first])
+                : CandleSummary.Merge(Enumerable.Range(first, last - first + 1).Select(i => candles.At(i, c.Data.Y[i])));
+            var (p0, p1) = (c.PixelX[first], c.PixelX[last]);
+            var center = merge == 1 ? p0 : (p0 + p1) / 2;
+            if (!candle.IsComplete || !double.IsFinite(center) || !c.InPlotX(center))
+            {
+                continue;
+            }
+
+            var x = center + c.BarOffset;
+            var rising = candle.Close >= candle.Open;
+            (rising ? up : down).MoveTo(x, c.MapY(candle.High)).LineTo(x, c.MapY(candle.Low));
+            (hasUp, hasDown) = (hasUp || rising, hasDown || !rising);
+            var (yo, yc) = (c.MapY(candle.Open), c.MapY(candle.Close));
+            bodies.Add(new RectNode(new RectF((float)(x - width / 2), (float)Math.Min(yo, yc), (float)width, (float)Math.Max(1, Math.Abs(yo - yc))),
+                rising ? upBody : downBody)
+            {
+                Class = rising ? "rio-candle rio-candle-up" : "rio-candle rio-candle-down",
+            });
+
+            // The hit stands for the group: at its center, at the last close.
+            hx.Add((float)center);
+            hy.Add((float)yc);
+            hi.Add(last);
+            hs.Add(c.Data.ToSourceIndex(last));
+            groups.Add((first, last));
+        }
+
+        if (hasUp)
+        {
+            c.Output.Add(new PathNode(up.Build(), upWick) { Class = "rio-wicks rio-wicks-up" });
+        }
+
+        if (hasDown)
+        {
+            c.Output.Add(new PathNode(down.Build(), downWick) { Class = "rio-wicks rio-wicks-down" });
+        }
+
+        c.Output.AddRange(bodies);
+        c.CandleGroups = groups;
         c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
     }
 }

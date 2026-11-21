@@ -224,6 +224,11 @@ public static partial class ChartLayout
                 warnings.Add($"series '{s.Id}': a range area needs low values (LowValue, or \"low\" in a spec); nothing is drawn.");
             }
 
+            if (s.Type == SeriesType.Candlestick && d.Candles is null && d.Count > 0)
+            {
+                warnings.Add($"series '{s.Id}': a candlestick needs candles (CandlestickSeries, SeriesData.WithCandles or FromCandleBuckets); nothing is drawn.");
+            }
+
             if (s.Type == SeriesType.BoxPlot && d.Box is null && d.Count > 0)
             {
                 warnings.Add($"series '{s.Id}': a box plot needs boxes (BoxPlotSeries, SeriesData.WithBox or FromBoxGroups); nothing is drawn.");
@@ -730,7 +735,12 @@ public static partial class ChartLayout
     /// <summary>Selected points: a marker in the series color (ringed in the surface color), or an outline around a bar.</summary>
     private static IEnumerable<Node> SelectionMarks(Resolved r, SeriesBuildContext c, IReadOnlyCollection<int> picked, StyleTable styles)
     {
-        var bar = r.Spec.Type is SeriesType.Bar or SeriesType.BoxPlot;
+        var bar = r.Spec.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick;
+        if (c.CandleGroups is { } merged && merged.Any(g => g.First != g.Last))
+        {
+            yield break; // merged candles (zoomed out): a single period has no candle of its own to outline
+        }
+
         var style = bar
             ? styles.Add("selected-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.5f })
             : styles.Add($"series-{r.ColorIndex}-selected", new Style { Fill = r.Color, Stroke = ThemeTokens.Surface, StrokeWidth = 2 });
@@ -753,6 +763,10 @@ public static partial class ChartLayout
             {
                 var y0 = r.Data.Box is { } box ? c.MapY(box.Q1[i]) : c.Lower is { } lower && double.IsFinite(lower[i]) ? c.MapY(lower[i]) : c.ZeroY;
                 y = r.Data.Box is { } b ? c.MapY(b.Q3[i]) : y;
+                if (r.Data.Candles is { } candle)
+                {
+                    (y, y0) = (c.MapY(candle.High[i]), c.MapY(candle.Low[i])); // the whole candle, wick included
+                }
                 var left = x + c.BarOffset - c.BarWidth / 2;
                 yield return new RectNode(new RectF((float)(left - 1.5), (float)(Math.Min(y, y0) - 1.5), (float)(c.BarWidth + 3), (float)(Math.Abs(y0 - y) + 3)), style)
                 {
@@ -767,8 +781,10 @@ public static partial class ChartLayout
         }
     }
 
-    // Box plots are never stacked: each series gets its own slot even with a Stack name.
-    private static string SlotKey(Resolved r) => r.Spec.Stack is { Length: > 0 } stack && r.Spec.Type != SeriesType.BoxPlot ? $"stack|{r.Axis.Id}|{stack}" : "series|" + r.Spec.Id;
+    // Box plots and candlesticks are never stacked: each series gets its own slot even with a Stack name.
+    private static string SlotKey(Resolved r) => r.Spec.Stack is { Length: > 0 } stack && r.Spec.Type is not (SeriesType.BoxPlot or SeriesType.Candlestick)
+        ? $"stack|{r.Axis.Id}|{stack}"
+        : "series|" + r.Spec.Id;
 
     // ---------- Styles ----------
 
@@ -865,7 +881,7 @@ public static partial class ChartLayout
     private static void ApplyStacking(List<Resolved> drawable, XKind kind, Dictionary<string, int> categoryIndex)
     {
         var groups = drawable
-            .Where(r => r.Spec.Stack is { Length: > 0 } && r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot))
+            .Where(r => r.Spec.Stack is { Length: > 0 } && r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick))
             .GroupBy(r => (r.Axis.Id, r.Spec.Stack, r.Type.UsesSlots));
         foreach (var group in groups)
         {
@@ -1036,6 +1052,7 @@ public static partial class ChartLayout
         var format = r.Spec.Format ?? r.Axis.Spec.Format;
         var xTitle = r.Spec.Type == SeriesType.Scatter && !string.IsNullOrWhiteSpace(xAxisTitle) ? xAxisTitle : null;
         var boxParts = r.Spec.Type == SeriesType.BoxPlot && r.Data.Box is not null ? new string[n][] : null;
+        var candleParts = r.Spec.Type == SeriesType.Candlestick && r.Data.Candles is not null && context.CandleGroups is { } cg && cg.Count == n ? new string[n][] : null;
         for (var i = 0; i < n; i++)
         {
             var j = hits.Index[i];
@@ -1053,6 +1070,21 @@ public static partial class ChartLayout
             if (boxParts is not null && r.Data.Box is { } box)
             {
                 boxParts[i] = BoxPartValues(box, j, r.Data.Y[j], culture, format);
+            }
+
+            if (candleParts is not null && r.Data.Candles is { } candles)
+            {
+                // A merged candle (zoomed out) stands for several periods: say from when to when.
+                var (first, last) = context.CandleGroups![i];
+                var candle = first == last ? candles.At(j, r.Data.Y[j])
+                    : CandleSummary.Merge(Enumerable.Range(first, last - first + 1).Select(k => candles.At(k, r.Data.Y[k])));
+                if (first != last && kind != XKind.Category)
+                {
+                    xLabels[i] = $"{formatX(r.Data.X[first])} – {xLabels[i]}";
+                }
+
+                values[i] = ValueFormatter.Format(candle.Close, culture, format);
+                candleParts[i] = CandlePartValues(candle, culture, format);
             }
         }
 
@@ -1085,9 +1117,26 @@ public static partial class ChartLayout
             hits.X, hits.Y, hits.Index, xLabels, values)
         {
             Step = r.Spec.Curve == CurveType.Step && !r.Type.UsesSlots && kind != XKind.Category,
-            PartLabels = boxParts is null ? null : BoxPartLabels(texts),
-            PartValues = boxParts,
+            PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : null,
+            PartValues = boxParts ?? candleParts,
         };
+    }
+
+    /// <summary>The rows under a candle's close in its tooltip.</summary>
+    private static string[] CandlePartLabels(ChartTexts texts) =>
+        [texts.CandleOpen, texts.CandleHigh, texts.CandleLow, texts.CandleClose, texts.CandleChange];
+
+    private static string[] CandlePartValues(CandleSummary c, CultureInfo culture, string? format)
+    {
+        var change = c.Close - c.Open;
+        var sign = change > 0 ? "+" : "";
+        var percent = c.Open != 0 ? $" ({sign}{(change / Math.Abs(c.Open)).ToString("0.0%", culture)})" : "";
+        return
+        [
+            ValueFormatter.Format(c.Open, culture, format), ValueFormatter.Format(c.High, culture, format),
+            ValueFormatter.Format(c.Low, culture, format), ValueFormatter.Format(c.Close, culture, format),
+            sign + ValueFormatter.Format(change, culture, format) + percent,
+        ];
     }
 
     /// <summary>The rows under a box's median in its tooltip, highest first (as drawn).</summary>

@@ -73,6 +73,20 @@ public static partial class ChartLayout
         return new GroupNode(nodes) { Class = "rio-legend", AriaLabel = label };
     }
 
+    /// <summary>Candlesticks: a falling and a rising candle body, as drawn.</summary>
+    private static GroupNode CandleSwatch(double x, double cy, StyleTable styles)
+    {
+        var w = (SwatchWidth - 3) / 2;
+        return new GroupNode(
+        [
+            new RectNode(new RectF((float)x, (float)(cy - 5), (float)w, 10), styles.Add("candle-down", new Style { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f })),
+            new RectNode(new RectF((float)(x + w + 3), (float)(cy - 4), (float)w, 8), styles.Add("candle-up", new Style { Fill = ThemeTokens.Surface, Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f })),
+        ])
+        {
+            Class = "rio-swatch rio-swatch-candle",
+        };
+    }
+
     private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles)
     {
         var cy = y + height / 2;
@@ -84,6 +98,8 @@ public static partial class ChartLayout
             : entry.Type == SeriesType.Scatter
             ? new PathNode(new PathBuilder().MoveTo(x + SwatchWidth / 2, cy - 4.5).Arc(x + SwatchWidth / 2, cy, 4.5, 0, Math.PI * 2).Close().Build(),
                 styles.Add("swatch-dot-" + entry.SeriesId, new Style { Fill = entry.Color })) { Class = "rio-swatch rio-swatch-dot" }
+            : entry.Type == SeriesType.Candlestick
+            ? CandleSwatch(x, cy, styles)
             : new RectNode(new RectF((float)x, (float)(cy - 5), (float)SwatchWidth, 10), swatchStyle) { CornerRadius = 2, Class = "rio-swatch" };
 
         var state = !entry.Visible ? ", hidden" : entry.IsEmpty ? ", no data" : "";

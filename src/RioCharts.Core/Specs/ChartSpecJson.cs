@@ -287,6 +287,11 @@ public static class ChartSpecJson
         ["heatmap"] = ("heatmap", null),
         ["rangearea"] = ("rangeArea", null),
         ["boxplot"] = ("boxPlot", null),
+        ["candlestick"] = ("candlestick", null),
+        ["candle"] = ("candlestick", null),
+        ["candles"] = ("candlestick", null),
+        ["ohlc"] = ("candlestick", null),
+        ["stock"] = ("candlestick", null),
         ["box"] = ("boxPlot", null),
         ["boxandwhisker"] = ("boxPlot", null),
         ["whisker"] = ("boxPlot", null),
@@ -393,7 +398,7 @@ public static class ChartSpecJson
                     else
                     {
                         errors.Add(new SpecError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, boxPlot, pie, radialBar, auto (also column, donut, stackedBar, spline, gauge, points)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, pie, radialBar, auto (also column, donut, stackedBar, spline, gauge, points)."));
                     }
                 }
 

@@ -70,6 +70,55 @@ public sealed class SeriesData
     }
 
     /// <summary>
+    /// Candlesticks: the open, high and low of each point (<see cref="Y"/> is the close); null for
+    /// other series. Set with <see cref="WithCandles"/>.
+    /// </summary>
+    public CandleColumns? Candles { get; private set; }
+
+    /// <summary>
+    /// The same points as candles: <paramref name="candles"/> is in input order (index i is the
+    /// candle of input item or group i). Each point's y becomes its candle's close; an incomplete
+    /// candle is a gap.
+    /// </summary>
+    public SeriesData WithCandles(ReadOnlySpan<CandleSummary> candles)
+    {
+        var ordered = new CandleSummary[Count];
+        var y = new double[Count];
+        for (var i = 0; i < ordered.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            ordered[i] = source < candles.Length && candles[source].IsComplete ? candles[source] : CandleSummary.Empty;
+            y[i] = ordered[i].Close;
+        }
+
+        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Candles = CandleColumns.From(ordered) };
+    }
+
+    /// <summary>
+    /// Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on
+    /// their wall-clock time) and each bucket gives the first, highest, lowest and last value in
+    /// time order. Null values are skipped.
+    /// </summary>
+    /// <param name="groups">Each candle's item indexes; a point's source index is its group's index.</param>
+    public static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value,
+        TimeBucket bucket, out IReadOnlyList<int[]> groups)
+    {
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(value);
+        var list = items as IReadOnlyList<TItem> ?? items?.ToList() ?? throw new ArgumentNullException(nameof(items));
+        var data = FromGroups(list, item => time(item) is { } t ? TimeBuckets.Floor(t, bucket) : null, _ => 0, out groups);
+        var candles = new CandleSummary[groups.Count];
+        for (var g = 0; g < candles.Length; g++)
+        {
+            // In time order within the bucket, whatever the input order.
+            var ordered = groups[g].OrderBy(i => ToX(time(list[i]))).ThenBy(i => i);
+            candles[g] = CandleSummary.FromValues(ordered.Select(i => value(list[i]) ?? double.NaN));
+        }
+
+        return data.WithCandles(candles);
+    }
+
+    /// <summary>
     /// Box plots: the quartiles, whiskers, extremes and outliers of each point (<see cref="Y"/> is
     /// the median); null for other series. Set with <see cref="WithBox"/>.
     /// </summary>
@@ -145,7 +194,7 @@ public sealed class SeriesData
     {
         if (IsSorted(x))
         {
-            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box };
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles };
         }
 
         var order = Enumerable.Range(0, x.Length).ToArray();
@@ -170,6 +219,11 @@ public sealed class SeriesData
         {
             // The boxes follow their points.
             result.Box = BoxColumns.From([.. order.Select(i => box.At(i, Y[i]))]);
+        }
+
+        if (Candles is { } candles)
+        {
+            result.Candles = CandleColumns.From([.. order.Select(i => candles.At(i, Y[i]))]);
         }
 
         return result;

@@ -80,7 +80,8 @@ public static class ChartRazor
                 notes.Add("filter: " + string.Join(" and ", filter.Select(f => $"{f.Field} {f.Op.ToString().ToLowerInvariant()} {Value(f.Value)}")));
             }
 
-            if (s.TimeBucket is { } bucket)
+            var candleBucket = s.Type == SeriesType.Candlestick && s.Open is null ? s.TimeBucket ?? TimeBucket.Day : (TimeBucket?)null;
+            if (s.TimeBucket is { } bucket && candleBucket is null)
             {
                 notes.Add($"per {bucket.ToString().ToLowerInvariant()}");
             }
@@ -118,6 +119,7 @@ public static class ChartRazor
                 SeriesType.Heatmap => "HeatmapSeries",
                 SeriesType.RangeArea => "RangeAreaSeries",
                 SeriesType.BoxPlot => "BoxPlotSeries",
+                SeriesType.Candlestick => "CandlestickSeries",
                 _ => "LineSeries",
             };
 
@@ -131,6 +133,24 @@ public static class ChartRazor
             if (s.Type == SeriesType.RangeArea && s.Low is { } lowField)
             {
                 sb.Append($" LowValue=\"r => r.{Property(lowField)}\"");
+            }
+
+            if (candleBucket is { } perBucket)
+            {
+                sb.Append($" Bucket=\"TimeBucket.{perBucket}\""); // raw readings: the component makes the candles
+            }
+            else if (s.Type == SeriesType.Candlestick && s.Open is { } openField)
+            {
+                sb.Append($" OpenValue=\"r => r.{Property(openField)}\"");
+                if (s.High is { } highField)
+                {
+                    sb.Append($" HighValue=\"r => r.{Property(highField)}\"");
+                }
+
+                if (s.Low is { } lowCandle)
+                {
+                    sb.Append($" LowValue=\"r => r.{Property(lowCandle)}\"");
+                }
             }
 
             if (s.Type == SeriesType.BoxPlot && s.Q1 is { } q1Field && s.Q3 is { } q3Field)

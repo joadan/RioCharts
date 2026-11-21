@@ -101,6 +101,12 @@ public static class ThemeTokens
     /// <summary>Data labels drawn on top of a bar's own color.</summary>
     public const string DataLabelInverse = "--rio-data-label-inverse";
 
+    /// <summary>Rising values, e.g. a candle that closes above its open.</summary>
+    public const string Positive = "--rio-positive";
+
+    /// <summary>Falling values, e.g. a candle that closes below its open.</summary>
+    public const string Negative = "--rio-negative";
+
     /// <summary>Number of colors in the series palette.</summary>
     public const int SeriesColorCount = 10;
 

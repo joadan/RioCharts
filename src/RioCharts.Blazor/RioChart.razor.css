@@ -10,6 +10,8 @@
     --_rio-surface: #ffffff;
     --_rio-focus: #2f6fde;
     --_rio-annotation: #7c828c;
+    --_rio-positive: #2f9e6e;
+    --_rio-negative: #d6485a;
     --_rio-data-label-inverse: #ffffff;
     /* Colorblind-aware categorical palette */
     --_rio-series-1: #4269d0;
@@ -39,6 +41,8 @@
         --_rio-surface: #16191d;
         --_rio-focus: #7aa7ff;
         --_rio-annotation: #8f96a0;
+        --_rio-positive: #4cc38a;
+        --_rio-negative: #f0717f;
         --_rio-data-label-inverse: #ffffff;
         --_rio-series-1: #6b8ff0;
         --_rio-series-2: #f2c14e;
@@ -62,6 +66,8 @@
     --_rio-surface: #16191d;
     --_rio-focus: #7aa7ff;
     --_rio-annotation: #8f96a0;
+    --_rio-positive: #4cc38a;
+    --_rio-negative: #f0717f;
     --_rio-data-label-inverse: #ffffff;
     --_rio-series-1: #6b8ff0;
     --_rio-series-2: #f2c14e;
@@ -83,6 +89,8 @@
     --_rio-surface: #ffffff;
     --_rio-focus: #2f6fde;
     --_rio-annotation: #7c828c;
+    --_rio-positive: #2f9e6e;
+    --_rio-negative: #d6485a;
     --_rio-data-label-inverse: #ffffff;
     --_rio-series-1: #4269d0;
     --_rio-series-2: #efb118;

@@ -94,6 +94,11 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// </summary>
     private protected virtual SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups) => data;
 
+    /// <summary>Settings of a series type that change how its data is built (e.g. a candle bucket): a change rebuilds it.</summary>
+    private protected virtual object? DataSettings => null;
+
+    private object? _lastDataSettings;
+
     bool ISeriesSource.HasTooltipValue => TooltipValue is not null;
 
     string? ISeriesSource.FormatTooltipValue(TooltipPointInfo point) =>
@@ -195,9 +200,10 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
         var items = Items ?? Chart.DefaultItems as IEnumerable<TItem>;
         var aggregateKey = (Aggregate, YAggregate is not null);
-        if (_buffer is null && (!ReferenceEquals(items, _lastItems) || aggregateKey != _lastAggregate)
+        if (_buffer is null && (!ReferenceEquals(items, _lastItems) || aggregateKey != _lastAggregate || !Equals(DataSettings, _lastDataSettings))
             || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
         {
+            _lastDataSettings = DataSettings;
             _lastItems = items;
             _lastData = Data;
             _lastVersion = DataVersion;
@@ -452,6 +458,8 @@ public sealed class BoxPlotSeries<TItem> : SeriesBase<TItem>
         base.OnParametersSet();
     }
 
+    private protected override object? DataSettings => Precomputed;
+
     private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
     {
         if (groups is not null && YValue is { } value)
@@ -470,6 +478,97 @@ public sealed class BoxPlotSeries<TItem> : SeriesBase<TItem>
             double V(Func<TItem, double?>? f, TItem item) => f?.Invoke(item) ?? double.NaN;
             return data.WithBox(items.Select(item => BoxSummary.FromFiveNumbers(V(LowValue, item), V(Q1Value, item), V(YValue, item),
                 V(Q3Value, item), V(HighValue, item), OutliersValue?.Invoke(item), CountValue?.Invoke(item) ?? 0)).ToArray());
+        }
+
+        return data;
+    }
+}
+
+/// <summary>
+/// Candlestick: how a value moved within each period: a wick from low to high and a body from open
+/// to close, hollow when it rose and filled when it fell (theme colors <c>--rio-positive</c> and
+/// <c>--rio-negative</c>). Give raw readings (<c>XValue</c> and <c>YValue</c>, one item per
+/// reading) with a <see cref="Bucket"/> such as an hour or a day, or candles computed elsewhere
+/// (<see cref="OpenValue"/>, <see cref="HighValue"/>, <see cref="LowValue"/> and <see cref="CloseValue"/>,
+/// one item per period). When zoomed out, candles too narrow to see merge into wider ones.
+/// </summary>
+public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
+{
+    private Func<TItem, object?>? _time;
+    private Func<TItem, object?>? _bucketed;
+    private Func<IReadOnlyList<TItem>, double?>? _group;
+
+    /// <summary>Raw readings: the period of each candle, e.g. <c>TimeBucket.Hour</c> (on the readings' wall-clock time).</summary>
+    [Parameter] public TimeBucket? Bucket { get; set; }
+
+    /// <summary>Precomputed candles: the period's first value.</summary>
+    [Parameter] public Func<TItem, double?>? OpenValue { get; set; }
+
+    /// <summary>Precomputed candles: the highest value.</summary>
+    [Parameter] public Func<TItem, double?>? HighValue { get; set; }
+
+    /// <summary>Precomputed candles: the lowest value.</summary>
+    [Parameter] public Func<TItem, double?>? LowValue { get; set; }
+
+    /// <summary>Precomputed candles: the period's last value (the same as <c>YValue</c>).</summary>
+    [Parameter] public Func<TItem, double?>? CloseValue { get; set; }
+
+    private bool Precomputed => OpenValue is not null && HighValue is not null && LowValue is not null;
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Candlestick;
+
+    private protected override object? DataSettings => (Precomputed, Bucket);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        // XValue is wrapped to group readings per bucket; keep the caller's own selector.
+        if (!ReferenceEquals(XValue, _bucketed))
+        {
+            _time = XValue;
+        }
+
+        if (Precomputed)
+        {
+            XValue = _time;
+            YValue = CloseValue ?? YValue;
+            YAggregate = null;
+        }
+        else if (Bucket is not null && _time is not null)
+        {
+            XValue = _bucketed ??= item => _time?.Invoke(item) is { } t && Bucket is { } b ? TimeBuckets.Floor(t, b) : _time?.Invoke(item);
+            YAggregate = _group ??= _ => 0; // group per bucket; the candles replace the values in Complete
+        }
+        else
+        {
+            XValue = _time;
+            YAggregate = null;
+        }
+
+        Aggregate = null;
+        base.OnParametersSet();
+    }
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (groups is not null && YValue is { } value && _time is { } time)
+        {
+            var candles = new CandleSummary[groups.Count];
+            for (var g = 0; g < candles.Length; g++)
+            {
+                // In time order within the bucket, whatever the order of the items.
+                var ordered = groups[g].OrderBy(i => time(items[i]) is { } t ? AxisValue.ToDouble(t, XKind.Time) : double.NaN).ThenBy(i => i);
+                candles[g] = CandleSummary.FromValues(ordered.Select(i => value(items[i]) ?? double.NaN));
+            }
+
+            return data.WithCandles(candles);
+        }
+
+        if (groups is null && Precomputed)
+        {
+            double V(Func<TItem, double?>? f, TItem item) => f?.Invoke(item) ?? double.NaN;
+            return data.WithCandles(items.Select(item => new CandleSummary(V(OpenValue, item), V(HighValue, item), V(LowValue, item), V(YValue, item))).ToArray());
         }
 
         return data;

@@ -214,6 +214,10 @@ public sealed record SeriesSpec
     [Description("Range area: the field with the low value of each point (y is the high value). Box plot with precomputed boxes: the lower whisker end.")]
     public string? Low { get; init; }
 
+    /// <summary>Candlestick with precomputed candles: the field with each period's first value (y is the close, low and high the extremes). Leave it out to make candles from the raw y values per timeBucket.</summary>
+    [Description("Candlestick with precomputed candles: the field with each period's first value (y is the close, low and high the extremes). Leave it out to make candles from the raw y values per timeBucket.")]
+    public string? Open { get; init; }
+
     /// <summary>Box plot with precomputed boxes: the field with the lower quartile (y is the median). Leave out q1, q3, low and high to compute the boxes from the raw y values per x.</summary>
     [Description("Box plot with precomputed boxes: the field with the lower quartile (y is the median). Leave out q1, q3, low and high to compute the boxes from the raw y values per x.")]
     public string? Q1 { get; init; }
@@ -371,6 +375,9 @@ public enum SeriesType
 
     /// <summary>The spread of values per x: a box from the lower to the upper quartile, the median, whiskers and outliers.</summary>
     BoxPlot,
+
+    /// <summary>How a value moved within each period: open, high, low and close.</summary>
+    Candlestick,
     /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,
 }

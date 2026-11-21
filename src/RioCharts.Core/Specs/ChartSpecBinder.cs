@@ -142,13 +142,28 @@ public static class ChartSpecBinder
         {
             low = Find(dataset, s.Low, $"{path}.low", FieldType.Number, errors);
         }
+        else if (s.Type == SeriesType.Candlestick && s.Open is not null)
+        {
+            errors.Add(new SpecError($"{path}.low", "precomputed candles need open, high and low (y is the close); leave out open, high and low to make candles from the y values per timeBucket."));
+        }
         else if (s.Type == SeriesType.RangeArea)
         {
             errors.Add(new SpecError($"{path}.low", $"a range area needs the field with the low values (y is the high value); numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
         }
 
         // Box plots: precomputed boxes (q1 and q3, with low and high for the whiskers), or raw y values per x.
-        DataField? q1 = null, q3 = null, high = null;
+        DataField? q1 = null, q3 = null, high = null, open = null;
+        if (s.Type == SeriesType.Candlestick)
+        {
+            // Precomputed candles (open, high and low; y is the close), or raw y values per timeBucket.
+            open = s.Open is null ? null : Find(dataset, s.Open, $"{path}.open", FieldType.Number, errors);
+            high = s.High is null ? null : Find(dataset, s.High, $"{path}.high", FieldType.Number, errors);
+            if (s.Open is not null && s.High is null)
+            {
+                errors.Add(new SpecError($"{path}.high", "precomputed candles need open, high and low (y is the close); leave out open, high and low to make candles from the y values per timeBucket."));
+            }
+        }
+
         if (s.Type == SeriesType.BoxPlot)
         {
             q1 = s.Q1 is null ? null : Find(dataset, s.Q1, $"{path}.q1", FieldType.Number, errors);
@@ -198,8 +213,24 @@ public static class ChartSpecBinder
             return;
         }
 
+        var candleBucket = s.Type == SeriesType.Candlestick && open is null ? s.TimeBucket ?? TimeBucket.Day : (TimeBucket?)null;
+        if (s.Type == SeriesType.Candlestick && open is null && s.TimeBucket is null)
+        {
+            warnings.Add($"{path}.timeBucket: not set for candles from raw values; using day.");
+        }
+
+        if (candleBucket is not null && x.Type != FieldType.Time)
+        {
+            errors.Add(new SpecError($"{path}.x", $"candles from raw values need a time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()} (or give open, high and low)."));
+            return;
+        }
+
         var aggregate = s.Aggregate;
-        if (aggregate is null && s.TimeBucket is not null)
+        if (s.Type == SeriesType.Candlestick)
+        {
+            // Candles are their own aggregate (first, highest, lowest, last).
+        }
+        else if (aggregate is null && s.TimeBucket is not null)
         {
             aggregate = Aggregate.Average;
             warnings.Add($"{path}.aggregate: not set with timeBucket; using average.");
@@ -212,6 +243,20 @@ public static class ChartSpecBinder
 
         foreach (var (key, groupRows) in groups)
         {
+            if (s.Type == SeriesType.Candlestick)
+            {
+                var candleId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "values") : s.Id, key, usedIds);
+                var candleName = key is null ? s.Name ?? Humanize(y?.Name ?? "values") : s.Name is null ? key : $"{s.Name}: {key}";
+                output.Add(s with { Id = candleId, Name = candleName });
+                var kept = groupRows.Where(r => x.Values[r] is not null).ToList();
+                double At(DataField? field, int r) => field?.Values[r] is double d ? d : double.NaN;
+                data[candleId] = candleBucket is { } perBucket
+                    ? SeriesData.FromCandleBuckets(kept, r => x.Values[r], r => At(y, r) is var v && double.IsFinite(v) ? v : null, perBucket, out _)
+                    : SeriesData.FromItems(kept, r => x.Values[r], r => At(y, r) is var c && double.IsFinite(c) ? c : null)
+                        .WithCandles(kept.Select(r => new CandleSummary(At(open, r), At(high, r), At(low, r), At(y, r))).ToArray());
+                continue;
+            }
+
             if (s.Type == SeriesType.BoxPlot)
             {
                 var boxId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "values") : s.Id, key, usedIds);
@@ -311,21 +356,7 @@ public static class ChartSpecBinder
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>
-    private static object Floor(object value, TimeBucket bucket)
-    {
-        var t = value switch { DateTimeOffset o => o.DateTime, DateTime d => d, _ => default };
-        var floored = bucket switch
-        {
-            TimeBucket.Minute => new DateTime(t.Year, t.Month, t.Day, t.Hour, t.Minute, 0),
-            TimeBucket.Hour => new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0),
-            TimeBucket.Day => t.Date,
-            TimeBucket.Week => t.Date.AddDays(-(((int)t.DayOfWeek + 6) % 7)),
-            TimeBucket.Month => new DateTime(t.Year, t.Month, 1),
-            TimeBucket.Quarter => new DateTime(t.Year, (t.Month - 1) / 3 * 3 + 1, 1),
-            _ => new DateTime(t.Year, 1, 1),
-        };
-        return value is DateTimeOffset offset ? new DateTimeOffset(floored, offset.Offset) : floored;
-    }
+    private static object Floor(object value, TimeBucket bucket) => TimeBuckets.Floor(value, bucket);
 
     /// <summary>
     /// The chart type for "auto": times and numbers give a line (bars for time buckets), categories

@@ -1,0 +1,72 @@
+@page "/candlesticks"
+
+<PageTitle>Candlesticks · RioCharts</PageTitle>
+
+<h1>Candlesticks</h1>
+<p class="lead">
+    A candlestick shows how a value moved within each period: where it started, how high and low it went, and where it ended. Prices,
+    but also sensor data: the first, highest, lowest and last temperature per hour or day.
+</p>
+
+<Example Title="From readings" Code="@ReadingsCode">
+    <Description>
+        <p>
+            Give <code>CandlestickSeries</code> the raw readings and a <code>Bucket</code>: the readings of each hour (or day, week, …) become
+            one candle. A rising period is hollow, a falling one filled (<code>--rio-positive</code> and <code>--rio-negative</code>). Three
+            weeks of hourly candles are too narrow to see, so neighbouring candles merge into wider ones that keep the highs and lows; drag
+            to zoom in and the hours come back. Note the cooling fault on the tenth day.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Items="ServerRoom" YAxis="Celsius" Height="280" Zoomable="true">
+            <CandlestickSeries Name="Server room" XValue="r => r.Time" YValue="r => r.Value" Bucket="TimeBucket.Hour" Format="0.0 °C" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="From numbers computed elsewhere" Code="@PrecomputedCode">
+    <Description>
+        <p>
+            With one item per period, pass <code>OpenValue</code>, <code>HighValue</code>, <code>LowValue</code> and <code>CloseValue</code>.
+            Here a line on the same chart shows the average of each day's first and last price.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="PriceDay" Items="Prices" YAxis="PerMwh" Height="260">
+            <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
+                               LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" />
+            <LineSeries Name="Midpoint" XValue="p => p.Date" YValue="p => (p.First + p.Last) / 2" Curve="CurveType.Monotone" Format="0.0 €" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON specs</h2>
+<p>
+    <code>"type": "candlestick"</code> (also <code>"ohlc"</code>, <code>"candle"</code>) with a time <code>x</code>, <code>y</code> and a
+    <code>timeBucket</code> makes candles from the rows' y values per bucket (a day when not set). With <code>open</code>, <code>high</code>
+    and <code>low</code>, each row is a candle and <code>y</code> its close.
+</p>
+
+@code {
+    private static readonly AxisSpec Celsius = new() { Title = "°C" };
+    private static readonly AxisSpec PerMwh = new() { Title = "€/MWh" };
+
+    private const string ReadingsCode = """
+        <RioChart TItem="Reading" Items="readings" Zoomable="true">
+            <CandlestickSeries Name="Server room" XValue="r => r.Time" YValue="r => r.Value"
+                               Bucket="TimeBucket.Hour" Format="0.0 °C" />
+        </RioChart>
+
+        @code {
+            record Reading(DateTime Time, double? Value); // every 15 minutes
+        }
+        """;
+
+    private const string PrecomputedCode = """
+        <RioChart TItem="PriceDay" Items="prices">
+            <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
+                               LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" />
+            <LineSeries Name="Midpoint" XValue="p => p.Date" YValue="p => (p.First + p.Last) / 2" />
+        </RioChart>
+        """;
+}

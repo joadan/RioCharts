@@ -144,6 +144,21 @@ public sealed record ChartTexts
     /// <summary>Box plot tooltip: the values beyond the whiskers.</summary>
     public string BoxOutliers { get => Get(); init => Set(value); }
 
+    /// <summary>Candlestick tooltip: the period's first value.</summary>
+    public string CandleOpen { get => Get(); init => Set(value); }
+
+    /// <summary>Candlestick tooltip: the highest value.</summary>
+    public string CandleHigh { get => Get(); init => Set(value); }
+
+    /// <summary>Candlestick tooltip: the lowest value.</summary>
+    public string CandleLow { get => Get(); init => Set(value); }
+
+    /// <summary>Candlestick tooltip: the period's last value.</summary>
+    public string CandleClose { get => Get(); init => Set(value); }
+
+    /// <summary>Candlestick tooltip: the change from open to close.</summary>
+    public string CandleChange { get => Get(); init => Set(value); }
+
     /// <summary>A compact chart's description when there is no data.</summary>
     public string NoDataShort { get => Get(); init => Set(value); }
 
@@ -349,6 +364,11 @@ public sealed record ChartTexts
         [nameof(BoxMin)] = "Min",
         [nameof(BoxCount)] = "Count",
         [nameof(BoxOutliers)] = "Outliers",
+        [nameof(CandleOpen)] = "Open",
+        [nameof(CandleHigh)] = "High",
+        [nameof(CandleLow)] = "Low",
+        [nameof(CandleClose)] = "Close",
+        [nameof(CandleChange)] = "Change",
         [nameof(PieChart)] = "Pie chart",
         [nameof(DonutChart)] = "Donut chart",
         [nameof(RadialBarChart)] = "Radial bar chart",
@@ -405,6 +425,11 @@ public sealed record ChartTexts
         BoxMin = "Min",
         BoxCount = "Antal",
         BoxOutliers = "Avvikande värden",
+        CandleOpen = "Öppning",
+        CandleHigh = "Högsta",
+        CandleLow = "Lägsta",
+        CandleClose = "Stängning",
+        CandleChange = "Förändring",
         LastValue = "senast {0}",
         NoDataShort = "Inga data.",
         PieChart = "Cirkeldiagram",
@@ -457,6 +482,11 @@ public sealed record ChartTexts
         BoxMin = "Min",
         BoxCount = "Antall",
         BoxOutliers = "Uteliggere",
+        CandleOpen = "Åpning",
+        CandleHigh = "Høyeste",
+        CandleLow = "Laveste",
+        CandleClose = "Slutt",
+        CandleChange = "Endring",
         LastValue = "sist {0}",
         NoDataShort = "Ingen data.",
         PieChart = "Sektordiagram",
@@ -509,6 +539,11 @@ public sealed record ChartTexts
         BoxMin = "Min",
         BoxCount = "Antal",
         BoxOutliers = "Afvigere",
+        CandleOpen = "Åbning",
+        CandleHigh = "Højeste",
+        CandleLow = "Laveste",
+        CandleClose = "Lukning",
+        CandleChange = "Ændring",
         LastValue = "senest {0}",
         NoDataShort = "Ingen data.",
         PieChart = "Cirkeldiagram",
@@ -561,6 +596,11 @@ public sealed record ChartTexts
         BoxMin = "Minimi",
         BoxCount = "Määrä",
         BoxOutliers = "Poikkeavat arvot",
+        CandleOpen = "Avaus",
+        CandleHigh = "Korkein",
+        CandleLow = "Matalin",
+        CandleClose = "Päätös",
+        CandleChange = "Muutos",
         LastValue = "viimeisin {0}",
         NoDataShort = "Ei tietoja.",
         PieChart = "Ympyräkaavio",
@@ -613,6 +653,11 @@ public sealed record ChartTexts
         BoxMin = "Min",
         BoxCount = "Anzahl",
         BoxOutliers = "Ausreißer",
+        CandleOpen = "Eröffnung",
+        CandleHigh = "Hoch",
+        CandleLow = "Tief",
+        CandleClose = "Schluss",
+        CandleChange = "Änderung",
         LastValue = "zuletzt {0}",
         NoDataShort = "Keine Daten.",
         PieChart = "Kreisdiagramm",
@@ -665,6 +710,11 @@ public sealed record ChartTexts
         BoxMin = "Min",
         BoxCount = "Nombre",
         BoxOutliers = "Valeurs aberrantes",
+        CandleOpen = "Ouverture",
+        CandleHigh = "Plus haut",
+        CandleLow = "Plus bas",
+        CandleClose = "Clôture",
+        CandleChange = "Variation",
         LastValue = "dernière valeur {0}",
         NoDataShort = "Aucune donnée.",
         PieChart = "Graphique en secteurs",
@@ -717,6 +767,11 @@ public sealed record ChartTexts
         BoxMin = "Mín.",
         BoxCount = "Recuento",
         BoxOutliers = "Valores atípicos",
+        CandleOpen = "Apertura",
+        CandleHigh = "Máximo",
+        CandleLow = "Mínimo",
+        CandleClose = "Cierre",
+        CandleChange = "Variación",
         LastValue = "último {0}",
         NoDataShort = "Sin datos.",
         PieChart = "Gráfico circular",

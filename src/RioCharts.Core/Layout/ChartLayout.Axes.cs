@@ -86,6 +86,12 @@ public static partial class ChartLayout
                 Include(r.Lower, r.Data.X);
             }
 
+            if (r.Data.Candles is { } candles)
+            {
+                Include(candles.High, r.Data.X);
+                Include(candles.Low, r.Data.X);
+            }
+
             if (r.Data.Box is { } box)
             {
                 // The whole box plot, outliers included.
