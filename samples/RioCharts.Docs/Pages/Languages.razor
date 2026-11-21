@@ -67,8 +67,14 @@
 <h2>From resx files or IStringLocalizer</h2>
 <p>
     If your app already translates with resource files, <code>ChartTexts.From</code> reads the texts by key. The keys are the property names
-    in the table below (also in <code>ChartTexts.Keys</code>). Keys your resources don't have keep the fallback text:
+    in the table below (also in <code>ChartTexts.Keys</code>). Keys your resources don't have keep the fallback text, here the built-in
+    language, so you only translate what you want to change.
 </p>
+<p>
+    Give the localizer a class of your own: <code>IStringLocalizer&lt;ChartTexts&gt;</code> would look for the resources in the RioCharts
+    assembly, not yours. Any <code>IStringLocalizer</code> works the same way, also one that reads from a database.
+</p>
+<CodeBlock Language="csharp" Code="@LocalizerSetupCode" />
 <CodeBlock Code="@LocalizerCode" />
 
 <p>
@@ -144,9 +150,18 @@
         });
         """;
 
+    private const string LocalizerSetupCode = """
+        // Program.cs (package Microsoft.Extensions.Localization)
+        builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
+
+        // ChartResources.cs: a marker class; its texts are Resources/ChartResources.resx, ChartResources.sv.resx, ...
+        // with keys such as NoData and ResetZoom.
+        public sealed class ChartResources;
+        """;
+
     private const string LocalizerCode = """
-        @* MainLayout.razor: ChartTexts.resx holds keys such as NoData and ResetZoom *@
-        @inject IStringLocalizer<ChartTexts> L
+        @* MainLayout.razor *@
+        @inject IStringLocalizer<ChartResources> L
 
         <CascadingValue Value="_chartTexts">
             @Body
