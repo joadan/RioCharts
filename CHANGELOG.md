@@ -12,6 +12,14 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Auto-compact (`AutoCompact`, default on; `"autoCompact"` in JSON specs): as a normal chart
+  gets small it leaves out the x axis title (below 180 px high), then the legend and y axis title
+  (160 and 150 px high, or under 200 px wide), the title (120 px high) and the axis labels (x below
+  90 px high, y below 200 px wide). A right legend moves to the top under 400 px wide, and an
+  automatic legend taller than 30% of the chart is left out. Below 120 × 60 px the chart is laid out
+  as a compact chart. Sizes scale with the font size. `LegendMode.Show` keeps the legend.
+  `AutoCompact="false"` keeps everything at any size. Pie and radial bar charts leave out the
+  legend and title the same way. Charts that are small today look different (less chrome).
 - Trimming and native AOT: Core, Blazor, Skia and AI are marked `IsAotCompatible` and build
   without trimming or AOT warnings. Spec JSON uses source-generated metadata
   (`ChartSpecJson.Options`); `ChartSpecJson.Parse` fills in the defaults of properties missing from

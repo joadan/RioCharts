@@ -97,6 +97,34 @@
     </ChildContent>
 </Example>
 
+<Example Title="Auto-compact" Code="@AutoCode">
+    <Description>
+        <p>
+            Normal charts make room for the plot as they get small: first the axis titles go, then the legend (the tooltip still names the
+            series), the title and the axis labels. A right legend moves to the top on narrow charts. Below 120 × 60 px the chart is drawn as a
+            compact chart. It is on by default; <code>AutoCompact="false"</code> keeps everything at any size. Pick a size:
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="size-picker">
+            @foreach (var (label, w, h) in Sizes)
+            {
+                <button type="button" class="@(_size == label ? "active" : null)" aria-pressed="@(_size == label ? "true" : "false")" @onclick="@(() => _size = label)">@label</button>
+            }
+            <label><input type="checkbox" @bind="_autoCompact" /> AutoCompact</label>
+        </div>
+        <div class="size-stage">
+            <div style="@($"width:{Size.W}px;max-width:100%")">
+                <RioChart Items="Supply" Height="Size.H" Title="Air handling unit" AutoCompact="_autoCompact"
+                          XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "°C" })">
+                    <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+                    <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+                </RioChart>
+            </div>
+        </div>
+    </ChildContent>
+</Example>
+
 <h2>Options</h2>
 <div class="table-scroll">
 <table class="docs">
@@ -106,11 +134,28 @@
     <tr><td><code>Highlight</code> (line, area)</td><td>none</td><td><code>PointHighlight.Last</code>, <code>First</code>, <code>Min</code>, <code>Max</code>, combined with <code>|</code>.</td></tr>
     <tr><td><code>Interactive</code></td><td>true</td><td>False: plain SVG without JS (no tooltip). For many charts on a page.</td></tr>
     <tr><td><code>Width</code></td><td>the container</td><td>Needed for exact geometry when <code>Interactive="false"</code>.</td></tr>
+    <tr><td><code>AutoCompact</code></td><td>true</td><td>Leave out axis titles, legend, title and axis labels as a normal chart gets small. Also <code>"autoCompact"</code> in JSON specs.</td></tr>
     <tr><td><code>KeyboardNavigation</code></td><td>off when compact</td><td>Set true to make a compact chart a tab stop with arrow-key navigation.</td></tr>
 </table>
 </div>
 
 @code {
+    private static readonly (string Label, double W, double H)[] Sizes =
+        [("640 × 300", 640, 300), ("480 × 170", 480, 170), ("360 × 130", 360, 130), ("180 × 100", 180, 100), ("110 × 50", 110, 50)];
+
+    private string _size = "480 × 170";
+    private bool _autoCompact = true;
+
+    private (string Label, double W, double H) Size => Sizes.First(s => s.Label == _size);
+
+    private const string AutoCode = """
+        <RioChart Items="supply" Height="130" Title="Air handling unit"
+                  XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "°C" })">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        """;
+
     private const string SparkCode = """
         <RioChart Items="supply" Compact="true" Height="40">
             <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C"

@@ -15,6 +15,9 @@ public sealed record ChartSpec
     [Description("Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y range fits the data tightly (bars keep zero). For small charts in tables and tiles.")]
     public bool Compact { get; init; }
 
+    [Description("Default true: as the chart gets small, leave out axis titles, then the legend, title and axis labels; very small charts become compact. False keeps everything at any size.")]
+    public bool AutoCompact { get; init; } = true;
+
     [Description("Horizontal axis.")]
     public AxisSpec X { get; init; } = new();
 

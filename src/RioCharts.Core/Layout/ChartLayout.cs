@@ -116,10 +116,11 @@ public static partial class ChartLayout
         var culture = options.Culture;
         var texts = options.Texts ?? ChartTexts.For(culture);
         var measure = options.Measurer;
-        var compact = spec.Compact;
+        var compact = spec.Compact || AutoCompacts(spec, options);
         var width = Math.Max(compact ? 8 : 50, options.Width);
         var height = Math.Max(compact ? 8 : 50, options.Height);
         var font = options.FontSize;
+        var chrome = FitChrome(spec.AutoCompact && !compact, width, height, font);
         var lineHeight = font * 1.3;
         var styles = CreateStyles(options);
 
@@ -213,7 +214,7 @@ public static partial class ChartLayout
         // ---------- Title and legend ----------
         var y0 = PadTop;
         var titleNodes = new List<Node>();
-        if (!compact && !string.IsNullOrWhiteSpace(spec.Title))
+        if (!compact && chrome.Title && !string.IsNullOrWhiteSpace(spec.Title))
         {
             var titleHeight = options.TitleFontSize * 1.3;
             titleNodes.Add(new TextNode(spec.Title!, new PointF((float)PadLeft, (float)(y0 + titleHeight / 2)), new TextStyle("title"), Anchor.Start)
@@ -230,10 +231,10 @@ public static partial class ChartLayout
         {
             LegendMode.Show => legendEntries.Count > 0,
             LegendMode.Hide => false,
-            _ => legendEntries.Count > 1,
+            _ => legendEntries.Count > 1 && chrome.Legend,
         };
 
-        var legendPosition = spec.Legend.Position;
+        var legendPosition = FitLegendPosition(spec.Legend.Position, chrome);
         var legendItems = showLegend ? MeasureLegend(legendEntries, measure, font) : [];
         double legendTop = 0, legendBottom = 0, legendRight = 0;
         List<List<(LegendEntry Entry, double Width)>> legendRows = [];
@@ -247,7 +248,12 @@ public static partial class ChartLayout
             {
                 legendRows = WrapRows(legendItems, width - PadLeft - PadRight);
                 var legendHeight = legendRows.Count * (lineHeight + 4);
-                if (legendPosition == LegendPosition.Top)
+                if (LegendTooTall(spec, legendHeight, height))
+                {
+                    showLegend = false;
+                    legendRows = [];
+                }
+                else if (legendPosition == LegendPosition.Top)
                 {
                     legendTop = legendHeight + 8;
                 }
@@ -260,11 +266,11 @@ public static partial class ChartLayout
 
         // ---------- Vertical layout ----------
         var visibleAxes = axes.Where(a => a.Visible).ToList();
-        var xLabelHeight = compact ? 0 : lineHeight + 6;
-        var xTitleHeight = compact || string.IsNullOrWhiteSpace(spec.X.Title) ? 0 : lineHeight + 4;
+        var xLabelHeight = compact || !chrome.XLabels ? 0 : lineHeight + 6;
+        var xTitleHeight = compact || !chrome.XTitle || string.IsNullOrWhiteSpace(spec.X.Title) ? 0 : lineHeight + 4;
 
         // Y titles sit above the axis labels, horizontally (easier to read than rotated text).
-        var yTitleHeight = !compact && (visibleAxes.Any(a => !string.IsNullOrWhiteSpace(a.Spec.Title)) || (!hasData && !string.IsNullOrWhiteSpace(primary.Spec.Title)))
+        var yTitleHeight = !compact && chrome.YTitles && (visibleAxes.Any(a => !string.IsNullOrWhiteSpace(a.Spec.Title)) || (!hasData && !string.IsNullOrWhiteSpace(primary.Spec.Title)))
             ? lineHeight + 2
             : 0;
 
@@ -295,8 +301,8 @@ public static partial class ChartLayout
             }
         }
 
-        var left = compact ? [] : visibleAxes.Where(a => !a.Right).ToList();
-        var right = compact ? [] : visibleAxes.Where(a => a.Right).ToList();
+        var left = compact || !chrome.YLabels ? [] : visibleAxes.Where(a => !a.Right).ToList();
+        var right = compact || !chrome.YLabels ? [] : visibleAxes.Where(a => a.Right).ToList();
         var plotLeft = compact ? inset : PadLeft + (left.Count > 0 ? LabelGap + left.Sum(a => a.LabelWidth) + (left.Count - 1) * AxisGap : 0);
         var plotRight = compact ? width - inset
             : width - PadRight - legendRight - (right.Count > 0 ? LabelGap + right.Sum(a => a.LabelWidth) + (right.Count - 1) * AxisGap : 0);
@@ -387,7 +393,7 @@ public static partial class ChartLayout
 
         if (hasData && !compact)
         {
-            foreach (var axis in visibleAxes)
+            foreach (var axis in chrome.YLabels ? visibleAxes : [])
             {
                 var nodes = new List<Node>();
                 for (var i = 0; i < axis.Ticks.Count; i++)
@@ -404,17 +410,17 @@ public static partial class ChartLayout
                 });
             }
 
-            statics.Add(new GroupNode(xTickNodes) { Class = "rio-axis-x", AriaLabel = texts.XAxis + (spec.X.Title is { } xt ? ": " + xt : "") });
+            statics.Add(new GroupNode(chrome.XLabels ? xTickNodes : []) { Class = "rio-axis-x", AriaLabel = texts.XAxis + (spec.X.Title is { } xt ? ": " + xt : "") });
         }
 
-        if (!compact && !string.IsNullOrWhiteSpace(spec.X.Title))
+        if (!compact && chrome.XTitle && !string.IsNullOrWhiteSpace(spec.X.Title))
         {
             statics.Add(new TextNode(spec.X.Title!, new PointF((float)(plotLeft + plotWidth / 2), (float)(plotBottom + xLabelHeight + xTitleHeight / 2)),
                 new TextStyle("axis-title"), Anchor.Middle) { Class = "rio-axis-title" });
         }
 
         var titleY = (float)(plotTop - font / 2 - yTitleHeight / 2 - 2);
-        foreach (var axis in compact ? [] : hasData ? visibleAxes : [primary])
+        foreach (var axis in compact || !chrome.YTitles ? [] : hasData ? visibleAxes : [primary])
         {
             if (!string.IsNullOrWhiteSpace(axis.Spec.Title))
             {

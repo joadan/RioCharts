@@ -364,8 +364,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   scales to its container.
 - **JSON:** `highlight` accepts "last", "last, max" or ["last", "max"] and is normalized to the
   enum's comma-separated form; unknown values get the list of valid ones.
-- **Not yet:** auto-compact (shedding axis titles, legend and axes when a normal chart gets very
-  small).
+- **Auto-compact** (below) covers normal charts that get small.
 
 
 
@@ -424,3 +423,20 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **NuGet advisory:** restoring the smoke app pulls `Microsoft.DotNet.ILCompiler` 10.0.12, which
   has a high-severity advisory (NU1903). It is a build-time compiler for this test app only, not
   a dependency of the packages; a newer SDK brings a fixed version.
+
+
+## Auto-compact
+
+- **On by default** (`AutoCompact`, Design.md: "auto-hiding axes and legend at small sizes").
+  `FitChrome` decides from the chart's size what it has room for, in this order: x axis title
+  (180 px high), legend (160 px high, 200 px wide), y axis titles (150 px high, 200 px wide), title
+  (120 px high), x labels (90 px high), y labels (200 px wide). Below 120 × 60 px the chart is laid
+  out as a compact chart (`AutoCompacts`), which also allows sizes under 50 px and uses the short
+  summary. The sizes are for the 12 px font and scale with `FontSize`.
+- **Legend:** a right legend moves to the top under 400 px wide; an automatic legend taller than
+  30% of the chart is left out. `LegendMode.Show` always shows it (it was asked for).
+- **Still there when hidden:** the description keeps the title, the svg keeps its aria-label, and
+  the tooltip names the series and values. Hidden y labels keep the grid lines.
+- **Polar charts** shed the legend and title by the same rules; they have no compact layout.
+- **Deterministic thresholds, no hysteresis:** a chart resized across a threshold switches at
+  the same size both ways.

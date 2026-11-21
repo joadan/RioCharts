@@ -26,6 +26,7 @@ public static partial class ChartLayout
         var height = Math.Max(50, options.Height);
         var font = options.FontSize;
         var lineHeight = font * 1.3;
+        var chrome = FitChrome(spec.AutoCompact, width, height, font);
 
         foreach (var r in resolved.Where(r => r.Type.CoordinateSystem != CoordinateSystem.Polar))
         {
@@ -66,13 +67,14 @@ public static partial class ChartLayout
         {
             LegendMode.Show => legendEntries.Count > 0,
             LegendMode.Hide => false,
-            _ => legendEntries.Count > 1,
+            _ => legendEntries.Count > 1 && chrome.Legend,
         };
+        var legendPosition = FitLegendPosition(spec.Legend.Position, chrome);
 
         // ---------- Title and legend ----------
         var statics = new List<Node>();
         var y0 = PadTop;
-        if (!string.IsNullOrWhiteSpace(spec.Title))
+        if (chrome.Title && !string.IsNullOrWhiteSpace(spec.Title))
         {
             var titleHeight = options.TitleFontSize * 1.3;
             statics.Add(new TextNode(spec.Title!, new PointF((float)PadLeft, (float)(y0 + titleHeight / 2)), new TextStyle("title"), Anchor.Start)
@@ -87,7 +89,7 @@ public static partial class ChartLayout
         List<List<(LegendEntry Entry, double Width)>> legendRows = [];
         if (showLegend)
         {
-            if (spec.Legend.Position == LegendPosition.Right)
+            if (legendPosition == LegendPosition.Right)
             {
                 legendRight = legendItems.Max(i => i.Width) + 16;
             }
@@ -95,7 +97,15 @@ public static partial class ChartLayout
             {
                 legendRows = WrapRows(legendItems, width - PadLeft - PadRight);
                 var legendHeight = legendRows.Count * (lineHeight + 4);
-                (legendTop, legendBottom) = spec.Legend.Position == LegendPosition.Top ? (legendHeight + 8, 0.0) : (0.0, legendHeight + 8);
+                if (LegendTooTall(spec, legendHeight, height))
+                {
+                    showLegend = false;
+                    legendRows = [];
+                }
+                else
+                {
+                    (legendTop, legendBottom) = legendPosition == LegendPosition.Top ? (legendHeight + 8, 0.0) : (0.0, legendHeight + 8);
+                }
             }
         }
 
@@ -105,7 +115,7 @@ public static partial class ChartLayout
         var plot = new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
         if (showLegend)
         {
-            statics.Add(BuildLegend(legendItems, legendRows, spec.Legend.Position, width - PadRight - legendRight + 16, plot, y0,
+            statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
                 plotBottom + 8, lineHeight, styles, texts.Legend));
         }
 

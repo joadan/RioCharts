@@ -179,6 +179,14 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public bool Compact { get; set; }
 
     /// <summary>
+    /// Default true: as the chart gets small (a narrow container, a low <see cref="Height"/>), it
+    /// leaves out axis titles first, then the legend, the title and the axis labels, so the plot keeps
+    /// the space; the tooltip still shows the series and values. Below 120 × 60 px it becomes a
+    /// compact chart. False keeps everything at any size.
+    /// </summary>
+    [Parameter] public bool AutoCompact { get; set; } = true;
+
+    /// <summary>
     /// False draws plain SVG without the JS module: no tooltip, hover, zoom, keyboard navigation,
     /// download button or width measuring. For many small charts (compact charts in a table) or static
     /// pages. Set <see cref="Width"/> for exact geometry; otherwise the chart is laid out at a default
@@ -221,7 +229,9 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>The spec being drawn: the bound <see cref="Spec"/>, or the one from parameters and child components.</summary>
     private ChartSpec CurrentSpec() => Spec is not null && _bound is not null
-        ? Compact && !_bound.Spec.Compact ? _bound.Spec with { Compact = true } : _bound.Spec
+        ? (Compact && !_bound.Spec.Compact) || (!AutoCompact && _bound.Spec.AutoCompact)
+            ? _bound.Spec with { Compact = Compact || _bound.Spec.Compact, AutoCompact = AutoCompact && _bound.Spec.AutoCompact }
+            : _bound.Spec
         : BuildSpec();
 
     /// <summary>The canvas series layer needs the JS module; without it the series stay SVG.</summary>
@@ -354,7 +364,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets,
-            TooltipHeader is not null, TooltipTemplate is not null, Compact, CurrentTexts);
+            TooltipHeader is not null, TooltipTemplate is not null, Compact, AutoCompact, CurrentTexts);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -369,6 +379,7 @@ public partial class RioChart<TItem> : IChartContext
     {
         Title = Title,
         Compact = Compact,
+        AutoCompact = AutoCompact,
         X = XAxis ?? new AxisSpec(),
         Y = YAxis ?? new AxisSpec(),
         YAxes = YAxes ?? [],

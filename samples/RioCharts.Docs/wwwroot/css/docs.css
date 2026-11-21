@@ -1492,3 +1492,29 @@ table.sparkline-table td.num {
 table.texts-table td:first-child {
     white-space: nowrap;
 }
+
+
+/* ----- Auto-compact example ----- */
+
+.size-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.site .doc .size-picker button.active {
+    border-color: var(--doc-accent);
+    color: var(--doc-accent);
+}
+
+.size-stage {
+    min-height: 300px;
+}
+
+.size-stage > div {
+    outline: 1px dashed var(--doc-border);
+    outline-offset: 2px;
+}

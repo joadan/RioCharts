@@ -79,4 +79,19 @@
         Assert.NotEmpty(cut.FindAll("path.rio-line")); // drawn as SVG: a canvas needs the JS module
         Assert.Equal("img", cut.Find("svg.rio-chart-svg").GetAttribute("role")); // no keyboard without JS
     }
+
+    [Fact]
+    public void Low_charts_leave_out_the_title_unless_auto_compact_is_off()
+    {
+        var auto = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Height="100" Title="Supply air">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var off = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Height="100" Title="Supply air" AutoCompact="false">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Empty(auto.FindAll("text.rio-title"));
+        Assert.Single(off.FindAll("text.rio-title"));
+        Assert.Equal("Supply air", auto.Find("svg.rio-chart-svg").GetAttribute("aria-label")); // still named for screen readers
+    }
 }
