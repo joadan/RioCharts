@@ -11,7 +11,7 @@ renders SVG, and a tiny JS module only measures the container and the font.
 
 | Package | What |
 |---------|------|
-| `RioCharts.Blazor` | `<RioChart>` with line, area, bar, pie, donut and radial bar series, tooltips, zoom, annotations, light and dark themes. |
+| `RioCharts.Blazor` | `<RioChart>` with line, area, range area, bar (vertical or horizontal), scatter, heatmap, pie, donut and radial bar series; tooltips, zoom, annotations, export, keyboard and screen reader support, light and dark themes. |
 | `RioCharts.Core` | The chart engine: scales, ticks, layout and a render-agnostic scene. No UI dependencies. |
 | `RioCharts.Skia` | Server-side export to SVG and PNG with SkiaSharp, for reports, emails and agents. |
 | `RioCharts.AI` | `create_chart` and `render_chart` tools for AI agents (Microsoft.Extensions.AI and MCP). |
@@ -23,7 +23,7 @@ Reference `RioCharts.Blazor` and add `@using RioCharts.Blazor` and `@using RioCh
 `_Imports.razor`. Styles come with `{YourApp}.styles.css` automatically.
 
 ```razor
-<RioChart Items="traffic" YAxis="new AxisSpec { Title = "Sessions" }">
+<RioChart Items="traffic" YAxis="@(new AxisSpec { Title = "Sessions" })">
     <ReferenceLine Value="1000" Label="Campaign goal" />
     <LineSeries Name="Web" XValue="r => r.Timestamp" YValue="r => r.Sessions" />
 </RioChart>

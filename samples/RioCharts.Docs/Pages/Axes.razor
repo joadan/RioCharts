@@ -88,7 +88,7 @@
         """;
 
     private const string TwoAxesCode = """
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Sessions per hour" }" YAxes="[new AxisSpec { Id = "orders", Title = "Orders" }]">
+        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Sessions per hour" })" YAxes="@([new AxisSpec { Id = "orders", Title = "Orders" }])">
             <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" />
             <LineSeries Items="sessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>
@@ -96,7 +96,7 @@
 
     private const string FormatCode = """
         <RioChart TItem="Sales" Culture="CultureInfo.GetCultureInfo("de-DE")"
-               YAxis="new AxisSpec { Title = "EUR", Format = "C0", Min = 0 }">
+               YAxis="@(new AxisSpec { Title = "EUR", Format = "C0", Min = 0 })">
             <BarSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
         </RioChart>
         """;

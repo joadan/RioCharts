@@ -88,7 +88,7 @@ to `_Imports.razor`. Styles come with `{YourApp}.styles.css` automatically.
 Several series, options and two-way bound legend state:
 
 ```razor
-<RioChart TItem="Reading" Title="Online store" YAxis="new AxisSpec { Title = "Sessions" }" @bind-HiddenSeries="hidden">
+<RioChart TItem="Reading" Title="Online store" YAxis="@(new AxisSpec { Title = "Sessions" })" @bind-HiddenSeries="hidden">
     <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
     <AreaSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" />
     <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
@@ -102,7 +102,7 @@ Several series, options and two-way bound legend state:
 Stacking, a second axis, data labels and annotations:
 
 ```razor
-<RioChart TItem="Reading" YAxis="new AxisSpec { Title = "ms" }" YAxes="[new AxisSpec { Id = "orders", Title = "Orders" }]"
+<RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "ms" })" YAxes="@([new AxisSpec { Id = "orders", Title = "Orders" }])"
        OnPointClick="e => selected = e.Item">
     <ReferenceBand From="0" To="200" Label="Fast" />
     <ReferenceLine Value="300" Label="Limit" />

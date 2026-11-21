@@ -123,27 +123,27 @@
         """;
 
     private const string GapsCode = """
-        <RioChart Items="conversion" YAxis="new AxisSpec { Title = "%" }">
+        <RioChart Items="conversion" YAxis="@(new AxisSpec { Title = "%" })">
             <LineSeries Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" />  @* Value is double? *@
         </RioChart>
         """;
 
     private const string IrregularCode = """
         @* Readings logged on change: no fixed interval, different timestamps per series. *@
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Items" }">
+        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Items" })">
             <LineSeries Items="stock" Name="Stock" XValue="r => r.Time" YValue="r => r.Value" Format="0 'in stock'" />
             <LineSeries Items="reorderLevel" Name="Reorder level" XValue="r => r.Time" YValue="r => r.Value" Format="0" Curve="CurveType.Step" />
         </RioChart>
         """;
 
     private const string AreaCode = """
-        <RioChart Items="revenue" YAxis="new AxisSpec { Title = "€ per 15 min" }">
+        <RioChart Items="revenue" YAxis="@(new AxisSpec { Title = "€ per 15 min" })">
             <AreaSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
         </RioChart>
         """;
 
     private const string StackedCode = """
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Sessions per 15 min" }">
+        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })">
             <AreaSeries Items="search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
             <AreaSeries Items="social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
             <AreaSeries Items="email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />

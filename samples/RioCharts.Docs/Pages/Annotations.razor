@@ -48,7 +48,7 @@
     private string? _clicked;
 
     private const string AllCode = """
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Sessions per 15 min" }" OnAnnotationClick="e => clicked = e.Label">
+        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })" OnAnnotationClick="e => clicked = e.Label">
             <ReferenceLine Value="200" Label="Target" />
             <ReferenceBand Axis="AnnotationAxis.X" From="saleStart" To="saleEnd" Label="Evening sale" />
             <ReferenceBand Axis="AnnotationAxis.X" From="maintenanceStart" To="maintenanceEnd" Label="Maintenance" Color="#d9480f" />

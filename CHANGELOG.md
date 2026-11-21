@@ -3,9 +3,14 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
-## 0.1.0-preview (unreleased)
+## Unreleased
 
-Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
+## 0.1.50-preview (2026-11-21)
+
+The first release with notes: everything since the start, restructured to the new design
+([Design.md](Design.md)), milestones 1 to 6. The earlier previews on NuGet, 0.1.2-preview and
+0.1.14-preview, were snapshots of this work; the API changes listed as breaking below are
+breaking for them.
 
 ### Blazor
 
@@ -227,6 +232,9 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
 ### Fixed
 
+- Code samples in the README, the NuGet readme and the docs passed object values with quotes
+  inside an attribute (`YAxis="new AxisSpec { Title = "Sessions" }"`), which does not compile;
+  they now use `YAxis="@(new AxisSpec { Title = "Sessions" })"`.
 - Performance check with large data (numbers in `docs/implementation-notes.md`):
   - Pies with many slices: outside labels are limited to what fits down each side (the largest
     slices keep theirs; all slices stay in the tooltip), and the legend and color lookups are no

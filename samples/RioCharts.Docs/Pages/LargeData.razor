@@ -66,7 +66,7 @@
     }
 
     private const string BigCode = """
-        <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas" YAxis="new AxisSpec { Title = "ms" }">
+        <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas" YAxis="@(new AxisSpec { Title = "ms" })">
             <LineSeries Name="Response time" Data="SeriesData.From(times, values)" StrokeWidth="1.25" Format="0 ms" />
         </RioChart>
         """;
