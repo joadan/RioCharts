@@ -110,8 +110,10 @@ public static partial class ChartLayout
             {
                 var sum = pie.Grouped.Sum(s => s.Value);
                 var name = polar.Count > 1 ? $"{texts.Other} ({r.Spec.DisplayName})" : texts.Other;
-                lines.Add($"{name}: {ValueFormatter.Format(sum, culture, r.Spec.Format ?? "")} ({Percent(sum / pie.Total, culture)})");
-                lines.AddRange(pie.Grouped.Select(s => $"{s.Label} {ValueFormatter.Format(s.Value, culture, r.Spec.Format ?? "")} ({Percent(s.Value / pie.Total, culture)})"));
+                // The total, then each part as "• name": a tab between name and value lets the JS module
+                // lay them out as rows; as plain text (a native title, a screen reader) it reads as a list.
+                lines.Add($"{name}\t{ValueFormatter.Format(sum, culture, r.Spec.Format ?? "")} ({Percent(sum / pie.Total, culture)})");
+                lines.AddRange(pie.Grouped.Select(s => $"{OtherPartPrefix}{s.Label}\t{ValueFormatter.Format(s.Value, culture, r.Spec.Format ?? "")} ({Percent(s.Value / pie.Total, culture)})"));
             }
 
             return string.Join("\n", lines);
@@ -296,6 +298,9 @@ public static partial class ChartLayout
     /// <summary>The legend key of the "Other" slice (hide it with this id in HiddenSeries).</summary>
     public const string OtherSliceKey = "rio:other";
 
+    /// <summary>Starts each part's line in the "Other" legend tooltip (the JS module shows those lines as parts).</summary>
+    internal const string OtherPartPrefix = "• ";
+
     private static readonly string OtherColor = ThemeTokens.Series(ThemeTokens.SeriesColorCount - 1);
 
     /// <summary>
@@ -353,10 +358,10 @@ public static partial class ChartLayout
         List<Node> seriesNodes, List<Node> labelNodes, List<TooltipSlice> tooltip, List<(string, double)> described)
     {
         // Slices per ring: positive values of visible categories, small ones grouped when asked.
-        var slicesPerRing = new List<(Resolved Ring, List<Slice> Slices, double Total)>();
+        var slicesPerRing = new List<(Resolved Ring, List<Slice> Slices, double Total, List<Slice> Grouped)>();
         foreach (var r in rings)
         {
-            var (slices, total, _) = PieSlices(r, labels[r], hidden, colorOf, texts, out var skipped);
+            var (slices, total, grouped) = PieSlices(r, labels[r], hidden, colorOf, texts, out var skipped);
             if (skipped)
             {
                 warnings.Add($"series '{r.Spec.Id}': negative values cannot be shown in a pie and are left out.");
@@ -364,7 +369,7 @@ public static partial class ChartLayout
 
             if (slices.Count > 0)
             {
-                slicesPerRing.Add((r, slices, total));
+                slicesPerRing.Add((r, slices, total, grouped));
             }
         }
 
@@ -475,7 +480,7 @@ public static partial class ChartLayout
         var outsideLabels = new List<(double Angle, string Text, double Width, double Sweep)>();
         for (var k = 0; k < n; k++)
         {
-            var (ring, slices, total) = slicesPerRing[k];
+            var (ring, slices, total, grouped) = slicesPerRing[k];
             var sum = slices.Sum(s => s.Value);
 
             // The first series is the outer ring.
@@ -505,7 +510,13 @@ public static partial class ChartLayout
                 var valueText = ValueFormatter.Format(s.Value, culture, ring.Spec.Format ?? "");
                 tooltip.Add(new TooltipSlice(ring.Spec.Id, s.Index, n > 1 || ring.Spec.Name is not null ? ring.Spec.DisplayName : "", s.Label,
                     $"{valueText} ({Percent(share, culture)})", s.Color, cx, cy, (float)r0, (float)r1, (float)Math.Min(a0, a1), (float)Math.Max(a0, a1),
-                    (float)Math.Max(a0, a1)));
+                    (float)Math.Max(a0, a1))
+                {
+                    // The "Other" slice lists what it holds.
+                    Parts = s.Index < 0
+                        ? [.. grouped.Select(g => new TooltipPart(g.Label, $"{ValueFormatter.Format(g.Value, culture, ring.Spec.Format ?? "")} ({Percent(g.Value / sum, culture)})"))]
+                        : [],
+                });
                 if (k == 0)
                 {
                     described.Add((s.Label, s.Value));

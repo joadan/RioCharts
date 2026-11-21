@@ -50,4 +50,13 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
 /// <param name="A1">End of the drawn arc (highlighted on hover).</param>
 /// <param name="HitEnd">End of the hover area (the whole track for radial bars).</param>
 public sealed record TooltipSlice(string SeriesId, int Index, string Header, string Label, string Value, string Color,
-    float Cx, float Cy, float R0, float R1, float A0, float A1, float HitEnd);
+    float Cx, float Cy, float R0, float R1, float A0, float A1, float HitEnd)
+{
+    /// <summary>For the grouped "Other" slice: the categories it holds, in data order; empty otherwise.</summary>
+    public IReadOnlyList<TooltipPart> Parts { get; init; } = [];
+}
+
+/// <summary>One category inside a grouped "Other" slice.</summary>
+/// <param name="Label">The category.</param>
+/// <param name="Value">Formatted value and share, e.g. "9 k€ (1%)".</param>
+public sealed record TooltipPart(string Label, string Value);

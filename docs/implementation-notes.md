@@ -469,10 +469,15 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `ChartLayout.OtherSliceKey`, color of the last series token like the slice) takes its place.
   Hiding "Other" leaves its slices out and the shares are of the visible slices. Colors of the other
   categories keep their index, so they do not shift.
-- **Tooltip text** is built in Core (`LegendEntry.Tooltip`, lines separated by 
-): a series uses
+- **Tooltip text** is built in Core (`LegendEntry.Tooltip`, lines separated by `\n`): a series uses
   `ChartDescriber.DescribeSeries`, the same text as the compact summary; a slice gets its value and
-  share per ring; "Other" lists each grouped slice.
+  share per ring. "Other" is the total, then each grouped slice: `Other\t15 k€ (2%)`, then
+  `• Gift cards\t9 k€ (1%)` per part. The JS module lays a text with tabs out as rows (name left,
+  value right) and lines starting with "• " as the parts under the line above: smaller, muted and
+  indented under a thin rule, so the total and its parts are easy to tell apart. As plain text (a
+  native `<title>`, `aria-description`) it still reads as a total followed by a list.
+- **The "Other" slice's own tooltip** lists the same parts (`TooltipSlice.Parts`, `Pl`/`Pv` in the
+  interop slice model), laid out the same way; keyboard navigation reads them after the total.
 - **Rendering:** the scene puts it in the legend group's `Title`. The Skia exporter and static or
   prerendered Blazor charts write an SVG `<title>` (a native tooltip). Interactive charts render
   `data-tip` and `aria-description` instead (`SvgSceneRenderer.LegendTips`), and the JS module shows

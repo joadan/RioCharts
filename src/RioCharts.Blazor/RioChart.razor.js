@@ -741,7 +741,30 @@ function movePolar(state, m, pos, slice) {
     value.textContent = s.value;
     row.append(dot, name, value);
     tip.appendChild(row);
+    if (s.pl && s.pl.length > 0) {
+        tip.appendChild(partRows(s.pl, s.pv));
+    }
+
     placeTooltip(state, pos, pos.x, pos.y);
+}
+
+// The categories in a grouped "Other" slice: smaller rows under the total, set off by a line.
+function partRows(labels, values) {
+    const parts = document.createElement('div');
+    parts.className = 'rio-tooltip-parts';
+    labels.forEach((label, i) => {
+        const row = document.createElement('div');
+        row.className = 'rio-tooltip-row rio-tooltip-part';
+        const name = document.createElement('span');
+        name.className = 'rio-tooltip-name';
+        name.textContent = label;
+        const value = document.createElement('span');
+        value.className = 'rio-tooltip-value';
+        value.textContent = values[i] ?? '';
+        row.append(name, value);
+        parts.appendChild(row);
+    });
+    return parts;
 }
 
 function move(state, e) {
@@ -909,7 +932,38 @@ function showLegendTip(state, target) {
     }
 
     state.legendItem = item;
-    tip.textContent = item.getAttribute('data-tip');
+    const text = item.getAttribute('data-tip');
+    if (text.includes('\t')) {
+        // "name<tab>value" lines; lines starting with "• " are the parts of the line above (Other).
+        tip.replaceChildren();
+        const lines = text.split('\n');
+        for (let i = 0; i < lines.length;) {
+            const [label, value] = lines[i++].split('\t');
+            const row = document.createElement('div');
+            row.className = 'rio-tooltip-row';
+            const name = document.createElement('span');
+            name.className = 'rio-tooltip-name';
+            name.textContent = label;
+            const v = document.createElement('span');
+            v.className = 'rio-tooltip-value';
+            v.textContent = value ?? '';
+            row.append(name, v);
+            tip.appendChild(row);
+            const labels = [], values = [];
+            while (i < lines.length && lines[i].startsWith('• ')) {
+                const [l, pv] = lines[i++].slice(2).split('\t');
+                labels.push(l);
+                values.push(pv ?? '');
+            }
+
+            if (labels.length > 0) {
+                tip.appendChild(partRows(labels, values));
+            }
+        }
+    } else {
+        tip.textContent = text;
+    }
+
     tip.classList.add('rio-tooltip-visible');
     const c = state.container.getBoundingClientRect();
     const r = item.getBoundingClientRect();
@@ -1111,7 +1165,8 @@ function showKey(state, announce) {
         }
 
         if (announce) {
-            say(state, `${slice.header ? slice.header + ', ' : ''}${slice.label}: ${slice.value}. ${position(m, kb.i + 1, m.slices.length)}`);
+            const parts = slice.pl && slice.pl.length > 0 ? ` (${slice.pl.map((l, j) => `${l} ${slice.pv[j]}`).join(', ')})` : '';
+            say(state, `${slice.header ? slice.header + ', ' : ''}${slice.label}: ${slice.value}${parts}. ${position(m, kb.i + 1, m.slices.length)}`);
         }
 
         return;

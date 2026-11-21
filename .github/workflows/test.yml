@@ -23,6 +23,12 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # The bUnit tests fake the JS module, so a syntax error in it would pass them: check it here.
+      - name: Check the JS module's syntax
+        run: |
+          cp src/RioCharts.Blazor/RioChart.razor.js "$RUNNER_TEMP/RioChart.razor.mjs"
+          node --check "$RUNNER_TEMP/RioChart.razor.mjs"
+
       - name: Test
         run: |
           dotnet test tests/RioCharts.Tests/RioCharts.Tests.csproj -c Release

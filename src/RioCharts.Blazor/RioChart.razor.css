@@ -170,6 +170,23 @@
     white-space: pre-line;
 }
 
+/* The categories in "Other": smaller and muted under the total, set off by a line. */
+.rio-chart ::deep .rio-tooltip-parts {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--rio-grid, var(--_rio-grid));
+}
+
+.rio-chart ::deep .rio-tooltip-part {
+    padding-left: 16px;
+    font-size: 11px;
+    color: var(--rio-text-muted, var(--_rio-text-muted));
+}
+
+.rio-chart ::deep .rio-tooltip-part .rio-tooltip-value {
+    font-weight: 400;
+}
+
 .rio-chart ::deep .rio-hover-cell {
     fill: none;
     stroke: var(--rio-text, var(--_rio-text));

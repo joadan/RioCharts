@@ -708,7 +708,8 @@ public partial class RioChart<TItem> : IChartContext
                 Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type == SeriesType.Bar, s.Step, s.Snap,
                     s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight, s.CellWidths))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
-                    s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd))]))
+                    s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd,
+                    s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))]))
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
     }

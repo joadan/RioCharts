@@ -31,7 +31,18 @@ public class LegendTests
         var other = layout.Legend[^1];
         Assert.Equal(ChartLayout.OtherSliceKey, other.SeriesId);
         Assert.Equal(layout.Tooltip.Slices.Single(s => s.Label == "Other").Color, other.Color); // same color as the slice
-        Assert.Equal("Other: 15 MWh (2%)\nElevators 9 MWh (1%)\nControls 6 MWh (1%)", other.Tooltip);
+        Assert.Equal("Other\t15 MWh (2%)\n• Elevators\t9 MWh (1%)\n• Controls\t6 MWh (1%)", other.Tooltip); // total, then its parts
+    }
+
+    [Fact]
+    public void The_Other_slice_tooltip_lists_its_parts()
+    {
+        var layout = ChartLayout.Compute(Pie, Energy, Options);
+
+        var other = layout.Tooltip.Slices.Single(s => s.Index < 0);
+        Assert.Equal("15 MWh (2%)", other.Value);
+        Assert.Equal([new TooltipPart("Elevators", "9 MWh (1%)"), new TooltipPart("Controls", "6 MWh (1%)")], other.Parts);
+        Assert.All(layout.Tooltip.Slices.Where(s => s.Index >= 0), s => Assert.Empty(s.Parts));
     }
 
     [Fact]

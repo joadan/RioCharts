@@ -5,6 +5,14 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Pies: the "Other" slice's tooltip lists the slices it holds, and in both that tooltip and the
+  "Other" legend tooltip the total and its parts look different: the total is a normal row, the
+  parts are smaller, muted and indented under a thin line. Before, the legend tooltip was lines of
+  plain text that looked alike, and the slice tooltip showed only the total.
+  `TooltipSlice.Parts` (Core) holds the parts. The legend tooltip text for "Other" is now
+  `Other<tab>total` followed by `• part<tab>value` lines.
+- The Test workflow checks the JS module's syntax (the component tests fake the module).
+
 ## 0.1.50-preview (2026-11-21)
 
 The first release with notes: everything since the start, restructured to the new design
