@@ -1,0 +1,29 @@
+{
+  "rows": [
+    {
+      "category": "Shoes",
+      "revenue": 447000,
+      "share": 38
+    },
+    {
+      "category": "Clothing",
+      "revenue": 313000,
+      "share": 27
+    },
+    {
+      "category": "Camping",
+      "revenue": 224000,
+      "share": 19
+    },
+    {
+      "category": "Accessories",
+      "revenue": 125000,
+      "share": 11
+    },
+    {
+      "category": "Bikes",
+      "revenue": 60000,
+      "share": 5
+    }
+  ]
+}

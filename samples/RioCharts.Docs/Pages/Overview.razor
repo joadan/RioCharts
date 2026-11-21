@@ -21,13 +21,12 @@
 
         <div class="hero-visual">
             <div class="window">
-                <div class="window-bar"><i></i><i></i><i></i><span>AirHandlingUnit.razor</span></div>
+                <div class="window-bar"><i></i><i></i><i></i><span>StoreTraffic.razor</span></div>
                 <div class="window-body">
-                    <RioChart TItem="Reading" Title="Air handling unit" YAxis="Celsius" Height="300">
-                        <ReferenceBand From="20" To="24" Label="Comfort zone" />
-                        <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-                        <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-                        <LineSeries Items="Outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+                    <RioChart TItem="Reading" Title="Store traffic" YAxis="Sessions" Height="300">
+                        <ReferenceBand Axis="AnnotationAxis.X" From="SaleStart" To="SaleEnd" Label="Flash sale" />
+                        <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="#,0" />
+                        <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="#,0" />
                     </RioChart>
                 </div>
             </div>
@@ -45,27 +44,27 @@
         <div class="gallery">
             <a class="tile" href="lines-and-areas">
                 <RioChart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
-                    <AreaSeries Items="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+                    <AreaSeries Items="Revenue" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
                 </RioChart>
                 <span class="tile-label">Areas <span aria-hidden="true">→</span></span>
             </a>
             <a class="tile" href="bars">
                 <RioChart TItem="Monthly" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
-                    <BarSeries Items="Mix" Name="Heating" XValue="m => m.Month" YValue="m => m.Heating" Stack="mix" />
-                    <BarSeries Items="Mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" />
-                    <BarSeries Items="Mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" />
+                    <BarSeries Items="Mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="mix" />
+                    <BarSeries Items="Mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Stack="mix" />
+                    <BarSeries Items="Mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Stack="mix" />
                 </RioChart>
                 <span class="tile-label">Stacked bars <span aria-hidden="true">→</span></span>
             </a>
             <a class="tile" href="pies">
                 <RioChart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
-                    <DonutSeries Items="EnergyUse" XValue="s => s.Name" YValue="s => s.Value" />
+                    <DonutSeries Items="CategoryRevenue" XValue="s => s.Name" YValue="s => s.Value" />
                 </RioChart>
                 <span class="tile-label">Donuts <span aria-hidden="true">→</span></span>
             </a>
             <a class="tile" href="pies#radial-bars">
                 <RioChart TItem="Share" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
-                    <RadialBarSeries Items="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+                    <RadialBarSeries Items="Goals" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
                 </RioChart>
                 <span class="tile-label">Radial bars <span aria-hidden="true">→</span></span>
             </a>
@@ -151,12 +150,14 @@
 </section>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
+    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly DateTime SaleStart = Start.AddHours(18);
+    private static readonly DateTime SaleEnd = Start.AddHours(22);
     private static readonly LegendSpec NoLegend = new() { Mode = LegendMode.Hide };
     private static readonly TooltipSpec NoTooltip = new() { Enabled = false };
 
     private const string QuickCode = """
-        <RioChart Items="readings">
+        <RioChart Items="orders">
             <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>
         """;

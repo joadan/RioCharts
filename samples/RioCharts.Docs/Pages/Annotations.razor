@@ -3,58 +3,65 @@
 <PageTitle>Annotations · RioCharts</PageTitle>
 
 <h1>Annotations</h1>
-<p class="lead">Mark what matters: setpoints, comfort zones, fault periods and events. Muted by default, so they support the data.</p>
+<p class="lead">Mark what matters: targets, campaigns, maintenance windows and events. Muted by default, so they support the data.</p>
 
 <Example Title="Lines, bands, points and callouts" Code="@AllCode">
     <Description>
-        <p>Reference lines expand the axis so they are always visible; bands do not. Values can be numbers, times or category names. Hover an annotation for its value.</p>
+        <p>
+            Reference lines expand the axis so they are always visible; bands do not. Values can be numbers, times or category names. Here an
+            evening sale and a night-time maintenance window are bands on the time axis, the traffic target is a line, and the peak and the
+            newsletter are marked on the data. Hover an annotation for its value.
+        </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" YAxis="Celsius" OnAnnotationClick="e => _clicked = e.Label">
-            <ReferenceBand From="20" To="24" Label="Comfort zone" />
-            <ReferenceBand Axis="AnnotationAxis.X" From="_faultStart" To="_faultEnd" Label="Fan fault" Color="#d9480f" />
+        <RioChart TItem="Reading" YAxis="Sessions" OnAnnotationClick="e => _clicked = e.Label">
+            <ReferenceLine Value="200" Label="Target" />
+            <ReferenceBand Axis="AnnotationAxis.X" From="_saleStart" To="_saleEnd" Label="Evening sale" />
+            <ReferenceBand Axis="AnnotationAxis.X" From="_maintenanceStart" To="_maintenanceEnd" Label="Maintenance" Color="#d9480f" />
             <ReferenceLine Axis="AnnotationAxis.X" Value="_now" Label="Now" />
-            <PointAnnotation X="_alarm" Y="23.4" Label="High temp alarm" Color="#d9480f" />
-            <Callout X="_filter" Y="20.6" Label="Filter changed" OffsetX="-30" OffsetY="-36" />
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <PointAnnotation X="_peak" Y="252" Label="Peak: 252 sessions" Color="#d9480f" />
+            <Callout X="_newsletter" Y="34" Label="Newsletter sent" OffsetX="-30" OffsetY="-36" />
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
         <p class="note">Clicked: @(_clicked ?? "nothing yet (click an annotation)")</p>
     </ChildContent>
 </Example>
 
 <Example Title="Draggable threshold" Code="@DragCode">
-    <Description><p>With <code>Draggable</code>, the user can move a reference line; <code>@@bind-Value</code> receives the new value.</p></Description>
+    <Description><p>With <code>Draggable</code>, the user can move a reference line; <code>@@bind-Value</code> receives the new value. Here it sets when to send a high-traffic alert.</p></Description>
     <ChildContent>
-        <RioChart Items="Supply" YAxis="Celsius" Height="240">
-            <ReferenceLine @bind-Value="_setpoint" Label="@($"Setpoint {_setpoint:0.0} °C")" Draggable="true" />
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <RioChart Items="WebSessions" YAxis="Sessions" Height="240">
+            <ReferenceLine @bind-Value="_alertAt" Label="@($"Alert at {_alertAt:#,0} sessions")" Draggable="true" />
+            <LineSeries Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
-        <p class="note">Setpoint: @_setpoint.ToString("0.0") °C. Drag the dashed line.</p>
+        <p class="note">Alert at @_alertAt.ToString("#,0") sessions per 15 min. Drag the dashed line.</p>
     </ChildContent>
 </Example>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
-    private static readonly DateTime _faultStart = Start.AddHours(26), _faultEnd = Start.AddHours(31), _now = Start.AddHours(44);
-    private static readonly DateTime _alarm = Start.AddHours(34.5), _filter = Start.AddHours(9);
-    private double _setpoint = 19.5;
+    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly DateTime _saleStart = Start.AddHours(16), _saleEnd = Start.AddHours(23), _now = Start.AddHours(44);
+    private static readonly DateTime _maintenanceStart = Start.AddHours(26), _maintenanceEnd = Start.AddHours(28);
+    private static readonly DateTime _peak = Start.AddHours(20), _newsletter = Start.AddHours(31);
+    private double _alertAt = 220;
     private string? _clicked;
 
     private const string AllCode = """
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" OnAnnotationClick="e => clicked = e.Label">
-            <ReferenceBand From="20" To="24" Label="Comfort zone" />
-            <ReferenceBand Axis="AnnotationAxis.X" From="faultStart" To="faultEnd" Label="Fan fault" Color="#d9480f" />
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Sessions per 15 min" }" OnAnnotationClick="e => clicked = e.Label">
+            <ReferenceLine Value="200" Label="Target" />
+            <ReferenceBand Axis="AnnotationAxis.X" From="saleStart" To="saleEnd" Label="Evening sale" />
+            <ReferenceBand Axis="AnnotationAxis.X" From="maintenanceStart" To="maintenanceEnd" Label="Maintenance" Color="#d9480f" />
             <ReferenceLine Axis="AnnotationAxis.X" Value="now" Label="Now" />
-            <PointAnnotation X="alarm" Y="23.4" Label="High temp alarm" Color="#d9480f" />
-            <Callout X="filterChange" Y="20.6" Label="Filter changed" OffsetX="-30" OffsetY="-36" />
+            <PointAnnotation X="peak" Y="252" Label="Peak: 252 sessions" Color="#d9480f" />
+            <Callout X="newsletterSent" Y="34" Label="Newsletter sent" OffsetX="-30" OffsetY="-36" />
             <LineSeries ... />
         </RioChart>
         """;
 
     private const string DragCode = """
-        <ReferenceLine @bind-Value="setpoint" Label="Setpoint" Draggable="true" />
+        <ReferenceLine @bind-Value="alertAt" Label="Alert" Draggable="true" />
 
-        @code { double setpoint = 19.5; }
+        @code { double alertAt = 220; }
         """;
 }

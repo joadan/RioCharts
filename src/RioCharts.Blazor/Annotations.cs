@@ -77,9 +77,9 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
 }
 
 /// <summary>
-/// A horizontal (Axis="Y", default) or vertical (Axis="X") line, e.g. a setpoint or "today".
+/// A horizontal (Axis="Y", default) or vertical (Axis="X") line, e.g. a target or "today".
 /// With <see cref="Draggable"/> the user can move it; bind the value with <c>@bind-Value</c>.
-/// <code>&lt;ReferenceLine @bind-Value="setpoint" Label="Setpoint" Draggable="true" /&gt;</code>
+/// <code>&lt;ReferenceLine @bind-Value="limit" Label="Limit" Draggable="true" /&gt;</code>
 /// </summary>
 /// <typeparam name="TValue">A number type, DateTime, DateTimeOffset, DateOnly or string (category).</typeparam>
 public sealed class ReferenceLine<TValue> : AnnotationBase

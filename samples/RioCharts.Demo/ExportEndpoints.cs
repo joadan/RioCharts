@@ -13,10 +13,10 @@ public static class ExportEndpoints
 {
     public static void MapChartExport(this IEndpointRouteBuilder app)
     {
-        // /export/ahu.png?theme=dark&width=640&height=320
-        app.MapGet("/export/ahu.{format}", (string format, string? theme, int? width, int? height) =>
+        // /export/traffic.png?theme=dark&width=640&height=320
+        app.MapGet("/export/traffic.{format}", (string format, string? theme, int? width, int? height) =>
         {
-            var (spec, data) = AirHandlingUnit();
+            var (spec, data) = Traffic();
             var options = new ExportOptions
             {
                 Width = Math.Clamp(width ?? 720, 200, 2000),
@@ -34,37 +34,37 @@ public static class ExportEndpoints
         });
     }
 
-    private static (ChartSpec Spec, Dictionary<string, SeriesData> Data) AirHandlingUnit()
+    private static (ChartSpec Spec, Dictionary<string, SeriesData> Data) Traffic()
     {
         var start = new DateTime(2026, 11, 16);
         var times = Enumerable.Range(0, 2 * 96).Select(i => start.AddMinutes(15 * i)).ToArray();
-        double Cycle(int i) => Math.Sin((times[i].Hour + times[i].Minute / 60.0 - 9) / 24 * 2 * Math.PI);
-        var supply = times.Select((_, i) => Math.Round(19 + 1.5 * Cycle(i), 1)).ToArray();
-        var extract = times.Select((_, i) => Math.Round(22 + 0.8 * Cycle(i), 1)).ToArray();
-        var outdoor = times.Select((_, i) => Math.Round(4 + 5 * Cycle(i), 1)).ToArray();
+        double Cycle(int i) => Math.Sin((times[i].Hour + times[i].Minute / 60.0 - 14) / 24 * 2 * Math.PI);
+        var web = times.Select((_, i) => Math.Round(150 + 110 * Cycle(i))).ToArray();
+        var app = times.Select((_, i) => Math.Round(98 + 75 * Cycle(i))).ToArray();
+        var marketplace = times.Select((_, i) => Math.Round(55 + 35 * Cycle(i))).ToArray();
 
         var spec = new ChartSpec
         {
-            Title = "Air handling unit (rendered on the server)",
-            Y = new AxisSpec { Title = "°C" },
+            Title = "Sessions per channel (rendered on the server)",
+            Y = new AxisSpec { Title = "Sessions" },
             Series =
             [
-                new SeriesSpec { Id = "supply", Name = "Supply", Curve = CurveType.Monotone },
-                new SeriesSpec { Id = "extract", Name = "Extract", Curve = CurveType.Monotone },
-                new SeriesSpec { Id = "outdoor", Name = "Outdoor" },
+                new SeriesSpec { Id = "web", Name = "Web", Curve = CurveType.Monotone },
+                new SeriesSpec { Id = "app", Name = "App", Curve = CurveType.Monotone },
+                new SeriesSpec { Id = "marketplace", Name = "Marketplace" },
             ],
             Annotations =
             [
-                new AnnotationSpec { Type = AnnotationType.Band, From = 20, To = 24, Label = "Comfort zone" },
-                new AnnotationSpec { Value = 21, Label = "Setpoint 21 °C" },
+                new AnnotationSpec { Type = AnnotationType.Band, From = 200, To = 260, Label = "High traffic" },
+                new AnnotationSpec { Value = 150, Label = "Campaign goal 150" },
             ],
         };
 
         return (spec, new()
         {
-            ["supply"] = SeriesData.From(times, supply),
-            ["extract"] = SeriesData.From(times, extract),
-            ["outdoor"] = SeriesData.From(times, outdoor),
+            ["web"] = SeriesData.From(times, web),
+            ["app"] = SeriesData.From(times, app),
+            ["marketplace"] = SeriesData.From(times, marketplace),
         });
     }
 }

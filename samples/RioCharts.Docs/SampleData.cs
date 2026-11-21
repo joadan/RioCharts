@@ -1,6 +1,9 @@
 namespace RioCharts.Docs;
 
-/// <summary>Deterministic sample data for the examples (building climate and energy, temperatures in °C).</summary>
+/// <summary>
+/// Deterministic sample data for the examples: a small online store selling outdoor gear. Its traffic,
+/// orders, revenue, stock and servers. Money in euros.
+/// </summary>
 public static class SampleData
 {
     public sealed record Reading(DateTime Time, double? Value);
@@ -9,91 +12,98 @@ public static class SampleData
 
     public sealed record Share(string Name, double Value);
 
-    /// <summary>An hourly reading of outdoor temperature, two units' supply air and heating power.</summary>
-    public sealed record Weather(DateTime Time, double Outdoor, double Supply, double Supply2, double Heating);
+    /// <summary>One day of advertising: spend and the revenue it brought, per channel.</summary>
+    public sealed record AdDay(DateTime Date, double SearchSpend, double SearchRevenue, double DisplaySpend, double DisplayRevenue);
 
-    public sealed record Monthly(string Month, double Heating, double Ventilation, double Cooling);
+    /// <summary>One delivery: distance and how long it took.</summary>
+    public sealed record Delivery(double Km, double Hours);
 
-    public sealed record Alarm(string Unit, string Text, double Minutes);
+    /// <summary>Revenue per product group and month, k€.</summary>
+    public sealed record Monthly(string Month, double Shoes, double Clothing, double Gear);
+
+    /// <summary>A support ticket: its topic, subject and handling time.</summary>
+    public sealed record Ticket(string Topic, string Subject, double Minutes);
 
     public static readonly DateTime Start = new(2026, 11, 16);
 
-    private static double Cycle(DateTime t) => Math.Sin((t.Hour + t.Minute / 60.0 - 9) / 24 * 2 * Math.PI);
+    /// <summary>The daily traffic pattern: low at night, a peak in the evening (around 20:00), in [-1, 1].</summary>
+    private static double Cycle(DateTime t) => Math.Sin((t.Hour + t.Minute / 60.0 - 14) / 24 * 2 * Math.PI);
 
     private static List<Reading> Series(Func<int, DateTime, double?> value, int count = 2 * 96, int minutes = 15) =>
         Enumerable.Range(0, count).Select(i => Start.AddMinutes(minutes * i)).Select((t, i) => new Reading(t, value(i, t))).ToList();
 
-    /// <summary>
-    /// Two weeks, hourly. AHU 1 follows its outdoor compensation curve (warmer supply when it is cold
-    /// outside); AHU 2's curve is flat (it does not compensate). Heating power falls to zero above 16 °C.
-    /// </summary>
-    public static readonly List<Weather> Hourly = Enumerable.Range(0, 24 * 14).Select(i =>
-    {
-        var t = Start.AddHours(i);
-        var outdoor = Math.Round(4 + 6 * Cycle(t) + Drift(i, 21, 24) * 6, 1);
-        return new Weather(t, outdoor,
-            Math.Round(Math.Clamp(22.5 - 0.3 * outdoor + Drift(i, 22, 3) * 0.6, 17, 27), 1),
-            Math.Round(19.5 + Drift(i, 24, 3) * 0.7, 1),
-            Math.Round(Math.Max(0, 2.6 * (16 - outdoor) + Drift(i, 23, 4) * 4), 1));
-    }).ToList();
+    /// <summary>Sessions per 15 minutes on the website, two days.</summary>
+    public static readonly List<Reading> WebSessions = Series((i, t) => Math.Round(Math.Max(5, 140 + 110 * Cycle(t) + Drift(i, 1) * 40)));
 
-    public static readonly List<Reading> Supply = Series((i, t) => Math.Round(19 + 1.5 * Cycle(t) + Drift(i, 1) * 0.8, 2));
+    /// <summary>Sessions per 15 minutes in the app, two days.</summary>
+    public static readonly List<Reading> AppSessions = Series((i, t) => Math.Round(Math.Max(5, 90 + 70 * Cycle(t) + Drift(i, 2) * 30)));
 
-    public static readonly List<Reading> Extract = Series((i, t) => Math.Round(22 + 0.8 * Cycle(t) + Drift(i, 2) * 0.6, 2));
+    /// <summary>Sessions per 15 minutes from search, social and email (they add up), two days.</summary>
+    public static readonly List<Reading> Search = Series((i, t) => Math.Round(Math.Max(3, 80 + 60 * Cycle(t) + Drift(i, 4) * 20)));
 
-    /// <summary>Outdoor temperature with a sensor gap.</summary>
-    public static readonly List<Reading> Outdoor = Series((i, t) => i is >= 60 and < 75 ? null : Math.Round(4 + 5 * Cycle(t) + Drift(i, 3, 6) * 2, 2));
+    public static readonly List<Reading> Social = Series((i, t) => Math.Round(Math.Max(2, 45 + 40 * Cycle(t) + Drift(i, 5) * 15)));
 
-    public static readonly List<Reading> Heating = Series((i, t) => Math.Round(Math.Max(0, 14 - 9 * Cycle(t) + Drift(i, 4) * 3), 2));
+    public static readonly List<Reading> Email = Series((i, t) => Math.Round(t.Hour is >= 7 and < 10 ? 50 + Drift(i, 6) * 20 : 10 + Drift(i, 6) * 6));
 
-    public static readonly List<Reading> Ventilation = Series((i, t) => Math.Round(t.Hour is >= 7 and < 18 ? 6 + Drift(i, 5) * 1.5 : 2 + Drift(i, 6) * 0.8, 2));
+    /// <summary>Conversion rate in %, with a gap while tracking was down.</summary>
+    public static readonly List<Reading> Conversion = Series((i, t) => i is >= 60 and < 75 ? null : Math.Round(2.6 + 0.7 * Cycle(t) + Drift(i, 3, 6) * 0.6, 2));
 
-    public static readonly List<Reading> Daily = Enumerable.Range(0, 35)
+    /// <summary>Revenue per 15 minutes, €.</summary>
+    public static readonly List<Reading> Revenue = Series((i, t) => Math.Round(Math.Max(0, 900 + 750 * Cycle(t) + Drift(i, 7) * 300)));
+
+    /// <summary>Orders per day, the last 35 days.</summary>
+    public static readonly List<Reading> DailyOrders = Enumerable.Range(0, 35)
         .Select(d => Start.AddDays(d - 34))
         .Select((d, i) => new Reading(d, Math.Round(220 + 60 * Math.Sin(d.DayOfYear / 5.0) + Noise(i, 7) * 25, 0)))
         .ToList();
 
-    public static readonly List<Reading> Setpoints =
+    /// <summary>Server capacity in sessions per 15 minutes: scaled up for the day, down at night (a step line).</summary>
+    public static readonly List<Reading> Capacity =
     [
-        new(Start, 21), new(Start.AddHours(6), 21), new(Start.AddHours(7), 22.5), new(Start.AddHours(17), 22.5),
-        new(Start.AddHours(18), 20), new(Start.AddHours(30), 20), new(Start.AddHours(31), 22.5), new(Start.AddHours(41), 22.5),
-        new(Start.AddHours(42), 20), new(Start.AddHours(48), 20),
+        new(Start, 200), new(Start.AddHours(8), 300), new(Start.AddHours(16), 400), new(Start.AddHours(23), 200),
+        new(Start.AddHours(32), 300), new(Start.AddHours(40), 400), new(Start.AddHours(47), 200), new(Start.AddHours(48), 200),
     ];
 
-    /// <summary>A setpoint that changes at irregular times (comfort mode, a meeting, night setback).</summary>
-    public static readonly List<Reading> RoomSetpoint =
+    /// <summary>The reorder level for a product, changed at irregular times (a campaign, then back).</summary>
+    public static readonly List<Reading> ReorderLevel =
     [
-        new(Start, 18), new(Start.AddHours(6.5), 21), new(Start.AddHours(9.75), 22), new(Start.AddHours(11.2), 21),
-        new(Start.AddHours(17.6), 19.5), new(Start.AddHours(22.4), 18), new(Start.AddHours(24), 18),
+        new(Start, 40), new(Start.AddHours(6.5), 60), new(Start.AddHours(9.75), 80), new(Start.AddHours(13.2), 60),
+        new(Start.AddHours(17.6), 50), new(Start.AddHours(22.4), 40), new(Start.AddHours(24), 40),
     ];
 
     /// <summary>
-    /// A room sensor that logs on change: a reading when the temperature has moved 0.2 °C since the
-    /// last one, or after an hour without one. Dense while the room heats up and cools down, sparse at
-    /// night, and nothing for two hours while the sensor is offline.
+    /// The product's stock, logged on change: a reading when it has moved 3 items since the last one,
+    /// or after an hour without one. Dense while it sells fast and when a delivery comes in, sparse at
+    /// night, and nothing for two hours while the warehouse system was offline.
     /// </summary>
-    public static readonly List<Reading> RoomOnChange = LogOnChange();
+    public static readonly List<Reading> StockOnChange = LogOnChange();
 
     private static List<Reading> LogOnChange()
     {
-        // The room follows the setpoint with a lag, plus slow drift.
         var readings = new List<Reading>();
-        double room = 18.2, logged = double.NaN;
+        double stock = 120, logged = double.NaN;
         var last = DateTime.MinValue;
         for (var minute = 0; minute <= 24 * 60; minute++)
         {
             var t = Start.AddMinutes(minute);
-            var target = RoomSetpoint.Last(r => r.Time <= t).Value!.Value;
-            room += (target - room) / 45 + Drift(minute, 7, 30) * 0.004;
+            var hour = minute / 60.0;
+            var rate = hour is >= 8 and < 23 ? 0.12 + 0.08 * Math.Sin((hour - 8) / 15 * Math.PI) : 0.01; // items sold per minute
+            stock = Math.Max(0, stock - rate * (1 + Drift(minute, 7, 30)));
+            var reorder = ReorderLevel.Last(r => r.Time <= t).Value!.Value;
+            if (stock < reorder && minute % 180 == 0)
+            {
+                stock += 60; // a delivery
+            }
+
             var offline = minute is >= 13 * 60 + 10 and < 15 * 60 + 5;
             if (offline)
             {
                 continue;
             }
 
-            if (double.IsNaN(logged) || Math.Abs(room - logged) >= 0.2 || (t - last).TotalMinutes >= 60)
+            if (double.IsNaN(logged) || Math.Abs(stock - logged) >= 3 || (t - last).TotalMinutes >= 60)
             {
-                logged = Math.Round(room, 1);
+                logged = Math.Round(stock);
                 last = t;
                 readings.Add(new Reading(t, logged));
             }
@@ -102,14 +112,14 @@ public static class SampleData
         return readings;
     }
 
-    /// <summary>Supply air of five air handling units over two days (one drifts upward: a heating valve stuck open).</summary>
-    public static readonly List<(string Unit, List<Reading> Readings)> UnitSupply =
+    /// <summary>Sales per hour of five products over two days (one keeps growing; one sold out for a while).</summary>
+    public static readonly List<(string Product, List<Reading> Readings)> ProductSales =
     [
-        ("AHU 1 · Office east", Series((i, t) => Math.Round(19 + 1.2 * Cycle(t) + Drift(i, 11) * 0.6, 2))),
-        ("AHU 2 · Office west", Series((i, t) => Math.Round(19.5 + 0.9 * Cycle(t) + Drift(i, 12) * 0.5, 2))),
-        ("AHU 3 · Conference", Series((i, t) => Math.Round(18.5 + (t.Hour is >= 8 and < 17 ? 1.5 : 0) + Drift(i, 13, 4) * 0.7, 2))),
-        ("AHU 4 · Restaurant", Series((i, t) => Math.Round(19 + 0.04 * i + Drift(i, 14) * 0.5, 2))),
-        ("AHU 5 · Warehouse", Series((i, t) => i is >= 120 and < 140 ? null : Math.Round(16 + 1.5 * Cycle(t) + Drift(i, 15) * 0.8, 2))),
+        ("Trail shoe · Ridge 2", Series((i, t) => Math.Round(Math.Max(0, 14 + 10 * Cycle(t) + Drift(i, 11) * 5), 1), 48, 60)),
+        ("Rain jacket · Storm", Series((i, t) => Math.Round(Math.Max(0, 9 + 6 * Cycle(t) + Drift(i, 12) * 4), 1), 48, 60)),
+        ("Headlamp · Beam 400", Series((i, t) => Math.Round(Math.Max(0, 6 + (t.Hour is >= 18 and < 23 ? 6 : 0) + Drift(i, 13, 4) * 3), 1), 48, 60)),
+        ("Water bottle · 1 l", Series((i, t) => Math.Round(Math.Max(0, 4 + 0.35 * i + Drift(i, 14) * 3), 1), 48, 60)),
+        ("Tent · Dome 2p", Series((i, t) => i is >= 30 and < 36 ? null : Math.Round(Math.Max(0, 3 + 2 * Cycle(t) + Drift(i, 15) * 2), 1), 48, 60)),
     ];
 
     public static readonly List<Sales> Quarters =
@@ -119,40 +129,61 @@ public static class SampleData
 
     public static readonly List<Monthly> Mix =
     [
-        new("Jan", 42, 18, 0), new("Feb", 38, 17, 0), new("Mar", 29, 15, 1), new("Apr", 17, 11, 3), new("May", 8, 9, 8), new("Jun", 4, 8, 15),
+        new("Jan", 42, 18, 6), new("Feb", 38, 17, 7), new("Mar", 29, 21, 11), new("Apr", 33, 24, 19), new("May", 36, 26, 28), new("Jun", 31, 22, 35),
     ];
 
-    public static readonly List<Share> EnergyUse =
+    /// <summary>Revenue per category this year, k€.</summary>
+    public static readonly List<Share> CategoryRevenue =
     [
-        new("Heating", 412), new("Ventilation", 236), new("Cooling", 148), new("Lighting", 97), new("Pumps", 31), new("Elevators", 9), new("Controls", 6),
+        new("Shoes", 412), new("Clothing", 236), new("Camping", 148), new("Accessories", 97), new("Bags", 31), new("Gift cards", 9), new("Socks", 6),
     ];
 
-    // One row per alarm, so units repeat: aggregate them per unit.
-    public static readonly List<Alarm> Alarms =
+    // One row per ticket, so topics repeat: aggregate them per topic.
+    public static readonly List<Ticket> Tickets =
     [
-        new("AHU 1", "Filter pressure", 45), new("AHU 2", "Supply fan", 120), new("AHU 1", "Frost guard", 15),
-        new("AHU 3", "Filter pressure", 30), new("AHU 1", "Supply temperature low", 60), new("AHU 2", "Extract fan", 90),
-        new("AHU 4", "Filter pressure", 20), new("AHU 1", "Filter pressure", 35), new("AHU 3", "Heat recovery", 75),
-        new("AHU 2", "Supply fan", 40),
+        new("Shipping", "Where is my order?", 45), new("Payment", "Card declined", 120), new("Shipping", "Wrong address", 15),
+        new("Returns", "Wrong size", 30), new("Shipping", "Late delivery", 60), new("Payment", "Double charge", 90),
+        new("Account", "Password reset", 20), new("Shipping", "Damaged parcel", 35), new("Returns", "Refund status", 75),
+        new("Payment", "Invoice", 40),
     ];
 
-    public static readonly List<Share> Health = [new("Supply fan", 87), new("Extract fan", 74), new("Filter", 41), new("Heat recovery", 92)];
+    /// <summary>This month's goals: % reached.</summary>
+    public static readonly List<Share> Goals = [new("Revenue", 87), new("Orders", 74), new("New customers", 41), new("Reviews", 92)];
 
-    /// <summary>Hourly UTC readings across the end of summer time in Europe (25 Oct 2026).</summary>
-    public static readonly (DateTimeOffset Time, double Value)[] DstReadings = Enumerable.Range(0, 36)
-        .Select(h => (new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero).AddHours(h), Math.Round(7 + 4 * Math.Sin((h - 3) / 24.0 * 2 * Math.PI), 1)))
+    /// <summary>Orders per hour, UTC, across the end of summer time in Europe (25 Oct 2026).</summary>
+    public static readonly (DateTimeOffset Time, double Value)[] DstOrders = Enumerable.Range(0, 36)
+        .Select(h => (new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero).AddHours(h), Math.Round(Math.Max(2, 40 + 30 * Math.Sin((h - 8) / 24.0 * 2 * Math.PI)))))
         .ToArray();
 
-    /// <summary>A random walk as plain arrays (the columnar fast path).</summary>
+    /// <summary>
+    /// Thirty days of ads, daily. Search ads pay off (revenue grows with spend); display ads do not
+    /// (revenue stays about the same whatever is spent).
+    /// </summary>
+    public static readonly List<AdDay> Ads = Enumerable.Range(0, 30).Select(i =>
+    {
+        var search = Math.Round(200 + 600 * (Noise(i, 31) + 0.5), 0);
+        var display = Math.Round(150 + 500 * (Noise(i, 32) + 0.5), 0);
+        return new AdDay(Start.AddDays(i - 30), search, Math.Round(800 + 3.1 * search + Noise(i, 33) * 500), display,
+            Math.Round(1400 + 0.2 * display + Noise(i, 34) * 500));
+    }).ToList();
+
+    /// <summary>300 deliveries: a day in town, a day or two further away, three to four days to remote places.</summary>
+    public static readonly List<Delivery> Deliveries = Enumerable.Range(0, 300).Select(i =>
+    {
+        var km = Math.Round(Math.Pow(Noise(i, 41) + 0.5, 2) * 900 + 2, 0);
+        return new Delivery(km, Math.Round(Math.Max(4, 18 + km * 0.09 + Noise(i, 42) * 14), 1));
+    }).ToList();
+
+    /// <summary>Server response times in ms, a random walk as plain arrays (the columnar fast path).</summary>
     public static (DateTime[] Times, double[] Values) Big(int count)
     {
         var times = new DateTime[count];
         var values = new double[count];
-        var value = 20.0;
+        var value = 180.0;
         for (var i = 0; i < count; i++)
         {
             times[i] = Start.AddDays(-30).AddSeconds(i * 13);
-            value += Noise(i, 9) * 0.08;
+            value = Math.Max(40, value + Noise(i, 9) * 4);
             values[i] = value;
         }
 
@@ -161,7 +192,7 @@ public static class SampleData
 
     /// <summary>
     /// Repeatable, smooth noise in [-0.5, 0.5]: <see cref="Noise"/> at every <paramref name="span"/>th sample, eased between.
-    /// Per-sample noise at 15-minute steps draws a ragged, pixelated-looking line; real sensors drift instead.
+    /// Per-sample noise at 15-minute steps draws a ragged, pixelated-looking line; real data drifts instead.
     /// </summary>
     public static double Drift(int i, int seed, int span = 8)
     {

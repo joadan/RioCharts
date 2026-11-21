@@ -55,7 +55,7 @@ public static class ChartDescriber
     /// <summary>
     /// Short text for a compact chart (sparkline), read instead of the full description: per series
     /// its range, last value and trend, formatted like the tooltips, e.g.
-    /// "Room: 18.2 °C to 20.8 °C, last 19.4 °C, rising."
+    /// "Checkout: 182 ms to 208 ms, last 194 ms, rising."
     /// </summary>
     public static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
         ChartTexts? texts = null)
@@ -86,8 +86,8 @@ public static class ChartDescriber
     }
 
     /// <summary>
-    /// One series: its range, last value and trend, formatted like the tooltips, e.g. "Room: 18.2 °C
-    /// to 20.8 °C, last 19.4 °C, rising" (no last value or trend on category axes). Null without data.
+    /// One series: its range, last value and trend, formatted like the tooltips, e.g. "Checkout: 182 ms
+    /// to 208 ms, last 194 ms, rising" (no last value or trend on category axes). Null without data.
     /// Used by compact charts and the legend's tooltips.
     /// </summary>
     public static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts? texts = null)

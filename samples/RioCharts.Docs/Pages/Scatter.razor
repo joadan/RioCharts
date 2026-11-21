@@ -4,36 +4,36 @@
 
 <h1>Scatter</h1>
 <p class="lead">
-    A marker per point shows how two measures relate: supply air against outdoor temperature, heating power against the weather, fan
-    power against airflow. The order of the points does not matter.
+    A marker per point shows how two measures relate: revenue against ad spend, delivery time against distance, response time against
+    traffic. The order of the points does not matter.
 </p>
 
-<Example Title="Outdoor compensation" Code="@CompensationCode">
+<Example Title="Ad spend and revenue" Code="@AdsCode">
     <Description>
         <p>
-            Each unit should raise its supply temperature when it is cold outside. <code>TrendLine</code> draws the least-squares line
-            through the points: AHU 1 follows its curve, AHU 2's line is flat, so it does not compensate. Hover a point: the tooltip shows the
-            nearest point, not everything at that x.
+            Thirty days of ads: what the store spent each day and the revenue the ads brought in. <code>TrendLine</code> draws the
+            least-squares line through the points: search ads climb, so more spend brings more revenue; the display ads' line is flat, so
+            spending more on them does not pay off. Hover a point: the tooltip shows the nearest point, not everything at that x.
         </p>
     </Description>
     <ChildContent>
-        <RioChart Items="Hourly" Title="Supply air against outdoor temperature" XAxis="_outdoorAxis" YAxis="_supplyAxis">
-            <ScatterSeries Name="AHU 1" XValue="w => w.Outdoor" YValue="w => w.Supply" Format="0.0 °C" TrendLine="true" />
-            <ScatterSeries Name="AHU 2" XValue="w => w.Outdoor" YValue="w => w.Supply2" Format="0.0 °C" TrendLine="true" />
+        <RioChart Items="Ads" Title="Revenue against ad spend, per day" XAxis="_spendAxis" YAxis="_revenueAxis">
+            <ScatterSeries Name="Search ads" XValue="a => a.SearchSpend" YValue="a => a.SearchRevenue" Format="#,0 €" TrendLine="true" />
+            <ScatterSeries Name="Display ads" XValue="a => a.DisplaySpend" YValue="a => a.DisplayRevenue" Format="#,0 €" TrendLine="true" />
         </RioChart>
     </ChildContent>
 </Example>
 
-<Example Title="Energy signature" Code="@SignatureCode">
+<Example Title="Delivery times" Code="@DeliveryCode">
     <Description>
         <p>
-            Heating power against outdoor temperature: it falls as it gets warmer and stops around 16 °C. Smaller markers keep 336 hourly
-            points readable; the markers are translucent, so dense areas look darker.
+            Hours from dispatch to delivery against distance: a day in town, a day or two further away, three to four days to remote places.
+            Smaller markers keep 300 deliveries readable; the markers are translucent, so dense areas look darker.
         </p>
     </Description>
     <ChildContent>
-        <RioChart Items="Hourly" XAxis="_outdoorAxis" YAxis="_heatingAxis" Height="280">
-            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="4" />
+        <RioChart Items="Deliveries" XAxis="_kmAxis" YAxis="_hoursAxis" Height="280">
+            <ScatterSeries Name="Delivery" XValue="d => d.Km" YValue="d => d.Hours" Format="0.0 'h'" MarkerSize="4" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -50,25 +50,26 @@
 </div>
 <p>
     A chart with scatter series finds the nearest point in both directions, so its tooltip is not shared. Scatter series work with line
-    series in the same chart (e.g. a design curve), zoom, keyboard navigation, export and the canvas layer.
+    series in the same chart (e.g. a break-even line), zoom, keyboard navigation, export and the canvas layer.
 </p>
 
 @code {
-    private readonly AxisSpec _outdoorAxis = new() { Title = "Outdoor °C" };
-    private readonly AxisSpec _supplyAxis = new() { Title = "Supply °C" };
-    private readonly AxisSpec _heatingAxis = new() { Title = "kW" };
+    private readonly AxisSpec _spendAxis = new() { Title = "Ad spend, €" };
+    private readonly AxisSpec _revenueAxis = new() { Title = "Revenue, €" };
+    private readonly AxisSpec _kmAxis = new() { Title = "Distance, km" };
+    private readonly AxisSpec _hoursAxis = new() { Title = "Hours" };
 
-    private const string CompensationCode = """
-        <RioChart Items="hourly" Title="Supply air against outdoor temperature"
-                  XAxis="@(new AxisSpec { Title = "Outdoor °C" })" YAxis="@(new AxisSpec { Title = "Supply °C" })">
-            <ScatterSeries Name="AHU 1" XValue="w => w.Outdoor" YValue="w => w.Supply" Format="0.0 °C" TrendLine="true" />
-            <ScatterSeries Name="AHU 2" XValue="w => w.Outdoor" YValue="w => w.Supply2" Format="0.0 °C" TrendLine="true" />
+    private const string AdsCode = """
+        <RioChart Items="ads" Title="Revenue against ad spend, per day"
+                  XAxis="@(new AxisSpec { Title = "Ad spend, €" })" YAxis="@(new AxisSpec { Title = "Revenue, €" })">
+            <ScatterSeries Name="Search ads" XValue="a => a.SearchSpend" YValue="a => a.SearchRevenue" Format="#,0 €" TrendLine="true" />
+            <ScatterSeries Name="Display ads" XValue="a => a.DisplaySpend" YValue="a => a.DisplayRevenue" Format="#,0 €" TrendLine="true" />
         </RioChart>
         """;
 
-    private const string SignatureCode = """
-        <RioChart Items="hourly" XAxis="@(new AxisSpec { Title = "Outdoor °C" })" YAxis="@(new AxisSpec { Title = "kW" })">
-            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="4" />
+    private const string DeliveryCode = """
+        <RioChart Items="deliveries" XAxis="@(new AxisSpec { Title = "Distance, km" })" YAxis="@(new AxisSpec { Title = "Hours" })">
+            <ScatterSeries Name="Delivery" XValue="d => d.Km" YValue="d => d.Hours" Format="0.0 'h'" MarkerSize="4" />
         </RioChart>
         """;
 }

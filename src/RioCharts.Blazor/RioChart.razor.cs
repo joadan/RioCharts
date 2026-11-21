@@ -13,7 +13,7 @@ namespace RioCharts.Blazor;
 
 /// <summary>
 /// A chart. Series are added as child components:
-/// <code>&lt;RioChart Items="readings"&gt;&lt;LineSeries XValue="r =&gt; r.Time" YValue="r =&gt; r.Temp" /&gt;&lt;/RioChart&gt;</code>
+/// <code>&lt;RioChart Items="readings"&gt;&lt;LineSeries XValue="r =&gt; r.Time" YValue="r =&gt; r.Sessions" /&gt;&lt;/RioChart&gt;</code>
 /// The chart fills its container's width and lays out again when the width changes.
 /// </summary>
 public partial class RioChart<TItem> : IChartContext

@@ -13,13 +13,13 @@
         <p>One tooltip per x lists every series. Hover or focus a legend item for a summary of its series (range, last value, trend; for slices the value and share). Click it to hide the series (<code>@@bind-HiddenSeries</code> keeps it in your page); click a point to get its item.</p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" YAxis="Celsius" @bind-HiddenSeries="_hidden" OnPointClick="e => _point = e">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        <RioChart TItem="Reading" YAxis="Sessions" @bind-HiddenSeries="_hidden" OnPointClick="e => _point = e">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
         </RioChart>
         <p class="note">
             Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden)).
-            Clicked: @(_point is null ? "nothing yet" : $"{_point.SeriesName} {_point.Item?.Value:0.0} °C at {_point.Item?.Time:g}")
+            Clicked: @(_point is null ? "nothing yet" : $"{_point.SeriesName} {_point.Item?.Value:#,0} sessions at {_point.Item?.Time:g}")
         </p>
     </ChildContent>
 </Example>
@@ -30,7 +30,7 @@
             Every chart with data is a tab stop. With it focused, <kbd>←</kbd> and <kbd>→</kbd> move between points, <kbd>↑</kbd> and
             <kbd>↓</kbd> between series (on pies, every arrow moves between slices), <kbd>Home</kbd>, <kbd>End</kbd>, <kbd>Page Up</kbd> and
             <kbd>Page Down</kbd> jump. The crosshair and tooltip follow, linked charts follow too, and screen readers hear each point
-            (for example "Tue 01:00: Supply 20.1 °C, Extract 22.3 °C. 5 of 96"). <kbd>Enter</kbd> raises <code>OnPointClick</code> and
+            (for example "Mon 01:00: Web 177 sessions, App 114 sessions. 5 of 192"). <kbd>Enter</kbd> raises <code>OnPointClick</code> and
             <kbd>Esc</kbd> leaves. On <code>Zoomable</code> charts, <kbd>+</kbd> and <kbd>−</kbd> zoom around the focused point,
             <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> pans and <kbd>0</kbd> shows all data (try it on the zoom example below).
             It all runs in the browser; only finished zooms and Enter call .NET.
@@ -38,11 +38,11 @@
         <p>Click the chart below or Tab to it, then use the arrow keys. <code>KeyboardNavigation="false"</code> turns it off.</p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" Height="240" YAxis="Celsius" OnPointClick="e => _keyPoint = e">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions" OnPointClick="e => _keyPoint = e">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
         </RioChart>
-        <p class="note">Selected with Enter: @(_keyPoint is null ? "nothing yet" : $"{_keyPoint.SeriesName} {_keyPoint.Item?.Value:0.0} °C at {_keyPoint.Item?.Time:g}")</p>
+        <p class="note">Selected with Enter: @(_keyPoint is null ? "nothing yet" : $"{_keyPoint.SeriesName} {_keyPoint.Item?.Value:#,0} sessions at {_keyPoint.Item?.Time:g}")</p>
     </ChildContent>
 </Example>
 
@@ -55,10 +55,10 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" YAxis="Celsius" TooltipHeader="@(p => p.X is DateTime t ? t.ToString("dddd HH:mm") : null)">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value"
-                        TooltipValue="@(p => $"{p.Y:0.0} °C ({Extract[p.Index].Value - p.Y:0.0} °C below extract)")" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        <RioChart TItem="Reading" YAxis="Sessions" TooltipHeader="@(p => p.X is DateTime t ? t.ToString("dddd HH:mm") : null)">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value"
+                        TooltipValue="@(p => $"{p.Y:#,0} sessions ({p.Y - AppSessions[p.Index].Value:#,0} more than the app)")" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -76,17 +76,17 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Alarm" Items="Alarms" Height="240" YAxis="Minutes">
+        <RioChart TItem="Ticket" Items="Tickets" Height="240" YAxis="Minutes">
             <ChildContent>
-                <BarSeries Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+                <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
             </ChildContent>
             <TooltipTemplate>
-                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count alarms</div>
-                @foreach (var alarm in context.Points[0].Items)
+                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count tickets</div>
+                @foreach (var ticket in context.Points[0].Items)
                 {
                     <div class="rio-tooltip-row">
-                        <span class="rio-tooltip-name">@alarm.Text</span>
-                        <span class="rio-tooltip-value">@alarm.Minutes min</span>
+                        <span class="rio-tooltip-name">@ticket.Subject</span>
+                        <span class="rio-tooltip-value">@ticket.Minutes min</span>
                     </div>
                 }
             </TooltipTemplate>
@@ -102,12 +102,12 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" Height="200" YAxis="Celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <RioChart TItem="Reading" Height="200" YAxis="Sessions" Zoomable="true" Group="store" @bind-VisibleRange="_range">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
-        <RioChart TItem="Reading" Height="150" YAxis="Kwh" Zoomable="true" Group="ahu">
-            <AreaSeries Items="Heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <RioChart TItem="Reading" Height="150" YAxis="Euros" Zoomable="true" Group="store">
+            <AreaSeries Items="Revenue" Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
         </RioChart>
         <p class="note">
             Visible: @(_range is null ? "all" : $"{_range.Min:g} – {_range.Max:g}")
@@ -122,8 +122,8 @@
     <code>OnZoomChanging</code> can clamp or cancel a zoom. <code>Layout</code> exposes the scales and the hit-test index.</p>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
-    private static readonly AxisSpec Kwh = new() { Title = "kWh" };
+    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisSpec Euros = new() { Title = "€ per 15 min" };
     private static readonly AxisSpec Minutes = new() { Title = "min" };
     private IReadOnlyCollection<string> _hidden = [];
     private PointClickEventArgs<Reading>? _point;
@@ -131,8 +131,8 @@
 
     private const string ClickCode = """
         <RioChart TItem="Reading" @bind-HiddenSeries="hidden" OnPointClick="e => clicked = e">
-            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
         </RioChart>
         """;
 
@@ -140,31 +140,31 @@
 
     private const string KeyboardCode = """
         <RioChart TItem="Reading" OnPointClick="e => selected = e">
-            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
         </RioChart>
         """;
 
     private const string FormatCode = """
         <RioChart TItem="Reading" TooltipHeader="@(p => p.X is DateTime t ? t.ToString("dddd HH:mm") : null)">
-            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value"
-                        TooltipValue="@(p => $"{p.Y:0.0} °C ({extract[p.Index].Value - p.Y:0.0} °C below extract)")" />
-            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value"
+                        TooltipValue="@(p => $"{p.Y:#,0} sessions ({p.Y - app[p.Index].Value:#,0} more than the app)")" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
         </RioChart>
         """;
 
     private const string TemplateCode = """
-        <RioChart TItem="Alarm" Items="alarms">
+        <RioChart TItem="Ticket" Items="tickets">
             <ChildContent>
-                <BarSeries Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+                <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
             </ChildContent>
             <TooltipTemplate>
-                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count alarms</div>
-                @foreach (var alarm in context.Points[0].Items)
+                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count tickets</div>
+                @foreach (var ticket in context.Points[0].Items)
                 {
                     <div class="rio-tooltip-row">
-                        <span class="rio-tooltip-name">@alarm.Text</span>
-                        <span class="rio-tooltip-value">@alarm.Minutes min</span>
+                        <span class="rio-tooltip-name">@ticket.Subject</span>
+                        <span class="rio-tooltip-value">@ticket.Minutes min</span>
                     </div>
                 }
             </TooltipTemplate>
@@ -172,11 +172,11 @@
         """;
 
     private const string ZoomCode = """
-        <RioChart TItem="Reading" Zoomable="true" Group="ahu" @bind-VisibleRange="range">
-            <LineSeries Items="supply" ... />
+        <RioChart TItem="Reading" Zoomable="true" Group="store" @bind-VisibleRange="range">
+            <LineSeries Items="web" ... />
         </RioChart>
-        <RioChart TItem="Reading" Zoomable="true" Group="ahu">
-            <AreaSeries Items="heating" ... />
+        <RioChart TItem="Reading" Zoomable="true" Group="store">
+            <AreaSeries Items="revenue" ... />
         </RioChart>
 
         <button @onclick="() => range = ChartRange.Of(from, to)">Zoom</button>

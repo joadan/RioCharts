@@ -23,9 +23,9 @@ Reference `RioCharts.Blazor` and add `@using RioCharts.Blazor` and `@using RioCh
 `_Imports.razor`. Styles come with `{YourApp}.styles.css` automatically.
 
 ```razor
-<RioChart Items="readings" YAxis="new AxisSpec { Title = "°C" }">
-    <ReferenceLine Value="21" Label="Setpoint" />
-    <LineSeries Name="Supply" XValue="r => r.Timestamp" YValue="r => r.SupplyTemp" />
+<RioChart Items="traffic" YAxis="new AxisSpec { Title = "Sessions" }">
+    <ReferenceLine Value="1000" Label="Campaign goal" />
+    <LineSeries Name="Web" XValue="r => r.Timestamp" YValue="r => r.Sessions" />
 </RioChart>
 ```
 

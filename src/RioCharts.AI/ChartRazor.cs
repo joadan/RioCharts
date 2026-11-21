@@ -221,7 +221,7 @@ public static class ChartRazor
 
     private static string Number(double value) => value.ToString("0.####", CultureInfo.InvariantCulture);
 
-    /// <summary>"supplyTemp", "supply_temp" → "SupplyTemp".</summary>
+    /// <summary>"responseMs", "response_ms" → "ResponseMs".</summary>
     private static string Property(string field)
     {
         var sb = new StringBuilder();

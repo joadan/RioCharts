@@ -16,9 +16,9 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" Title="Supply and extract air" YAxis="Celsius" Exportable="true">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" />
+        <RioChart TItem="Reading" Title="Sessions, web and app" YAxis="Sessions" Exportable="true">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" Curve="CurveType.Monotone" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" Curve="CurveType.Monotone" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -33,8 +33,8 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart @ref="_chart" TItem="Reading" Height="240" YAxis="Kwh">
-            <BarSeries Items="Daily" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" Format="0 kWh" />
+        <RioChart @ref="_chart" TItem="Reading" Height="240" YAxis="Orders">
+            <BarSeries Items="DailyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
         </RioChart>
         <p class="note">
             <button class="small" @onclick="() => _chart!.DownloadPngAsync(options: new ChartImageOptions { Scale = 3 })">Download PNG (3×)</button>
@@ -60,8 +60,8 @@
         <p>Here PNG is saved with the date in its name at 3×, and CSV is shown below instead of downloaded.</p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" Height="240" YAxis="Celsius" Exportable="true" ExportFormats="ExportFormats.Png | ExportFormats.Csv" OnExporting="HandleExport">
-            <LineSeries Items="Outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        <RioChart TItem="Reading" Height="240" YAxis="Percent" Exportable="true" ExportFormats="ExportFormats.Png | ExportFormats.Csv" OnExporting="HandleExport">
+            <LineSeries Items="Conversion" Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" />
         </RioChart>
         @if (_handled is not null)
         {
@@ -90,8 +90,9 @@
 </div>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
-    private static readonly AxisSpec Kwh = new() { Title = "kWh" };
+    private static readonly AxisSpec Sessions = new() { Title = "Sessions" };
+    private static readonly AxisSpec Orders = new() { Title = "Orders" };
+    private static readonly AxisSpec Percent = new() { Title = "%" };
     private RioChart<Reading>? _chart;
     private string? _pngInfo;
 
@@ -99,7 +100,7 @@
 
     private void HandleExport(ChartExportingEventArgs e)
     {
-        e.FileName = $"outdoor-{DateTime.Today:yyyy-MM-dd}.{e.Format.ToString().ToLowerInvariant()}";
+        e.FileName = $"conversion-{DateTime.Today:yyyy-MM-dd}.{e.Format.ToString().ToLowerInvariant()}";
         if (e.Format == ExportFormat.Png)
         {
             e.ImageOptions = new ChartImageOptions { Scale = 3 };
@@ -119,21 +120,21 @@
     }
 
     private const string MenuCode = """
-        <RioChart TItem="Reading" Title="Supply and extract air" Exportable="true">
-            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        <RioChart TItem="Reading" Title="Sessions, web and app" Exportable="true">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
         </RioChart>
         """;
 
     private const string HandlerCode = """
         <RioChart TItem="Reading" Exportable="true" ExportFormats="ExportFormats.Png | ExportFormats.Csv" OnExporting="HandleExport">
-            <LineSeries Items="outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="conversion" Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" />
         </RioChart>
 
         @code {
             async Task HandleExport(ChartExportingEventArgs e)
             {
-                e.FileName = $"outdoor-{DateTime.Today:yyyy-MM-dd}.{e.Format.ToString().ToLowerInvariant()}";
+                e.FileName = $"conversion-{DateTime.Today:yyyy-MM-dd}.{e.Format.ToString().ToLowerInvariant()}";
                 if (e.Format == ExportFormat.Png)
                 {
                     e.ImageOptions = new ChartImageOptions { Scale = 3 };
@@ -149,7 +150,7 @@
 
     private const string CodeCode = """
         <RioChart @ref="chart" TItem="Reading">
-            <BarSeries Items="daily" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" Format="0 kWh" />
+            <BarSeries Items="dailyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
         </RioChart>
 
         <button @onclick="() => chart.DownloadPngAsync(options: new ChartImageOptions { Scale = 3 })">Download PNG (3×)</button>

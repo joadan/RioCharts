@@ -10,28 +10,28 @@
 </p>
 
 <Example Title="A two-minute window" Code="@LiveCode">
-    <Description><p>Two buffers with a time window, fed four times a second.</p></Description>
+    <Description><p>Visitors on the store right now, web and app: two buffers with a time window, fed four times a second.</p></Description>
     <ChildContent>
-        <RioChart TItem="double" Height="240" YAxis="Celsius" RefreshInterval="250">
-            <ReferenceLine Value="21" Label="Setpoint" />
-            <LineSeries Name="Supply" Buffer="_supply" Curve="CurveType.Monotone" Format="0.00 °C" />
-            <LineSeries Name="Room" Buffer="_room" Curve="CurveType.Monotone" Format="0.00 °C" />
+        <RioChart TItem="double" Height="240" YAxis="Visitors" RefreshInterval="250">
+            <ReferenceLine Value="200" Label="Autoscale" />
+            <LineSeries Name="Web" Buffer="_web" Curve="CurveType.Monotone" Format="#,0" />
+            <LineSeries Name="App" Buffer="_app" Curve="CurveType.Monotone" Format="#,0" />
         </RioChart>
         <p class="note"><button class="small" @onclick="Toggle">@(_timer is null ? "Start" : "Pause")</button></p>
     </ChildContent>
 </Example>
 
 <h2>From a stream</h2>
-<CodeBlock Language="csharp" Code="await buffer.ConsumeAsync(sensor.ReadingsAsync(token), r => r.Time, r => r.Temperature, token);" />
+<CodeBlock Language="csharp" Code="await buffer.ConsumeAsync(analytics.VisitorsAsync(token), v => v.Time, v => v.Count, token);" />
 <p>Buffers keep at most <code>Capacity</code> points (100 000 by default) and, with a <code>timeWindow</code>, only the latest span of time.</p>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
-    private readonly SeriesBuffer _supply = new(timeWindow: TimeSpan.FromMinutes(2));
-    private readonly SeriesBuffer _room = new(timeWindow: TimeSpan.FromMinutes(2));
+    private static readonly AxisSpec Visitors = new() { Title = "Visitors" };
+    private readonly SeriesBuffer _web = new(timeWindow: TimeSpan.FromMinutes(2));
+    private readonly SeriesBuffer _app = new(timeWindow: TimeSpan.FromMinutes(2));
     private readonly Random _random = new(7);
     private Timer? _timer;
-    private double _s = 19.5, _r = 21.2;
+    private double _w = 170, _a = 105;
 
     protected override void OnInitialized()
     {
@@ -59,25 +59,26 @@
 
     private void Append(DateTime t)
     {
-        _s += (_random.NextDouble() - 0.5) * 0.12 + (19.5 - _s) * 0.02;
-        _r += (_random.NextDouble() - 0.5) * 0.05 + (21.2 - _r) * 0.02;
-        _supply.Append(t, _s);
-        _room.Append(t, _r);
+        // Visitors drift around a level; whole people only.
+        _w += (_random.NextDouble() - 0.5) * 8 + (170 - _w) * 0.02;
+        _a += (_random.NextDouble() - 0.5) * 5 + (105 - _a) * 0.02;
+        _web.Append(t, Math.Round(_w));
+        _app.Append(t, Math.Round(_a));
     }
 
     public void Dispose() => _timer?.Dispose();
 
     private const string LiveCode = """
         <RioChart TItem="double" RefreshInterval="250">
-            <LineSeries Name="Supply" Buffer="supply" Curve="CurveType.Monotone" />
-            <LineSeries Name="Room" Buffer="room" Curve="CurveType.Monotone" />
+            <LineSeries Name="Web" Buffer="web" Curve="CurveType.Monotone" />
+            <LineSeries Name="App" Buffer="app" Curve="CurveType.Monotone" />
         </RioChart>
 
         @code {
-            SeriesBuffer supply = new(timeWindow: TimeSpan.FromMinutes(2));
-            SeriesBuffer room = new(timeWindow: TimeSpan.FromMinutes(2));
+            SeriesBuffer web = new(timeWindow: TimeSpan.FromMinutes(2));
+            SeriesBuffer app = new(timeWindow: TimeSpan.FromMinutes(2));
 
-            void OnReading(DateTime time, double value) => supply.Append(time, value); // any thread
+            void OnVisitors(DateTime time, double count) => web.Append(time, count); // any thread
         }
         """;
 }

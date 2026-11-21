@@ -9,9 +9,9 @@ The folder has:
 |------|------|
 | `.mcp.json` | Registers the server with Claude Code (it asks you to enable it the first time). |
 | `.vscode/mcp.json` | The same for GitHub Copilot in VS Code. |
-| `data/ahu.csv` | Two air handling units, hourly for a week: supply, extract and outdoor temperature (°C), energy (kWh). |
-| `data/rooms.csv` | Room temperature (°C), CO₂ (ppm) and occupancy, saved as Swedish Excel does (semicolons, decimal commas). |
-| `data/energy-by-system.json` | Yearly energy per system (kWh and share in %). |
+| `data/orders.csv` | An online store selling outdoor gear, hourly for a week per sales channel (Web, App, Marketplace): sessions, orders, revenue (€). |
+| `data/stores.csv` | The store's pickup shops: revenue (k€), orders and customer rating, saved as Swedish Excel does (semicolons, decimal commas). |
+| `data/revenue-by-category.json` | Yearly revenue per product category (€ and share in %). |
 
 Each file in `data/` is a dataset named after the file. Add your own CSV or JSON files there; the
 server reads them again when they change.
@@ -49,11 +49,11 @@ Check it with `riocharts-mcp --help`. To update after code changes, pack again a
 
 ## 3. Ask for charts
 
-- "Chart supply air temperature per unit for the week, with a 19 °C setpoint line."
-- "Bar chart of energy per day for both units, stacked."
-- "Which rooms are warmest? Show the top 5 as bars."
-- "Donut of energy per system, dark theme, as SVG."
-- "Here are my readings: 08:00 20.1, 09:00 20.8, 10:00 21.4. Make a line chart." (inline data, no file needed)
+- "Chart sessions per channel for the week, with a line at 1000 sessions."
+- "Bar chart of revenue per day for all channels, stacked."
+- "Which pickup shops sell the most? Show the top 5 as bars."
+- "Donut of revenue per category, dark theme, as SVG."
+- "Here are today's orders: 08:00 12, 09:00 18, 10:00 25. Make a line chart." (inline data, no file needed)
 
 The agent gets the image back, a short description of the chart, and the path of the saved file.
 If the spec is wrong it gets errors that name the problem and the valid options, and tries again.

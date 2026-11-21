@@ -12,41 +12,42 @@ public static class SpecDatasets
         var start = new DateTime(2026, 11, 14);
         var rows = new List<IReadOnlyDictionary<string, object?>>();
         var i = 0;
-        foreach (var unit in new[] { "AHU 1", "AHU 2", "AHU 3" })
+        foreach (var channel in new[] { "Web", "App", "Marketplace" })
         {
-            var offset = unit[^1] - '1';
+            var scale = channel switch { "Web" => 1.0, "App" => 0.65, _ => 0.35 };
             for (var h = 0; h < 7 * 24; h++, i++)
             {
                 var t = start.AddHours(h);
-                var cycle = Math.Sin((t.Hour - 9) / 24.0 * 2 * Math.PI);
-                var outdoor = Math.Round(3 + 5 * cycle + SampleData.Noise(i, 21) * 2, 1);
+                var cycle = Math.Sin((t.Hour - 14) / 24.0 * 2 * Math.PI);
+                var sessions = Math.Round(Math.Max(10, scale * (560 + 440 * cycle + SampleData.Noise(i, 21) * 120)));
+                var orders = Math.Round(sessions * (0.025 + SampleData.Noise(i, 22) * 0.006));
                 rows.Add(new Dictionary<string, object?>
                 {
                     ["timestamp"] = t,
-                    ["unit"] = unit,
-                    ["supplyTemp"] = Math.Round(18.5 + offset * 0.6 + 1.4 * cycle + SampleData.Noise(i, 22) * 0.4, 1),
-                    ["extractTemp"] = Math.Round(21.5 + offset * 0.3 + 0.8 * cycle + SampleData.Noise(i, 23) * 0.4, 1),
-                    ["outdoorTemp"] = outdoor,
-                    ["energy"] = Math.Round(Math.Max(0, 12 + offset * 3 - 1.6 * outdoor + SampleData.Noise(i, 24) * 2), 1),
+                    ["channel"] = channel,
+                    ["sessions"] = sessions,
+                    ["orders"] = orders,
+                    ["revenue"] = Math.Round(orders * (78 + SampleData.Noise(i, 23) * 20)),
+                    ["responseMs"] = Math.Round(140 + sessions * 0.05 + SampleData.Noise(i, 24) * 30),
                 });
             }
         }
 
         var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-        var systems = new (string Name, double[] Profile)[]
+        var categories = new (string Name, double[] Profile)[]
         {
-            ("Heating", [42, 38, 29, 17, 8, 4, 3, 3, 9, 19, 30, 39]),
-            ("Ventilation", [21, 20, 21, 20, 19, 18, 15, 16, 19, 20, 21, 21]),
-            ("Cooling", [0, 0, 1, 3, 8, 15, 21, 19, 9, 2, 0, 0]),
-            ("Lighting", [9, 8, 7, 6, 5, 4, 4, 4, 6, 7, 8, 9]),
+            ("Shoes", [42, 38, 29, 33, 36, 31, 28, 30, 34, 37, 48, 61]),
+            ("Clothing", [18, 17, 21, 24, 26, 22, 20, 21, 25, 29, 38, 52]),
+            ("Camping", [6, 7, 11, 19, 28, 35, 39, 33, 18, 9, 7, 12]),
+            ("Accessories", [9, 8, 7, 8, 9, 10, 10, 9, 8, 9, 14, 24]),
         };
-        var energy = months.SelectMany((month, m) => systems.Select(s =>
-            (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["month"] = month, ["system"] = s.Name, ["mwh"] = s.Profile[m] }));
+        var sales = months.SelectMany((month, m) => categories.Select(c =>
+            (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["month"] = month, ["category"] = c.Name, ["revenue"] = c.Profile[m] }));
 
         return
         [
-            ChartDataset.FromRows("ahu", rows, "Air handling units AHU 1-3, hourly for one week"),
-            ChartDataset.FromRows("energy", energy, "Energy use per system and month, MWh"),
+            ChartDataset.FromRows("shop", rows, "Online store traffic per sales channel (Web, App, Marketplace), hourly for one week"),
+            ChartDataset.FromRows("sales", sales, "Revenue per product category and month, k€"),
         ];
     }
 }

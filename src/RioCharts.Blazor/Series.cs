@@ -78,8 +78,8 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     [Parameter] public string? Format { get; set; }
 
     /// <summary>
-    /// Text for this series' value in the tooltip, e.g. <c>p =&gt; $"{p.Y:0.0} °C"</c> or
-    /// <c>p =&gt; $"{p.Y:0.0} °C (setpoint {p.Item!.Setpoint} °C)"</c>; null keeps the default
+    /// Text for this series' value in the tooltip, e.g. <c>p =&gt; $"{p.Y:0} ms"</c> or
+    /// <c>p =&gt; $"{p.Y:0} ms (target {p.Item!.Target} ms)"</c>; null keeps the default
     /// (<see cref="Format"/>). Runs once per layout for the points that can be hovered, not on
     /// pointer moves.
     /// </summary>
@@ -284,8 +284,8 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 }
 
 /// <summary>
-/// Scatter series: a marker per point, for how two measures relate, e.g. supply temperature
-/// against outdoor temperature. The tooltip shows the point nearest the pointer.
+/// Scatter series: a marker per point, for how two measures relate, e.g. delivery distance
+/// against delivery time. The tooltip shows the point nearest the pointer.
 /// </summary>
 public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
 {

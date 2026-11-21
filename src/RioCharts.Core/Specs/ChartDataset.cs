@@ -29,7 +29,7 @@ public sealed class DataField
     public FieldType Type { get; }
     public object?[] Values { get; }
 
-    /// <summary>What the field means (shown to AI agents), e.g. "Supply air temperature in °C".</summary>
+    /// <summary>What the field means (shown to AI agents), e.g. "Revenue in €".</summary>
     public string? Description { get; }
 }
 

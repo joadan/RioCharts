@@ -10,8 +10,8 @@
         <p>Percentages inside slices that fit; small slices get outside labels with leader lines. <code>GroupSmallSlices</code> merges tiny ones into "Other", which gets one legend item; hover it to see what it holds, click it to hide it (its id in <code>HiddenSeries</code> is <code>ChartLayout.OtherSliceKey</code>).</p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Share" Title="Energy use by system">
-            <PieSeries Items="EnergyUse" Name="Energy use" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 MWh" />
+        <RioChart TItem="Share" Title="Revenue by category, this year">
+            <PieSeries Items="CategoryRevenue" Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 k€" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -20,21 +20,21 @@
     <Description><p>A pie with a hole, and the total in the middle.</p></Description>
     <ChildContent>
         <RioChart TItem="Share" Legend="_right">
-            <DonutSeries Items="EnergyUse" XValue="s => s.Name" YValue="s => s.Value" />
+            <DonutSeries Items="CategoryRevenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" />
         </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Half donut and nested rings" Code="@HalfCode">
-    <Description><p>Start and end angles make a half donut that uses the full height. Several pie series become rings.</p></Description>
+    <Description><p>Start and end angles make a half donut that uses the full height. Several pie series become rings: here revenue per sales channel, this year outside and last year inside.</p></Description>
     <ChildContent>
         <div class="row">
             <RioChart TItem="Share" Height="220">
-                <DonutSeries Items="_supply" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
+                <DonutSeries Items="_channels" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" StartAngle="-90" EndAngle="90" />
             </RioChart>
             <RioChart TItem="Share" Height="220">
-                <PieSeries Items="_supply" Name="2026" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.35" />
-                <PieSeries Items="_lastYear" Name="2025" XValue="s => s.Name" YValue="s => s.Value" />
+                <PieSeries Items="_channels" Name="2026" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" InnerRadius="0.35" />
+                <PieSeries Items="_lastYear" Name="2025" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" />
             </RioChart>
         </div>
     </ChildContent>
@@ -43,37 +43,37 @@
 <Example Title="Radial bars" Code="@RadialCode">
     <Description><p>One track per category, filled up to <code>Max</code>.</p></Description>
     <ChildContent>
-        <RioChart TItem="Share" Title="Component health">
-            <RadialBarSeries Items="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+        <RioChart TItem="Share" Title="This month's goals">
+            <RadialBarSeries Items="Goals" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
         </RioChart>
     </ChildContent>
 </Example>
 
 @code {
     private static readonly LegendSpec _right = new() { Position = LegendPosition.Right };
-    private static readonly List<Share> _supply = [new("District heating", 214), new("Heat pump", 96), new("Solar", 38)];
-    private static readonly List<Share> _lastYear = [new("District heating", 251), new("Heat pump", 71), new("Solar", 22)];
+    private static readonly List<Share> _channels = [new("Web", 214), new("App", 96), new("Marketplace", 38)];
+    private static readonly List<Share> _lastYear = [new("Web", 251), new("App", 71), new("Marketplace", 22)];
 
     private const string PieCode = """
-        <RioChart TItem="Share" Title="Energy use by system">
-            <PieSeries Items="use" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 MWh" />
+        <RioChart TItem="Share" Title="Revenue by category, this year">
+            <PieSeries Items="revenue" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 k€" />
         </RioChart>
         """;
 
     private const string DonutCode = """
         <RioChart TItem="Share" Legend="new LegendSpec { Position = LegendPosition.Right }">
-            <DonutSeries Items="use" XValue="s => s.Name" YValue="s => s.Value" />
+            <DonutSeries Items="revenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" />
         </RioChart>
         """;
 
     private const string HalfCode = """
-        <DonutSeries Items="supply" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
+        <DonutSeries Items="channels" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
 
-        <PieSeries Items="supply" Name="2026" ... InnerRadius="0.35" />   @* outer ring *@
+        <PieSeries Items="channels" Name="2026" ... InnerRadius="0.35" />   @* outer ring *@
         <PieSeries Items="lastYear" Name="2025" ... />                    @* inner ring *@
         """;
 
     private const string RadialCode = """
-        <RadialBarSeries Items="health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+        <RadialBarSeries Items="goals" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
         """;
 }

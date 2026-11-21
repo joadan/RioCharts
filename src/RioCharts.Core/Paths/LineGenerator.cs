@@ -136,7 +136,7 @@ public static class LineGenerator
         switch (curve)
         {
             case CurveType.Step:
-                // Step-after: each value holds until the next point (states, setpoints).
+                // Step-after: each value holds until the next point (states, prices).
                 for (var i = start; i < end - 1; i++)
                 {
                     b.LineTo(x[i + 1], y[i]);

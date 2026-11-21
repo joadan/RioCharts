@@ -426,7 +426,7 @@ public static class ChartSpecBinder
         return sb.ToString().Trim('-') is { Length: > 0 } slug ? slug : "series";
     }
 
-    /// <summary>"supplyTemp" or "supply_temp" → "Supply temp".</summary>
+    /// <summary>"responseMs" or "response_ms" → "Response ms".</summary>
     public static string Humanize(string field)
     {
         var sb = new StringBuilder();

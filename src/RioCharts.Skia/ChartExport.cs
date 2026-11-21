@@ -54,8 +54,8 @@ public sealed record ExportOptions
 /// </summary>
 /// <example>
 /// <code>
-/// var spec = new ChartSpec { Title = "Supply air", Series = [new SeriesSpec { Id = "supply", Name = "Supply" }] };
-/// var data = new Dictionary&lt;string, SeriesData&gt; { ["supply"] = SeriesData.From(times, values) };
+/// var spec = new ChartSpec { Title = "Sessions", Series = [new SeriesSpec { Id = "web", Name = "Web" }] };
+/// var data = new Dictionary&lt;string, SeriesData&gt; { ["web"] = SeriesData.From(times, values) };
 /// byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320 });
 /// </code>
 /// </example>

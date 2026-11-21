@@ -36,7 +36,7 @@ public sealed record ChartSpec
     [Description("Series to draw, in order. Colors are assigned from the palette in this order.")]
     public IReadOnlyList<SeriesSpec> Series { get; init; } = [];
 
-    [Description("Reference lines and bands, e.g. a setpoint or a fault period.")]
+    [Description("Reference lines and bands, e.g. a target or an incident period.")]
     public IReadOnlyList<AnnotationSpec> Annotations { get; init; } = [];
 
     [Description("Display time zone: \"UTC\", \"local\" (the viewer's zone) or an IANA id such as \"Europe/Stockholm\". Null shows times as given. Times are then plotted on instants and labelled in this zone.")]
@@ -48,7 +48,7 @@ public sealed record ChartSpec
     [Description("Dataset (by id from the data source) that series read their x and y fields from, unless a series names its own.")]
     public string? Dataset { get; init; }
 
-    [Description("Inline rows for small data, e.g. [{\"month\":\"Jan\",\"mwh\":42}]. At most 1000 rows; prefer a dataset id for real data.")]
+    [Description("Inline rows for small data, e.g. [{\"month\":\"Jan\",\"revenue\":42}]. At most 1000 rows; prefer a dataset id for real data.")]
     public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Data { get; init; }
 }
 
@@ -122,7 +122,7 @@ public sealed record SeriesSpec
     [Description("Combine rows with the same x (or time bucket): sum, average, min, max, count or last.")]
     public Aggregate? Aggregate { get; init; }
 
-    [Description("Field to split by: one series per distinct value (e.g. one line per unit).")]
+    [Description("Field to split by: one series per distinct value (e.g. one line per sales channel).")]
     public string? GroupBy { get; init; }
 
     [Description("Order points by y (for categories, e.g. a ranking): ascending or descending.")]
@@ -252,7 +252,7 @@ public enum SeriesType
     Pie,
     RadialBar,
 
-    /// <summary>A marker per point, for how two measures relate (e.g. supply against outdoor temperature).</summary>
+    /// <summary>A marker per point, for how two measures relate (e.g. delivery distance against delivery time).</summary>
     Scatter,
 
     /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
@@ -307,7 +307,7 @@ public enum LabelPosition { Start, Middle, End }
 [JsonConverter(typeof(JsonStringEnumConverter<AnnotationLayer>))]
 public enum AnnotationLayer { Below, Above }
 
-/// <summary>A condition on a field, e.g. { "field": "unit", "op": "eq", "value": "AHU 1" }.</summary>
+/// <summary>A condition on a field, e.g. { "field": "channel", "op": "eq", "value": "Web" }.</summary>
 public sealed record FilterSpec
 {
     [Description("Field name.")]

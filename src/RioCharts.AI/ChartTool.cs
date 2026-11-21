@@ -404,16 +404,16 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         sb.AppendLine("    \"name\"?, \"groupBy\"?: \"<field: one series per value>\", \"aggregate\"?: \"sum|average|min|max|count|last\",");
         sb.AppendLine("    \"timeBucket\"?: \"hour|day|week|month|quarter|year\", \"filter\"?: [ { \"field\", \"op\": \"eq|ne|gt|gte|lt|lte|contains\", \"value\" } ],");
         sb.AppendLine("    \"sort\"?: \"ascending|descending\", \"limit\"?: n, \"stack\"?: \"<group>\", \"yAxisId\"?, \"innerRadius\"?: 0.6 (donut), \"dataLabels\"? } ],");
-        sb.AppendLine("  \"y\"?: { \"title\": \"°C\" }, \"yAxes\"?: [ { \"id\": \"kwh\", \"title\": \"kWh\" } ],");
+        sb.AppendLine("  \"y\"?: { \"title\": \"Sessions\" }, \"yAxes\"?: [ { \"id\": \"eur\", \"title\": \"€\" } ],");
         sb.AppendLine("  \"annotations\"?: [ { \"type\": \"line|band|point|callout\", \"axis\": \"x|y\", \"value\" | \"from\"+\"to\" | \"x\"+\"y\", \"label\" } ],");
         sb.AppendLine("  \"data\"?: [ { ...small inline rows instead of a dataset... } ] }");
         sb.AppendLine();
         sb.AppendLine("Examples:");
-        sb.AppendLine("{\"dataset\":\"ahu\",\"series\":[{\"type\":\"line\",\"x\":\"timestamp\",\"y\":\"supplyTemp\",\"groupBy\":\"unit\"}],\"annotations\":[{\"value\":21,\"label\":\"Setpoint\"}]}");
-        sb.AppendLine("{\"dataset\":\"ahu\",\"title\":\"Energy per day\",\"series\":[{\"type\":\"bar\",\"x\":\"timestamp\",\"y\":\"energy\",\"timeBucket\":\"day\",\"aggregate\":\"sum\"}]}");
-        sb.AppendLine("{\"data\":[{\"system\":\"Heating\",\"share\":45},{\"system\":\"Fans\",\"share\":55}],\"series\":[{\"type\":\"auto\",\"x\":\"system\",\"y\":\"share\"}]}");
+        sb.AppendLine("{\"dataset\":\"shop\",\"series\":[{\"type\":\"line\",\"x\":\"timestamp\",\"y\":\"sessions\",\"groupBy\":\"channel\"}],\"annotations\":[{\"value\":600,\"label\":\"Goal\"}]}");
+        sb.AppendLine("{\"dataset\":\"shop\",\"title\":\"Revenue per day\",\"series\":[{\"type\":\"bar\",\"x\":\"timestamp\",\"y\":\"revenue\",\"timeBucket\":\"day\",\"aggregate\":\"sum\"}]}");
+        sb.AppendLine("{\"data\":[{\"category\":\"Shoes\",\"share\":45},{\"category\":\"Clothing\",\"share\":55}],\"series\":[{\"type\":\"auto\",\"x\":\"category\",\"y\":\"share\"}]}");
         sb.AppendLine();
-        sb.AppendLine("Tips: time on x gives a line; categories give bars; shares of a whole give a donut (\"auto\" picks). Use timeBucket + aggregate for long time ranges, sort + limit for top-N, groupBy for one line per unit. Call get_chart_schema for every option.");
+        sb.AppendLine("Tips: time on x gives a line; categories give bars; shares of a whole give a donut (\"auto\" picks). Use timeBucket + aggregate for long time ranges, sort + limit for top-N, groupBy for one line per channel or category. Call get_chart_schema for every option.");
         if (!renderOnly)
         {
             sb.AppendLine("To get the image yourself (PNG or SVG, e.g. for a report), call render_chart with the same spec.");

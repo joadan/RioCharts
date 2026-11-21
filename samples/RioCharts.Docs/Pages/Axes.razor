@@ -11,22 +11,22 @@
     </Description>
     <ChildContent>
         <div class="row">
-            <RioChart Items="Supply" Height="180" Title="Two days">
-                <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
+            <RioChart Items="WebSessions" Height="180" Title="Two days">
+                <LineSeries Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" />
             </RioChart>
-            <RioChart Items="Daily" Height="180" Title="Five weeks">
-                <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
+            <RioChart Items="DailyOrders" Height="180" Title="Five weeks">
+                <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
             </RioChart>
         </div>
     </ChildContent>
 </Example>
 
 <Example Title="Two Y axes" Code="@TwoAxesCode">
-    <Description><p>Extra axes go on the right; series pick one with <code>YAxisId</code>. Their ticks line up with the main grid.</p></Description>
+    <Description><p>Extra axes go on the right; series pick one with <code>YAxisId</code>. Their ticks line up with the main grid. Here sessions per hour on the left and the orders they turn into on the right.</p></Description>
     <ChildContent>
-        <RioChart TItem="Reading" YAxis="Celsius" YAxes="_energyAxis">
-            <BarSeries Items="_hourlyEnergy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Format="0 kWh" />
-            <LineSeries Items="_hourlyOutdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+        <RioChart TItem="Reading" YAxis="SessionsAxis" YAxes="_ordersAxis">
+            <BarSeries Items="_hourlyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Format="#,0 'orders'" />
+            <LineSeries Items="_hourlySessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="#,0 'sessions'" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -49,8 +49,8 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="(DateTimeOffset Time, double Value)" Items="DstReadings" TimeZone="@_zone" Height="220" YAxis="Celsius">
-            <LineSeries Name="Outdoor" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+        <RioChart TItem="(DateTimeOffset Time, double Value)" Items="DstOrders" TimeZone="@_zone" Height="220" YAxis="OrdersPerHour">
+            <LineSeries Name="Orders" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="#,0 'orders'" />
         </RioChart>
         <p class="note">
             Zone:
@@ -65,30 +65,32 @@
 </Example>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
-    private static readonly IReadOnlyList<AxisSpec> _energyAxis = [new() { Id = "energy", Title = "kWh" }];
+    private static readonly AxisSpec SessionsAxis = new() { Title = "Sessions per hour" };
+    private static readonly AxisSpec OrdersPerHour = new() { Title = "Orders per hour" };
+    private static readonly IReadOnlyList<AxisSpec> _ordersAxis = [new() { Id = "orders", Title = "Orders" }];
     private static readonly AxisSpec _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
     private static readonly System.Globalization.CultureInfo _german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
     private string? _zone = "Europe/Stockholm";
 
-    private static readonly List<Reading> _hourlyOutdoor = Enumerable.Range(0, 48)
-        .Select(h => new Reading(Start.AddHours(h), Math.Round(4 + 5 * Math.Sin((h % 24 - 9) / 24.0 * 2 * Math.PI) + Noise(h, 11), 1)))
+    // Web sessions per hour (four 15-minute readings each), and the orders they bring.
+    private static readonly List<Reading> _hourlySessions = WebSessions.Chunk(4)
+        .Select(c => new Reading(c[0].Time, c.Sum(r => r.Value ?? 0)))
         .ToList();
 
-    private static readonly List<Reading> _hourlyEnergy = _hourlyOutdoor
-        .Select((r, h) => new Reading(r.Time, Math.Round(30 - 2.2 * r.Value!.Value + Noise(h, 12) * 4, 0)))
+    private static readonly List<Reading> _hourlyOrders = _hourlySessions
+        .Select((r, h) => new Reading(r.Time, Math.Round(r.Value!.Value * 0.026 + Noise(h, 12) * 4, 0)))
         .ToList();
 
     private const string TimeCode = """
-        <RioChart Items="readings" Title="Two days">
+        <RioChart Items="sessions" Title="Two days">
             <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>
         """;
 
     private const string TwoAxesCode = """
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]">
-            <BarSeries Items="energy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" />
-            <LineSeries Items="outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Sessions per hour" }" YAxes="[new AxisSpec { Id = "orders", Title = "Orders" }]">
+            <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" />
+            <LineSeries Items="sessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>
         """;
 
@@ -100,7 +102,7 @@
         """;
 
     private const string ZoneCode = """
-        <RioChart Items="readings" TimeZone="Europe/Stockholm">   @* readings use DateTimeOffset *@
+        <RioChart Items="orders" TimeZone="Europe/Stockholm">   @* Time is a DateTimeOffset *@
             <LineSeries XValue="m => m.Time" YValue="m => m.Value" />
         </RioChart>
         """;

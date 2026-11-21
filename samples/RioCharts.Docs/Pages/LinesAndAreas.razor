@@ -7,15 +7,15 @@
 
 <Example Title="Curves" Code="@CurvesCode">
     <Description>
-        <p><code>Linear</code> (default), <code>Monotone</code> (smooth, never overshoots the data) and <code>Step</code> (each value holds until the next point, for setpoints and states).</p>
+        <p><code>Linear</code> (default), <code>Monotone</code> (smooth, never overshoots the data) and <code>Step</code> (each value holds until the next point, for limits, prices and states). Here web sessions, and the server capacity that is scaled up for the day and down at night.</p>
     </Description>
     <ChildContent>
         <div class="row">
             <RioChart TItem="Reading" Height="200" Title="Monotone">
-                <LineSeries Items="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+                <LineSeries Items="WebSessions" Name="Web sessions" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
             </RioChart>
             <RioChart TItem="Reading" Height="200" Title="Step">
-                <LineSeries Items="Setpoints" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
+                <LineSeries Items="Capacity" Name="Capacity" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
             </RioChart>
         </div>
     </ChildContent>
@@ -23,11 +23,11 @@
 
 <Example Title="Gaps" Code="@GapsCode">
     <Description>
-        <p>A <code>null</code> y value breaks the line instead of dropping to zero. A point with no neighbour gets a small dot so it stays visible.</p>
+        <p>A <code>null</code> y value breaks the line instead of dropping to zero: here the conversion rate is missing for a few hours while tracking was down. A point with no neighbour gets a small dot so it stays visible.</p>
     </Description>
     <ChildContent>
-        <RioChart Items="Outdoor" Height="220" YAxis="Celsius">
-            <LineSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+        <RioChart Items="Conversion" Height="220" YAxis="Percent">
+            <LineSeries Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -35,19 +35,21 @@
 <Example Title="Irregular time series" Code="@IrregularCode">
     <Description>
         <p>
-            Points are placed at their real times, so series do not need a fixed interval or the same timestamps. Here a room sensor logs
-            only when the temperature changes by 0.2 °C (@RoomOnChange.Count readings: many while the room heats up, few at night), and the
-            setpoint is a step line that changes at irregular times.
+            Points are placed at their real times, so series do not need a fixed interval or the same timestamps. Here the stock of a product
+            is logged only when it has moved by 3 items, or after an hour without a reading (@StockOnChange.Count readings: many while it
+            sells fast and when a delivery comes in, few at night), and the reorder level is a step line that changes at irregular times.
+            Hover a stock reading: the tooltip also lists the reorder level in effect at that moment, marked on the step line at the point
+            where that level was set.
         </p>
         <p>
-            A long silence is not a gap by itself: the sensor was offline 13:10–15:05 and the line simply joins the readings on either
-            side. To break the line, add a reading with a <code>null</code> value where the data stops (see Gaps above).
+            A long silence is not a gap by itself: the warehouse system was offline 13:10–15:05 and the line simply joins the readings on
+            either side. To break the line, add a reading with a <code>null</code> value where the data stops (see Gaps above).
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" Height="260" YAxis="Celsius">
-            <LineSeries Items="RoomOnChange" Name="Room" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="RoomSetpoint" Name="Setpoint" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Step" />
+        <RioChart TItem="Reading" Height="260" YAxis="StockAxis">
+            <LineSeries Items="StockOnChange" Name="Stock" XValue="r => r.Time" YValue="r => r.Value" Format="0 'in stock'" />
+            <LineSeries Items="ReorderLevel" Name="Reorder level" XValue="r => r.Time" YValue="r => r.Value" Format="0" Curve="CurveType.Step" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -55,18 +57,19 @@
 <Example Title="Areas" Code="@AreaCode">
     <Description><p>Areas always include zero, with a light fill under the line.</p></Description>
     <ChildContent>
-        <RioChart Items="Heating" Height="220" YAxis="Kwh">
-            <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <RioChart Items="Revenue" Height="220" YAxis="Euros">
+            <AreaSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
         </RioChart>
     </ChildContent>
 </Example>
 
 <Example Title="Stacked areas" Code="@StackedCode">
-    <Description><p>Series with the same <code>Stack</code> name are stacked. Hide one in the legend and the stack closes up.</p></Description>
+    <Description><p>Series with the same <code>Stack</code> name are stacked: sessions by channel add up to the total. Hide one in the legend and the stack closes up.</p></Description>
     <ChildContent>
-        <RioChart TItem="Reading" Height="240" YAxis="Kwh">
-            <AreaSeries Items="Heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
-            <AreaSeries Items="Ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions">
+            <AreaSeries Items="Search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" Curve="CurveType.Monotone" />
+            <AreaSeries Items="Social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" Curve="CurveType.Monotone" />
+            <AreaSeries Items="Email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" Curve="CurveType.Monotone" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -89,41 +92,44 @@
 </Example>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
-    private static readonly AxisSpec Kwh = new() { Title = "kWh" };
+    private static readonly AxisSpec Percent = new() { Title = "%" };
+    private static readonly AxisSpec StockAxis = new() { Title = "Items" };
+    private static readonly AxisSpec Euros = new() { Title = "€ per 15 min" };
+    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
     private static readonly List<Reading> _empty = [];
-    private static readonly List<Reading> _one = [new(Start, 21.5)];
-    private static readonly List<Reading> _flat = Enumerable.Range(0, 24).Select(h => new Reading(Start.AddHours(h), 21)).ToList();
+    private static readonly List<Reading> _one = [new(Start, 120)];
+    private static readonly List<Reading> _flat = Enumerable.Range(0, 24).Select(h => new Reading(Start.AddHours(h), 200)).ToList();
 
     private const string CurvesCode = """
-        <LineSeries Items="supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-        <LineSeries Items="setpoints" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
+        <LineSeries Items="web" Name="Web sessions" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <LineSeries Items="capacity" Name="Capacity" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
         """;
 
     private const string GapsCode = """
-        <RioChart Items="outdoor" YAxis="new AxisSpec { Title = "°C" }">
-            <LineSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />  @* Value is double? *@
+        <RioChart Items="conversion" YAxis="new AxisSpec { Title = "%" }">
+            <LineSeries Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" />  @* Value is double? *@
         </RioChart>
         """;
 
     private const string IrregularCode = """
         @* Readings logged on change: no fixed interval, different timestamps per series. *@
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }">
-            <LineSeries Items="roomReadings" Name="Room" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="setpoints" Name="Setpoint" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Step" />
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Items" }">
+            <LineSeries Items="stock" Name="Stock" XValue="r => r.Time" YValue="r => r.Value" Format="0 'in stock'" />
+            <LineSeries Items="reorderLevel" Name="Reorder level" XValue="r => r.Time" YValue="r => r.Value" Format="0" Curve="CurveType.Step" />
         </RioChart>
         """;
 
     private const string AreaCode = """
-        <RioChart Items="heating" YAxis="new AxisSpec { Title = "kWh" }">
-            <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <RioChart Items="revenue" YAxis="new AxisSpec { Title = "€ per 15 min" }">
+            <AreaSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
         </RioChart>
         """;
 
     private const string StackedCode = """
-        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "kWh" }">
-            <AreaSeries Items="heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" />
-            <AreaSeries Items="ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" />
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "Sessions per 15 min" }">
+            <AreaSeries Items="search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
+            <AreaSeries Items="social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
+            <AreaSeries Items="email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
         </RioChart>
         """;
 

@@ -6,7 +6,7 @@
 <header class="top">
     <div>
         <h1>RioCharts</h1>
-        <p class="lead">Line, area, bar, pie and radial charts with tooltips, stacking, multiple Y axes, annotations, zoom, live data and time zones. <a href="/spec">Spec playground (AI chart specs)</a></p>
+        <p class="lead">An online-store dashboard: line, area, bar, pie and radial charts with tooltips, stacking, multiple Y axes, annotations, zoom, live data and time zones. <a href="/spec">Spec playground (AI chart specs)</a></p>
     </div>
     <button class="theme" @onclick="() => _dark = !_dark">@(_dark ? "Light" : "Dark") theme</button>
 </header>
@@ -15,7 +15,7 @@
     <div class="grid">
         <section>
             <h2>Zero configuration</h2>
-            <RioChart Items="_supply">
+            <RioChart Items="_web">
                 <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
             </RioChart>
             <p class="note">A single series: no legend, time axis picked from the data.</p>
@@ -23,12 +23,12 @@
 
         <section>
             <h2>Several series, gaps and toggling</h2>
-            <RioChart @ref="_ahu" TItem="Reading" Title="Air handling unit" YAxis="_celsius" @bind-HiddenSeries="_hidden" Exportable="true">
-                <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-                <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-                <LineSeries Items="_outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
+            <RioChart @ref="_traffic" TItem="Reading" Title="Sessions per channel" YAxis="_sessionsAxis" @bind-HiddenSeries="_hidden" Exportable="true">
+                <LineSeries Items="_web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+                <LineSeries Items="_app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+                <LineSeries Items="_marketplace" Name="Marketplace" XValue="r => r.Time" YValue="r => r.Value" />
             </RioChart>
-            <p class="note">Outdoor has a sensor gap. Click legend items to hide series. Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden))</p>
+            <p class="note">Marketplace has a gap (feed outage). Click legend items to hide series. Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden))</p>
             <p class="note">
                 <button class="small" @onclick="ExportToServer">Export to .NET</button> @_exported
             </p>
@@ -36,14 +36,14 @@
 
         <section>
             <h2>Area</h2>
-            <RioChart Items="_energy" YAxis="_kwh">
-                <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <RioChart Items="_revenue" YAxis="_eur">
+                <AreaSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
             </RioChart>
         </section>
 
         <section>
             <h2>Grouped bars, categories</h2>
-            <RioChart TItem="QuarterSales" Title="Sales per quarter">
+            <RioChart TItem="QuarterSales" Title="Revenue per quarter (€)">
                 <BarSeries Items="_sales" Name="2025" XValue="s => s.Quarter" YValue="s => s.Last" />
                 <BarSeries Items="_sales" Name="2026" XValue="s => s.Quarter" YValue="s => s.This" />
             </RioChart>
@@ -52,8 +52,8 @@
 
         <section>
             <h2>Bars and a line over time</h2>
-            <RioChart TItem="Reading" YAxis="_kwh">
-                <BarSeries Items="_daily" Name="Daily use" XValue="r => r.Time" YValue="r => r.Value" />
+            <RioChart TItem="Reading" YAxis="_ordersAxis">
+                <BarSeries Items="_daily" Name="Orders per day" XValue="r => r.Time" YValue="r => r.Value" />
                 <LineSeries Items="_dailyAverage" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
             </RioChart>
             <p class="note">Default z-order: areas, then bars, then lines.</p>
@@ -61,52 +61,54 @@
 
         <section>
             <h2>Step line</h2>
-            <RioChart Items="_setpoints" YAxis="_celsius">
-                <LineSeries Name="Setpoint" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" />
+            <RioChart Items="_prices" YAxis="_eur">
+                <LineSeries Name="Tent price" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Step" Format="0 €" />
             </RioChart>
+            <p class="note">A price that changes for flash sales.</p>
         </section>
 
         <section>
             <h2>Annotations, tooltip and clicks</h2>
-            <RioChart TItem="Reading" YAxis="_celsius" OnPointClick="PointClicked" OnAnnotationClick="AnnotationClicked">
-                <ReferenceBand From="20" To="24" Label="Comfort zone" />
-                <ReferenceBand Axis="AnnotationAxis.X" From="_faultStart" To="_faultEnd" Label="Fan fault" Color="#d9480f" />
-                <ReferenceLine @bind-Value="_setpoint" Label="@($"Setpoint {_setpoint:0.0} °C")" Draggable="true" />
-                <PointAnnotation X="_alarm" Y="23.4" Label="High temp alarm" Color="#d9480f" />
-                <Callout X="_filterChange" Y="20.6" Label="Filter changed" OffsetX="-30" OffsetY="-36" />
+            <RioChart TItem="Reading" YAxis="_ms" OnPointClick="PointClicked" OnAnnotationClick="AnnotationClicked">
+                <ReferenceBand From="0" To="200" Label="Fast" />
+                <ReferenceBand Axis="AnnotationAxis.X" From="_incidentStart" To="_incidentEnd" Label="Payment incident" Color="#d9480f" />
+                <ReferenceLine @bind-Value="_limit" Label="@($"Limit {_limit:0} ms")" Draggable="true" />
+                <PointAnnotation X="_alert" Y="365" Label="Slow checkout alert" Color="#d9480f" />
+                <Callout X="_deploy" Y="165" Label="Deploy v2.4" OffsetX="-30" OffsetY="-36" />
                 <ReferenceLine Axis="AnnotationAxis.X" Value="_now" Label="Now" />
-                <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-                <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+                <LineSeries Items="_checkout" Name="Checkout" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0 ms" />
+                <LineSeries Items="_search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0 ms" />
             </RioChart>
-            <p class="note">Hover for the shared tooltip; click a point or an annotation; drag the setpoint line (bound with <code>@@bind-Value</code>: @_setpoint.ToString("0.0") °C). @_clicked</p>
+            <p class="note">Server response times. Hover for the shared tooltip; click a point or an annotation; drag the limit line (bound with <code>@@bind-Value</code>: @_limit.ToString("0") ms). @_clicked</p>
         </section>
 
         <section>
             <h2>Two Y axes</h2>
-            <RioChart TItem="Reading" YAxis="_celsius" YAxes="_energyAxis">
-                <BarSeries Items="_hourlyEnergy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Format="0 kWh" />
-                <LineSeries Items="_hourlyOutdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+            <RioChart TItem="Reading" YAxis="_sessionsAxis" YAxes="_ordersAxes">
+                <BarSeries Items="_hourlyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Format="0" />
+                <LineSeries Items="_hourlySessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0" />
             </RioChart>
-            <p class="note">Energy uses the right axis (<code>YAxisId="energy"</code>); the grid follows the left axis.</p>
+            <p class="note">Orders use the right axis (<code>YAxisId="orders"</code>); the grid follows the left axis.</p>
         </section>
 
         <section>
             <h2>Stacked bars with data labels</h2>
-            <RioChart TItem="EnergyMix" Title="Heat supply per month" YAxis="_mwh">
-                <BarSeries Items="_mix" Name="District heating" XValue="m => m.Month" YValue="m => m.District" Stack="heat" DataLabels="true" />
-                <BarSeries Items="_mix" Name="Heat pump" XValue="m => m.Month" YValue="m => m.HeatPump" Stack="heat" DataLabels="true" />
-                <BarSeries Items="_mix" Name="Solar" XValue="m => m.Month" YValue="m => m.Solar" Stack="heat" DataLabels="true" />
+            <RioChart TItem="CategoryMix" Title="Revenue per month" YAxis="_keur">
+                <BarSeries Items="_mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="revenue" DataLabels="true" />
+                <BarSeries Items="_mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Stack="revenue" DataLabels="true" />
+                <BarSeries Items="_mix" Name="Camping" XValue="m => m.Month" YValue="m => m.Camping" Stack="revenue" DataLabels="true" />
             </RioChart>
             <p class="note">Labels show inside segments that are big enough. Toggle a series and the stack closes up.</p>
         </section>
 
         <section>
             <h2>Stacked areas</h2>
-            <RioChart TItem="Reading" YAxis="_kwh">
-                <AreaSeries Items="_heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
-                <AreaSeries Items="_ventilation" Name="Ventilation" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
-                <AreaSeries Items="_lighting" Name="Lighting" XValue="r => r.Time" YValue="r => r.Value" Stack="use" Curve="CurveType.Monotone" />
+            <RioChart TItem="Reading" YAxis="_sessionsAxis">
+                <AreaSeries Items="_organic" Name="Organic search" XValue="r => r.Time" YValue="r => r.Value" Stack="traffic" Curve="CurveType.Monotone" />
+                <AreaSeries Items="_ads" Name="Ads" XValue="r => r.Time" YValue="r => r.Value" Stack="traffic" Curve="CurveType.Monotone" />
+                <AreaSeries Items="_email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Stack="traffic" Curve="CurveType.Monotone" />
             </RioChart>
+            <p class="note">Sessions per hour by traffic source.</p>
         </section>
 
         <section>
@@ -120,8 +122,8 @@
 
         <section>
             <h2>Pie</h2>
-            <RioChart TItem="Share" Title="Energy use by system" OnPointClick="SliceClicked">
-                <PieSeries Items="_use" Name="Energy use" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 MWh" />
+            <RioChart TItem="Share" Title="Revenue by category, 2026" OnPointClick="SliceClicked">
+                <PieSeries Items="_categories" Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" Format="0 k€" />
             </RioChart>
             <p class="note">Slices under 3% are grouped into "Other"; small slices get outside labels. Click a slice or a legend item. @_sliceClicked</p>
         </section>
@@ -129,20 +131,20 @@
         <section>
             <h2>Donut</h2>
             <RioChart TItem="Share" Legend="_rightLegend">
-                <DonutSeries Items="_supplyShare" Name="Heat supply" XValue="s => s.Name" YValue="s => s.Value" />
+                <DonutSeries Items="_channelShare" Name="Orders" XValue="s => s.Name" YValue="s => s.Value" />
             </RioChart>
-            <p class="note">The total sits in the middle; the legend is on the right.</p>
+            <p class="note">Orders per channel. The total sits in the middle; the legend is on the right.</p>
         </section>
 
         <section>
             <h2>Half donut and nested rings</h2>
             <div class="edge two">
                 <RioChart TItem="Share" Height="220">
-                    <DonutSeries Items="_supplyShare" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
+                    <DonutSeries Items="_channelShare" XValue="s => s.Name" YValue="s => s.Value" StartAngle="-90" EndAngle="90" />
                 </RioChart>
                 <RioChart TItem="Share" Height="220">
-                    <PieSeries Items="_supplyShare" Name="2026" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.35" />
-                    <PieSeries Items="_supplyShareLastYear" Name="2025" XValue="s => s.Name" YValue="s => s.Value" />
+                    <PieSeries Items="_channelShare" Name="2026" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.35" />
+                    <PieSeries Items="_channelShareLastYear" Name="2025" XValue="s => s.Name" YValue="s => s.Value" />
                 </RioChart>
             </div>
             <p class="note">Rings: the first series is the outer ring (2026), the inner ring is 2025.</p>
@@ -150,32 +152,32 @@
 
         <section>
             <h2>Radial bars</h2>
-            <RioChart TItem="Share" Title="Component health">
-                <RadialBarSeries Items="_health" Name="Health" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+            <RioChart TItem="Share" Title="Monthly sales target reached">
+                <RadialBarSeries Items="_targets" Name="Target" XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
             </RioChart>
         </section>
 
         <section class="wide">
             <h2>Live data</h2>
-            <RioChart TItem="double" Height="220" YAxis="_celsius" RefreshInterval="250">
-                <ReferenceLine Value="21" Label="Setpoint" />
-                <LineSeries Name="Supply" Buffer="_liveSupply" Curve="CurveType.Monotone" Format="0.00 °C" />
-                <LineSeries Name="Room" Buffer="_liveRoom" Curve="CurveType.Monotone" Format="0.00 °C" />
+            <RioChart TItem="double" Height="220" YAxis="_ms" RefreshInterval="250">
+                <ReferenceLine Value="250" Label="Target" />
+                <LineSeries Name="Checkout" Buffer="_liveCheckout" Curve="CurveType.Monotone" Format="0 ms" />
+                <LineSeries Name="Search" Buffer="_liveSearch" Curve="CurveType.Monotone" Format="0 ms" />
             </RioChart>
             <p class="note">
-                Two <code>SeriesBuffer</code>s with a 2-minute window, fed four times a second from a timer; the chart redraws at
-                most every 250 ms.
+                Response times in two <code>SeriesBuffer</code>s with a 2-minute window, fed four times a second from a timer; the chart
+                redraws at most every 250 ms.
                 <button class="small" @onclick="ToggleLive">@(_liveTimer is null ? "Start" : "Stop")</button>
             </p>
         </section>
 
         <section class="wide">
             <h2>Display time zone</h2>
-            <RioChart TItem="Measurement" Items="_dst" TimeZone="@_zone" Height="220" YAxis="_celsius">
-                <LineSeries Name="Outdoor" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+            <RioChart TItem="Measurement" Items="_dst" TimeZone="@_zone" Height="220" YAxis="_sessionsAxis">
+                <LineSeries Name="Sessions" XValue="m => m.Time" YValue="m => m.Value" Curve="CurveType.Monotone" Format="0" />
             </RioChart>
             <p class="note">
-                Hourly UTC readings (<code>DateTimeOffset</code>) across the end of summer time on 25 Oct 2026. Zone:
+                Hourly UTC values (<code>DateTimeOffset</code>) across the end of summer time on 25 Oct 2026. Zone:
                 <select @bind="_zone">
                     <option value="">none (as given)</option>
                     <option value="local">local (browser)</option>
@@ -189,34 +191,34 @@
 
         <section class="wide">
             <h2>Zoom, pan and linked charts</h2>
-            <RioChart TItem="Reading" Height="220" YAxis="_celsius" Zoomable="true" Group="ahu" @bind-VisibleRange="_range">
-                <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
-                <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 °C" />
+            <RioChart TItem="Reading" Height="220" YAxis="_sessionsAxis" Zoomable="true" Group="shop" @bind-VisibleRange="_range">
+                <LineSeries Items="_web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0" />
+                <LineSeries Items="_app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0" />
             </RioChart>
-            <RioChart TItem="Reading" Height="160" YAxis="_kwh" Zoomable="true" Group="ahu">
-                <AreaSeries Items="_energy" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0.0 kWh" />
+            <RioChart TItem="Reading" Height="160" YAxis="_eur" Zoomable="true" Group="shop">
+                <AreaSeries Items="_revenue" Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" Format="0 €" />
             </RioChart>
             <p class="note">
                 Drag to zoom, Shift+drag to pan, Ctrl+wheel to zoom at the pointer, double-click to reset. The two charts share the
-                crosshair and the zoom (<code>Group="ahu"</code>). Visible: @(_range is null ? "all" : $"{_range.Min:g} – {_range.Max:g}")
+                crosshair and the zoom (<code>Group="shop"</code>). Visible: @(_range is null ? "all" : $"{_range.Min:g} – {_range.Max:g}")
                 <button class="small" @onclick="() => _range = ChartRange.Of(new DateTime(2026, 11, 17, 6, 0, 0), new DateTime(2026, 11, 17, 18, 0, 0))">Show 17 Nov 06–18</button>
             </p>
         </section>
 
         <section class="wide">
             <h2>Server-side export (RioCharts.Skia)</h2>
-            <img class="export" src="@($"/export/ahu.png?theme={(_dark ? "dark" : "light")}")" alt="Air handling unit chart rendered on the server" />
+            <img class="export" src="@($"/export/traffic.png?theme={(_dark ? "dark" : "light")}")" alt="Sessions per channel chart rendered on the server" />
             <p class="note">
                 A PNG from <code>ChartExport.ToPng(spec, data)</code>: the same chart model and layout, rendered with SkiaSharp on the
                 server, with real font metrics. Also as
-                <a href="/export/ahu.svg" target="_blank">SVG</a> and <a href="/export/ahu.png?theme=dark" target="_blank">dark PNG</a>.
+                <a href="/export/traffic.svg" target="_blank">SVG</a> and <a href="/export/traffic.png?theme=dark" target="_blank">dark PNG</a>.
             </p>
         </section>
 
         <section class="wide">
             <h2>Columnar fast path: 200 000 points</h2>
-            <RioChart TItem="double" Height="260" Zoomable="true" SeriesLayer="_bigLayer">
-                <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />
+            <RioChart TItem="double" Height="260" Zoomable="true" SeriesLayer="_bigLayer" YAxis="_ms">
+                <LineSeries Name="Response time" Data="_big" StrokeWidth="1.25" Format="0 ms" />
             </RioChart>
             <p class="note">
                 Passed as arrays with <code>SeriesData.From(times, values)</code>; downsampled with LTTB to the plot width. Zoom in: only the
@@ -227,8 +229,8 @@
 
         <section class="wide resizable">
             <h2>Responsive: drag the corner to resize</h2>
-            <RioChart Items="_supply" Height="220">
-                <AreaSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <RioChart Items="_web" Height="220">
+                <AreaSeries Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" />
             </RioChart>
         </section>
 
@@ -261,41 +263,41 @@
 @code {
     private sealed record Reading(DateTime Time, double? Value);
     private sealed record QuarterSales(string Quarter, double Last, double This);
-    private sealed record EnergyMix(string Month, double District, double HeatPump, double Solar);
+    private sealed record CategoryMix(string Month, double Shoes, double Clothing, double Camping);
     private sealed record Share(string Name, double Value);
     private sealed record Measurement(DateTimeOffset Time, double Value);
 
-    private RioChart<Reading>? _ahu;
+    private RioChart<Reading>? _traffic;
     private string? _exported;
 
     // Images reach .NET as a stream, so they may exceed Blazor Server's 32 KB message limit.
     private async Task ExportToServer()
     {
-        var png = await _ahu!.ExportPngAsync(new ChartImageOptions { Scale = 4 });
-        var svg = await _ahu.ExportSvgAsync();
-        _exported = $"PNG {png.Length / 1024.0:0} KB, SVG {svg.Length / 1024.0:0} KB, CSV {_ahu.ExportCsv().Length / 1024.0:0} KB";
+        var png = await _traffic!.ExportPngAsync(new ChartImageOptions { Scale = 4 });
+        var svg = await _traffic.ExportSvgAsync();
+        _exported = $"PNG {png.Length / 1024.0:0} KB, SVG {svg.Length / 1024.0:0} KB, CSV {_traffic.ExportCsv().Length / 1024.0:0} KB";
     }
 
     private string? _zone = "Europe/Stockholm";
     private readonly List<Measurement> _dst = Enumerable.Range(0, 36)
         .Select(h => new Measurement(new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero).AddHours(h),
-            Math.Round(7 + 4 * Math.Sin((h - 3) / 24.0 * 2 * Math.PI), 1)))
+            Math.Round(420 + 300 * Math.Sin((h - 3) / 24.0 * 2 * Math.PI))))
         .ToList();
 
     private readonly LegendSpec _rightLegend = new() { Position = LegendPosition.Right };
     private string _sliceClicked = "";
 
-    private readonly List<Share> _use =
+    private readonly List<Share> _categories =
     [
-        new("Heating", 412), new("Ventilation", 236), new("Cooling", 148), new("Lighting", 97), new("Pumps", 31),
-        new("Elevators", 9), new("Controls", 6),
+        new("Shoes", 447), new("Clothing", 313), new("Camping", 224), new("Accessories", 125), new("Bikes", 41),
+        new("Gift cards", 12), new("Repairs", 7),
     ];
 
-    private readonly List<Share> _supplyShare = [new("District heating", 214), new("Heat pump", 96), new("Solar", 38)];
-    private readonly List<Share> _supplyShareLastYear = [new("District heating", 251), new("Heat pump", 71), new("Solar", 22)];
-    private readonly List<Share> _health = [new("Supply fan", 87), new("Extract fan", 74), new("Filter", 41), new("Heat recovery", 92)];
+    private readonly List<Share> _channelShare = [new("Web", 2140), new("App", 1390), new("Marketplace", 760)];
+    private readonly List<Share> _channelShareLastYear = [new("Web", 2310), new("App", 940), new("Marketplace", 520)];
+    private readonly List<Share> _targets = [new("Shoes", 87), new("Clothing", 74), new("Camping", 41), new("Accessories", 92)];
 
-    private void SliceClicked(PointClickEventArgs<Share> e) => _sliceClicked = $"Clicked {e.Item?.Name}: {e.Item?.Value} MWh.";
+    private void SliceClicked(PointClickEventArgs<Share> e) => _sliceClicked = $"Clicked {e.Item?.Name}: {e.Item?.Value} k€.";
 
     private bool _dark;
     private IReadOnlyCollection<string> _hidden = [];
@@ -305,11 +307,11 @@
 
     // ---------- Live data ----------
 
-    private readonly SeriesBuffer _liveSupply = new(timeWindow: TimeSpan.FromMinutes(2));
-    private readonly SeriesBuffer _liveRoom = new(timeWindow: TimeSpan.FromMinutes(2));
+    private readonly SeriesBuffer _liveCheckout = new(timeWindow: TimeSpan.FromMinutes(2));
+    private readonly SeriesBuffer _liveSearch = new(timeWindow: TimeSpan.FromMinutes(2));
     private readonly Random _liveRandom = new(7);
     private Timer? _liveTimer;
-    private double _supplyValue = 19.5, _roomValue = 21.2;
+    private double _checkoutValue = 210, _searchValue = 130;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -344,48 +346,53 @@
     {
         lock (_liveRandom)
         {
-            _supplyValue += (_liveRandom.NextDouble() - 0.5) * 0.12 + (19.5 - _supplyValue) * 0.02;
-            _roomValue += (_liveRandom.NextDouble() - 0.5) * 0.05 + (21.2 - _roomValue) * 0.02;
-            _liveSupply.Append(t, _supplyValue);
-            _liveRoom.Append(t, _roomValue);
+            _checkoutValue += (_liveRandom.NextDouble() - 0.5) * 12 + (210 - _checkoutValue) * 0.02;
+            _searchValue += (_liveRandom.NextDouble() - 0.5) * 5 + (130 - _searchValue) * 0.02;
+            _liveCheckout.Append(t, _checkoutValue);
+            _liveSearch.Append(t, _searchValue);
         }
     }
 
     public void Dispose() => _liveTimer?.Dispose();
 
-    private readonly AxisSpec _celsius = new() { Title = "°C" };
-    private readonly AxisSpec _kwh = new() { Title = "kWh" };
-    private readonly AxisSpec _mwh = new() { Title = "MWh" };
-    private readonly IReadOnlyList<AxisSpec> _energyAxis = [new() { Id = "energy", Title = "kWh" }];
+    private readonly AxisSpec _sessionsAxis = new() { Title = "Sessions" };
+    private readonly AxisSpec _ordersAxis = new() { Title = "Orders" };
+    private readonly AxisSpec _eur = new() { Title = "€" };
+    private readonly AxisSpec _keur = new() { Title = "k€" };
+    private readonly AxisSpec _ms = new() { Title = "ms" };
+    private readonly IReadOnlyList<AxisSpec> _ordersAxes = [new() { Id = "orders", Title = "Orders" }];
     private readonly TooltipSpec _singleTooltip = new() { Shared = false };
 
-    private DateTime _faultStart, _faultEnd, _now, _alarm, _filterChange;
-    private double _setpoint = 21;
-    private List<Reading> _hourlyEnergy = [];
-    private List<Reading> _hourlyOutdoor = [];
-    private List<Reading> _heating = [];
-    private List<Reading> _ventilation = [];
-    private List<Reading> _lighting = [];
+    private DateTime _incidentStart, _incidentEnd, _now, _alert, _deploy;
+    private double _limit = 300;
+    private List<Reading> _hourlyOrders = [];
+    private List<Reading> _hourlySessions = [];
+    private List<Reading> _organic = [];
+    private List<Reading> _ads = [];
+    private List<Reading> _email = [];
 
-    private readonly List<EnergyMix> _mix =
+    // Revenue per category and month, k€ (the same numbers as the "sales" spec dataset).
+    private readonly List<CategoryMix> _mix =
     [
-        new("Jan", 42, 18, 1), new("Feb", 38, 17, 2), new("Mar", 29, 15, 5), new("Apr", 17, 11, 8),
-        new("May", 8, 6, 11), new("Jun", 4, 3, 12),
+        new("Jan", 42, 18, 6), new("Feb", 38, 17, 7), new("Mar", 29, 21, 11), new("Apr", 33, 24, 19),
+        new("May", 36, 26, 28), new("Jun", 31, 22, 35),
     ];
 
     private void PointClicked(PointClickEventArgs<Reading> e) =>
-        _clicked = $"Clicked {e.SeriesName}: {e.Item?.Value:0.0} °C at {e.Item?.Time:g}.";
+        _clicked = $"Clicked {e.SeriesName}: {e.Item?.Value:0} ms at {e.Item?.Time:g}.";
 
     private void AnnotationClicked(AnnotationClickEventArgs e) =>
         _clicked = $"Clicked annotation '{e.Label}'.";
 
-    private List<Reading> _supply = [];
-    private List<Reading> _extract = [];
-    private List<Reading> _outdoor = [];
-    private List<Reading> _energy = [];
+    private List<Reading> _web = [];
+    private List<Reading> _app = [];
+    private List<Reading> _marketplace = [];
+    private List<Reading> _revenue = [];
+    private List<Reading> _checkout = [];
+    private List<Reading> _search = [];
     private List<Reading> _daily = [];
     private List<Reading> _dailyAverage = [];
-    private List<Reading> _setpoints = [];
+    private List<Reading> _prices = [];
     private readonly List<Reading> _empty = [];
     private List<Reading> _onePoint = [];
     private List<Reading> _flat = [];
@@ -404,62 +411,67 @@
         var random = new Random(3);
         var start = new DateTime(2026, 11, 16);
 
-        // Two days of 15-minute readings.
+        // Two days of 15-minute values; traffic peaks in the evening.
         for (var i = 0; i < 2 * 96; i++)
         {
             var t = start.AddMinutes(15 * i);
-            var dayCycle = Math.Sin((t.Hour + t.Minute / 60.0 - 9) / 24 * 2 * Math.PI);
-            _outdoor.Add(new Reading(t, i is >= 60 and < 75 ? null : Math.Round(4 + 5 * dayCycle + random.NextDouble(), 1)));
-            _supply.Add(new Reading(t, Math.Round(19 + 1.5 * dayCycle + random.NextDouble() * 0.4, 1)));
-            _extract.Add(new Reading(t, Math.Round(22 + 0.8 * dayCycle + random.NextDouble() * 0.3, 1)));
-            _energy.Add(new Reading(t, Math.Round(Math.Max(0, 14 - 9 * dayCycle + random.NextDouble() * 2), 1)));
+            var dayCycle = Math.Sin((t.Hour + t.Minute / 60.0 - 14) / 24 * 2 * Math.PI);
+            var web = Math.Round(Math.Max(5, 140 + 110 * dayCycle + random.NextDouble() * 25));
+            var app = Math.Round(Math.Max(3, 90 + 75 * dayCycle + random.NextDouble() * 18));
+            var marketplace = Math.Round(Math.Max(2, 50 + 35 * dayCycle + random.NextDouble() * 10));
+            _web.Add(new Reading(t, web));
+            _app.Add(new Reading(t, app));
+            _marketplace.Add(new Reading(t, i is >= 60 and < 75 ? null : marketplace));
+            _revenue.Add(new Reading(t, Math.Round((web + app + marketplace) * 2.1 + random.NextDouble() * 80)));
+            _checkout.Add(new Reading(t, Math.Round(220 + 60 * dayCycle + random.NextDouble() * 20)));
+            _search.Add(new Reading(t, Math.Round(140 + 40 * dayCycle + random.NextDouble() * 15)));
         }
 
-        // Five weeks of daily values.
+        // Five weeks of daily orders.
         var days = Enumerable.Range(0, 35).Select(d => start.AddDays(d - 34)).ToList();
         _daily = days.Select(d => new Reading(d, Math.Round(220 + 60 * Math.Sin(d.DayOfYear / 5.0) + random.Next(-25, 25), 0))).ToList();
         _dailyAverage = _daily.Select((r, i) => new Reading(r.Time, _daily.Skip(Math.Max(0, i - 6)).Take(Math.Min(7, i + 1)).Average(x => x.Value))).ToList();
 
-        _setpoints =
+        _prices =
         [
-            new(start, 21), new(start.AddHours(6), 21), new(start.AddHours(7), 22.5), new(start.AddHours(17), 22.5),
-            new(start.AddHours(18), 20), new(start.AddHours(30), 20), new(start.AddHours(31), 22.5), new(start.AddHours(41), 22.5),
-            new(start.AddHours(42), 20), new(start.AddHours(48), 20),
+            new(start, 249), new(start.AddHours(6), 249), new(start.AddHours(7), 199), new(start.AddHours(17), 199),
+            new(start.AddHours(18), 229), new(start.AddHours(30), 229), new(start.AddHours(31), 189), new(start.AddHours(41), 189),
+            new(start.AddHours(42), 249), new(start.AddHours(48), 249),
         ];
 
-        _faultStart = start.AddHours(26);
-        _faultEnd = start.AddHours(31);
-        _now = start.AddHours(44);
-        _alarm = start.AddHours(34.5);
-        _filterChange = start.AddHours(9);
+        _incidentStart = start.AddHours(26);
+        _incidentEnd = start.AddHours(31);
+        _now = start.AddHours(45);
+        _alert = start.AddHours(43);
+        _deploy = start.AddHours(9);
 
         // Hourly values over two days.
         for (var h = 0; h < 48; h++)
         {
             var t = start.AddHours(h);
-            var dayCycle = Math.Sin((t.Hour - 9) / 24.0 * 2 * Math.PI);
-            var outdoor = Math.Round(4 + 5 * dayCycle + random.NextDouble(), 1);
-            _hourlyOutdoor.Add(new Reading(t, outdoor));
-            _hourlyEnergy.Add(new Reading(t, Math.Round(30 - 2.2 * outdoor + random.NextDouble() * 4, 0)));
-            var occupied = t.Hour is >= 7 and < 18;
-            _heating.Add(new Reading(t, Math.Round(Math.Max(2, 14 - 1.4 * outdoor + random.NextDouble() * 2), 1)));
-            _ventilation.Add(new Reading(t, Math.Round((occupied ? 6 : 2) + random.NextDouble(), 1)));
-            _lighting.Add(new Reading(t, Math.Round((occupied ? 3.5 : 0.6) + random.NextDouble() * 0.5, 1)));
+            var dayCycle = Math.Sin((t.Hour - 14) / 24.0 * 2 * Math.PI);
+            var sessions = Math.Round(1100 + 850 * dayCycle + random.NextDouble() * 150);
+            _hourlySessions.Add(new Reading(t, sessions));
+            _hourlyOrders.Add(new Reading(t, Math.Round(sessions * (0.022 + random.NextDouble() * 0.008))));
+            var morning = t.Hour is >= 8 and < 12;
+            _organic.Add(new Reading(t, Math.Round(Math.Max(20, 520 + 400 * dayCycle + random.NextDouble() * 60))));
+            _ads.Add(new Reading(t, Math.Round(Math.Max(10, 260 + 200 * dayCycle + random.NextDouble() * 40))));
+            _email.Add(new Reading(t, Math.Round((morning ? 180 : 40) + random.NextDouble() * 20)));
         }
 
-        _onePoint = [new(start, 21.5)];
-        _flat = Enumerable.Range(0, 24).Select(h => new Reading(start.AddHours(h), 21)).ToList();
+        _onePoint = [new(start, 420)];
+        _flat = Enumerable.Range(0, 24).Select(h => new Reading(start.AddHours(h), 300)).ToList();
 
-        // A large series as plain arrays (the columnar fast path).
+        // A large series as plain arrays (the columnar fast path): response times every 13 seconds for a month.
         const int n = 200_000;
         var times = new DateTime[n];
         var values = new double[n];
-        var value = 20.0;
+        var value = 180.0;
         for (var i = 0; i < n; i++)
         {
             times[i] = start.AddDays(-30).AddSeconds(i * 13);
-            value += (random.NextDouble() - 0.5) * 0.08;
-            values[i] = i == 150_000 ? value + 6 : value;
+            value += (random.NextDouble() - 0.5) * 2 + (180 - value) * 0.001;
+            values[i] = i == 150_000 ? value + 120 : value;
         }
 
         _big = SeriesData.From(times, values);

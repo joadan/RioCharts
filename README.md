@@ -31,7 +31,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Tooltip and crosshair (shared across series by default), handled in the browser
 - Stacked bars, areas and lines; mixed series; multiple Y axes
 - Data labels with collision avoidance
-- Reference lines and bands (setpoints, comfort zones, fault periods)
+- Reference lines and bands (targets, limits, incident periods)
 - Point and annotation click events
 - Pie, donut (also half donut and nested rings) and radial bar, with inside and outside labels,
   leader lines and "Other" grouping
@@ -80,18 +80,18 @@ Reference `RioCharts.Blazor` and add `@using RioCharts.Blazor` and `@using RioCh
 to `_Imports.razor`. Styles come with `{YourApp}.styles.css` automatically.
 
 ```razor
-<RioChart Items="readings">
-    <LineSeries XValue="r => r.Timestamp" YValue="r => r.SupplyTemp" />
+<RioChart Items="traffic">
+    <LineSeries XValue="r => r.Timestamp" YValue="r => r.Sessions" />
 </RioChart>
 ```
 
 Several series, options and two-way bound legend state:
 
 ```razor
-<RioChart TItem="Reading" Title="Air handling unit" YAxis="new AxisSpec { Title = "°C" }" @bind-HiddenSeries="hidden">
-    <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-    <AreaSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
-    <BarSeries Items="energy" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" />
+<RioChart TItem="Reading" Title="Online store" YAxis="new AxisSpec { Title = "Sessions" }" @bind-HiddenSeries="hidden">
+    <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+    <AreaSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" />
+    <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
 </RioChart>
 ```
 
@@ -102,26 +102,26 @@ Several series, options and two-way bound legend state:
 Stacking, a second axis, data labels and annotations:
 
 ```razor
-<RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }" YAxes="[new AxisSpec { Id = "energy", Title = "kWh" }]"
+<RioChart TItem="Reading" YAxis="new AxisSpec { Title = "ms" }" YAxes="[new AxisSpec { Id = "orders", Title = "Orders" }]"
        OnPointClick="e => selected = e.Item">
-    <ReferenceBand From="20" To="24" Label="Comfort zone" />
-    <ReferenceLine Value="21" Label="Setpoint" />
-    <ReferenceBand Axis="AnnotationAxis.X" From="faultStart" To="faultEnd" Label="Fan fault" />
-    <BarSeries Items="heating" Name="Heating" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" />
-    <BarSeries Items="fans" Name="Fans" XValue="r => r.Time" YValue="r => r.Value" YAxisId="energy" Stack="use" DataLabels="true" />
-    <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+    <ReferenceBand From="0" To="200" Label="Fast" />
+    <ReferenceLine Value="300" Label="Limit" />
+    <ReferenceBand Axis="AnnotationAxis.X" From="incidentStart" To="incidentEnd" Label="Payment incident" />
+    <BarSeries Items="webOrders" Name="Web" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Stack="orders" />
+    <BarSeries Items="appOrders" Name="App" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Stack="orders" DataLabels="true" />
+    <LineSeries Items="checkout" Name="Checkout" XValue="r => r.Time" YValue="r => r.Value" Format="0 ms" />
 </RioChart>
 ```
 
 Pie, donut and radial bar (the x value names each slice; the legend lists slices):
 
 ```razor
-<RioChart Items="use">
-    <DonutSeries Name="Energy use" XValue="u => u.System" YValue="u => u.MWh" GroupSmallSlices="0.03" />
+<RioChart Items="categories">
+    <DonutSeries Name="Revenue" XValue="c => c.Category" YValue="c => c.Revenue" GroupSmallSlices="0.03" />
 </RioChart>
 
-<RioChart Items="health">
-    <RadialBarSeries XValue="h => h.Component" YValue="h => h.Percent" Max="100" Format="0'%'" />
+<RioChart Items="targets">
+    <RadialBarSeries XValue="t => t.Category" YValue="t => t.Percent" Max="100" Format="0'%'" />
 </RioChart>
 ```
 
@@ -129,7 +129,7 @@ AI chart creation, with `RioCharts.AI`: agents write a small JSON spec against y
 tool validates it (errors name the path and the valid options), renders it and describes it:
 
 ```csharp
-var tool = new ChartTool(new InMemoryDataSource([ChartDataset.FromItems("ahu", readings, "Air handling units, hourly")]));
+var tool = new ChartTool(new InMemoryDataSource([ChartDataset.FromItems("shop", rows, "Online store traffic per channel, hourly")]));
 var chat = new ChatOptions { Tools = tool.AsAIFunctions() };          // Microsoft.Extensions.AI
 builder.Services.AddMcpServer().WithHttpTransport().WithRioChartsTools(tool); // or as an MCP server
 tool.ChartCreated += result => Show(result.Png);
@@ -155,13 +155,13 @@ To try it, open [samples/RioCharts.Mcp.Sample](samples/RioCharts.Mcp.Sample) in 
 sample data, the agent configuration and example prompts.
 
 The same specs work in Blazor: `<RioChart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
-`{"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}]}`.
+`{"dataset":"shop","series":[{"type":"line","x":"timestamp","y":"sessions","groupBy":"channel"}]}`.
 
 Server-side export (no browser), with `RioCharts.Skia`: the same spec and data, as PNG or SVG:
 
 ```csharp
-var spec = new ChartSpec { Title = "Supply air", Series = [new SeriesSpec { Id = "supply", Name = "Supply" }] };
-var data = new Dictionary<string, SeriesData> { ["supply"] = SeriesData.From(times, values) };
+var spec = new ChartSpec { Title = "Sessions", Series = [new SeriesSpec { Id = "web", Name = "Web" }] };
+var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(times, values) };
 byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320, Theme = ExportTheme.Dark });
 string svg = ChartExport.ToSvg(spec, data);
 ```
@@ -170,7 +170,7 @@ Large data, as plain arrays (no per-item cost):
 
 ```razor
 <RioChart TItem="double">
-    <LineSeries Name="Sensor" Data="SeriesData.From(timestamps, values)" />
+    <LineSeries Name="Response time" Data="SeriesData.From(timestamps, values)" />
 </RioChart>
 ```
 

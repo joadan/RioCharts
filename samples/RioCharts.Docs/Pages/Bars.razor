@@ -8,7 +8,7 @@
 <Example Title="Grouped bars" Code="@GroupedCode">
     <Description><p>Several bar series share each category. Large numbers are compact (182k).</p></Description>
     <ChildContent>
-        <RioChart TItem="Sales" Title="Sales per quarter">
+        <RioChart TItem="Sales" Title="Revenue per quarter, €">
             <BarSeries Items="Quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
             <BarSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
         </RioChart>
@@ -18,10 +18,10 @@
 <Example Title="Stacked bars with data labels" Code="@StackedCode">
     <Description><p>Same <code>Stack</code> name, same slot. Labels show inside segments that are big enough.</p></Description>
     <ChildContent>
-        <RioChart TItem="Monthly" Title="Energy per month" YAxis="Mwh">
-            <BarSeries Items="Mix" Name="Heating" XValue="m => m.Month" YValue="m => m.Heating" Stack="mix" DataLabels="true" />
-            <BarSeries Items="Mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" DataLabels="true" />
-            <BarSeries Items="Mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" DataLabels="true" />
+        <RioChart TItem="Monthly" Title="Revenue per product group" YAxis="KiloEuros">
+            <BarSeries Items="Mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="mix" DataLabels="true" Format="0 k€" />
+            <BarSeries Items="Mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Stack="mix" DataLabels="true" Format="0 k€" />
+            <BarSeries Items="Mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Stack="mix" DataLabels="true" Format="0 k€" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -36,12 +36,12 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Alarm" Items="Alarms" Title="Alarms per unit" OnPointClick="e => _alarms = e">
-            <BarSeries Name="Alarms" XValue="a => a.Unit" Aggregate="Aggregate.Count" />
-            <BarSeries Name="Downtime (h)" XValue="a => a.Unit" YAggregate="g => g.Sum(a => a.Minutes) / 60" Format="0.0 h" />
+        <RioChart TItem="Ticket" Items="Tickets" Title="Support tickets per topic" OnPointClick="e => _tickets = e">
+            <BarSeries Name="Tickets" XValue="t => t.Topic" Aggregate="Aggregate.Count" />
+            <BarSeries Name="Handling time (h)" XValue="t => t.Topic" YAggregate="g => g.Sum(t => t.Minutes) / 60" Format="0.0 h" />
         </RioChart>
         <p class="note">
-            Clicked: @(_alarms is null ? "nothing yet" : $"{_alarms.X}, {_alarms.SeriesName}: " + string.Join(", ", _alarms.Items.Select(a => $"{a.Text} ({a.Minutes} min)")))
+            Clicked: @(_tickets is null ? "nothing yet" : $"{_tickets.X}, {_tickets.SeriesName}: " + string.Join(", ", _tickets.Items.Select(t => $"{t.Subject} ({t.Minutes} min)")))
         </p>
     </ChildContent>
 </Example>
@@ -49,8 +49,8 @@
 <Example Title="Bars and a line" Code="@MixedCode">
     <Description><p>Default draw order is areas, then bars, then lines (override with <code>ZIndex</code>). Bars work on time axes too.</p></Description>
     <ChildContent>
-        <RioChart TItem="Reading" YAxis="Kwh">
-            <BarSeries Items="Daily" Name="Daily use" XValue="r => r.Time" YValue="r => r.Value" />
+        <RioChart TItem="Reading" YAxis="OrdersAxis">
+            <BarSeries Items="DailyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
             <LineSeries Items="_average" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
     </ChildContent>
@@ -67,38 +67,38 @@
 </Example>
 
 @code {
-    private static readonly AxisSpec Kwh = new() { Title = "kWh" };
-    private static readonly AxisSpec Mwh = new() { Title = "MWh" };
+    private static readonly AxisSpec OrdersAxis = new() { Title = "Orders per day" };
+    private static readonly AxisSpec KiloEuros = new() { Title = "k€" };
     private static readonly TooltipSpec _single = new() { Shared = false };
-    private PointClickEventArgs<Alarm>? _alarms;
-    private static readonly List<Reading> _average = Daily
-        .Select((r, i) => new Reading(r.Time, Daily.Skip(Math.Max(0, i - 6)).Take(Math.Min(7, i + 1)).Average(x => x.Value)))
+    private PointClickEventArgs<Ticket>? _tickets;
+    private static readonly List<Reading> _average = DailyOrders
+        .Select((r, i) => new Reading(r.Time, DailyOrders.Skip(Math.Max(0, i - 6)).Take(Math.Min(7, i + 1)).Average(x => x.Value)))
         .ToList();
 
     private const string GroupedCode = """
-        <RioChart TItem="Sales" Title="Sales per quarter">
+        <RioChart TItem="Sales" Title="Revenue per quarter, €">
             <BarSeries Items="quarters" Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
             <BarSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
         </RioChart>
         """;
 
     private const string StackedCode = """
-        <BarSeries Items="mix" Name="Heating" XValue="m => m.Month" YValue="m => m.Heating" Stack="mix" DataLabels="true" />
-        <BarSeries Items="mix" Name="Ventilation" XValue="m => m.Month" YValue="m => m.Ventilation" Stack="mix" DataLabels="true" />
-        <BarSeries Items="mix" Name="Cooling" XValue="m => m.Month" YValue="m => m.Cooling" Stack="mix" DataLabels="true" />
+        <BarSeries Items="mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="mix" DataLabels="true" Format="0 k€" />
+        <BarSeries Items="mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Stack="mix" DataLabels="true" Format="0 k€" />
+        <BarSeries Items="mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Stack="mix" DataLabels="true" Format="0 k€" />
         """;
 
     private const string AggregateCode = """
-        <RioChart TItem="Alarm" Items="alarms" OnPointClick="e => clicked = e">
-            <BarSeries Name="Alarms" XValue="a => a.Unit" Aggregate="Aggregate.Count" />
-            <BarSeries Name="Downtime (h)" XValue="a => a.Unit" YAggregate="g => g.Sum(a => a.Minutes) / 60" Format="0.0 h" />
+        <RioChart TItem="Ticket" Items="tickets" OnPointClick="e => clicked = e">
+            <BarSeries Name="Tickets" XValue="t => t.Topic" Aggregate="Aggregate.Count" />
+            <BarSeries Name="Handling time (h)" XValue="t => t.Topic" YAggregate="g => g.Sum(t => t.Minutes) / 60" Format="0.0 h" />
         </RioChart>
 
-        @* clicked.Items holds every alarm behind the bar *@
+        @* clicked.Items holds every ticket behind the bar *@
         """;
 
     private const string MixedCode = """
-        <BarSeries Items="daily" Name="Daily use" XValue="r => r.Time" YValue="r => r.Value" />
+        <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
         <LineSeries Items="average" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         """;
 

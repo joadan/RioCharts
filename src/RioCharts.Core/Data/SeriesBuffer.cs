@@ -9,7 +9,7 @@ namespace RioCharts.Core.Data;
 /// <code>
 /// var buffer = new SeriesBuffer(timeWindow: TimeSpan.FromMinutes(10));
 /// buffer.Append(DateTime.Now, 21.4);
-/// // &lt;LineSeries Buffer="buffer" Name="Supply" /&gt;
+/// // &lt;LineSeries Buffer="buffer" Name="Checkout" /&gt;
 /// </code>
 /// </example>
 public sealed class SeriesBuffer

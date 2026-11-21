@@ -13,17 +13,17 @@
         <p>
             The y range fits the data tightly, so small changes show (bars keep zero). <code>Highlight</code> marks the last, first, lowest or
             highest value with a dot; it works on normal charts too. The tooltip still works, and screen readers get a short summary such as
-            "Supply: 17.3 °C to 20.7 °C, last 17.9 °C, stable" instead of a tab stop.
+            "Web: 28 to 252 sessions, last 193, falling" instead of a tab stop.
         </p>
     </Description>
     <ChildContent>
         <div class="compact-demo">
-            <span>Supply air, last 48 h</span>
-            <RioChart Items="Supply" Compact="true" Height="40">
-                <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone"
+            <span>Web sessions, last 48 h</span>
+            <RioChart Items="WebSessions" Compact="true" Height="40">
+                <LineSeries Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" Curve="CurveType.Monotone"
                             Highlight="PointHighlight.Last | PointHighlight.Min | PointHighlight.Max" />
             </RioChart>
-            <b>@($"{Supply[^1].Value:0.0} °C")</b>
+            <b>@($"{WebSessions[^1].Value:#,0}")</b>
         </div>
     </ChildContent>
 </Example>
@@ -33,23 +33,24 @@
         <p>
             Every interactive chart loads the JS module, measures its container and sends its points to the browser. With dozens of charts on a
             page, <code>Interactive="false"</code> draws plain SVG instead: no JS, no tooltip, no round trips. Give it a <code>Width</code> so it
-            is drawn at its real size (without one it is laid out 160 px wide and scaled to fit).
+            is drawn at its real size (without one it is laid out 160 px wide and scaled to fit). Here the water bottle keeps selling more, and
+            the tent shows a gap while it was sold out.
         </p>
     </Description>
     <ChildContent>
         <div class="table-scroll">
         <table class="docs sparkline-table">
-            <tr><th>Unit</th><th>Supply air, 48 h</th><th>Now</th></tr>
-            @foreach (var (unit, readings) in UnitSupply)
+            <tr><th>Product</th><th>Sold per hour, 48 h</th><th>Last hour</th></tr>
+            @foreach (var (product, readings) in ProductSales)
             {
                 <tr>
-                    <td>@unit</td>
+                    <td>@product</td>
                     <td>
-                        <RioChart Items="readings" Compact="true" Interactive="false" Width="140" Height="28" Title="@unit">
-                            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Highlight="PointHighlight.Last" />
+                        <RioChart Items="readings" Compact="true" Interactive="false" Width="140" Height="28" Title="@product">
+                            <LineSeries Name="Sold" XValue="r => r.Time" YValue="r => r.Value" Format="0 'per hour'" Highlight="PointHighlight.Last" />
                         </RioChart>
                     </td>
-                    <td class="num">@($"{readings.Last(r => r.Value is not null).Value:0.0} °C")</td>
+                    <td class="num">@($"{readings.Last(r => r.Value is not null).Value:0}")</td>
                 </tr>
             }
         </table>
@@ -64,34 +65,34 @@
     <ChildContent>
         <div class="compact-grid">
             <div>
-                <span>Heating, kWh per 15 min</span>
-                <RioChart Items="Heating" Compact="true" Height="48">
-                    <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 kWh" Curve="CurveType.Monotone" />
+                <span>Revenue, € per 15 min</span>
+                <RioChart Items="Revenue" Compact="true" Height="48">
+                    <AreaSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
                 </RioChart>
             </div>
             <div>
-                <span>Energy, kWh per day</span>
-                <RioChart Items="Daily" Compact="true" Height="48">
-                    <BarSeries Name="Energy" XValue="r => r.Time" YValue="r => r.Value" Format="0 kWh" />
+                <span>Orders per day, 35 days</span>
+                <RioChart Items="DailyOrders" Compact="true" Height="48">
+                    <BarSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'orders'" />
                 </RioChart>
             </div>
         </div>
     </ChildContent>
 </Example>
 
-<Example Title="Normal range" Code="@BandCode">
+<Example Title="Target range" Code="@BandCode">
     <Description>
         <p>
-            Annotations still draw, without their text: a <code>ReferenceBand</code> shows the normal range at a glance. Bands do not widen the
-            y range, so the line keeps its detail.
+            Annotations still draw, without their text: a <code>ReferenceBand</code> shows the target range at a glance. Bands do not widen the
+            y range, so the line keeps its detail, and a gap (here, while tracking was down) stays a gap.
         </p>
     </Description>
     <ChildContent>
         <div class="compact-demo">
-            <span>Extract air vs 21.5–22.5 °C</span>
-            <RioChart Items="Extract" Compact="true" Height="40">
-                <LineSeries Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" Highlight="PointHighlight.Last" />
-                <ReferenceBand From="21.5" To="22.5" />
+            <span>Conversion vs 2–3 % target</span>
+            <RioChart Items="Conversion" Compact="true" Height="40">
+                <LineSeries Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" Curve="CurveType.Monotone" Highlight="PointHighlight.Last" />
+                <ReferenceBand From="2" To="3" />
             </RioChart>
         </div>
     </ChildContent>
@@ -115,10 +116,10 @@
         </div>
         <div class="size-stage">
             <div style="@($"width:{Size.W}px;max-width:100%")">
-                <RioChart Items="Supply" Height="Size.H" Title="Air handling unit" AutoCompact="_autoCompact"
-                          XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "°C" })">
-                    <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-                    <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+                <RioChart Items="WebSessions" Height="Size.H" Title="Store traffic" AutoCompact="_autoCompact"
+                          XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })">
+                    <LineSeries Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
+                    <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
                 </RioChart>
             </div>
         </div>
@@ -149,49 +150,49 @@
     private (string Label, double W, double H) Size => Sizes.First(s => s.Label == _size);
 
     private const string AutoCode = """
-        <RioChart Items="supply" Height="130" Title="Air handling unit"
-                  XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "°C" })">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        <RioChart Items="web" Height="130" Title="Store traffic"
+                  XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })">
+            <LineSeries Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
         </RioChart>
         """;
 
     private const string SparkCode = """
-        <RioChart Items="supply" Compact="true" Height="40">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C"
+        <RioChart Items="web" Compact="true" Height="40">
+            <LineSeries Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'"
                         Highlight="PointHighlight.Last | PointHighlight.Min | PointHighlight.Max" />
         </RioChart>
         """;
 
     private const string TableCode = """
-        @foreach (var unit in units)
+        @foreach (var product in products)
         {
             <tr>
-                <td>@unit.Name</td>
+                <td>@product.Name</td>
                 <td>
-                    <RioChart Items="unit.Readings" Compact="true" Interactive="false" Width="140" Height="28" Title="@unit.Name">
-                        <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Highlight="PointHighlight.Last" />
+                    <RioChart Items="product.Readings" Compact="true" Interactive="false" Width="140" Height="28" Title="@product.Name">
+                        <LineSeries Name="Sold" XValue="r => r.Time" YValue="r => r.Value" Format="0 'per hour'" Highlight="PointHighlight.Last" />
                     </RioChart>
                 </td>
-                <td>@unit.Now °C</td>
+                <td>@product.LastHour</td>
             </tr>
         }
         """;
 
     private const string KindsCode = """
-        <RioChart Items="heating" Compact="true" Height="48">
-            <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        <RioChart Items="revenue" Compact="true" Height="48">
+            <AreaSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
         </RioChart>
 
-        <RioChart Items="daily" Compact="true" Height="48">
-            <BarSeries Name="Energy" XValue="r => r.Time" YValue="r => r.Value" />
+        <RioChart Items="orders" Compact="true" Height="48">
+            <BarSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'orders'" />
         </RioChart>
         """;
 
     private const string BandCode = """
-        <RioChart Items="extract" Compact="true" Height="40">
-            <LineSeries Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.Last" />
-            <ReferenceBand From="21.5" To="22.5" />
+        <RioChart Items="conversion" Compact="true" Height="40">
+            <LineSeries Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" Highlight="PointHighlight.Last" />
+            <ReferenceBand From="2" To="3" />
         </RioChart>
         """;
 }

@@ -9,10 +9,10 @@
 </p>
 
 <Example Title="200 000 points" Code="@BigCode">
-    <Description><p>Running in WebAssembly in your browser. Drag to zoom in.</p></Description>
+    <Description><p>A month of server response times, one every 13 seconds, running in WebAssembly in your browser. Drag to zoom in.</p></Description>
     <ChildContent>
-        <RioChart TItem="double" Height="280" Zoomable="true" SeriesLayer="_layer">
-            <LineSeries Name="Sensor" Data="_big" StrokeWidth="1.25" />
+        <RioChart TItem="double" Height="280" Zoomable="true" SeriesLayer="_layer" YAxis="Ms">
+            <LineSeries Name="Response time" Data="_big" StrokeWidth="1.25" Format="0 ms" />
         </RioChart>
         <p class="note">
             Series layer: @_layer
@@ -30,6 +30,7 @@
 </ul>
 
 @code {
+    private static readonly AxisSpec Ms = new() { Title = "ms" };
     private static readonly SeriesData _big = Create();
     private SeriesLayer _layer = SeriesLayer.Canvas;
 
@@ -40,8 +41,8 @@
     }
 
     private const string BigCode = """
-        <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas">
-            <LineSeries Name="Sensor" Data="SeriesData.From(times, values)" StrokeWidth="1.25" />
+        <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas" YAxis="new AxisSpec { Title = "ms" }">
+            <LineSeries Name="Response time" Data="SeriesData.From(times, values)" StrokeWidth="1.25" Format="0 ms" />
         </RioChart>
         """;
 }

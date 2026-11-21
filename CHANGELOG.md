@@ -12,6 +12,10 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Samples: every example (docs site, demo app, MCP sample data, READMEs, doc comments and the JSON
+  schema's example) now uses an online store (sessions, orders, revenue in €, stock, response times)
+  instead of building climate data. The MCP sample's files are now `orders.csv`,
+  `revenue-by-category.json` and `stores.csv`; the demo's export route is `/export/traffic.{svg|png}`.
 - Scatter series (`<ScatterSeries>`, `SeriesType.Scatter`, `"scatter"` or `"points"` in JSON): a
   translucent marker per point (`MarkerSize`, default 5 px) and an optional dashed least-squares
   `TrendLine`. Numeric x axes get a nice range so points are not on the edge; the tooltip shows the

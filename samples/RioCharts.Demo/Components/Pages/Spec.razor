@@ -72,58 +72,58 @@
     [
         ("Minimal", """
             {
-              "dataset": "ahu",
-              "series": [{ "type": "line", "x": "timestamp", "y": "supplyTemp" }]
+              "dataset": "shop",
+              "series": [{ "type": "line", "x": "timestamp", "y": "sessions" }]
             }
             """),
-        ("One line per unit", """
+        ("One line per channel", """
             {
-              "dataset": "ahu",
-              "title": "Supply air per unit",
-              "y": { "title": "°C" },
-              "series": [{ "type": "spline", "x": "timestamp", "y": "supplyTemp", "groupBy": "unit" }],
-              "annotations": [{ "value": 19, "label": "Setpoint 19 °C" }]
+              "dataset": "shop",
+              "title": "Sessions per channel",
+              "y": { "title": "Sessions" },
+              "series": [{ "type": "spline", "x": "timestamp", "y": "sessions", "groupBy": "channel" }],
+              "annotations": [{ "value": 600, "label": "Campaign goal 600" }]
             }
             """),
-        ("Energy per day", """
+        ("Revenue per day", """
             {
-              "dataset": "ahu",
-              "title": "Heating energy per day",
-              "y": { "title": "kWh" },
-              "series": [{ "type": "column", "x": "timestamp", "y": "energy", "timeBucket": "daily",
-                           "aggregate": "sum", "groupBy": "unit", "stack": "units" }]
+              "dataset": "shop",
+              "title": "Revenue per day",
+              "y": { "title": "€" },
+              "series": [{ "type": "column", "x": "timestamp", "y": "revenue", "timeBucket": "daily",
+                           "aggregate": "sum", "groupBy": "channel", "stack": "channels" }]
             }
             """),
-        ("Energy mix (auto)", """
+        ("Categories (auto)", """
             {
-              "dataset": "energy",
-              "title": "Energy use per system, 2026",
-              "series": [{ "type": "auto", "x": "system", "y": "mwh", "aggregate": "sum", "sort": "desc" }]
+              "dataset": "sales",
+              "title": "Revenue per category, 2026 (k€)",
+              "series": [{ "type": "auto", "x": "category", "y": "revenue", "aggregate": "sum", "sort": "desc" }]
             }
             """),
         ("Shares (auto donut)", """
             {
-              "data": [ { "use": "Heating", "share": 48 }, { "use": "Ventilation", "share": 27 },
-                        { "use": "Cooling", "share": 15 }, { "use": "Lighting", "share": 10 } ],
-              "series": [{ "type": "auto", "x": "use", "y": "share" }]
+              "data": [ { "topic": "Delivery", "share": 48 }, { "topic": "Returns", "share": 27 },
+                        { "topic": "Payment", "share": 15 }, { "topic": "Product question", "share": 10 } ],
+              "series": [{ "type": "auto", "x": "topic", "y": "share" }]
             }
             """),
         ("Two axes", """
             {
-              "dataset": "ahu",
-              "y": { "title": "°C" },
-              "yAxes": [{ "id": "kwh", "title": "kWh" }],
+              "dataset": "shop",
+              "y": { "title": "Sessions" },
+              "yAxes": [{ "id": "eur", "title": "€" }],
               "series": [
-                { "type": "bar", "x": "timestamp", "y": "energy", "timeBucket": "day", "aggregate": "sum", "yAxisId": "kwh", "name": "Energy" },
-                { "type": "line", "x": "timestamp", "y": "outdoorTemp", "timeBucket": "day", "aggregate": "average", "name": "Outdoor" }
+                { "type": "bar", "x": "timestamp", "y": "revenue", "timeBucket": "day", "aggregate": "sum", "yAxisId": "eur", "name": "Revenue" },
+                { "type": "line", "x": "timestamp", "y": "sessions", "timeBucket": "day", "aggregate": "sum", "name": "Sessions" }
               ],
               "filter": "ignored: filters go on series"
             }
             """),
         ("With errors", """
             {
-              "dataset": "ahu",
-              "series": [{ "type": "scatter", "x": "time", "y": "supplyTemps" }]
+              "dataset": "shop",
+              "series": [{ "type": "scatter", "x": "time", "y": "sesions" }]
             }
             """),
     ];
@@ -158,6 +158,6 @@
         var bound = ChartSpecBinder.Bind(_spec, DemoDatasets.ByName);
         _errors.AddRange(bound.Errors.Select(e => e.ToString()));
         _warnings.AddRange(bound.Warnings);
-        _razor = ChartRazor.FromSpec(_spec, "Reading", "readings");
+        _razor = ChartRazor.FromSpec(_spec, "Row", "rows");
     }
 }

@@ -32,17 +32,17 @@
     private const string Code = """
         var spec = new ChartSpec
         {
-            Title = "Supply air",
-            Y = new AxisSpec { Title = "°C" },
-            Series = [new SeriesSpec { Id = "supply", Name = "Supply", Curve = CurveType.Monotone }],
-            Annotations = [new AnnotationSpec { Value = 21, Label = "Setpoint" }],
+            Title = "Orders per day",
+            Y = new AxisSpec { Title = "Orders" },
+            Series = [new SeriesSpec { Id = "orders", Name = "Orders", Curve = CurveType.Monotone }],
+            Annotations = [new AnnotationSpec { Value = 250, Label = "Target" }],
         };
-        var data = new Dictionary<string, SeriesData> { ["supply"] = SeriesData.From(times, values) };
+        var data = new Dictionary<string, SeriesData> { ["orders"] = SeriesData.From(days, orders) };
 
         byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320, Theme = ExportTheme.Dark });
         string svg = ChartExport.ToSvg(spec, data);
 
         // In a minimal API:
-        app.MapGet("/charts/supply.png", () => Results.File(ChartExport.ToPng(spec, data), "image/png"));
+        app.MapGet("/charts/orders.png", () => Results.File(ChartExport.ToPng(spec, data), "image/png"));
         """;
 }

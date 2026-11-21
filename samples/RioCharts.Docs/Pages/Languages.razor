@@ -31,14 +31,14 @@
             </label>
         </div>
         <div class="language-grid">
-            <RioChart Items="Supply" Culture="Current" Height="220" Zoomable="true" Exportable="true">
-                <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" />
+            <RioChart Items="Revenue" Culture="Current" Height="220" Zoomable="true" Exportable="true">
+                <LineSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
             </RioChart>
-            <RioChart Items="EnergyUse" Culture="Current" Height="300">
-                <PieSeries Name="Energy use" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.6" GroupSmallSlices="0.03" Format="0 MWh" DataLabels="false" />
+            <RioChart Items="CategoryRevenue" Culture="Current" Height="300">
+                <PieSeries Name="Revenue per category" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.6" GroupSmallSlices="0.03" Format="#,0 k€" DataLabels="false" />
             </RioChart>
-            <RioChart Items="NoReadings" Culture="Current" Height="300">
-                <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <RioChart Items="NoOrders" Culture="Current" Height="300">
+                <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
             </RioChart>
         </div>
     </ChildContent>
@@ -85,7 +85,7 @@
 <h2>Templates</h2>
 <p>
     Some texts are templates: <code>{0}</code>, <code>{1}</code>… are filled in. A text with a count can have two forms separated by
-    <code>|</code>: the first is used when the count is 1, so <code>"{0}: {1} value|{0}: {1} values"</code> reads "Supply: 1 value" or "Supply:
+    <code>|</code>: the first is used when the count is 1, so <code>"{0}: {1} value|{0}: {1} values"</code> reads "Web: 1 value" or "Web:
     48 values". A template that cannot be filled in (a stray brace) falls back to English instead of breaking the chart.
 </p>
 
@@ -107,7 +107,7 @@
         ("de-DE", "Deutsch"), ("fr-FR", "Français"), ("es-ES", "Español"),
     ];
 
-    private static readonly List<Reading> NoReadings = [];
+    private static readonly List<Reading> NoOrders = [];
 
     private string _culture = "sv-SE";
 
@@ -116,13 +116,13 @@
     private string CultureLabel => Cultures.First(c => c.Name == _culture).Label;
 
     private const string CultureCode = """
-        <RioChart Items="supply" Culture="@(new CultureInfo("sv-SE"))" Zoomable="true" Exportable="true">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        <RioChart Items="revenue" Culture="@(new CultureInfo("sv-SE"))" Zoomable="true" Exportable="true">
+            <LineSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" />
         </RioChart>
         """;
 
     private const string WithCode = """
-        <RioChart Items="readings" Texts="@(ChartTexts.Swedish with { ResetZoom = "Visa allt", NoData = "Inga mätvärden ännu" })">
+        <RioChart Items="orders" Texts="@(ChartTexts.Swedish with { ResetZoom = "Visa allt", NoData = "Inga ordrar ännu" })">
             ...
         </RioChart>
         """;
@@ -134,7 +134,7 @@
         </CascadingValue>
 
         @code {
-            private readonly ChartTexts _chartTexts = ChartTexts.English with { NoData = "Waiting for the first reading" };
+            private readonly ChartTexts _chartTexts = ChartTexts.English with { NoData = "Waiting for the first order" };
         }
         """;
 

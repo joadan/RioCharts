@@ -54,9 +54,9 @@
 @code {
     private const string DataCode = """
         // Datasets the agent may chart: from rows, objects or JSON.
-        var ahu = ChartDataset.FromItems("ahu", readings, "Air handling units, hourly",
-            new Dictionary<string, string> { ["supplyTemp"] = "supply air °C", ["energy"] = "kWh per hour" });
-        var source = new InMemoryDataSource([ahu]);   // or implement IChartDataSource to load on demand
+        var shop = ChartDataset.FromItems("shop", traffic, "Store traffic per sales channel, hourly",
+            new Dictionary<string, string> { ["orders"] = "orders per hour", ["revenue"] = "revenue per hour, €" });
+        var source = new InMemoryDataSource([shop]);   // or implement IChartDataSource to load on demand
         var tool = new ChartTool(source, new ChartToolOptions { Export = new ExportOptions { Width = 720, Height = 360 } });
         tool.ChartCreated += result => ShowToUser(result.Png!, result.Summary);
         """;
@@ -64,11 +64,11 @@
     private const string AiCode = """
         IChatClient client = ...;
         var options = new ChatOptions { Tools = tool.AsAIFunctions() };
-        var response = await client.GetResponseAsync("Show supply air per unit last week, with the 19 °C setpoint", options);
+        var response = await client.GetResponseAsync("Chart orders per channel this week, with our goal of 40 an hour", options);
 
         // The model calls create_chart with e.g.
-        // {"dataset":"ahu","series":[{"type":"line","x":"timestamp","y":"supplyTemp","groupBy":"unit"}],
-        //  "annotations":[{"value":19,"label":"Setpoint"}]}
+        // {"dataset":"shop","series":[{"type":"line","x":"timestamp","y":"orders","groupBy":"channel"}],
+        //  "annotations":[{"value":40,"label":"Goal"}]}
         """;
 
     private const string McpCode = """
@@ -85,7 +85,7 @@
         var tool = new ChartTool(source, new ChartToolOptions { OutputDirectory = "charts" });
 
         // The model calls render_chart with e.g.
-        // {"spec":{"dataset":"ahu","title":"Energy per day","series":[{"type":"bar","x":"timestamp","y":"energy","timeBucket":"day","aggregate":"sum"}]},
+        // {"spec":{"dataset":"shop","title":"Revenue per day","series":[{"type":"bar","x":"timestamp","y":"revenue","timeBucket":"day","aggregate":"sum"}]},
         //  "format":"svg","width":640,"height":320}
 
         // Or from code:
@@ -110,6 +110,6 @@
 
     private const string RazorCode = """
         // Turn a spec the agent built into component markup for the codebase:
-        string razor = ChartRazor.FromSpec(ChartSpecJson.Parse(json).Spec!, itemType: "Reading", itemsName: "readings");
+        string razor = ChartRazor.FromSpec(ChartSpecJson.Parse(json).Spec!, itemType: "Traffic", itemsName: "traffic");
         """;
 }

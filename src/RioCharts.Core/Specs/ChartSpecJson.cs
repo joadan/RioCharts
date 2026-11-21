@@ -196,7 +196,7 @@ public static class ChartSpecJson
             root.Insert(1, "title", "RioCharts chart spec");
             root.Insert(2, "description",
                 "A chart: series read x and y fields from a dataset (or inline data); everything else has sensible defaults. "
-                + "Minimal example: {\"dataset\":\"ahu\",\"series\":[{\"type\":\"line\",\"x\":\"timestamp\",\"y\":\"supplyTemp\"}]}");
+                + "Minimal example: {\"dataset\":\"shop\",\"series\":[{\"type\":\"line\",\"x\":\"timestamp\",\"y\":\"sessions\"}]}");
         }
 
         return schema;
