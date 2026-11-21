@@ -174,7 +174,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   drawn as two halves. `Scale` sets the pixel density (default 2).
 - **Fonts on Linux servers:** the package brings `SkiaSharp.NativeAssets.Linux.NoDependencies`;
   install fonts in the container (e.g. `fonts-dejavu`) for good text.
-- **Not yet:** Blazor's `ExportSvgAsync`/`ExportPngAsync` and client-side download, and PDF.
+- **Not yet:** PDF. (Blazor's `ExportSvgAsync`/`ExportPngAsync` and downloads: see Client-side export.)
 
 ## Milestone 6
 
@@ -253,3 +253,29 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - Without an aggregate, duplicates are drawn as given. The layout warns about them for category
   x, bars and polar series; lines on numbers or times may repeat an x on purpose (a vertical step)
   and get no warning.
+
+## Client-side export
+
+- **In the browser, not via Skia.** The JS module clones the drawn `<svg>` and writes the
+  computed presentation properties (fill, stroke, opacity, fonts, ...) as attributes, so theme
+  variables, app CSS overrides and the faded hidden legend items come out as plain colors;
+  inherited properties are written only where they differ from the parent. Classes, Blazor's
+  scoped-CSS attributes and render-marker comments are dropped. The canvas series layer is added
+  on top as a PNG `<image>`. PNG draws that SVG onto a canvas at `Scale`. This keeps the Blazor
+  package free of SkiaSharp (large for WebAssembly) and matches the page exactly; Design.md's
+  "keep the JS module tiny" gives way here because only the browser knows the resolved CSS.
+- **Fonts:** an SVG drawn as an image cannot load the page's web fonts, so PNG text uses the
+  viewer's installed fonts (the next font in the list). Server export with `RioCharts.Skia` is the
+  route for exact fonts or images without a browser.
+- **Size limits:** `ExportPngAsync`/`ExportSvgAsync` receive the bytes as an `IJSStreamReference`
+  (up to 256 MB), not a JS interop result, which Blazor Server caps at
+  `MaximumReceiveMessageSize` (32 KB). `Download…Async` never sends the image through .NET.
+- **CSV** (`ChartCsv`, Core) uses the data as bound (after per-x aggregation, before downsampling
+  and zoom), every series including hidden ones. Rows are the union of x values; a repeated x gets
+  as many rows as the longest run, so no point is lost. Times are written as given (ISO 8601, with
+  the input's offset when it had one; dates alone when every time is midnight). The download adds
+  a UTF-8 byte order mark so Excel reads non-ASCII names.
+- **Menu:** plain Blazor state with a transparent backdrop that closes it on an outside click,
+  and Escape; focus moves to the first item on open. Its selectors are prefixed with `.rio-chart`
+  so broad app rules (e.g. a docs site's `.doc button`) do not restyle it. Design.md asks that
+  every UI interaction raise an event; the menu raises none yet.

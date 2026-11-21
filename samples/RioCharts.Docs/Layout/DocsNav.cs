@@ -15,6 +15,7 @@ public static class DocsNav
         [
             new("axes", "Axes and time"), new("annotations", "Annotations"), new("interaction", "Tooltips, clicks and zoom"),
             new("live-data", "Live data"), new("large-data", "Large data"), new("theming", "Theming"),
+            new("export", "Export and download"),
         ]),
         new("Beyond Blazor", [new("specs", "JSON specs (playground)"), new("server-export", "Server-side export"), new("ai", "AI agents and MCP")]),
     ];

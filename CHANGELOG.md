@@ -12,6 +12,15 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Client-side export. `Exportable` adds a download button (top-right, shown on hover or focus) with
+  a menu for a PNG image, an SVG image and CSV data; `ExportFileName` names the files (default: the
+  title). From code: `DownloadPngAsync`, `DownloadSvgAsync`, `DownloadCsvAsync`, and `ExportPngAsync`
+  (`byte[]`), `ExportSvgAsync` (string) and `ExportCsv()` to get the content in .NET.
+  `ChartImageOptions` sets the PNG `Scale` (default 2) and the `Background` (default the surface
+  color). Images are made in the browser from the chart as drawn, so they keep the size, zoom,
+  hidden series, canvas series layer and the page's CSS theme; images reach .NET as a stream, so
+  Blazor Server's message size limit does not apply. Core: `ChartCsv` and `CsvOptions` (an x column
+  and one column per series, invariant numbers and ISO 8601 times by default).
 - Fix: the Reset zoom button now resets every zoomable chart in the same `Group`, as
   double-click already did; before it reset only the chart it was on.
 - Series components combine items with the same x into one point: `Aggregate` (`Sum`,

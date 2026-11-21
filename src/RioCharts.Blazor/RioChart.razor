@@ -54,6 +54,27 @@
     @if (Zoomable && layout.Zoomed)
     {
         <button type="button" class="rio-reset-zoom" @onclick="OnResetZoomClick"
-                style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4)}px")">Reset zoom</button>
+                style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4 + (Exportable ? 32 : 0))}px")">Reset zoom</button>
+    }
+    @if (Exportable)
+    {
+        <div class="rio-export @(_exportMenuOpen ? "rio-export-open" : null)" @onkeydown="OnExportMenuKey">
+            <button type="button" class="rio-export-button" title="Download" aria-label="Download chart"
+                    aria-haspopup="menu" aria-expanded="@(_exportMenuOpen ? "true" : "false")" aria-controls="@(_id + "-export")"
+                    @onclick="ToggleExportMenu">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                    <path d="M8 2.5v7.5M4.75 6.75 8 10l3.25-3.25M3 12.5h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            @if (_exportMenuOpen)
+            {
+                <div class="rio-export-backdrop" @onclick="CloseExportMenu"></div>
+                <div class="rio-export-menu" role="menu" id="@(_id + "-export")" aria-label="Download">
+                    <button type="button" role="menuitem" @ref="_exportFirstItem" @onclick="@(() => ExportFromMenu("png"))">PNG image</button>
+                    <button type="button" role="menuitem" @onclick="@(() => ExportFromMenu("svg"))">SVG image</button>
+                    <button type="button" role="menuitem" @onclick="@(() => ExportFromMenu("csv"))">CSV data</button>
+                </div>
+            }
+        </div>
     }
 </div>

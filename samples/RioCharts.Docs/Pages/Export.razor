@@ -1,0 +1,106 @@
+@page "/export"
+
+<PageTitle>Export and download · RioCharts</PageTitle>
+
+<h1>Export and download</h1>
+<p class="lead">
+    Save a chart as PNG or SVG, or its data as CSV, straight from the browser. Images show the chart as it is drawn: the current size, zoom,
+    hidden series and the page's theme colors. No server-side rendering or extra package is needed.
+</p>
+
+<Example Title="Download menu" Code="@MenuCode">
+    <Description>
+        <p>
+            <code>Exportable</code> adds a download button in the top-right corner. It shows while the pointer is over the chart (always on touch screens)
+            and opens a menu with <b>PNG image</b>, <b>SVG image</b> and <b>CSV data</b>. Files are named after the title unless you set <code>ExportFileName</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Title="Supply and extract air" YAxis="Celsius" Exportable="true">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" />
+            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Export from code" Code="@CodeCode">
+    <Description>
+        <p>
+            The same exports are methods on the chart reference. <code>Download…Async</code> saves a file in the browser.
+            <code>ExportPngAsync</code> and <code>ExportSvgAsync</code> return the image to .NET (for uploads, emails or reports), and
+            <code>ExportCsv</code> returns the data of every series as text: an x column and one column per series, numbers in invariant culture,
+            times in ISO 8601.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart @ref="_chart" TItem="Reading" Height="240" YAxis="Kwh">
+            <BarSeries Items="Daily" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" Format="0 kWh" />
+        </RioChart>
+        <p class="note">
+            <button class="small" @onclick="() => _chart!.DownloadPngAsync(options: new ChartImageOptions { Scale = 3 })">Download PNG (3×)</button>
+            <button class="small" @onclick="() => _chart!.DownloadSvgAsync()">Download SVG</button>
+            <button class="small" @onclick="() => _chart!.DownloadCsvAsync(options: new CsvOptions { Delimiter = ';' })">Download CSV (;)</button>
+            <button class="small" @onclick="SizeOfPng">Measure PNG</button>
+        </p>
+        @if (_pngInfo is not null)
+        {
+            <p class="note">@_pngInfo</p>
+        }
+    </ChildContent>
+</Example>
+
+<h2>Options</h2>
+<table class="docs">
+    <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+    <tr><td><code>ChartImageOptions.Scale</code></td><td>2</td><td>PNG pixels per CSS pixel.</td></tr>
+    <tr><td><code>ChartImageOptions.Background</code></td><td>the surface color</td><td>Any CSS color; <code>"transparent"</code> for none.</td></tr>
+    <tr><td><code>CsvOptions.Delimiter</code></td><td><code>,</code></td><td>Column separator, e.g. <code>;</code> for spreadsheets with a decimal comma.</td></tr>
+    <tr><td><code>CsvOptions.Culture</code></td><td>invariant</td><td>Culture for numbers.</td></tr>
+    <tr><td><code>CsvOptions.XHeader</code></td><td>the x axis title, else <code>x</code></td><td>Header of the x column.</td></tr>
+</table>
+
+<div class="callout">
+    Images use the fonts installed on the viewer's machine: a web font the page loads is not available inside the image, so text falls back to
+    the next font in the list. For images made without a browser (emails, scheduled reports), use <a href="server-export">server-side export</a>.
+</div>
+
+@code {
+    private static readonly AxisSpec Celsius = new() { Title = "°C" };
+    private static readonly AxisSpec Kwh = new() { Title = "kWh" };
+    private RioChart<Reading>? _chart;
+    private string? _pngInfo;
+
+    private async Task SizeOfPng()
+    {
+        var png = await _chart!.ExportPngAsync();
+        _pngInfo = $"ExportPngAsync returned {png.Length / 1024.0:0.0} KB.";
+    }
+
+    private const string MenuCode = """
+        <RioChart TItem="Reading" Title="Supply and extract air" Exportable="true">
+            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        """;
+
+    private const string CodeCode = """
+        <RioChart @ref="chart" TItem="Reading">
+            <BarSeries Items="daily" Name="Energy" XValue="r => r.Time" YValue="r => r.Value" Format="0 kWh" />
+        </RioChart>
+
+        <button @onclick="() => chart.DownloadPngAsync(options: new ChartImageOptions { Scale = 3 })">Download PNG (3×)</button>
+        <button @onclick="() => chart.DownloadSvgAsync()">Download SVG</button>
+        <button @onclick="() => chart.DownloadCsvAsync(options: new CsvOptions { Delimiter = ';' })">Download CSV (;)</button>
+
+        @code {
+            RioChart<Reading> chart = null!;
+
+            async Task Upload()
+            {
+                byte[] png = await chart.ExportPngAsync();
+                string svg = await chart.ExportSvgAsync(new ChartImageOptions { Background = "transparent" });
+                string csv = chart.ExportCsv();
+            }
+        }
+        """;
+}

@@ -514,6 +514,7 @@ public partial class RioChart<TItem> : IChartContext
             return;
         }
 
+        await FocusExportMenuAsync();
         try
         {
             if (firstRender)

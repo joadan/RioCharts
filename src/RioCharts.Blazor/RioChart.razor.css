@@ -286,6 +286,91 @@
     outline-offset: 1px;
 }
 
+/* ---------- Download menu (Exportable) ---------- */
+
+.rio-chart .rio-export {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+}
+
+.rio-chart .rio-export-button {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: var(--rio-surface, var(--_rio-surface));
+    color: var(--rio-text-muted, var(--_rio-text-muted));
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.12s ease-out;
+}
+
+/* Shown while the pointer is over the chart, when focused or open, and always on touch screens. */
+.rio-chart:hover .rio-export-button,
+.rio-chart .rio-export-button:focus-visible,
+.rio-chart .rio-export-open .rio-export-button {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .rio-chart .rio-export-button {
+        opacity: 1;
+    }
+}
+
+.rio-chart .rio-export-button:hover,
+.rio-chart .rio-export-open .rio-export-button {
+    border-color: var(--rio-grid, var(--_rio-grid));
+    color: var(--rio-text, var(--_rio-text));
+}
+
+.rio-chart .rio-export-button:focus-visible,
+.rio-chart .rio-export-menu button:focus-visible {
+    outline: 2px solid var(--rio-focus, var(--_rio-focus));
+    outline-offset: 1px;
+}
+
+.rio-chart .rio-export-backdrop {
+    position: fixed;
+    inset: 0;
+}
+
+.rio-chart .rio-export-menu {
+    position: absolute;
+    top: 32px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 128px;
+    padding: 4px;
+    border: 1px solid var(--rio-grid, var(--_rio-grid));
+    border-radius: 8px;
+    background: var(--rio-surface, var(--_rio-surface));
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.1);
+}
+
+.rio-chart .rio-export-menu button {
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 5px;
+    background: none;
+    color: var(--rio-text, var(--_rio-text));
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.rio-chart .rio-export-menu button:hover {
+    background: var(--rio-grid, var(--_rio-grid));
+}
+
 /* ---------- Draggable reference lines ---------- */
 
 .rio-chart ::deep .rio-draggable-y {

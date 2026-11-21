@@ -258,7 +258,7 @@ html.dark-boot, html.dark-boot body {
 
 /* ----- Buttons ----- */
 
-.site .button, .site .doc button:not(.code-copy) {
+.site .button, .site .doc button:not(.code-copy, .rio-chart button) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -276,7 +276,7 @@ html.dark-boot, html.dark-boot body {
     transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
-.site .button:hover, .site .doc button:not(.code-copy):hover {
+.site .button:hover, .site .doc button:not(.code-copy, .rio-chart button):hover {
     border-color: var(--doc-accent);
     color: var(--doc-text);
 }

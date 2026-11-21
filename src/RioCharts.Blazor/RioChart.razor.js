@@ -7,6 +7,8 @@
 //   share the crosshair here in the browser and the zoom through each chart's .NET side.
 // - With a TooltipTemplate, .NET renders the tooltip content: JS asks for it only when the hovered
 //   points change (one call in flight, the latest wins) and places the card when it arrives.
+// - Export: copies the drawn chart into a standalone SVG (theme colors resolved) and rasterizes it
+//   for PNG, so images match the page's CSS; downloads are saved here without a round trip.
 // Only clicks, finished zooms and (with a template) hovered-point changes call back into .NET.
 
 const states = new WeakMap();
@@ -996,4 +998,183 @@ function paintCanvas(state, dx) {
     }
 
     ctx.globalAlpha = 1;
+}
+
+// ---------- Export (SVG, PNG, downloads) ----------
+
+// Presentation properties copied from the live chart, so the file looks the same without the
+// page's CSS (theme variables, legend fading). Inherited ones are written only where they differ
+// from the parent; the rest only where they differ from the SVG default.
+const EXPORT_INHERITED = [
+    'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'stroke-dasharray', 'stroke-linecap',
+    'stroke-linejoin', 'visibility', 'font-family', 'font-size', 'font-weight', 'font-style', 'text-anchor',
+    'font-variant-numeric',
+];
+const EXPORT_DEFAULTS = { 'opacity': '1', 'dominant-baseline': 'auto' };
+
+// The chart as a standalone SVG document: { text, width, height }.
+function buildSvg(container, options) {
+    const source = container.querySelector('svg.rio-chart-svg');
+    if (!source) {
+        throw new Error('RioCharts: no chart to export.');
+    }
+
+    const vb = source.viewBox.baseVal;
+    const width = vb && vb.width ? vb.width : source.clientWidth;
+    const height = vb && vb.height ? vb.height : source.clientHeight;
+    const copy = source.cloneNode(true);
+    const originals = [source, ...source.querySelectorAll('*')];
+    const copies = [copy, ...copy.querySelectorAll('*')];
+    const computed = new Map();
+    const removed = [];
+    originals.forEach((el, i) => {
+        const target = copies[i];
+        for (const attr of [...target.attributes]) {
+            if (attr.name === 'class' || attr.name === 'tabindex' || /^b-[a-z0-9]+$/.test(attr.name)) {
+                target.removeAttribute(attr.name); // CSS hooks and Blazor's scoped-CSS markers
+            }
+        }
+
+        const style = getComputedStyle(el);
+        computed.set(el, style);
+        if (style.display === 'none') {
+            removed.push(target);
+            return;
+        }
+
+        if (el.tagName === 'title' || el.tagName === 'desc') {
+            return;
+        }
+
+        const parent = el === source ? null : computed.get(el.parentElement);
+        for (const name of EXPORT_INHERITED) {
+            const value = style.getPropertyValue(name);
+            const inherited = parent ? parent.getPropertyValue(name) : null;
+            if (value && value !== inherited) {
+                target.setAttribute(name, value);
+            } else {
+                target.removeAttribute(name);
+            }
+        }
+
+        // The entry fade: keep the element's own opacity, not a frame of the animation.
+        const animating = el.getAnimations && el.getAnimations().some(a => a.playState === 'running');
+        for (const name in EXPORT_DEFAULTS) {
+            if (name === 'opacity' && animating) {
+                continue;
+            }
+
+            const value = style.getPropertyValue(name);
+            if (value && value !== EXPORT_DEFAULTS[name]) {
+                target.setAttribute(name, value);
+            } else {
+                target.removeAttribute(name);
+            }
+        }
+    });
+    removed.forEach(el => el.remove());
+    const comments = document.createTreeWalker(copy, NodeFilter.SHOW_COMMENT);
+    const markers = [];
+    while (comments.nextNode()) {
+        markers.push(comments.currentNode); // Blazor's render markers
+    }
+
+    markers.forEach(n => n.remove());
+
+    copy.setAttribute('xmlns', SVG);
+    copy.setAttribute('width', width);
+    copy.setAttribute('height', height);
+    copy.removeAttribute('style');
+    copy.removeAttribute('aria-describedby');
+
+    const background = options && options.background
+        ? options.background
+        : resolveColor(container, 'var(--rio-surface, var(--_rio-surface))');
+    if (background && background !== 'transparent' && background !== 'none') {
+        const rect = document.createElementNS(SVG, 'rect');
+        rect.setAttribute('width', '100%');
+        rect.setAttribute('height', '100%');
+        rect.setAttribute('fill', background);
+        copy.insertBefore(rect, copy.querySelector(':scope > desc')?.nextSibling || copy.firstChild);
+    }
+
+    // The canvas series layer (large data) sits over the SVG: add it as an image on top.
+    const canvas = container.querySelector('canvas.rio-canvas');
+    if (canvas && canvas.width > 0) {
+        const image = document.createElementNS(SVG, 'image');
+        image.setAttribute('x', 0);
+        image.setAttribute('y', 0);
+        image.setAttribute('width', width);
+        image.setAttribute('height', height);
+        image.setAttribute('preserveAspectRatio', 'none');
+        image.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', canvas.toDataURL('image/png'));
+        copy.appendChild(image);
+    }
+
+    const text = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(copy);
+    return { text, width, height };
+}
+
+// A CSS color (e.g. a theme variable) as the browser resolves it inside the chart.
+function resolveColor(container, css) {
+    const probe = document.createElement('span');
+    probe.style.display = 'none';
+    probe.style.color = css;
+    container.appendChild(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color === 'rgba(0, 0, 0, 0)' ? 'transparent' : color;
+}
+
+async function renderPng(container, options) {
+    const svg = buildSvg(container, options);
+    const scale = options && options.scale > 0 ? options.scale : 2;
+    const url = URL.createObjectURL(new Blob([svg.text], { type: 'image/svg+xml;charset=utf-8' }));
+    try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(svg.width * scale));
+        canvas.height = Math.max(1, Math.round(svg.height * scale));
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+        return await new Promise((resolve, reject) =>
+            canvas.toBlob(b => b ? resolve(b) : reject(new Error('RioCharts: PNG encoding failed.')), 'image/png'));
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+}
+
+// For .NET (as a stream): the SVG text as UTF-8, and the PNG bytes.
+export function exportSvg(container, options) {
+    return new TextEncoder().encode(buildSvg(container, options).text);
+}
+
+export async function exportPng(container, options) {
+    return new Uint8Array(await (await renderPng(container, options)).arrayBuffer());
+}
+
+// Saves the chart as a file, without sending the image through .NET.
+export async function download(container, kind, fileName, options) {
+    const blob = kind === 'png'
+        ? await renderPng(container, options)
+        : new Blob([buildSvg(container, options).text], { type: 'image/svg+xml;charset=utf-8' });
+    saveBlob(blob, fileName);
+}
+
+export function downloadText(fileName, text, type) {
+    // A byte order mark, so Excel reads UTF-8 CSV correctly.
+    saveBlob(new Blob(['﻿', text], { type: `${type};charset=utf-8` }), fileName);
+}
+
+function saveBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
