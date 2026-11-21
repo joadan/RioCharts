@@ -592,10 +592,12 @@ function findSingle(m, px, py) {
     let best = null;
     for (const s of m.series) {
         if (s.ch > 0) {
-            // Heatmap: the cell under the pointer.
-            const j = nearest(s.x, px);
-            if (j >= 0 && Math.abs(s.x[j] - px) <= s.barWidth / 2 + 0.5 && Math.abs(s.y[j] - py) <= s.ch / 2 + 0.5) {
-                return [{ s, i: j, d: 0 }];
+            // Heatmap cells and horizontal bars: the one under the pointer.
+            for (let j = 0; j < s.x.length; j++) {
+                const w = s.cw ? s.cw[j] : s.barWidth;
+                if (Math.abs(s.x[j] - px) <= w / 2 + 0.5 && Math.abs(s.y[j] - py) <= s.ch / 2 + 0.5) {
+                    return [{ s, i: j, d: 0 }];
+                }
             }
 
             continue;
@@ -776,7 +778,7 @@ function drawHover(state, rows, m) {
     const x = rows.anchor !== undefined ? rows.anchor : first.x !== undefined ? first.x : first.s.x[first.i];
     if (first.s.ch > 0) {
         // Heatmap: outline the cell.
-        const w = first.s.barWidth, h = first.s.ch, cx = first.s.x[first.i], cy = first.s.y[first.i];
+        const w = first.s.cw ? first.s.cw[first.i] : first.s.barWidth, h = first.s.ch, cx = first.s.x[first.i], cy = first.s.y[first.i];
         g.appendChild(el('rect', { class: 'rio-hover-cell', x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 2 }));
         return;
     } else if (first.s.dots) {

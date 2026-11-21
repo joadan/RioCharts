@@ -46,6 +46,11 @@ public static class ChartRazor
             sb.Append($" TimeZone=\"{Attr(zone)}\"");
         }
 
+        if (spec.Horizontal)
+        {
+            sb.Append(" Horizontal=\"true\"");
+        }
+
         if (!spec.AutoCompact)
         {
             sb.Append(" AutoCompact=\"false\"");

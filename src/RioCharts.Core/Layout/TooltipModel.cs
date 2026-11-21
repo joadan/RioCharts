@@ -33,6 +33,9 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
 
     /// <summary>Heatmap: the cell height (a cell is <see cref="BarWidth"/> wide, centered on its point).</summary>
     public float CellHeight { get; init; }
+
+    /// <summary>Horizontal bars: each bar's length (with <see cref="CellHeight"/> its hover area); null when all cells are <see cref="BarWidth"/> wide.</summary>
+    public float[]? CellWidths { get; init; }
 }
 
 /// <summary>

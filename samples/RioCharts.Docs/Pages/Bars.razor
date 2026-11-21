@@ -56,6 +56,23 @@
     </ChildContent>
 </Example>
 
+<Example Title="Horizontal bars" Code="@HorizontalCode">
+    <Description>
+        <p>
+            <code>Horizontal="true"</code> turns the bars sideways: categories down the side, first on top, so a sorted list reads as a
+            ranking and long names have room (very long ones are shortened, the tooltip has them in full). <code>YAxis</code> formats the
+            values; reference lines such as a target are drawn across the rows. In a JSON spec: <code>"type": "horizontalBar"</code> or
+            <code>"horizontal": true</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="_ranking" Horizontal="true" YAxis="KiloEuros" Height="300" Title="Revenue per category, this year">
+            <BarSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" DataLabels="true" />
+            <ReferenceLine Value="200" Label="Target" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Per-bar tooltip" Code="@SingleCode">
     <Description><p>Tooltips are shared per x by default; <code>Shared = false</code> shows only the bar under the pointer.</p></Description>
     <ChildContent>
@@ -70,6 +87,7 @@
     private static readonly AxisSpec OrdersAxis = new() { Title = "Orders per day" };
     private static readonly AxisSpec KiloEuros = new() { Title = "k€" };
     private static readonly TooltipSpec _single = new() { Shared = false };
+    private static readonly List<Share> _ranking = [.. CategoryRevenue.OrderByDescending(s => s.Value)];
     private PointClickEventArgs<Ticket>? _tickets;
     private static readonly List<Reading> _average = DailyOrders
         .Select((r, i) => new Reading(r.Time, DailyOrders.Skip(Math.Max(0, i - 6)).Take(Math.Min(7, i + 1)).Average(x => x.Value)))
@@ -100,6 +118,14 @@
     private const string MixedCode = """
         <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
         <LineSeries Items="average" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        """;
+
+    private const string HorizontalCode = """
+        <RioChart Items="categories.OrderByDescending(c => c.Revenue)" Horizontal="true" YAxis="@(new AxisSpec { Title = "k€" })"
+                  Title="Revenue per category, this year">
+            <BarSeries Name="Revenue" XValue="c => c.Name" YValue="c => c.Revenue" Format="0 k€" DataLabels="true" />
+            <ReferenceLine Value="200" Label="Target" />
+        </RioChart>
         """;
 
     private const string SingleCode = """

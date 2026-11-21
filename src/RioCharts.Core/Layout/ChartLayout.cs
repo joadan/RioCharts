@@ -172,6 +172,11 @@ public static partial class ChartLayout
             resolved.Add(r);
         }
 
+        if (spec.Horizontal && resolved.Any(r => r.Spec.Type == SeriesType.Bar) && !resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
+        {
+            return ComputeHorizontal(spec, resolved, options, warnings, styles, time);
+        }
+
         if (resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
         {
             return ComputeHeatmap(spec, resolved, options, warnings, styles, time);

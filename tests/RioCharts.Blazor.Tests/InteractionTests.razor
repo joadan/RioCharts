@@ -165,4 +165,17 @@
         var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
         Assert.Equal("19.5 – 20.8", values[0].GetString()); // min and max of the day's readings
     }
+
+    [Fact]
+    public void Horizontal_bar_charts_send_each_bar_size()
+    {
+        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms" Horizontal="true">
+            <BarSeries Name="Minutes" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        Assert.Equal(["AHU 1", "AHU 2"], cut.FindAll("text.rio-row-label").Select(t => t.TextContent));
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal(2, series.GetProperty("cw").GetArrayLength());
+        Assert.True(series.GetProperty("ch").GetSingle() > 0);
+    }
 }

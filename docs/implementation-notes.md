@@ -542,3 +542,19 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   lowest low per point. In specs, average and sum become min (low) and max (high), since averaging a
   band's ends would hide its extremes; other aggregates apply to both ends.
 - **Not yet:** an outline option, live data with lows, and error bars.
+
+
+## Horizontal bars
+
+- **A chart option, not a series type** (`ChartSpec.Horizontal`): orientation is a property of the
+  whole chart. JSON `"horizontalBar"` (and synonyms) maps to `bar` and sets the chart flag.
+- **Own layout path** (`ComputeHorizontal`): rows from the categories (or the distinct x values as
+  labels), first on top; a nice value scale along the bottom (`spec.Y` gives title, format,
+  min/max); vertical grid lines and a zero line. Grouping and stacking are computed here (stack
+  per row, positive and negative separately). Only bar series; others are skipped with a warning.
+- **Labels:** row labels get at most 45% of the width and are shortened with "…" (the tooltip
+  keeps the full name). Data labels go after the bar end, inside it when there is no room,
+  and inside stacked segments only when they fit. Value lines and bands are supported (other
+  annotations are skipped with a warning); their labels sit in a strip above the rows.
+- **Hover:** `TooltipSeries.CellWidths` gives each bar's length; JS checks the rectangle under the
+  pointer (a linear scan, also used for heatmap cells now) and outlines it. No zoom.

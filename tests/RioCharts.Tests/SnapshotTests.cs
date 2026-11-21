@@ -218,6 +218,22 @@ public class SnapshotTests
                 Enumerable.Range(0, 30).Select(d => Math.Round(9000 + 2500 * Math.Sin(d / 7.0 * Math.PI))).ToArray()),
         }),
 
+        ["bars-horizontal"] = new(new ChartSpec
+        {
+            Horizontal = true,
+            Y = new AxisSpec { Title = "Revenue, k€" },
+            Series =
+            [
+                new SeriesSpec { Id = "a", Name = "2025", Type = SeriesType.Bar },
+                new SeriesSpec { Id = "b", Name = "2026", Type = SeriesType.Bar, DataLabels = true },
+            ],
+            Annotations = [new AnnotationSpec { Value = 100, Label = "Target" }],
+        }, new()
+        {
+            ["a"] = Categories(["Trail shoe · Ridge 2", "Rain jacket · Storm", "Headlamp · Beam 400", "Merino base layer, long sleeve", "Tent · Dome 2p"], 112, 84, 55, 61, 41),
+            ["b"] = Categories(["Trail shoe · Ridge 2", "Rain jacket · Storm", "Headlamp · Beam 400", "Merino base layer, long sleeve", "Tent · Dome 2p"], 128, 92, 71, 58, 22),
+        }, Height: 340),
+
         ["empty-swedish"] = new(new ChartSpec { Title = "Tilluft", Series = [new SeriesSpec { Id = "s", Name = "Tilluft" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 

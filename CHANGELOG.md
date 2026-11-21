@@ -12,6 +12,12 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Horizontal bars (`Horizontal="true"` on `RioChart`, `ChartSpec.Horizontal`, `"horizontal": true`
+  or `"type": "horizontalBar"` in JSON): categories down the side (first on top, so sorted data
+  reads as a ranking), values along the bottom with vertical grid lines. Grouped or stacked bars,
+  negatives to the left, values at the bar ends, long names shortened with "…" (full in the
+  tooltip), value lines and bands across the rows with their labels above. `YAxis` formats the
+  values. Hover outlines a bar. Docs: a horizontal example on the Bars page.
 - Range areas (`<RangeAreaSeries LowValue HighValue>`, `SeriesType.RangeArea`, `"rangeArea"` or
   `"range"` with a `"low"` field in JSON): a light band between a low and a high value per x,
   usually behind a line. `SeriesData` has an optional `Low` column (`WithLow`, in input order like

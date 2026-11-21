@@ -18,6 +18,9 @@ public sealed record ChartSpec
     [Description("Default true: as the chart gets small, leave out axis titles, then the legend, title and axis labels; very small charts become compact. False keeps everything at any size.")]
     public bool AutoCompact { get; init; } = true;
 
+    [Description("Bar charts: bars run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.")]
+    public bool Horizontal { get; init; }
+
     [Description("Horizontal axis.")]
     public AxisSpec X { get; init; } = new();
 

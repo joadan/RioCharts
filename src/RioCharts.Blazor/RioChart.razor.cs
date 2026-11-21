@@ -187,6 +187,12 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public bool AutoCompact { get; set; } = true;
 
     /// <summary>
+    /// Bar charts: bars run left to right, with the categories down the side (first on top). For
+    /// rankings and long category names. <see cref="YAxis"/> (title, format, min, max) applies to the values.
+    /// </summary>
+    [Parameter] public bool Horizontal { get; set; }
+
+    /// <summary>
     /// False draws plain SVG without the JS module: no tooltip, hover, zoom, keyboard navigation,
     /// download button or width measuring. For many small charts (compact charts in a table) or static
     /// pages. Set <see cref="Width"/> for exact geometry; otherwise the chart is laid out at a default
@@ -229,8 +235,13 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>The spec being drawn: the bound <see cref="Spec"/>, or the one from parameters and child components.</summary>
     private ChartSpec CurrentSpec() => Spec is not null && _bound is not null
-        ? (Compact && !_bound.Spec.Compact) || (!AutoCompact && _bound.Spec.AutoCompact)
-            ? _bound.Spec with { Compact = Compact || _bound.Spec.Compact, AutoCompact = AutoCompact && _bound.Spec.AutoCompact }
+        ? (Compact && !_bound.Spec.Compact) || (!AutoCompact && _bound.Spec.AutoCompact) || (Horizontal && !_bound.Spec.Horizontal)
+            ? _bound.Spec with
+            {
+                Compact = Compact || _bound.Spec.Compact,
+                AutoCompact = AutoCompact && _bound.Spec.AutoCompact,
+                Horizontal = Horizontal || _bound.Spec.Horizontal,
+            }
             : _bound.Spec
         : BuildSpec();
 
@@ -364,7 +375,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets,
-            TooltipHeader is not null, TooltipTemplate is not null, Compact, AutoCompact, CurrentTexts);
+            TooltipHeader is not null, TooltipTemplate is not null, Compact, AutoCompact, Horizontal, CurrentTexts);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -380,6 +391,7 @@ public partial class RioChart<TItem> : IChartContext
         Title = Title,
         Compact = Compact,
         AutoCompact = AutoCompact,
+        Horizontal = Horizontal,
         X = XAxis ?? new AxisSpec(),
         Y = YAxis ?? new AxisSpec(),
         YAxes = YAxes ?? [],
@@ -677,7 +689,7 @@ public partial class RioChart<TItem> : IChartContext
                 Group: Group,
                 Xscale: scale is null ? null : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
                 Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type == SeriesType.Bar, s.Step, s.Snap,
-                    s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight))],
+                    s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight, s.CellWidths))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd))]))
             : null;

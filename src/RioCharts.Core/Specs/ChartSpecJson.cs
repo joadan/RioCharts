@@ -260,6 +260,11 @@ public static class ChartSpecJson
         ["areachart"] = ("area", null),
         ["stackedarea"] = ("area", s => s.TryAdd("stack", "stack")),
         ["bar"] = ("bar", null),
+        ["horizontalbar"] = ("bar", s => s["horizontal"] = true),
+        ["horizontalbars"] = ("bar", s => s["horizontal"] = true),
+        ["hbar"] = ("bar", s => s["horizontal"] = true),
+        ["barh"] = ("bar", s => s["horizontal"] = true),
+        ["horizontalbarchart"] = ("bar", s => s["horizontal"] = true),
         ["bars"] = ("bar", null),
         ["barchart"] = ("bar", null),
         ["column"] = ("bar", null),
@@ -380,6 +385,16 @@ public static class ChartSpecJson
                     {
                         errors.Add(new SpecError($"series[{i}].type",
                             $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, pie, radialBar, auto (also column, donut, stackedBar, spline, gauge, points)."));
+                    }
+                }
+
+                // "horizontalBar" (or "horizontal": true on a series) makes the whole chart horizontal.
+                if (s["horizontal"] is JsonValue h && h.TryGetValue<bool>(out var horizontal))
+                {
+                    s.Remove("horizontal");
+                    if (horizontal)
+                    {
+                        root["horizontal"] = true;
                     }
                 }
 
