@@ -73,7 +73,7 @@ Separate the **chart** (coordinate system and axes) from the **series types** (t
 ### Coordinate systems
 - **Cartesian**: line, area, bar, scatter, heatmap, candlestick, box plot.
 - **Polar**: pie, donut, radial bar, radar, polar area, gauge.
-- Special cases (treemap, sankey) get their own system later, if ever.
+- **Space-filling**: treemap. No axes; the plot area is divided among the data (see Treemap below). Sankey later, if ever.
 - Cartesian and polar series never mix in one chart.
 
 ### Series type contract
@@ -106,6 +106,54 @@ Each series type provides:
 - Hover explode and the donut center label (total or hovered value) live in the overlay layer.
 - Animate start and end angles, never path data.
 - Without axes, the legend does more of the work; it is a shared component for both coordinate systems.
+
+### Radar
+Compares several measures across a few series, e.g. a unit's performance figures against a reference unit.
+- **Spokes** are categories (one per x value), evenly spaced and starting at the top, clockwise. The radius is a linear value scale from zero, shared by all spokes.
+- **Series** are closed polygons with a line about 2px wide and a light fill (low opacity) so overlapping series stay readable. Markers hidden until hover, as for lines.
+- **Grid**: concentric polygons at the nice ticks, thin and muted, with tick labels along the first spoke only. Spoke lines are as faint as the grid. Category labels sit just outside the spoke ends, anchored by side, and are shortened with "…" when they collide.
+- **Tooltip** is shared per spoke (like the shared x tooltip in cartesian charts): it lists every series' value for that category. Hit-testing picks the nearest spoke by angle.
+- **Missing values** (NaN) break the polygon into open line segments rather than pulling the point to the center.
+- Fewer than three categories still renders a clean state (a line or a point), never a collapsed or invalid polygon.
+
+### Box plot
+Shows the spread of values per category, e.g. supply temperatures per unit or per month.
+- **Cartesian** with a band x-axis (categories or time buckets); `Horizontal` works as for bars.
+- **Two ways in**:
+  - **Raw values**: a list of values per category. Core computes the five-number summary (quartiles by linear interpolation), whiskers at 1.5 × IQR (Tukey), and the outliers.
+  - **Precomputed**: min, q1, median, q3 and max selectors (plus optional outliers) when the app or database already has the summary.
+- **Columns**: min, q1, median, q3 and max are extra columns in `SeriesData`; outliers are a separate flat list with category indices.
+- **Drawing**: a box from q1 to q3 with a stronger median line, thin whiskers without end caps by default, outliers as small hollow dots. Several box series share band slots like grouped bars.
+- **Domain**: tight, like lines (no forced zero baseline), covering whiskers and outliers.
+- **Tooltip** shows the five numbers and the count; hovering an outlier shows its value (and item, when there is one).
+
+### Candlestick
+Shows how a value moves within each period: open, high, low and close. Besides finance, this fits aggregated sensor data, e.g. per-hour or per-day first/max/min/last of a temperature.
+- **Cartesian** with a time x-axis (time as given); a band x-axis is allowed so gaps such as weekends can be skipped.
+- **Columns**: open, high, low and close are extra columns in `SeriesData`. NaN in any of them is a gap.
+- **Drawing**: a thin wick from low to high and a body from open to close. Rising and falling candles use the theme's positive and negative tokens; a flat candle draws as a short line. Body width follows the period spacing, like bar band slots.
+- **Aggregation**: an optional helper buckets a raw time series into OHLC per interval (hour, day, …). When zoomed out past a pixel threshold, candles merge into wider buckets instead of using LTTB, so highs and lows are never lost.
+- **Domain**: tight, covering low to high.
+- **Tooltip** shows open, high, low and close for the period, and the change from open.
+- Mixes with lines (e.g. a moving average) and with bars on a second axis (e.g. volume or run time).
+
+### Treemap
+Shows how a total splits into parts, by area, when there are too many parts for a pie, e.g. energy use per building, floor and unit.
+- **Space-filling**: no axes. The plot area is divided into rectangles with the squarified layout, computed in Core.
+- **Hierarchy**: items with a parent selector (or a path selector, e.g. `"Building A/Floor 2/AHU 3"`), flattened in Core into a node list with parent indices and values. Parent values are the sum of their children; leaves only need a value. A flat list is a one-level treemap.
+- **Color**: by top-level group from the palette by default (children use the parent's color). Optionally by a separate value field on a sequential scale, sharing the heatmap's color scale.
+- **Drawing**: a small gap between rectangles, as between donut slices; group headers for parents when there is room.
+- **Labels**: name and value inside a rectangle when they fit, shortened with "…", otherwise hidden (full in the tooltip). Text color picks the better contrast against the fill.
+- **Small items**: as for pies, an optional threshold groups small leaves into "Other" per parent.
+- **Tooltip** shows the path, the value and its share of the parent and of the total. Hit-testing uses the rectangles.
+- **Legend**: the top-level groups, when colored by group. Drill-down (click a parent to zoom into it) comes later.
+- Zero and negative values are left out of the layout (and noted in the screen reader text), never drawn as empty or inverted rectangles.
+
+### Shared rules for these types
+- Each is a series type behind the same contract (extent, layout needs, scene nodes, hit-test entries, tooltip data, legend items); nothing outside Core's series layer special-cases them.
+- Each gets an AI spec `type` (`radar`, `boxPlot`, `candlestick`, `treemap`) with its fields in the JSON schema. Auto chart type does not pick them; they are chosen explicitly.
+- Each gets a reference chart in the visual snapshots, a docs page with a live example, and Skia export.
+- Keyboard navigation and the screen reader description work as for the existing types (spokes, boxes, candles, rectangles in reading order).
 
 ## Data input model
 **Two ways in, one representation inside.** Developers get a convenient API, large data gets a fast path, and Core only ever sees one data format.
@@ -348,6 +396,7 @@ All methods are async, and they work the same on Server and WASM.
 4. Zoom/pan, display time zone, streaming data, linked charts, remaining annotations (points, callouts, draggable), large-data mode (downsampling, canvas series layer).
 5. Server-side export via Skia using the same Core.
 6. AI chart spec: JSON schema, validation with actionable errors, `create_chart` tool (AIFunction/MCP), auto chart type.
+7. More chart types: radar, box plot, candlestick (with OHLC aggregation) and treemap.
 
 Design the internal chart model so it is serializable from milestone 1. That keeps the AI spec cheap to add later.
 
