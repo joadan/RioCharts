@@ -34,16 +34,20 @@ public static class ChartDescriber
     /// <param name="culture">Culture for numbers and dates.</param>
     /// <param name="texts">The chart's own texts. Null: <see cref="ChartTexts.For"/> the culture.</param>
     public static string Describe(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
-        ChartTexts? texts = null)
+        ChartTexts? texts = null) =>
+        Describe(spec, series, xKind, culture, texts ?? ChartTexts.For(culture), d => Facts(d, xKind));
+
+    /// <summary><see cref="Describe(ChartSpec, IReadOnlyList{ValueTuple{SeriesSpec, SeriesData, bool}}, XKind, CultureInfo, ChartTexts?)"/> with each series' <see cref="SeriesFacts"/> computed by the caller (once per layout).</summary>
+    internal static string Describe(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+        ChartTexts texts, Func<SeriesData, SeriesFacts> facts)
     {
-        texts ??= ChartTexts.For(culture);
         var sb = new StringBuilder();
         var visible = series.Where(s => s.Visible).ToList();
         sb.Append(string.IsNullOrWhiteSpace(spec.Title)
             ? texts.FillCount(nameof(ChartTexts.Summary), visible.Count, culture, visible.Count)
             : texts.FillCount(nameof(ChartTexts.SummaryTitled), visible.Count, culture, visible.Count, spec.Title));
 
-        if (!visible.Any(s => s.Data.Y.Any(double.IsFinite)))
+        if (!visible.Any(s => facts(s.Data).Count > 0))
         {
             sb.Append(' ').Append(texts.NoData).Append('.');
             return sb.ToString();
@@ -51,7 +55,7 @@ public static class ChartDescriber
 
         foreach (var (s, d, _) in visible)
         {
-            var stats = Scan(d);
+            var stats = facts(d);
             sb.Append(' ').Append(texts.FillCount(nameof(ChartTexts.SeriesValues), stats.Count, culture, s.DisplayName, stats.Count));
             if (stats.Count == 0)
             {
@@ -63,10 +67,9 @@ public static class ChartDescriber
             sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LowestHighest), culture,
                 d.Y[min].ToString("G4", culture), FormatX(d.X[min], d, xKind, culture), d.Y[max].ToString("G4", culture), FormatX(d.X[max], d, xKind, culture)));
 
-            var trend = xKind == XKind.Category ? Trend.None : ComputeTrend(d.X, d.Y);
-            if (trend != Trend.None)
+            if (stats.Trend != Trend.None)
             {
-                sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.Trend), culture, TrendText(trend, texts)));
+                sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.Trend), culture, TrendText(stats.Trend, texts)));
             }
 
             sb.Append('.');
@@ -81,9 +84,13 @@ public static class ChartDescriber
     /// "Checkout: 182 ms to 208 ms, last 194 ms, rising."
     /// </summary>
     public static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
-        ChartTexts? texts = null)
+        ChartTexts? texts = null) =>
+        DescribeCompact(spec, series, xKind, culture, texts ?? ChartTexts.For(culture), d => Facts(d, xKind));
+
+    /// <summary><see cref="DescribeCompact(ChartSpec, IReadOnlyList{ValueTuple{SeriesSpec, SeriesData, bool}}, XKind, CultureInfo, ChartTexts?)"/> with facts computed by the caller.</summary>
+    internal static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+        ChartTexts texts, Func<SeriesData, SeriesFacts> facts)
     {
-        texts ??= ChartTexts.For(culture);
         var sb = new StringBuilder();
         var visible = series.Where(s => s.Visible).ToList();
         if (!string.IsNullOrWhiteSpace(spec.Title))
@@ -91,7 +98,7 @@ public static class ChartDescriber
             sb.Append(spec.Title!.Trim().TrimEnd('.')).Append('.');
         }
 
-        if (!visible.Any(s => s.Data.Y.Any(double.IsFinite)))
+        if (!visible.Any(s => facts(s.Data).Count > 0))
         {
             sb.Append(sb.Length > 0 ? " " : "").Append(texts.NoDataShort);
             return sb.ToString();
@@ -99,7 +106,7 @@ public static class ChartDescriber
 
         foreach (var (s, d, _) in visible)
         {
-            if (DescribeSeries(spec, s, d, xKind, culture, texts) is { } text)
+            if (DescribeSeries(spec, s, d, xKind, culture, texts, facts(d)) is { } text)
             {
                 sb.Append(sb.Length > 0 ? " " : "").Append(text).Append('.');
             }
@@ -113,10 +120,12 @@ public static class ChartDescriber
     /// to 208 ms, last 194 ms, rising" (no last value or trend on category axes). Null without data.
     /// Used by compact charts and the legend's tooltips.
     /// </summary>
-    public static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts? texts = null)
+    public static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts? texts = null) =>
+        DescribeSeries(spec, s, d, xKind, culture, texts ?? ChartTexts.For(culture), Facts(d, xKind));
+
+    /// <summary><see cref="DescribeSeries(ChartSpec, SeriesSpec, SeriesData, XKind, CultureInfo, ChartTexts?)"/> with the series' facts computed by the caller.</summary>
+    internal static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts texts, SeriesFacts stats)
     {
-        texts ??= ChartTexts.For(culture);
-        var stats = Scan(d);
         if (stats.Count == 0)
         {
             return null;
@@ -146,9 +155,9 @@ public static class ChartDescriber
             // Points in no order: their number, the y range and whether y rises with x.
             sb.Append(texts.FillCount(nameof(ChartTexts.SeriesPoints), stats.Count, culture, s.DisplayName, stats.Count)).Append(", ");
             sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
-            if (xKind != XKind.Category && ComputeTrend(d.X, d.Y) is var t && t != Trend.None)
+            if (stats.Trend != Trend.None)
             {
-                sb.Append(", ").Append(TrendText(t, texts));
+                sb.Append(", ").Append(TrendText(stats.Trend, texts));
             }
 
             return sb.ToString();
@@ -159,10 +168,9 @@ public static class ChartDescriber
         if (xKind != XKind.Category && stats.Count > 1)
         {
             sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, F(d.Y[stats.Last])));
-            var trend = ComputeTrend(d.X, d.Y);
-            if (trend != Trend.None)
+            if (stats.Trend != Trend.None)
             {
-                sb.Append(", ").Append(TrendText(trend, texts));
+                sb.Append(", ").Append(TrendText(stats.Trend, texts));
             }
         }
 
@@ -212,7 +220,26 @@ public static class ChartDescriber
             n++;
             sumX += x;
             sumY += y;
-            (minX, maxX, minY, maxY) = (Math.Min(minX, x), Math.Max(maxX, x), Math.Min(minY, y), Math.Max(maxY, y));
+            // Plain comparisons: the values are finite, and Math.Min/Max on doubles are slower (NaN, -0).
+            if (x < minX)
+            {
+                minX = x;
+            }
+
+            if (x > maxX)
+            {
+                maxX = x;
+            }
+
+            if (y < minY)
+            {
+                minY = y;
+            }
+
+            if (y > maxY)
+            {
+                maxY = y;
+            }
         }
 
         if (n < 2)
@@ -256,6 +283,17 @@ public static class ChartDescriber
         return relative > 0.1 ? Trend.Increasing : relative < -0.1 ? Trend.Decreasing : Trend.Stable;
     }
 
+    /// <summary>
+    /// What the descriptions say about a series, from two passes over its data. Chart layout computes
+    /// it once per series and layout; the series' description is used twice (legend and chart summary).
+    /// </summary>
+    internal static SeriesFacts Facts(SeriesData d, XKind xKind)
+    {
+        var (count, min, max, last) = Scan(d);
+        var trend = xKind == XKind.Category || count < 2 ? Trend.None : ComputeTrend(d.X, d.Y);
+        return new SeriesFacts(count, min, max, last, trend);
+    }
+
     /// <summary>One pass over a series: the number of finite y values and the indexes of the lowest, highest and last.</summary>
     private static (int Count, int Min, int Max, int Last) Scan(SeriesData d)
     {
@@ -284,3 +322,6 @@ public static class ChartDescriber
         return (count, min, max, last);
     }
 }
+
+/// <summary>A series' finite values (count, indexes of the lowest, highest and last) and trend (None on category axes).</summary>
+internal readonly record struct SeriesFacts(int Count, int Min, int Max, int Last, Trend Trend);

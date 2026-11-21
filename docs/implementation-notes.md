@@ -297,6 +297,11 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   JS module are not benchmarked. Not run in CI (timings on shared runners are too noisy); the
   project is in the solution, so CI builds it. `benchmarks/README.md` holds a baseline from one
   machine, to compare changes on the same machine rather than as absolute numbers.
+- Layout work shared within one `ChartLayout.Compute`: `SeriesFacts` (count, extremes, last, trend)
+  per series feed the legend tooltips, the series' ARIA labels and the chart description; tooltip
+  x labels are cached by point index when all series have identical x values (up to 10,000
+  points; larger series are downsampled per series and the array would go on the large object
+  heap). Nothing is cached across layouts: `SeriesData` exposes its arrays and could be changed.
 
 ## Component tests (bUnit)
 

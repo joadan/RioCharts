@@ -16,6 +16,9 @@ changes are called out under **Breaking**.
   charts follow, as with the mouse.
 - Benchmarks (`benchmarks/RioCharts.Benchmarks`, BenchmarkDotNet): layout, items to columns, LTTB,
   SVG/PNG export and JSON specs, with a baseline in `benchmarks/README.md`.
+- Faster chart layout for lines: 27% at 1k points, 47% at 100k (54% when zoomed). The screen reader
+  texts no longer scan each series four times, the x extent reads only the first and last values,
+  and series with the same x values share their tooltip x labels.
 - The Test workflow checks the JS module's syntax (the component tests fake the module).
 
 ## 0.1.50-preview (2026-11-21)

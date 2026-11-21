@@ -218,6 +218,19 @@ public static partial class ChartLayout
         }
 
         var xKind = ResolveXKind(spec.X.Scale, resolved);
+
+        // Counts, extremes and trend per series for the screen reader texts, computed once: the
+        // legend, the series' labels and the chart description all use them.
+        var factsCache = new Dictionary<SeriesData, SeriesFacts>();
+        SeriesFacts Facts(SeriesData d)
+        {
+            if (!factsCache.TryGetValue(d, out var f))
+            {
+                factsCache[d] = f = ChartDescriber.Facts(d, xKind);
+            }
+
+            return f;
+        }
         foreach (var r in resolved.Where(r => r.Data.Count > 0 && r.Data.Kind != xKind))
         {
             warnings.Add($"series '{r.Spec.Id}': x values are {r.Data.Kind} but the axis is {xKind}; the series is skipped.");
@@ -280,7 +293,7 @@ public static partial class ChartLayout
 
         var legendEntries = resolved
             .Select(r => new LegendEntry(r.Spec.Id, r.Spec.DisplayName, r.Color, r.Spec.Type, r.Visible, r.Empty,
-                ChartDescriber.DescribeSeries(spec, r.Spec, r.Data, xKind, culture, texts) ?? $"{r.Spec.DisplayName}: {texts.NoData}"))
+                ChartDescriber.DescribeSeries(spec, r.Spec, r.Data, xKind, culture, texts, Facts(r.Data)) ?? $"{r.Spec.DisplayName}: {texts.NoData}"))
             .ToList();
         var showLegend = !compact && spec.Legend.Mode switch
         {
@@ -504,6 +517,15 @@ public static partial class ChartLayout
         var seriesNodes = new List<(int Order, int Index, Node Node)>();
         var labelAnchors = new List<(Resolved Series, List<LabelAnchor> Anchors)>();
         var formatX = TimeFormat(xKind, drawable.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format, time, options.ViewerTimeZone);
+        // Series with the same x values (common: several measurements per timestamp) share their
+        // tooltip x labels by point index, so each date is formatted once, not once per series. Not
+        // for large series: they are downsampled per series (few shared points), and the array would
+        // land on the large object heap.
+        var withData = drawable.Where(r => r.Data.Count > 0).ToList();
+        var sharedXLabels = xKind != XKind.Category && withData.Count > 1 && withData[0].Data.Count <= 10_000
+            && withData.All(r => r.Data.X.AsSpan().SequenceEqual(withData[0].Data.X))
+            ? new string?[withData[0].Data.Count]
+            : null;
         foreach (var r in drawable)
         {
             var axisScale = r.Axis.Scale;
@@ -530,7 +552,7 @@ public static partial class ChartLayout
             if (context.Hits is { } hits)
             {
                 hitTest.Add(hits);
-                tooltipSeries.Add(TooltipFor(r, hitTest.Series[^1], context, formatX, culture, xKind, xBand, plotWidth, spec.X.Title));
+                tooltipSeries.Add(TooltipFor(r, hitTest.Series[^1], context, formatX, culture, xKind, xBand, plotWidth, spec.X.Title, sharedXLabels));
             }
 
             if (context.Labels.Count > 0)
@@ -543,7 +565,7 @@ public static partial class ChartLayout
             {
                 Key = "series:" + r.Spec.Id,
                 Class = "rio-series rio-series-" + r.Spec.Type.ToString().ToLowerInvariant(),
-                AriaLabel = texts.FillCount(nameof(ChartTexts.SeriesPoints), r.Data.Y.Count(double.IsFinite), culture, r.Spec.DisplayName, r.Data.Y.Count(double.IsFinite)),
+                AriaLabel = texts.FillCount(nameof(ChartTexts.SeriesPoints), Facts(r.Data).Count, culture, r.Spec.DisplayName, Facts(r.Data).Count),
             }));
         }
 
@@ -589,8 +611,8 @@ public static partial class ChartLayout
             Height = (float)height,
             Styles = styles,
             Description = compact
-                ? ChartDescriber.DescribeCompact(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts)
-                : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts),
+                ? ChartDescriber.DescribeCompact(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts, Facts)
+                : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts, Facts),
         };
 
         var bandWidth = xKind == XKind.Category ? xBand!.Step : hasBars ? slotWidth / 0.8 : 0;
@@ -803,14 +825,24 @@ public static partial class ChartLayout
         var spacing = double.PositiveInfinity;
         foreach (var r in series)
         {
+            // X is sorted: the extent runs from the first to the last point with a value.
             var d = r.Data;
-            for (var i = 0; i < d.Count; i++)
+            var first = 0;
+            while (first < d.Count && !double.IsFinite(d.Y[first]))
             {
-                if (double.IsFinite(d.Y[i]))
+                first++;
+            }
+
+            if (first < d.Count)
+            {
+                var last = d.Count - 1;
+                while (!double.IsFinite(d.Y[last]))
                 {
-                    min = Math.Min(min, d.X[i]);
-                    max = Math.Max(max, d.X[i]);
+                    last--;
                 }
+
+                min = Math.Min(min, d.X[first]);
+                max = Math.Max(max, d.X[last]);
             }
 
             if (r.Type.UsesSlots)
@@ -866,7 +898,7 @@ public static partial class ChartLayout
     }
 
     private static TooltipSeries TooltipFor(Resolved r, HitTestIndex.SeriesHits hits, SeriesBuildContext context, Func<double, string> formatX,
-        CultureInfo culture, XKind kind, BandScale? band, double plotWidth, string? xAxisTitle = null)
+        CultureInfo culture, XKind kind, BandScale? band, double plotWidth, string? xAxisTitle = null, string?[]? sharedXLabels = null)
     {
         var n = hits.X.Length;
         var xLabels = new string[n];
@@ -879,7 +911,7 @@ public static partial class ChartLayout
             var x = r.Data.X[j];
             xLabels[i] = kind == XKind.Category
                 ? ((int)x is var c && c >= 0 && c < r.Data.Categories.Count ? r.Data.Categories[c] : "")
-                : formatX(x);
+                : sharedXLabels is not null ? sharedXLabels[j] ??= formatX(x) : formatX(x);
             if (xTitle is not null)
             {
                 xLabels[i] = $"{xTitle}: {xLabels[i]}"; // scatter: say what the x value is

@@ -23,22 +23,37 @@ result you want to rely on.
 ## Baseline
 
 2026-11-21, `--job short`, BenchmarkDotNet 0.15.2, .NET 10.0.12, Windows 11, x64 (AVX-512).
-Mean time and allocated memory per call.
+Mean time and allocated memory per call. Sections other than line layout are from before the
+first optimization pass; export and specs include a layout, so they are faster now.
 
 ### Layout
 
-| Benchmark | 1k points | 10k points | 100k points |
-| --- | ---: | ---: | ---: |
-| Line | 1.16 ms, 396 KB | 1.94 ms, 611 KB | 7.74 ms, 610 KB |
-| LineZoomed | 0.17 ms, 68 KB | 1.26 ms, 396 KB | 5.91 ms, 611 KB |
+Line layout with the default job (precise), before and after the first optimization pass (computing
+the screen reader facts once per layout, x extent from the first and last values, plain comparisons
+in the extent and trend loops, tooltip x labels shared by series with the same x):
+
+| Benchmark | Points | Before | After | Allocated (after) |
+| --- | ---: | ---: | ---: | ---: |
+| Line | 1k | 0.86 ms | 0.63 ms | 349 KB |
+| Line | 10k | 1.95 ms | 1.56 ms | 676 KB |
+| Line | 100k | 7.00 ms | 3.68 ms | 611 KB |
+| LineZoomed | 1k | 0.18 ms | 0.13 ms | 71 KB |
+| LineZoomed | 10k | 1.32 ms | 0.81 ms | 420 KB |
+| LineZoomed | 100k | 5.71 ms | 2.64 ms | 611 KB |
+
+What is left, from an EventPipe profile (`--profiler EP`): at 1k points about half the time is
+formatting the tooltip labels (one x and one value label per drawn point, sent to the browser so
+hover needs no round trip); at 100k, LTTB and the passes over all points (y extent, describer
+facts). Custom number formats (e.g. "0.0") take .NET's slower custom-format path; switching to
+standard formats (F1) would change rounding of values like 1.45, so they stay.
+
+Category and polar charts (short job, before the pass):
 
 | Benchmark | Time | Allocated |
 | --- | ---: | ---: |
 | GroupedBars | 44 µs | 49 KB |
 | StackedBars | 50 µs | 54 KB |
 | Pie | 23 µs | 33 KB |
-
-The 1k Line result had a large error (±2.4 ms); rerun with the default job before reading much into it.
 
 ### Data
 

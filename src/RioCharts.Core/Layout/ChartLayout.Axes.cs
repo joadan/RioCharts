@@ -119,11 +119,21 @@ public static partial class ChartLayout
             var (start, end) = window is { } w ? VisibleIndexes(xs, w.Min, w.Max, 0) : (0, values.Length);
             for (var i = start; i < end; i++)
             {
+                // Plain comparisons on finite values: faster than Math.Min/Max, which handle NaN and -0.
                 var y = values[i];
-                if (double.IsFinite(y))
+                if (!double.IsFinite(y))
                 {
-                    min = Math.Min(min, y);
-                    max = Math.Max(max, y);
+                    continue;
+                }
+
+                if (y < min)
+                {
+                    min = y;
+                }
+
+                if (y > max)
+                {
+                    max = y;
                 }
             }
         }
