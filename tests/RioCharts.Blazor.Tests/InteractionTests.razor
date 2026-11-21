@@ -142,4 +142,27 @@
         var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
         Assert.True(series.GetProperty("ch").GetSingle() > 0);
     }
+
+    [Fact]
+    public void Range_area_takes_low_and_high_selectors()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <RangeAreaSeries Items="Supply" Name="Range" XValue="r => r.Time" LowValue="r => r.Value - 1" HighValue="r => r.Value + 1" Format="0.0" />
+        </RioChart>);
+
+        Assert.Single(cut.FindAll("path.rio-range"));
+        var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
+        Assert.Equal("18.5 – 20.5", values[0].GetString());
+    }
+
+    [Fact]
+    public void An_aggregated_range_keeps_the_lowest_low()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <RangeAreaSeries Items="Supply" Name="Range" XValue="r => r.Time.Date" LowValue="r => r.Value" HighValue="r => r.Value" Aggregate="Aggregate.Max" Format="0.0" />
+        </RioChart>);
+
+        var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
+        Assert.Equal("19.5 – 20.8", values[0].GetString()); // min and max of the day's readings
+    }
 }

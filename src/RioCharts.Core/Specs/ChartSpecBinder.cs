@@ -77,7 +77,7 @@ public static class ChartSpecBinder
         return new SpecBindResult(bound, data, errors, warnings);
     }
 
-    private readonly record struct Point(object X, double? Y);
+    private readonly record struct Point(object X, double? Y, double? Low = null);
 
     private static void BindSeries(ChartSpec chart, SeriesSpec s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
         List<SeriesSpec> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<SpecError> errors, List<string> warnings)
@@ -136,6 +136,16 @@ public static class ChartSpecBinder
             }
         }
 
+        DataField? low = null;
+        if (s.Low is not null)
+        {
+            low = Find(dataset, s.Low, $"{path}.low", FieldType.Number, errors);
+        }
+        else if (s.Type == SeriesType.RangeArea)
+        {
+            errors.Add(new SpecError($"{path}.low", $"a range area needs the field with the low values (y is the high value); numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
+        }
+
         var groupBy = s.GroupBy is null ? null : Find(dataset, s.GroupBy, $"{path}.groupBy", null, errors);
         var filters = new List<(FilterSpec Spec, DataField Field)>();
         for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
@@ -187,7 +197,7 @@ public static class ChartSpecBinder
 
         foreach (var (key, groupRows) in groups)
         {
-            var points = Points(groupRows, x, y, s.TimeBucket, aggregate);
+            var points = Points(groupRows, x, y, s.TimeBucket, aggregate, low);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -211,12 +221,15 @@ public static class ChartSpecBinder
             }
 
             output.Add(bound);
-            data[id] = SeriesData.FromItems(points, p => p.X, p => p.Y);
+            var series = SeriesData.FromItems(points, p => p.X, p => p.Y);
+            data[id] = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
         }
     }
 
-    private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate)
+    private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null)
     {
+        double? LowAt(int r) => low?.Values[r] is double d ? d : null;
+
         object? XAt(int r)
         {
             var v = x.Values[r];
@@ -227,7 +240,7 @@ public static class ChartSpecBinder
 
         if (aggregate is null)
         {
-            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r))).ToList();
+            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r))).ToList();
         }
 
         // Group by x (or its bucket), keeping first-appearance order (categories) — times and numbers are sorted later anyway.
@@ -249,7 +262,12 @@ public static class ChartSpecBinder
             list.Add(r);
         }
 
-        return order.Select(key => new Point(key, Aggregation.Apply(aggregate.Value, groups[key].Select(YAt).ToList()))).ToList();
+        // A range keeps its extremes: the lowest low and the highest high (other aggregates apply to both ends).
+        var (lowAggregate, highAggregate) = low is not null && aggregate is Aggregate.Average or Aggregate.Sum
+            ? (Aggregate.Min, Aggregate.Max)
+            : (aggregate.Value, aggregate.Value);
+        return order.Select(key => new Point(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),
+            low is null ? null : Aggregation.Apply(lowAggregate, groups[key].Select(LowAt).ToList()))).ToList();
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>

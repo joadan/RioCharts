@@ -156,7 +156,13 @@ public static partial class ChartLayout
                 Visible = options.HiddenSeries?.Contains(s.Id) != true,
                 Empty = !d.Y.Any(double.IsFinite),
                 Upper = d.Y,
+                Lower = s.Type == SeriesType.RangeArea ? d.Low : null,
             };
+            if (s.Type == SeriesType.RangeArea && d.Low is null && d.Count > 0)
+            {
+                warnings.Add($"series '{s.Id}': a range area needs low values (LowValue, or \"low\" in a spec); nothing is drawn.");
+            }
+
             r.Axis = FindAxis(axes, s.YAxisId, $"series[{i}].yAxisId", warnings) ?? primary;
             if ((d.Kind == XKind.Category || r.Type.UsesSlots) && RepeatsX(d) is { } repeated)
             {
@@ -672,7 +678,7 @@ public static partial class ChartLayout
     private static void ApplyStacking(List<Resolved> drawable, XKind kind, Dictionary<string, int> categoryIndex)
     {
         var groups = drawable
-            .Where(r => r.Spec.Stack is { Length: > 0 })
+            .Where(r => r.Spec.Stack is { Length: > 0 } && r.Spec.Type != SeriesType.RangeArea)
             .GroupBy(r => (r.Axis.Id, r.Spec.Stack, r.Type.UsesSlots));
         foreach (var group in groups)
         {
@@ -817,7 +823,9 @@ public static partial class ChartLayout
             {
                 xLabels[i] = $"{xTitle}: {xLabels[i]}"; // scatter: say what the x value is
             }
-            values[i] = ValueFormatter.Format(r.Data.Y[j], culture, format);
+            values[i] = r.Spec.Type == SeriesType.RangeArea && r.Data.Low is { } low
+                ? $"{ValueFormatter.Format(low[j], culture, format)} – {ValueFormatter.Format(r.Data.Y[j], culture, format)}"
+                : ValueFormatter.Format(r.Data.Y[j], culture, format);
         }
 
         float snap;

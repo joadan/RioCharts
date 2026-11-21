@@ -527,3 +527,18 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   pointer and outlines it. Not shared.
 - **Not yet:** diverging scales (below/above a midpoint), custom color ranges, and calendar layouts
   (weeks × weekdays from dates) beyond what grouping gives.
+
+
+## Range area
+
+- **Data:** `SeriesData.Low`, an optional second value column (Design.md: "extra columns for
+  multi-value types"). `WithLow` takes the lows in input order and places them by `SourceIndex`,
+  so they follow their points through sorting; `WithX` (time zone conversion) carries them.
+  Live buffers (`SeriesBuffer`) have no low column yet.
+- **Drawing:** the layout sets `Resolved.Lower` to the lows, so the existing two-edge area path
+  (`AreaBetween`, used for stacks) draws the band. Fill 0.2, no outline, default layer 0 (below
+  lines). Not stacked even with `Stack` set. Missing low or high: a gap.
+- **Aggregation:** in Blazor, `Aggregate`/`YAggregate` give the high end and the low end is the
+  lowest low per point. In specs, average and sum become min (low) and max (high), since averaging a
+  band's ends would hide its extremes; other aggregates apply to both ends.
+- **Not yet:** an outline option, live data with lows, and error bars.

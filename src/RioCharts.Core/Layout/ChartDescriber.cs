@@ -104,6 +104,20 @@ public static class ChartDescriber
         string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
         var (min, max) = (points.Min(p => p.Y), points.Max(p => p.Y));
         var sb = new StringBuilder();
+        if (s.Type == SeriesType.RangeArea && d.Low is { } lows)
+        {
+            // From the lowest low to the highest high, and the last point's range.
+            var low = lows.Where(double.IsFinite).DefaultIfEmpty(min).Min();
+            sb.Append(s.DisplayName).Append(": ").Append(texts.Fill(nameof(ChartTexts.ValueRange), culture, F(low), F(max)));
+            var last = Enumerable.Range(0, d.Count).LastOrDefault(i => double.IsFinite(d.Y[i]) && double.IsFinite(lows[i]), -1);
+            if (xKind != XKind.Category && last >= 0)
+            {
+                sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, $"{F(lows[last])} – {F(d.Y[last])}"));
+            }
+
+            return sb.ToString();
+        }
+
         if (s.Type == SeriesType.Scatter)
         {
             // Points in no order: their number, the y range and whether y rises with x.

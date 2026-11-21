@@ -33,6 +33,7 @@ internal interface ISeriesType
         SeriesType.Bar => BarSeriesType.Instance,
         SeriesType.Scatter => ScatterSeriesType.Instance,
         SeriesType.Heatmap => HeatmapSeriesType.Instance,
+        SeriesType.RangeArea => RangeAreaSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar => new PolarSeriesType(type),
         _ => LineSeriesType.Instance,
     };
@@ -403,6 +404,46 @@ internal sealed class AreaSeriesType : ISeriesType
         LineSeriesType.AddHighlights(c);
         c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
         LineSeriesType.AddLabels(c, xs, ys, indices);
+    }
+}
+
+/// <summary>
+/// A band between each point's low and high value: a light fill without an outline, drawn below lines
+/// (it usually sits behind a mean or median line). Points without a low value are gaps.
+/// </summary>
+internal sealed class RangeAreaSeriesType : ISeriesType
+{
+    public static RangeAreaSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.RangeArea;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 0;
+    public bool IncludesZero => false;
+    public bool UsesSlots => false;
+
+    public void Build(SeriesBuildContext c)
+    {
+        var (xs, ys, y0, indices) = LineSeriesType.DrawnPoints(c);
+        if (y0 is null)
+        {
+            return; // no low values: nothing to fill (the layout warns)
+        }
+
+        // A gap where either end is missing.
+        for (var i = 0; i < xs.Length; i++)
+        {
+            if (!double.IsFinite(y0[i]))
+            {
+                ys[i] = double.NaN;
+            }
+            else if (!double.IsFinite(ys[i]))
+            {
+                y0[i] = double.NaN;
+            }
+        }
+
+        var fill = c.Styles.Add($"series-{c.ColorIndex}-range", new Style { Fill = c.Color, FillOpacity = 0.2f });
+        c.Output.Add(new PathNode(LineGenerator.AreaBetween(xs, ys, y0, c.Spec.Curve), fill) { Class = "rio-range" });
+        c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
     }
 }
 

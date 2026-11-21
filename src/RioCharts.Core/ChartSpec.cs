@@ -155,6 +155,9 @@ public sealed record SeriesSpec
     [Description("Show values on the chart. Null uses the default: on for pie, donut and radial bar, off otherwise.")]
     public bool? DataLabels { get; init; }
 
+    [Description("Range area: the field with the low value of each point (y is the high value).")]
+    public string? Low { get; init; }
+
     [Description("Scatter: marker diameter in pixels. Default 5.")]
     public double? MarkerSize { get; init; }
 
@@ -257,6 +260,9 @@ public enum SeriesType
 
     /// <summary>A grid of colored cells: every heatmap series is a row, x the columns, y the color.</summary>
     Heatmap,
+
+    /// <summary>A band between a low and a high value per x (e.g. min to max around an average).</summary>
+    RangeArea,
     /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,
 }

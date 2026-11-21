@@ -111,6 +111,7 @@ public static class ChartRazor
                 SeriesType.RadialBar => "RadialBarSeries",
                 SeriesType.Scatter => "ScatterSeries",
                 SeriesType.Heatmap => "HeatmapSeries",
+                SeriesType.RangeArea => "RangeAreaSeries",
                 _ => "LineSeries",
             };
 
@@ -121,6 +122,10 @@ public static class ChartRazor
             }
 
             sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\"");
+            if (s.Type == SeriesType.RangeArea && s.Low is { } lowField)
+            {
+                sb.Append($" LowValue=\"r => r.{Property(lowField)}\"");
+            }
             if (componentAggregate != Aggregate.Count || s.Y is not null)
             {
                 sb.Append($" YValue=\"r => r.{Property(s.Y ?? "value")}\"");

@@ -275,6 +275,11 @@ public static class ChartSpecJson
         ["radialbar"] = ("radialBar", null),
         ["scatter"] = ("scatter", null),
         ["heatmap"] = ("heatmap", null),
+        ["rangearea"] = ("rangeArea", null),
+        ["range"] = ("rangeArea", null),
+        ["rangeband"] = ("rangeArea", null),
+        ["band"] = ("rangeArea", null),
+        ["minmax"] = ("rangeArea", null),
         ["heat"] = ("heatmap", null),
         ["matrix"] = ("heatmap", null),
         ["calendar"] = ("heatmap", null),
@@ -374,7 +379,7 @@ public static class ChartSpecJson
                     else
                     {
                         errors.Add(new SpecError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, pie, radialBar, auto (also column, donut, stackedBar, spline, gauge, points)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, pie, radialBar, auto (also column, donut, stackedBar, spline, gauge, points)."));
                     }
                 }
 

@@ -74,6 +74,22 @@
     </ChildContent>
 </Example>
 
+<Example Title="Range areas" Code="@RangeCode">
+    <Description>
+        <p>
+            <code>RangeAreaSeries</code> fills a band between a low and a high value per x: here the lowest and highest revenue on each date over
+            the last three years, around the average line. The tooltip shows "low – high". In a JSON spec it is <code>"type": "rangeArea"</code>
+            with <code>"low"</code> and <code>"y"</code> fields; with <code>timeBucket</code> the band keeps the lowest low and highest high.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="RevenueHistory" Height="260" YAxis="RevenueAxis">
+            <RangeAreaSeries Name="Last 3 years" XValue="d => d.Date" LowValue="d => d.Low" HighValue="d => d.High" Format="#,0 €" Curve="CurveType.Monotone" />
+            <LineSeries Name="Average" XValue="d => d.Date" YValue="d => d.Average" Format="#,0 €" Curve="CurveType.Monotone" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Edge cases" Code="@EdgeCode">
     <Description><p>Empty data, a single point and all-equal values each render a clean state, never an error or a collapsed axis.</p></Description>
     <ChildContent>
@@ -96,6 +112,7 @@
     private static readonly AxisSpec StockAxis = new() { Title = "Items" };
     private static readonly AxisSpec Euros = new() { Title = "€ per 15 min" };
     private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisSpec RevenueAxis = new() { Title = "Revenue per day" };
     private static readonly List<Reading> _empty = [];
     private static readonly List<Reading> _one = [new(Start, 120)];
     private static readonly List<Reading> _flat = Enumerable.Range(0, 24).Select(h => new Reading(Start.AddHours(h), 200)).ToList();
@@ -130,6 +147,14 @@
             <AreaSeries Items="search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
             <AreaSeries Items="social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
             <AreaSeries Items="email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
+        </RioChart>
+        """;
+
+    private const string RangeCode = """
+        <RioChart Items="revenueHistory" YAxis="@(new AxisSpec { Title = "Revenue per day" })">
+            <RangeAreaSeries Name="Last 3 years" XValue="d => d.Date" LowValue="d => d.Low" HighValue="d => d.High"
+                             Format="#,0 €" Curve="CurveType.Monotone" />
+            <LineSeries Name="Average" XValue="d => d.Date" YValue="d => d.Average" Format="#,0 €" Curve="CurveType.Monotone" />
         </RioChart>
         """;
 

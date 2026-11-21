@@ -87,6 +87,12 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
     protected abstract SeriesType Type { get; }
 
+    /// <summary>
+    /// Adds what a series type needs beyond x and y (e.g. a range's low values) to data built from
+    /// Items. <paramref name="groups"/>: the items of each point when aggregated, else null.
+    /// </summary>
+    private protected virtual SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups) => data;
+
     bool ISeriesSource.HasTooltipValue => TooltipValue is not null;
 
     string? ISeriesSource.FormatTooltipValue(TooltipPointInfo point) =>
@@ -202,11 +208,12 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
                 ItemList = items as IReadOnlyList<TItem> ?? items.ToList();
                 _data = SeriesData.FromGroups(ItemList, XValue, aggregate, out var groups);
                 _groups = groups;
+                _data = Complete(_data, ItemList, groups);
             }
             else if (items is not null && XValue is not null && YValue is not null)
             {
                 ItemList = items as IReadOnlyList<TItem> ?? items.ToList();
-                _data = SeriesData.FromItems(ItemList, XValue, YValue);
+                _data = Complete(SeriesData.FromItems(ItemList, XValue, YValue), ItemList, null);
             }
             else
             {
@@ -313,6 +320,58 @@ public sealed class HeatmapSeries<TItem> : SeriesBase<TItem>
     protected override SeriesType Type => SeriesType.Heatmap;
 
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Max = Max };
+}
+
+/// <summary>
+/// Range area: a band between a low and a high value per x, e.g. the lowest and highest daily
+/// revenue around its average. Usually drawn behind a line; the tooltip shows "low – high".
+/// </summary>
+public sealed class RangeAreaSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>The low end of each point.</summary>
+    [Parameter] public Func<TItem, double?>? LowValue { get; set; }
+
+    /// <summary>The high end of each point (the same as <c>YValue</c>).</summary>
+    [Parameter] public Func<TItem, double?>? HighValue { get; set; }
+
+    /// <summary>Line shape of the band's edges: Linear or Monotone.</summary>
+    [Parameter] public CurveType Curve { get; set; } = CurveType.Linear;
+
+    protected override SeriesType Type => SeriesType.RangeArea;
+
+    protected override void OnParametersSet()
+    {
+        if (HighValue is not null)
+        {
+            YValue = HighValue;
+        }
+
+        base.OnParametersSet();
+    }
+
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve };
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (LowValue is null)
+        {
+            return data;
+        }
+
+        if (groups is null)
+        {
+            return data.WithLow(items.Select(item => LowValue(item) ?? double.NaN).ToArray());
+        }
+
+        // Aggregated: the lowest low of each point's items (the high end uses Aggregate/YAggregate).
+        var low = new double[groups.Count];
+        for (var g = 0; g < groups.Count; g++)
+        {
+            low[g] = Aggregation.Apply(Core.Aggregate.Min, groups[g].Select(i => LowValue(items[i])).ToList()) ?? double.NaN;
+        }
+
+        return data.WithLow(low);
+    }
 }
 
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>

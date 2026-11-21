@@ -144,6 +144,18 @@ public static class SampleData
             new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select((day, d) =>
                 new Share(day, Math.Round(c.Item2 + (d >= 5 ? 0.6 : 0) + Noise(k * 7 + d, 52) * 0.8, 1))).ToList())).ToList();
 
+    /// <summary>A day of revenue: the lowest, average and highest of the same date over the last three years, €.</summary>
+    public sealed record DayRange(DateTime Date, double Low, double Average, double High);
+
+    /// <summary>Revenue per day for six weeks, as the range and average of the last three years (weekly rhythm, slow growth).</summary>
+    public static readonly List<DayRange> RevenueHistory = Enumerable.Range(0, 42).Select(d =>
+    {
+        var date = Start.AddDays(d - 42);
+        var weekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+        var average = Math.Round(9000 + (weekend ? 3200 : 0) + d * 45 + Drift(d, 61, 3) * 1200);
+        return new DayRange(date, Math.Round(average - 1400 - (Noise(d, 62) + 0.5) * 1600), average, Math.Round(average + 1300 + (Noise(d, 63) + 0.5) * 1800));
+    }).ToList();
+
     public static readonly List<Sales> Quarters =
     [
         new("Q1", 182_000, 214_000), new("Q2", 236_000, 251_000), new("Q3", 198_000, 243_000), new("Q4", 271_000, 305_000),

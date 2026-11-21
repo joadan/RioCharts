@@ -12,6 +12,12 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Range areas (`<RangeAreaSeries LowValue HighValue>`, `SeriesType.RangeArea`, `"rangeArea"` or
+  `"range"` with a `"low"` field in JSON): a light band between a low and a high value per x,
+  usually behind a line. `SeriesData` has an optional `Low` column (`WithLow`, in input order like
+  the y values). The tooltip shows "low – high"; points missing either end are gaps; ranges are
+  never stacked. When aggregating, the band keeps the lowest low (and in specs with average or sum,
+  the highest high). Docs: a range example on Lines and areas.
 - Heatmaps (`<HeatmapSeries>`, `SeriesType.Heatmap`, `"heatmap"` in JSON): every heatmap series
   is a row (named by the series; `groupBy` in JSON specs makes one row per value), its x values the
   columns (categories, or numbers and times with cells as wide as the data's spacing) and its y

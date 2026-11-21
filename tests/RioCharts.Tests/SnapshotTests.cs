@@ -201,6 +201,23 @@ public class SnapshotTests
                 Enumerable.Range(0, 24).Select(h => Math.Round(Math.Max(5, (k >= 5 ? 260 : 200) * Math.Max(0, Math.Sin((h - 6) / 18.0 * Math.PI)) + (h is >= 19 and <= 22 ? 90 : 0)))).ToArray())))
             .ToDictionary(t => t.d, t => t.Item2), Width: 720),
 
+        ["range-band"] = new(new ChartSpec
+        {
+            Y = new AxisSpec { Title = "Revenue per day" },
+            Series =
+            [
+                new SeriesSpec { Id = "r", Name = "Range", Type = SeriesType.RangeArea, Curve = CurveType.Monotone },
+                new SeriesSpec { Id = "m", Name = "Average", Curve = CurveType.Monotone },
+            ],
+        }, new()
+        {
+            ["r"] = SeriesData.From(Enumerable.Range(0, 30).Select(d => Start.AddDays(d)).ToArray(),
+                    Enumerable.Range(0, 30).Select(d => Math.Round(9000 + 2500 * Math.Sin(d / 7.0 * Math.PI) + 1800 + d * 37 % 11 * 120)).ToArray())
+                .WithLow(Enumerable.Range(0, 30).Select(d => Math.Round(9000 + 2500 * Math.Sin(d / 7.0 * Math.PI) - 1500 - d * 53 % 13 * 100)).ToArray()),
+            ["m"] = SeriesData.From(Enumerable.Range(0, 30).Select(d => Start.AddDays(d)).ToArray(),
+                Enumerable.Range(0, 30).Select(d => Math.Round(9000 + 2500 * Math.Sin(d / 7.0 * Math.PI))).ToArray()),
+        }),
+
         ["empty-swedish"] = new(new ChartSpec { Title = "Tilluft", Series = [new SeriesSpec { Id = "s", Name = "Tilluft" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 

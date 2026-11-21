@@ -43,6 +43,29 @@ public sealed class SeriesData
     public int[]? SourceIndex { get; }
 
     /// <summary>
+    /// Range series: the low value of each point (<see cref="Y"/> is the high value), NaN where
+    /// missing; null for other series. Set with <see cref="WithLow"/>.
+    /// </summary>
+    public double[]? Low { get; private set; }
+
+    /// <summary>
+    /// The same points with a low value each, for range series (<see cref="Y"/> is the high value).
+    /// <paramref name="low"/> is in input order, like the y values given when creating the data:
+    /// index i is the low of input item (or column entry) i.
+    /// </summary>
+    public SeriesData WithLow(ReadOnlySpan<double> low)
+    {
+        var values = new double[Count];
+        for (var i = 0; i < values.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            values[i] = source < low.Length ? low[source] : double.NaN;
+        }
+
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values };
+    }
+
+    /// <summary>
     /// Time data: the UTC offset (milliseconds) of each point when the input had one (DateTimeOffset,
     /// or DateTime with Kind Utc or Local), NaN otherwise; null when no point had one. Used only
     /// when the chart has a display time zone; by default times are shown as given.
@@ -72,21 +95,27 @@ public sealed class SeriesData
     {
         if (IsSorted(x))
         {
-            return new SeriesData(x, Y, Kind, Categories, SourceIndex);
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low };
         }
 
         var order = Enumerable.Range(0, x.Length).ToArray();
         var keys = (double[])x.Clone();
         Array.Sort(keys, order);
         var y = new double[order.Length];
+        var low = Low is null ? null : new double[order.Length];
         var source = new int[order.Length];
         for (var i = 0; i < order.Length; i++)
         {
             y[i] = Y[order[i]];
+            if (low is not null)
+            {
+                low[i] = Low![order[i]];
+            }
+
             source[i] = ToSourceIndex(order[i]);
         }
 
-        return new SeriesData(keys, y, Kind, Categories, source);
+        return new SeriesData(keys, y, Kind, Categories, source) { Low = low };
     }
 
     public static SeriesData Empty { get; } = new([], [], XKind.Numeric, null, null);
