@@ -93,4 +93,53 @@ public class LargeDataTests
         Assert.True(layout.HitTest.Series[0].X.Length < 2000);
         Assert.True(allocated < 4_000_000, $"{allocated / 1e6:0.0} MB allocated"); // a copy of the points would be 8 MB or more
     }
+
+    private static SeriesData Cloud(int n, params (double X, double Y)[] extra)
+    {
+        var random = new Random(7);
+        double Gauss() => Math.Sqrt(-2 * Math.Log(1 - random.NextDouble())) * Math.Cos(2 * Math.PI * random.NextDouble());
+        var points = Enumerable.Range(0, n).Select(_ => (X: 50 + 5 * Gauss(), Y: 50 + 5 * Gauss())).Concat(extra).ToArray();
+        return SeriesData.From([.. points.Select(p => p.X)], [.. points.Select(p => p.Y)]);
+    }
+
+    [Fact]
+    public void Dense_scatter_clouds_draw_fewer_markers_but_keep_every_outlier()
+    {
+        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = SeriesType.Scatter }] };
+        var data = new Dictionary<string, SeriesData> { ["s"] = Cloud(50_000, (5, 95), (95, 5), (90, 90)) };
+
+        var layout = ChartLayout.Compute(spec, data, Options);
+
+        var hits = layout.HitTest.Series[0];
+        Assert.InRange(hits.Index.Length, 100, 12_000);
+        var drawn = hits.Index.Select(i => (data["s"].X[i], data["s"].Y[i])).ToHashSet();
+        Assert.Contains((5.0, 95.0), drawn);
+        Assert.Contains((95.0, 5.0), drawn);
+        Assert.Contains((90.0, 90.0), drawn);
+        Assert.Equal(hits.Index.Length, layout.Tooltip.Series[0].X.Length);
+    }
+
+    [Fact]
+    public void Small_scatter_series_draw_every_point()
+    {
+        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = SeriesType.Scatter }] };
+
+        var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["s"] = Cloud(500) }, Options);
+
+        Assert.Equal(500, layout.HitTest.Series[0].Index.Length);
+    }
+
+    [Fact]
+    public void The_trend_line_of_a_thinned_scatter_uses_all_points()
+    {
+        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = SeriesType.Scatter, TrendLine = true }] };
+        var data = new Dictionary<string, SeriesData> { ["s"] = Cloud(20_000, (10, 10), (90, 90)) };
+        PathNode Trend(ChartLayoutResult l) => All(l.Scene.Series).OfType<PathNode>().Single(p => p.Class == "rio-trend");
+
+        var thinned = ChartLayout.Compute(spec, data, Options);
+        var all = ChartLayout.Compute(spec, data, Options with { DownsampleThreshold = int.MaxValue });
+
+        Assert.True(thinned.HitTest.Series[0].Index.Length < all.HitTest.Series[0].Index.Length);
+        Assert.Equal(Trend(all).Path.Coords, Trend(thinned).Path.Coords);
+    }
 }

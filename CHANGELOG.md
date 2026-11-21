@@ -227,6 +227,11 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
     about half the time and memory.
   - PNG export uses one PNG filter (Up) instead of trying all: the same file size in about half
     the encoding time.
+  - Large scatter series are thinned: above the downsampling threshold, at most three markers per
+    square one marker radius wide, which renders the same (translucent markers are solid by then)
+    while outliers and sparse areas keep every point. 100k points in a cloud draw about 20k, with a
+    fifth of the tooltip data; the trend line still uses every point. Docs: a 100 000-point scatter
+    on the Large data page.
 - Pie and donut labels inside slices no longer spill over the ring. The fit test now checks the
   horizontal label box against the slice, so on the sides of a thin donut a label that would run
   across the ring is placed outside with a leader line instead.

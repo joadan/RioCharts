@@ -333,6 +333,9 @@ internal sealed class ScatterSeriesType : ISeriesType
     public bool UsesSlots => false;
 
     /// <summary>Marker radius from <see cref="SeriesSpec.MarkerSize"/> (a diameter, default 5 px).</summary>
+    /// <summary>Most markers drawn in one square cell a marker radius wide, once a series is thinned.</summary>
+    internal const int MarkersPerCell = 3;
+
     internal static double Radius(SeriesSpec spec) => Math.Clamp((spec.MarkerSize is > 0 and var size ? size : 5) / 2, 1, 30);
 
     public void Build(SeriesBuildContext c)
@@ -346,6 +349,12 @@ internal sealed class ScatterSeriesType : ISeriesType
         var ys = new List<double>();
         var indices = new List<int>();
         var builder = new PathBuilder();
+
+        // Many points: at most MarkersPerCell markers in each square one radius wide. Three markers at
+        // 0.75 opacity already cover about 98%, so the picture is the same while dense clouds draw far
+        // fewer markers; sparse areas, isolated points and outliers are all kept. Hover and the
+        // tooltip use the drawn points.
+        var occupied = c.DownsampleThreshold > 0 && end - start > c.DownsampleThreshold ? new Dictionary<long, int>() : null;
         for (var i = start; i < end; i++)
         {
             var (px, y) = (c.PixelX[i], c.Upper[i]);
@@ -355,6 +364,16 @@ internal sealed class ScatterSeriesType : ISeriesType
             }
 
             var py = c.MapY(y);
+            if (occupied is not null)
+            {
+                ref var count = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(
+                    occupied, ((long)Math.Floor(px / r) << 32) ^ (uint)(int)Math.Floor(py / r), out _);
+                if (++count > MarkersPerCell)
+                {
+                    continue;
+                }
+            }
+
             builder.MoveTo(px, py - r).Arc(px, py, r, 0, Math.PI * 2).Close();
             xs.Add(px);
             ys.Add(py);
@@ -363,7 +382,7 @@ internal sealed class ScatterSeriesType : ISeriesType
 
         if (c.Spec.TrendLine && data.Kind != XKind.Category)
         {
-            AddTrendLine(c, indices);
+            AddTrendLine(c, start, end);
         }
 
         var style = c.Styles.Add($"series-{c.ColorIndex}-marker", new Style { Fill = c.Color, FillOpacity = 0.75f });
@@ -372,28 +391,39 @@ internal sealed class ScatterSeriesType : ISeriesType
         LineSeriesType.AddLabels(c, [.. xs], [.. ys], [.. indices]);
     }
 
-    /// <summary>Least squares over the drawn points, from the first to the last point's x.</summary>
-    private static void AddTrendLine(SeriesBuildContext c, List<int> indices)
+    /// <summary>
+    /// Least squares over all visible points (also those left out of a dense drawing), from the first
+    /// to the last point's x.
+    /// </summary>
+    private static void AddTrendLine(SeriesBuildContext c, int start, int end)
     {
-        if (indices.Count < 2)
+        bool Usable(int i) => double.IsFinite(c.Upper[i]) && double.IsFinite(c.PixelX[i]);
+        int n = 0, first = -1, last = -1;
+        double mx = 0, my = 0;
+        for (var i = start; i < end; i++)
+        {
+            if (Usable(i))
+            {
+                (n, mx, my, last) = (n + 1, mx + c.Data.X[i], my + c.Upper[i], i);
+                first = first < 0 ? i : first;
+            }
+        }
+
+        if (n < 2)
         {
             return;
         }
 
-        double mx = 0, my = 0;
-        foreach (var i in indices)
-        {
-            mx += c.Data.X[i];
-            my += c.Upper[i];
-        }
-
-        mx /= indices.Count;
-        my /= indices.Count;
+        mx /= n;
+        my /= n;
         double sxy = 0, sxx = 0;
-        foreach (var i in indices)
+        for (var i = start; i < end; i++)
         {
-            sxy += (c.Data.X[i] - mx) * (c.Upper[i] - my);
-            sxx += (c.Data.X[i] - mx) * (c.Data.X[i] - mx);
+            if (Usable(i))
+            {
+                sxy += (c.Data.X[i] - mx) * (c.Upper[i] - my);
+                sxx += (c.Data.X[i] - mx) * (c.Data.X[i] - mx);
+            }
         }
 
         if (sxx <= 0)
@@ -401,8 +431,7 @@ internal sealed class ScatterSeriesType : ISeriesType
             return;
         }
 
-        var slope = sxy / sxx;
-        var (first, last) = (indices[0], indices[^1]); // x ascending
+        var slope = sxy / sxx; // first and last: x ascending
         double Y(int i) => c.MapY(my + slope * (c.Data.X[i] - mx));
         var style = c.Styles.Add($"series-{c.ColorIndex}-trend",
             new Style { Stroke = c.Color, StrokeWidth = 1.5f, Fill = "none", DashArray = "6 4", Opacity = 0.85f });

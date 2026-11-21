@@ -209,6 +209,22 @@ public static class SampleData
     }).ToList();
 
     /// <summary>Server response times in ms, a random walk as plain arrays (the columnar fast path).</summary>
+    /// <summary>Orders: minutes on the site before buying, and the order value in €. Most orders are quick and small.</summary>
+    public static (double[] Minutes, double[] Values) Orders(int count)
+    {
+        var random = new Random(42);
+        double Gauss() => Math.Sqrt(-2 * Math.Log(1 - random.NextDouble())) * Math.Cos(2 * Math.PI * random.NextDouble());
+        var minutes = new double[count];
+        var values = new double[count];
+        for (var i = 0; i < count; i++)
+        {
+            minutes[i] = Math.Round(Math.Exp(2.2 + 0.55 * Gauss()), 2);
+            values[i] = Math.Round(Math.Max(5, 18 + minutes[i] * 2.4 + 22 * Gauss() * Math.Sqrt(minutes[i] / 10)), 2);
+        }
+
+        return (minutes, values);
+    }
+
     public static (DateTime[] Times, double[] Values) Big(int count)
     {
         var times = new DateTime[count];

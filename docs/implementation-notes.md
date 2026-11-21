@@ -497,9 +497,18 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 
 ## Scatter
 
-- **Type:** `ScatterSeriesType` draws one path of circles (5 px by default, translucent fill, no outline), every
-  visible point: no downsampling, since each point is data. Default layer 3, above lines.
-- **Trend line:** least squares over the drawn points in data units, drawn from the first to the
+- **Type:** `ScatterSeriesType` draws one path of circles (5 px by default, translucent fill, no outline).
+  Default layer 3, above lines.
+- **Thinning, not downsampling:** each point is data, so LTTB does not apply. Above the downsampling
+  threshold (visible points), at most 3 markers are drawn per square cell one marker radius wide
+  (`MarkersPerCell`). Three markers at 0.75 opacity cover about 98%, so the picture does not change:
+  rendered with and without thinning, at most 0.07% of pixels differ visibly (uniform noise; 0.01%
+  for clouds). One per cell was visibly lighter in the middle of a 5k cloud; two still showed.
+  Sparse areas and outliers keep every point. Hover, tooltips and data labels use the drawn points;
+  the description and CSV use all data. Drawn markers are bounded by the plot area (about 3 per
+  r² of plot), not by the data: 100k points in a Gaussian cloud draw about 20k, 1M about 33k;
+  uniform noise over the whole plot is the worst case (86k of 100k).
+- **Trend line:** least squares over all visible points (also those thinned out) in data units, drawn from the first to the
   last point's x (dashed, series color). No equation or r²: the legend tooltip says rising/falling.
 - **Axes:** numeric x gets `NiceDomain(min, max, 10)` (steps of 5 for a typical outdoor range),
   unless zoomed or `X.Min/Max` are set; y has no forced zero. The plot clip grows by the marker
@@ -575,7 +584,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   | Line, 1M points, zoomed to 10% | 23 ms | 0.3 MB |
   | 3 lines, 1M points each | 95 ms | 1 MB |
   | 3 stacked areas, 1M points each | 117 ms | 63 MB |
-  | Scatter, 100k points | 100 ms | 36 MB |
+  | Scatter, 100k points (cloud / uniform noise) | 26 / 85 ms | 11 / 37 MB |
   | Bars, 10k categories | 7 ms | 4 MB |
   | Pie, 1000 / 10 000 slices | 40 / 35 ms | 2 / 20 MB |
   | Heatmap, 50 rows x 365 days | 25 ms | 7 MB |
@@ -592,8 +601,8 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   series with legend tooltips); stacking kept a dictionary entry per point; every x was mapped to
   a pixel before downsampling (`PixelPositions` maps on demand); PNG encoding tried every filter.
 - **Known costs, left as is:**
-  - Scatter is never downsampled: every point is drawn and goes to the tooltip model (4 MB of
-    JSON at 100k points). Fine to about 10k points.
+  - Scatter: thinned to what can be seen (see Scatter); uniform noise over the whole plot still
+    draws most points, so use the canvas layer for big scatters.
   - `FromItems` boxes each x (the selectors return `object`); `SeriesData.From` with columns is
     the fast path for big data, as the Large data page says.
   - In the browser, hover handling is about 0.05 ms per pointer move at 200k points. A full layout

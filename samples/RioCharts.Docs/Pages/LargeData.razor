@@ -21,10 +21,26 @@
     </ChildContent>
 </Example>
 
+<Example Title="100 000 points in a scatter" Code="@ScatterCode">
+    <Description>
+        <p>
+            Minutes on the site against order value for 100 000 orders. Points are data, so a scatter is never downsampled, but where markers
+            pile up only three are drawn per square one marker radius wide: by then the translucent markers are solid, so the picture is the same.
+            Outliers and sparse areas keep every point; the trend line uses them all. Drag to zoom into the dense corner.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="double" Height="320" Zoomable="true" SeriesLayer="SeriesLayer.Canvas" XAxis="Minutes" YAxis="Euros">
+            <ScatterSeries Name="Orders" Data="_orders" MarkerSize="4" TrendLine="true" Format="0 €" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <h2>Guidelines</h2>
 <ul>
     <li>Use <code>SeriesData.From(times, values)</code> for big series: no per-item selectors, no boxing.</li>
     <li>Downsampling is automatic (twice the plot width, four times on a canvas); set <code>DownsampleThreshold</code> to change it.</li>
+    <li>Scatter series are thinned instead: above the same threshold, at most three markers in each small square. Hover and tooltips use the drawn points.</li>
     <li><code>SeriesLayer.Canvas</code> keeps axes, labels and annotations in SVG and draws only the series on a canvas.</li>
     <li>Update with a new <code>SeriesData</code> or a <code>DataVersion</code>; for streams use a <code>SeriesBuffer</code>.</li>
 </ul>
@@ -32,6 +48,15 @@
 @code {
     private static readonly AxisSpec Ms = new() { Title = "ms" };
     private static readonly SeriesData _big = Create();
+    private static readonly AxisSpec Minutes = new() { Title = "Minutes on the site" };
+    private static readonly AxisSpec Euros = new() { Title = "Order value, €" };
+    private static readonly SeriesData _orders = CreateOrders();
+
+    private static SeriesData CreateOrders()
+    {
+        var (minutes, values) = Orders(100_000);
+        return SeriesData.From(minutes, values);
+    }
     private SeriesLayer _layer = SeriesLayer.Canvas;
 
     private static SeriesData Create()
@@ -43,6 +68,13 @@
     private const string BigCode = """
         <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas" YAxis="new AxisSpec { Title = "ms" }">
             <LineSeries Name="Response time" Data="SeriesData.From(times, values)" StrokeWidth="1.25" Format="0 ms" />
+        </RioChart>
+        """;
+
+    private const string ScatterCode = """
+        <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas"
+                  XAxis="@(new AxisSpec { Title = "Minutes on the site" })" YAxis="@(new AxisSpec { Title = "Order value, €" })">
+            <ScatterSeries Name="Orders" Data="SeriesData.From(minutes, values)" MarkerSize="4" TrendLine="true" Format="0 €" />
         </RioChart>
         """;
 }
