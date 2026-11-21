@@ -159,7 +159,8 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>
     /// Keyboard navigation (default on): the chart is a tab stop, and with it focused the arrow keys
     /// move between points (Up/Down: between series; pies: between slices), showing the tooltip and
-    /// announcing the point to screen readers; Enter clicks it, Escape leaves. Handled in the browser.
+    /// announcing the point to screen readers; Enter clicks it, Escape leaves. With <see cref="Zoomable"/>,
+    /// + and - zoom around the focused point, Shift+Left/Right pans and 0 resets. Handled in the browser.
     /// </summary>
     [Parameter] public bool KeyboardNavigation { get; set; } = true;
 
@@ -657,7 +658,8 @@ public partial class RioChart<TItem> : IChartContext
         var series = layout.Tooltip.Series.Count(s => s.X.Length > 0);
         var move = polar ? "Use the arrow keys to move between slices." :
             series > 1 ? "Use Left and Right to move between points, Up and Down to change series." : "Use Left and Right to move between points.";
-        return OnPointClick.HasDelegate ? $"{move} Press Enter to select a point, Escape to leave." : $"{move} Press Escape to leave.";
+        var zoom = Zoomable && layout.XScale is not null ? " Plus and minus zoom, Shift with Left and Right pans, 0 shows all data." : "";
+        return OnPointClick.HasDelegate ? $"{move}{zoom} Press Enter to select a point, Escape to leave." : $"{move}{zoom} Press Escape to leave.";
     }
 
     // ---------- Zoom and pan ----------

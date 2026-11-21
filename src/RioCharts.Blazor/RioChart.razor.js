@@ -133,7 +133,17 @@ export function update(container, model) {
     } else if (state.hovering && state.lastEvent && model) {
         move(state, state.lastEvent);
     } else if (state.kb && model && model.keys && document.activeElement === state.svg) {
-        showKey(state, false); // live data or a resize: stay on the focused point
+        // Live data or a resize: stay on the focused point. After a key zoom: on the same x.
+        const anchor = state.kbAnchor;
+        state.kbAnchor = null;
+        if (anchor !== null && anchor !== undefined && model.xscale && state.kb.s !== undefined) {
+            const s = model.series.filter(x => x.x.length > 0)[state.kb.s];
+            if (s) {
+                state.kb.i = Math.max(0, nearest(s.x, toPixel(model.xscale, anchor)));
+            }
+        }
+
+        showKey(state, anchor !== null && anchor !== undefined);
     } else {
         state.kb = null;
         hide(state);
@@ -836,6 +846,10 @@ function keyDown(state, e) {
         return; // legend items and annotations handle their own keys
     }
 
+    if (zoomKey(state, e)) {
+        return;
+    }
+
     const polar = !!(m.slices && m.slices.length > 0);
     const series = polar ? [] : m.series.filter(s => s.x.length > 0);
     if (!polar && series.length === 0) {
@@ -904,6 +918,47 @@ function keyDown(state, e) {
     }
 
     showKey(state, true);
+}
+
+// Zoomable charts: + and - zoom in and out (2x) around the focused point or the middle, Shift with
+// Left/Right pans a fifth of the view, 0 shows all data. Linked charts follow, as with the pointer.
+function zoomKey(state, e) {
+    const m = state.model;
+    const s = m.xscale;
+    if (!m.zoom || !s) {
+        return false;
+    }
+
+    const key = e.key;
+    const pan = e.shiftKey && (key === 'ArrowLeft' || key === 'ArrowRight');
+    if (!pan && !['+', '=', '-', '_', '0'].includes(key)) {
+        return false;
+    }
+
+    e.preventDefault();
+    const series = (m.series || []).filter(x => x.x.length > 0);
+    const kb = state.kb;
+    const focused = kb && kb.s !== undefined && series[kb.s] ? toData(s, series[kb.s].x[kb.i]) : null;
+    state.kbAnchor = kb ? focused : null;
+    if (key === '0') {
+        if (m.zoomed) {
+            commitReset(state);
+        }
+
+        return true;
+    }
+
+    const width = s.d1 - s.d0;
+    if (pan) {
+        const shift = width * 0.2 * (key === 'ArrowLeft' ? -1 : 1);
+        commitRange(state, s.d0 + shift, s.d1 + shift);
+        return true;
+    }
+
+    const factor = key === '-' || key === '_' ? 2 : 0.5;
+    const anchor = focused !== null ? focused : (s.d0 + s.d1) / 2;
+    commitRange(state, anchor - (anchor - s.d0) * factor, anchor + (s.d1 - anchor) * factor);
+    return true;
 }
 
 // Draws the focused point like a hover and (when announce) tells screen readers about it.

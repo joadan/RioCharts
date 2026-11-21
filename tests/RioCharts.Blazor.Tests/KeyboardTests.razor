@@ -40,6 +40,18 @@
     }
 
     [Fact]
+    public void Instructions_mention_the_zoom_keys_on_zoomable_charts()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal("Use Left and Right to move between points. Plus and minus zoom, Shift with Left and Right pans, 0 shows all data. Press Escape to leave.",
+            cut.Find(".rio-sr-only").TextContent);
+        Assert.Equal(true, Field(LastUpdateModel(Calls("update")), "zoom"));
+    }
+
+    [Fact]
     public void Pies_move_between_slices()
     {
         var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms">

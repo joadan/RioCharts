@@ -31,7 +31,9 @@
             <kbd>↓</kbd> between series (on pies, every arrow moves between slices), <kbd>Home</kbd>, <kbd>End</kbd>, <kbd>Page Up</kbd> and
             <kbd>Page Down</kbd> jump. The crosshair and tooltip follow, linked charts follow too, and screen readers hear each point
             (for example "Tue 01:00: Supply 20.1 °C, Extract 22.3 °C. 5 of 96"). <kbd>Enter</kbd> raises <code>OnPointClick</code> and
-            <kbd>Esc</kbd> leaves. It all runs in the browser, without server round trips.
+            <kbd>Esc</kbd> leaves. On <code>Zoomable</code> charts, <kbd>+</kbd> and <kbd>−</kbd> zoom around the focused point,
+            <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> pans and <kbd>0</kbd> shows all data (try it on the zoom example below).
+            It all runs in the browser; only finished zooms and Enter call .NET.
         </p>
         <p>Click the chart below or Tab to it, then use the arrow keys. <code>KeyboardNavigation="false"</code> turns it off.</p>
     </Description>

@@ -17,7 +17,10 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   keys move between points and Up/Down between series (pies: between slices), Home/End and
   PageUp/PageDown jump; the crosshair and tooltip follow (and linked charts), each point is
   announced through a live region, Enter raises `OnPointClick` and Escape leaves. Handled in the
-  browser from the points it already has. The download menu also moves with Up/Down/Home/End.
+  browser from the points it already has. On `Zoomable` charts, + and - zoom 2x around the
+  focused point (or the middle), Shift+Left/Right pans a fifth of the view and 0 shows all data,
+  through the same zoom commands as the pointer (`OnZoomChanging`, `@bind-VisibleRange`, linked
+  charts); the focus stays on the same x. The download menu also moves with Up/Down/Home/End.
 - **Breaking (markup):** the chart's `<svg>` now has `role="application"` and `tabindex="0"`
   instead of `role="img"` when keyboard navigation is on; `KeyboardNavigation="false"` restores
   the old markup.

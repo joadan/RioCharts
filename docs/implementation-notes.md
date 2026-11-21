@@ -318,6 +318,12 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   the Reset zoom button; localizing the built-in texts is a separate topic.
 - **Live data and resizes:** a new layout keeps the focused point (by index, clamped) while the
   chart has focus, without announcing it again.
-- **Not yet:** keyboard zoom and pan (e.g. +/- and Shift+arrows), and moving through hidden
-  series' data or annotations with the arrows.
+- **Zoom keys** (zoomable charts): + / = and - / _ zoom 2x around the focused point's x (the
+  middle without one), Shift+Left/Right pans 20%, 0 resets. They reuse the pointer's commit path
+  (`OnZoom`/`OnZoomReset` on this chart and its zoomable group), so clamping, `OnZoomChanging`
+  and binding behave the same. The focused data x is remembered and, when the new layout
+  arrives, the focus moves to the nearest point at that x and is announced again (the index
+  changes with the visible range). The zoomed range itself is not announced (JS has no
+  formatted range labels).
+- **Not yet:** moving through hidden series' data or annotations with the arrows.
 
