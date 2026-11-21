@@ -57,7 +57,7 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - Fixed: in a shared tooltip, a step line (`Curve="CurveType.Step"`) showed the value of its
   nearest point, not the one in effect, and was missing when its nearest point was far away
   (common with irregular data, e.g. a setpoint next to a sensor logged on change). It now shows
-  the last point at or before the hovered x, with the marker on the crosshair; the header comes
+  the last point at or before the hovered x, marked at that point; the header comes
   from a series with a point at that x. Core: `TooltipSeries.Step`.
 - Fixed: on time axes without a display time zone, `PointClickEventArgs.X` was a
   `DateTimeOffset` with the server's offset instead of a `DateTime`.

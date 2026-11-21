@@ -506,7 +506,7 @@ function nearest(xs, v) {
 
 // Shared: the x position closest to the pointer, and each series' point at that x. A step line
 // has a value everywhere between its first and last point: the last point at or before the x
-// (drawn at the x itself). rows.anchor is the x.
+// (marked where that point is). rows.anchor is the x.
 function findShared(m, px) {
     let anchor = null;
     for (const s of m.series) {
@@ -525,7 +525,7 @@ function findShared(m, px) {
         if (s.step) {
             const i = atOrBefore(s.x, anchor);
             if (i >= 0 && anchor <= s.x[s.x.length - 1] + 0.5) {
-                rows.push({ s, i, x: anchor });
+                rows.push({ s, i });
             }
 
             continue;

@@ -334,7 +334,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   its median spacing). A line series with no point near that x is left out rather than showing a
   value from another time.
 - Step lines (step-after) have a value everywhere between their first and last point, so they
-  are always listed with the last point at or before the anchor (`TooltipSeries.Step`), drawn at
-  the anchor x. The header is the label of a row with a point at the anchor.
+  are always listed with the last point at or before the anchor (`TooltipSeries.Step`), marked at
+  that point (where the value was set), not on the crosshair. The header is the label of a row with a point at the anchor.
 - Not yet: interpolated values for line series between their points.
 
