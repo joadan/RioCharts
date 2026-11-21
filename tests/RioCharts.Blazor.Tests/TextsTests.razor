@@ -1,7 +1,6 @@
 @inherits ChartTestBase
 
 @code {
-    private static object? Field(object? model, string name) => model?.GetType().GetProperty(name)?.GetValue(model);
 
     [Fact]
     public void Texts_parameter_translates_the_chart_own_texts()
@@ -16,7 +15,7 @@
         Assert.Equal("Använd vänster- och högerpil för att flytta mellan punkter. Tryck Escape för att lämna.", cut.Find(".rio-sr-only").TextContent);
         Assert.Equal("Ladda ner CSV", cut.Find(".rio-export-button").GetAttribute("aria-label"));
         Assert.StartsWith("Diagram med 1 serie. Tilluft: 4 värden", cut.Find("desc").TextContent);
-        Assert.Equal("{0} av {1}", Field(Calls("update")[^1].Arguments[1], "pos")); // "3 av 12", read by the JS module
+        Assert.Equal("{0} av {1}", Field(Payload(Calls("update")[^1]), "pos")); // "3 av 12", read by the JS module
     }
 
     [Fact]

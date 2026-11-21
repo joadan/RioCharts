@@ -595,7 +595,7 @@ public partial class RioChart<TItem> : IChartContext
             {
                 _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/RioChart.razor.js");
                 _dotnet = DotNetObjectReference.Create(this);
-                var info = await _module.InvokeAsync<ChartContainerInfo>("init", _container, _dotnet);
+                var info = ChartContainerInfo.From(await _module.InvokeAsync<System.Text.Json.JsonElement>("init", _container, _dotnet));
                 var changed = false;
                 if (info.Widths is { Length: > 0 } widths)
                 {
@@ -652,7 +652,7 @@ public partial class RioChart<TItem> : IChartContext
         _sentInteraction = key;
         if (UsesCanvas)
         {
-            await _module.InvokeVoidAsync("paint", _container, CanvasSeriesWriter.Build(_layout.Scene));
+            await _module.InvokeVoidAsync("paint", _container, InteropJson.Bytes(CanvasSeriesWriter.Build(_layout.Scene)));
         }
 
         var model = CustomTooltip(_layout);
@@ -660,55 +660,26 @@ public partial class RioChart<TItem> : IChartContext
         var scale = _layout.XScale;
         var zoom = Zoomable && scale is not null && _layout.HasData;
         var drags = _layout.DragHandles;
-        object? payload = model.Enabled || click || zoom || keys || drags.Count > 0 || (Group is not null && scale is not null)
-            ? new
-            {
-                drags = drags.Select(d => new { id = d.Id, x = d.IsX, pos = d.Pixel, s = new { d0 = d.DomainMin, d1 = d.DomainMax, r0 = d.RangeStart, r1 = d.RangeEnd } }),
-                plot = new { x = model.Plot.X, y = model.Plot.Y, w = model.Plot.Width, h = model.Plot.Height },
-                tooltip = model.Enabled,
-                template = model.Enabled && TooltipTemplate is not null,
-                shared = model.Shared,
-                band = model.BandWidth,
-                click,
-                keys,
-                pos = keys ? CurrentTexts.Position : null,
-                zoom,
-                zoomed = _layout.Zoomed,
-                group = Group,
-                xscale = scale is null ? null : new { d0 = scale.DomainMin, d1 = scale.DomainMax, r0 = scale.RangeStart, r1 = scale.RangeEnd },
-                series = model.Series.Select(s => new
-                {
-                    id = s.Id,
-                    name = s.Name,
-                    color = SvgWriter.Color(s.Color),
-                    bar = s.Type == SeriesType.Bar,
-                    step = s.Step,
-                    snap = s.Snap,
-                    barWidth = s.BarWidth,
-                    barOffset = s.BarOffset,
-                    x = s.X,
-                    y = s.Y,
-                    index = s.Index,
-                    xl = s.XLabels,
-                    v = s.Values,
-                }),
-                slices = model.Slices.Select(s => new
-                {
-                    id = s.SeriesId,
-                    index = s.Index,
-                    header = s.Header,
-                    label = s.Label,
-                    value = s.Value,
-                    color = SvgWriter.Color(s.Color),
-                    cx = s.Cx,
-                    cy = s.Cy,
-                    r0 = s.R0,
-                    r1 = s.R1,
-                    a0 = s.A0,
-                    a1 = s.A1,
-                    end = s.HitEnd,
-                }),
-            }
+        // UTF-8 JSON from source-generated metadata (Rendering/Interop.cs): trimming and AOT safe.
+        byte[]? payload = model.Enabled || click || zoom || keys || drags.Count > 0 || (Group is not null && scale is not null)
+            ? InteropJson.Bytes(new UpdateModel(
+                Drags: [.. drags.Select(d => new DragModel(d.Id, d.IsX, d.Pixel, new ScaleModel(d.DomainMin, d.DomainMax, d.RangeStart, d.RangeEnd)))],
+                Plot: new PlotModel(model.Plot.X, model.Plot.Y, model.Plot.Width, model.Plot.Height),
+                Tooltip: model.Enabled,
+                Template: model.Enabled && TooltipTemplate is not null,
+                Shared: model.Shared,
+                Band: model.BandWidth,
+                Click: click,
+                Keys: keys,
+                Pos: keys ? CurrentTexts.Position : null,
+                Zoom: zoom,
+                Zoomed: _layout.Zoomed,
+                Group: Group,
+                Xscale: scale is null ? null : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
+                Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type == SeriesType.Bar, s.Step, s.Snap,
+                    s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values))],
+                Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
+                    s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd))]))
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
     }

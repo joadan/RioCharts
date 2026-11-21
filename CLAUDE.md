@@ -57,5 +57,6 @@ Stop the running demo before rebuilding; it locks the library DLLs.
 - Keep the JS module tiny: measurement and high-frequency interaction only.
 - Temperatures in examples are in °C.
 - Libraries are `IsAotCompatible`: keep the build free of IL2xxx/IL3xxx warnings. JSON goes through source-generated contexts (`ChartSpecJsonContext`, `ChartToolJsonContext`), never reflection. A new spec record type needs an entry in `ChartSpecJson.Factories`.
+- JS interop arguments are primitives, `byte[]` or element/.NET references only: payloads are records in `Rendering/Interop.cs`, sent as source-generated UTF-8 JSON (`InteropJson.Bytes`) and read with `json()` in the JS module. Never pass anonymous or other objects (they break trimmed WebAssembly apps; a bUnit test checks).
 - Blazor features that need JS check `Live` (interactive and rendered interactively), not `Interactive` alone.
 - Text a chart writes itself (empty states, buttons, screen reader text) comes from `ChartTexts`, never a string literal; add a key with English and all built-in languages. Warnings and errors for developers stay English.

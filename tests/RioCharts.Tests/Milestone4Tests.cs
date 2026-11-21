@@ -250,7 +250,7 @@ public class Milestone4Tests
         };
 
         var scene = ChartLayout.Compute(spec, data, Options).Scene;
-        var json = System.Text.Json.JsonSerializer.Serialize(RioCharts.Blazor.Rendering.CanvasSeriesWriter.Build(scene));
+        var json = RioCharts.Blazor.Rendering.InteropJson.Bytes(RioCharts.Blazor.Rendering.CanvasSeriesWriter.Build(scene)); // what paint receives
         using var doc = System.Text.Json.JsonDocument.Parse(json);
         var ops = doc.RootElement.GetProperty("ops").EnumerateArray().ToList();
 

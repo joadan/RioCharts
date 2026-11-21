@@ -112,7 +112,7 @@
         var call = Assert.Single(Calls("download"));
         Assert.Equal("png", call.Arguments[1]);
         Assert.Equal("report.png", call.Arguments[2]); // the extension is added
-        Assert.Equal("{ scale = 3, background = transparent }", call.Arguments[3]!.ToString());
+        Assert.Equal("""{"scale":3,"background":"transparent"}""", System.Text.Encoding.UTF8.GetString((byte[])call.Arguments[3]!));
     }
 
     [Fact]

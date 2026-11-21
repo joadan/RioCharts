@@ -9,10 +9,10 @@ namespace RioCharts.Blazor.Rendering;
 /// </summary>
 public static class CanvasSeriesWriter
 {
-    public static object Build(Scene scene)
+    internal static CanvasModel Build(Scene scene)
     {
         var plot = FindPlot(scene.Series);
-        var ops = new List<object>();
+        var ops = new List<CanvasOp>();
         RectF? clip = plot?.Clip;
         if (plot is not null)
         {
@@ -22,11 +22,7 @@ public static class CanvasSeriesWriter
             }
         }
 
-        return new
-        {
-            clip = clip is { } c ? new[] { c.X, c.Y, c.Width, c.Height } : null,
-            ops,
-        };
+        return new CanvasModel(clip is { } c ? [c.X, c.Y, c.Width, c.Height] : null, ops);
     }
 
     /// <summary>Series groups (keyed "series:…") are drawn on the canvas instead of in SVG.</summary>
@@ -39,7 +35,7 @@ public static class CanvasSeriesWriter
         _ => null,
     };
 
-    private static void Add(Node node, StyleTable styles, List<object> ops)
+    private static void Add(Node node, StyleTable styles, List<CanvasOp> ops)
     {
         switch (node)
         {
@@ -51,22 +47,20 @@ public static class CanvasSeriesWriter
 
                 break;
             case PathNode p:
-                ops.Add(Paint(new { t = "p", d = SvgWriter.PathD(p.Path) }, styles.Get(p.Style)));
+                ops.Add(Paint(new CanvasShape("p", D: SvgWriter.PathD(p.Path)), styles.Get(p.Style)));
                 break;
             case RectNode r:
-                ops.Add(Paint(new { t = "r", x = r.Bounds.X, y = r.Bounds.Y, w = r.Bounds.Width, h = r.Bounds.Height, rx = r.CornerRadius }, styles.Get(r.Style)));
+                ops.Add(Paint(new CanvasShape("r", X: r.Bounds.X, Y: r.Bounds.Y, W: r.Bounds.Width, H: r.Bounds.Height, Rx: r.CornerRadius), styles.Get(r.Style)));
                 break;
         }
     }
 
-    private static object Paint(object shape, Style s) => new
-    {
+    private static CanvasOp Paint(CanvasShape shape, Style s) => new(
         shape,
-        fill = s.Fill is null ? null : SvgWriter.Color(s.Fill),
-        fo = s.FillOpacity,
-        stroke = s.Stroke is null ? null : SvgWriter.Color(s.Stroke),
-        sw = s.StrokeWidth ?? 1,
-        dash = s.DashArray,
-        op = s.Opacity,
-    };
+        s.Fill is null ? null : SvgWriter.Color(s.Fill),
+        s.FillOpacity,
+        s.Stroke is null ? null : SvgWriter.Color(s.Stroke),
+        s.StrokeWidth ?? 1,
+        s.DashArray,
+        s.Opacity);
 }

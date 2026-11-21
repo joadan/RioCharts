@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Bunit;
 using Microsoft.JSInterop;
 
@@ -17,8 +18,8 @@ public abstract class ChartTestBase : BunitContext
         SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", isInteractive: true));
         JSInterop.Mode = JSRuntimeMode.Strict;
         Module = JSInterop.SetupModule(ModulePath);
-        Init = Module.Setup<ChartContainerInfo>("init", _ => true);
-        Init.SetResult(new ChartContainerInfo(Width, null, "Europe/Stockholm"));
+        Init = Module.Setup<JsonElement>("init", _ => true);
+        Init.SetResult(JsonSerializer.SerializeToElement(new { width = Width, widths = (double[]?)null, timeZone = "Europe/Stockholm" }));
         foreach (var name in new[] { "update", "paint", "dispose", "download", "downloadText" })
         {
             Module.SetupVoid(name, _ => true).SetVoidResult();
@@ -30,8 +31,17 @@ public abstract class ChartTestBase : BunitContext
 
     protected BunitJSModuleInterop Module { get; }
 
-    // private protected: ChartContainerInfo is internal to the library (visible to this project).
-    private protected JSRuntimeInvocationHandler<ChartContainerInfo> Init { get; }
+    /// <summary>The JS module's init: what it reports about the container (a JsonElement, read without reflection).</summary>
+    protected JSRuntimeInvocationHandler<JsonElement> Init { get; }
+
+    /// <summary>A payload the chart sent to the JS module (UTF-8 JSON bytes), e.g. the model of the last update call.</summary>
+    protected static JsonElement Payload(JSRuntimeInvocation call, int argument = 1) =>
+        JsonDocument.Parse((byte[])call.Arguments[argument]!).RootElement;
+
+    /// <summary>A field of a payload: true/false, a string or null.</summary>
+    protected static object? Field(JsonElement model, string name) => model.TryGetProperty(name, out var v)
+        ? v.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, JsonValueKind.String => v.GetString(), JsonValueKind.Number => v.GetDouble(), _ => null }
+        : null;
 
     /// <summary>The calls of a JS module function so far.</summary>
     protected IReadOnlyList<JSRuntimeInvocation> Calls(string identifier) => Module.Invocations[identifier];

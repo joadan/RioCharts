@@ -1,3 +1,4 @@
+using RioCharts.Blazor.Rendering;
 using System.Text;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -164,10 +165,10 @@ public partial class RioChart<TItem>
     private IJSObjectReference Module() => _module
         ?? throw new InvalidOperationException("Exporting needs the browser: call it after the chart has rendered in an interactive render mode.");
 
-    private static object ImageOptions(ChartImageOptions? options)
+    private static byte[] ImageOptions(ChartImageOptions? options)
     {
         options ??= new ChartImageOptions();
-        return new { scale = options.Scale > 0 && double.IsFinite(options.Scale) ? options.Scale : 2, background = options.Background };
+        return InteropJson.Bytes(new ImageModel(options.Scale > 0 && double.IsFinite(options.Scale) ? options.Scale : 2, options.Background));
     }
 
     private string FileName(string? name, string extension)

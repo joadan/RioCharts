@@ -124,7 +124,14 @@ export function init(container, dotnet) {
     return { width: state.width, widths: measureFont(container), timeZone: viewerTimeZone() };
 }
 
+/** Payloads arrive as UTF-8 JSON bytes (source-generated on the .NET side, safe for trimming and AOT). */
+const utf8 = new TextDecoder();
+function json(bytes) {
+    return bytes instanceof Uint8Array ? JSON.parse(utf8.decode(bytes)) : bytes;
+}
+
 export function update(container, model) {
+    model = json(model);
     const state = states.get(container);
     if (!state) {
         return;
@@ -1232,6 +1239,7 @@ let themeObserver = null;
 
 // Draw operations for the series (SVG path data, rectangles, CSS paint) from .NET.
 export function paint(container, scene) {
+    scene = json(scene);
     const state = states.get(container);
     if (!state) {
         return;
@@ -1349,6 +1357,7 @@ const EXPORT_DEFAULTS = { 'opacity': '1', 'dominant-baseline': 'auto' };
 
 // The chart as a standalone SVG document: { text, width, height }.
 function buildSvg(container, options) {
+    options = json(options);
     const source = container.querySelector('svg.rio-chart-svg');
     if (!source) {
         throw new Error('RioCharts: no chart to export.');
@@ -1462,6 +1471,7 @@ function resolveColor(container, css) {
 }
 
 async function renderPng(container, options) {
+    options = json(options);
     const svg = buildSvg(container, options);
     const scale = options && options.scale > 0 ? options.scale : 2;
     const url = URL.createObjectURL(new Blob([svg.text], { type: 'image/svg+xml;charset=utf-8' }));

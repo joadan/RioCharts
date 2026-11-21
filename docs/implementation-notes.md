@@ -474,3 +474,19 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `data-tip` and `aria-description` instead (`SvgSceneRenderer.LegendTips`), and the JS module shows
   it in a `.rio-legend-tip` card under the item on pointerover and focusin, so there is no second,
   native tooltip.
+
+
+## JS interop payloads
+
+- **The bug:** marking `RioCharts.Blazor` AOT-compatible also made it trimmable. Blazor serializes
+  JS interop arguments with reflection-based System.Text.Json, and the trimmer removed the
+  constructor parameter names of the anonymous payload types, so every interactive chart threw
+  `ConstructorContainsNullParameterNames` in published WebAssembly apps. The trim analyzer cannot
+  see it: interop takes `object[]`. The dev server does not trim, so only the published site broke.
+- **Now:** the payloads (`update`, `paint`, image options) are records in `Rendering/Interop.cs`,
+  serialized with the source-generated `InteropJson` to UTF-8 bytes. Blazor passes `byte[]` as
+  binary (a `Uint8Array` in JS) and the module's `json()` parses it. Init's reply is read as a
+  `JsonElement` (`ChartContainerInfo.From`), which needs no type metadata.
+- **Guard:** a bUnit test renders a chart that uses every JS call and fails if any argument is not
+  a primitive, `byte[]`, `ElementReference` or `DotNetObjectReference`. A published (trimmed) docs
+  build was checked in the browser before and after.

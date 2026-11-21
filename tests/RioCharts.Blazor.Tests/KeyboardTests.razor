@@ -1,9 +1,7 @@
 @inherits ChartTestBase
 
 @code {
-    private static object? LastUpdateModel(IReadOnlyList<JSRuntimeInvocation> calls) => calls[^1].Arguments[1];
-
-    private static object? Field(object? model, string name) => model?.GetType().GetProperty(name)?.GetValue(model);
+    private static System.Text.Json.JsonElement LastUpdateModel(IReadOnlyList<JSRuntimeInvocation> calls) => Payload(calls[^1]);
 
     [Fact]
     public void A_chart_with_data_is_a_focusable_application_with_instructions()
@@ -96,7 +94,6 @@
         </RioChart>);
 
         var model = LastUpdateModel(Calls("update"));
-        Assert.NotNull(model);
         Assert.Equal(true, Field(model, "keys"));
         Assert.Equal(false, Field(model, "tooltip"));
     }
@@ -109,6 +106,6 @@
             <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
-        Assert.Null(LastUpdateModel(Calls("update")));
+        Assert.Null(Calls("update")[^1].Arguments[1]); // no model at all
     }
 }

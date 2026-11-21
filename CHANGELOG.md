@@ -12,6 +12,10 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Fixed: interactive charts failed in published (trimmed) Blazor WebAssembly apps, including the
+  docs site, with "ConstructorContainsNullParameterNames": the JS interop payloads were anonymous
+  types serialized by reflection. They are now source-generated UTF-8 JSON (`Rendering/Interop.cs`),
+  which is also native AOT safe. A test fails if a JS call gets anything but primitives or bytes.
 - Legend tooltips: hovering or focusing a legend item shows a summary: a series' range, last
   value and trend (`ChartDescriber.DescribeSeries`), a slice's value and share, and for "Other"
   every slice it holds. Interactive charts show it in a card like the chart tooltip; exports and
