@@ -25,7 +25,12 @@ internal sealed record UpdateModel(
     string? Group,
     ScaleModel? Xscale,
     IReadOnlyList<SeriesModel> Series,
-    IReadOnlyList<SliceModel> Slices);
+    IReadOnlyList<SliceModel> Slices,
+    InsetsModel? Need = null,
+    InsetsModel? At = null);
+
+/// <summary>Plot insets: what the chart's labels need, or the group minimum it was laid out with.</summary>
+internal sealed record InsetsModel(double L, double R);
 
 internal sealed record DragModel(string Id, bool X, double Pos, ScaleModel S);
 

@@ -20,6 +20,10 @@ changes are called out under **Breaking**.
   texts no longer scan each series four times, the x extent reads only the first and last values,
   and series with the same x values share their tooltip x labels.
 - The Test workflow checks the JS module's syntax (the component tests fake the module).
+- Linked charts (same `Group`) line up their plots: each uses the widest y-axis labels in the
+  group, so the same time sits at the same place in all of them and the crosshair runs in one
+  vertical line. Before, a chart with narrower labels (e.g. "2k" under "400") started its plot
+  further left. Core: `LayoutOptions.MinInsets` and `ChartLayoutResult.NeededInsets`.
 
 ## 0.1.50-preview (2026-11-21)
 

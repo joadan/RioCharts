@@ -49,7 +49,19 @@ public sealed record LayoutOptions
 
     /// <summary>The viewer's IANA time zone (from the browser), used for TimeZone "local" and to show the zone when it differs.</summary>
     public string? ViewerTimeZone { get; init; }
+
+    /// <summary>
+    /// Space to keep at least on each side of the plot, in pixels, so linked charts (e.g. a
+    /// Blazor <c>Group</c>) line their plots up although their axis labels differ in width.
+    /// Null: only what the chart's own labels need. Cartesian charts with vertical value axes only.
+    /// </summary>
+    public PlotInsets? MinInsets { get; init; }
 }
+
+/// <summary>The space between the chart's edges and its plot, in pixels.</summary>
+/// <param name="Left">From the left edge to the plot.</param>
+/// <param name="Right">From the plot to the right edge.</param>
+public readonly record struct PlotInsets(double Left, double Right);
 
 /// <summary>A legend item. <paramref name="Tooltip"/>: a summary shown on hover (lines separated by \n).</summary>
 public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty, string? Tooltip = null);
@@ -104,6 +116,13 @@ public sealed class ChartLayoutResult
 
     /// <summary>Draggable reference lines (for the interactive layer).</summary>
     public IReadOnlyList<DragHandle> DragHandles { get; init; } = [];
+
+    /// <summary>
+    /// The insets the chart's own axis labels and legend need, before <see cref="LayoutOptions.MinInsets"/>.
+    /// Linked charts share the largest of these. Null for charts that cannot line up (polar,
+    /// horizontal bars, heatmaps, compact charts).
+    /// </summary>
+    public PlotInsets? NeededInsets { get; init; }
 }
 
 /// <summary>
@@ -374,6 +393,13 @@ public static partial class ChartLayout
         var plotLeft = compact ? inset : PadLeft + (left.Count > 0 ? LabelGap + left.Sum(a => a.LabelWidth) + (left.Count - 1) * AxisGap : 0);
         var plotRight = compact ? width - inset
             : width - PadRight - legendRight - (right.Count > 0 ? LabelGap + right.Sum(a => a.LabelWidth) + (right.Count - 1) * AxisGap : 0);
+        var neededInsets = new PlotInsets(plotLeft, width - plotRight);
+        if (!compact && options.MinInsets is { } min)
+        {
+            plotLeft = Math.Max(plotLeft, min.Left);
+            plotRight = Math.Min(plotRight, width - min.Right);
+        }
+
         var plotWidth = Math.Max(compact ? 2 : 10, plotRight - plotLeft);
         plotRight = plotLeft + plotWidth;
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)plotWidth, (float)plotHeight);
@@ -635,6 +661,7 @@ public static partial class ChartLayout
             YScales = axes.ToDictionary(a => a.Id, a => a.Scale, StringComparer.Ordinal),
             HasData = hasData,
             DragHandles = dragHandles,
+            NeededInsets = compact ? null : neededInsets,
         };
     }
 

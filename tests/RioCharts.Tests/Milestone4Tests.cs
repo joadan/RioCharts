@@ -271,4 +271,28 @@ public class Milestone4Tests
         Assert.False(result.Zoomed);
         Assert.Null(result.XExtent);
     }
+    // ---------- Linked charts: plots line up ----------
+
+    [Fact]
+    public void Linked_charts_line_up_their_plots_with_the_largest_insets()
+    {
+        var x = new[] { 0.0, 1, 2 };
+        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var narrow = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(x, [1.0, 2, 3]) };
+        var wide = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(x, [100_000.0, 200_000, 300_000]) };
+
+        var a = ChartLayout.Compute(spec, narrow, Options);
+        var b = ChartLayout.Compute(spec, wide, Options);
+        var need = new PlotInsets(Math.Max(a.NeededInsets!.Value.Left, b.NeededInsets!.Value.Left),
+            Math.Max(a.NeededInsets.Value.Right, b.NeededInsets.Value.Right));
+        Assert.True(b.NeededInsets.Value.Left > a.NeededInsets.Value.Left); // wider y labels
+
+        var aligned = ChartLayout.Compute(spec, narrow, Options with { MinInsets = need });
+        var alignedB = ChartLayout.Compute(spec, wide, Options with { MinInsets = need });
+
+        Assert.Equal(alignedB.Plot.X, aligned.Plot.X);
+        Assert.Equal(alignedB.Plot.Right, aligned.Plot.Right);
+        Assert.Equal(alignedB.XScale!.RangeStart, aligned.XScale!.RangeStart);
+        Assert.Equal(a.NeededInsets, aligned.NeededInsets); // what it needs, not what it got: groups can shrink again
+    }
 }

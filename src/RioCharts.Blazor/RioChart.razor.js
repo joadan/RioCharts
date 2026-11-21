@@ -194,6 +194,7 @@ export function update(container, model) {
         hide(state);
     }
     joinGroup(state, model && model.group);
+    alignGroup(state.group);
     if (state.svg) {
         state.svg.classList.toggle('rio-clickable', !!(model && model.click));
         state.svg.classList.toggle('rio-zoomable', !!(model && model.zoom));
@@ -254,17 +255,46 @@ function joinGroup(state, name) {
         return;
     }
 
-    if (state.group && groups.has(state.group)) {
-        groups.get(state.group).delete(state);
+    const left = state.group;
+    if (left && groups.has(left)) {
+        groups.get(left).delete(state);
     }
 
     state.group = name || null;
+    state.insets = null;
+    if (left) {
+        alignGroup(left); // the others may need less space now
+    }
+
     if (state.group) {
         if (!groups.has(state.group)) {
             groups.set(state.group, new Set());
         }
 
         groups.get(state.group).add(state);
+    }
+}
+
+// Lines up the plots of linked charts: each gets the largest left and right insets any of them
+// needs (e.g. for wider y labels), so the same x is at the same place in all. Asks .NET to lay
+// out again only when a chart's insets change.
+function alignGroup(name) {
+    const members = name && groups.has(name) ? [...groups.get(name)].filter(s => s.model && s.model.need) : [];
+    if (members.length === 0) {
+        return;
+    }
+
+    const l = Math.max(...members.map(s => s.model.need.l));
+    const r = Math.max(...members.map(s => s.model.need.r));
+    const same = (a, b) => !!a && !!b && Math.abs(a.l - b.l) <= 0.5 && Math.abs(a.r - b.r) <= 0.5;
+    for (const s of members) {
+        // What the last layout used: its own needs, raised to the minimum .NET applied (model.at).
+        const m = s.model;
+        const now = { l: Math.max(m.need.l, m.at ? m.at.l : 0), r: Math.max(m.need.r, m.at ? m.at.r : 0) };
+        if (!same(now, { l, r }) && !same(s.insets, { l, r })) {
+            s.insets = { l, r }; // asked for; not again until it changes
+            s.dotnet.invokeMethodAsync('OnGroupInsets', l, r).catch(() => { });
+        }
     }
 }
 

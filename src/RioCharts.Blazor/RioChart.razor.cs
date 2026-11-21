@@ -39,6 +39,10 @@ public partial class RioChart<TItem> : IChartContext
     private DotNetObjectReference<JsCallbacks>? _dotnet;
     private object? _sentInteraction;
     private (double Min, double Max)? _range;
+
+    // Linked charts (Group): the plot insets the group agreed on, so the plots line up.
+    private PlotInsets? _groupInsets;
+    private string? _lastGroup;
     private ChartRange? _lastVisibleRangeParameter;
     private string? _viewerZone;
     private bool _disposed;
@@ -382,6 +386,16 @@ public partial class RioChart<TItem> : IChartContext
             _dirty = true;
         }
 
+        if (Group != _lastGroup)
+        {
+            _lastGroup = Group;
+            if (_groupInsets is not null)
+            {
+                _groupInsets = null;
+                _dirty = true;
+            }
+        }
+
         var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets,
             TooltipHeader is not null, TooltipTemplate is not null, Compact, AutoCompact, Horizontal, CurrentTexts);
         if (!Equals(parameters, _lastParameters))
@@ -455,6 +469,7 @@ public partial class RioChart<TItem> : IChartContext
             DownsampleThreshold = DownsampleThreshold ?? (UsesCanvas ? Math.Max(2000, (int)((Width ?? _measuredWidth ?? DefaultWidth) * 4)) : null),
             XRange = _range,
             ViewerTimeZone = _viewerZone,
+            MinInsets = Group is null ? null : _groupInsets,
         });
         _dirty = false;
         return _layout;
@@ -710,7 +725,9 @@ public partial class RioChart<TItem> : IChartContext
                     s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight, s.CellWidths))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd,
-                    s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))]))
+                    s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))],
+                Need: Group is not null && _layout.NeededInsets is { } need ? new InsetsModel(need.Left, need.Right) : null,
+                At: Group is not null && _groupInsets is { } at ? new InsetsModel(at.Left, at.Right) : null))
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
     }
@@ -862,6 +879,17 @@ public partial class RioChart<TItem> : IChartContext
     }
 
     /// <summary>Called by the JS ResizeObserver when the container width changes.</summary>
+    // A linked chart (same Group) needs more space beside its plot: line up with it.
+    internal void OnGroupInsets(double left, double right)
+    {
+        var insets = new PlotInsets(left, right);
+        if (Group is not null && _groupInsets != insets)
+        {
+            _groupInsets = insets;
+            Invalidate();
+        }
+    }
+
     internal void OnResize(double width)
     {
         if (width > 0 && Width is null && Math.Abs(width - (_measuredWidth ?? 0)) >= 1)
@@ -911,6 +939,8 @@ public partial class RioChart<TItem> : IChartContext
         [JSInvokable] public Task OnZoomReset() => chart.OnZoomReset();
 
         [JSInvokable] public void OnResize(double width) => chart.OnResize(width);
+
+        [JSInvokable] public void OnGroupInsets(double left, double right) => chart.OnGroupInsets(left, right);
     }
 
 

@@ -126,6 +126,14 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Linked charts:** charts with the same `Group` find each other in the JS module. Hover shows the
   crosshair and markers at the same x in the others (no tooltip there). A zoom or pan in one is sent
   to every zoomable chart in the group, each applying it through its own .NET side.
+- **Linked plots line up:** each layout reports the insets its own labels and legend need
+  (`ChartLayoutResult.NeededInsets`). After an update, the JS module takes the largest left and
+  right insets in the group and calls `OnGroupInsets` on every chart that was laid out with less;
+  that chart lays out again with `LayoutOptions.MinInsets`. Needs are reported before the minimum,
+  so the group shrinks again when the widest chart leaves or its labels get shorter. This costs one
+  extra layout per chart when the needs change, not per render. Only vertical cartesian charts take
+  part; polar, horizontal bars, heatmaps and compact charts report no needs. Without JS (static
+  rendering) linked charts don't line up.
 - **Streaming:** `SeriesBuffer` is a locked ring buffer (it grows up to `Capacity`, then drops the
   oldest point; a `TimeWindow` drops points older than the newest minus the window). Each change
   raises `Changed` on the appending thread; the chart coalesces them and lays out again at most
