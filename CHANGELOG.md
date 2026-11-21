@@ -195,6 +195,11 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
 ### AI
 
+- **Breaking:** `ChartTool.ChartCreated` is raised for render_chart too (after the file is
+  written, when `OutputDirectory` is set), so an app can show or keep the images an agent asks
+  for without digging them out of the tool results. The new `ChartToolResult.Tool` says which tool
+  made the chart. A handler that only wants create_chart charts checks `Tool`; a render_chart
+  image can be SVG, with `Png` null.
 - `render_chart` tool (`ChartTool.RenderChartAsync`, `AsRenderFunction`, and in
   `RioChartsMcpTools`): the same spec as `create_chart`, returned to the agent as a PNG or SVG
   image at the size and theme it asks for, e.g. for reports, emails or documents. Set

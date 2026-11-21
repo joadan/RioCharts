@@ -94,6 +94,12 @@ public sealed record ChartToolResult
     /// <summary>render_chart: the file the image was saved to, when the tool has an <see cref="ChartToolOptions.OutputDirectory"/>.</summary>
     public string? File { get; init; }
 
+    /// <summary>
+    /// The tool that made it: <see cref="ChartTool.ToolName"/> (create_chart, an image for the app)
+    /// or <see cref="ChartTool.RenderToolName"/> (render_chart, an image the agent asked for).
+    /// </summary>
+    [JsonIgnore] public string Tool { get; init; } = ChartTool.ToolName;
+
     /// <summary>The chart as PNG (create_chart, or render_chart with format png).</summary>
     [JsonIgnore] public byte[]? Png { get; init; }
 
@@ -133,7 +139,12 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
 
     private readonly ChartToolOptions _options = options ?? new ChartToolOptions();
 
-    /// <summary>Raised after every successful create_chart, with the image and bound spec (e.g. to show it to the user).</summary>
+    /// <summary>
+    /// Raised after every chart the tools make: each successful create_chart and render_chart, with
+    /// the image, bound spec and (render_chart with <see cref="ChartToolOptions.OutputDirectory"/>)
+    /// the file, e.g. to show it to the user. <see cref="ChartToolResult.Tool"/> says which tool made
+    /// it; a render_chart image can be SVG, with <see cref="ChartToolResult.Png"/> null.
+    /// </summary>
     public event Action<ChartToolResult>? ChartCreated;
 
     /// <summary>The tool description for the model: purpose, the datasets and their fields, the spec format and examples.</summary>
@@ -165,7 +176,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
     /// <summary>
     /// Validates, binds and renders a spec as an image for the agent (render_chart): PNG or SVG at
     /// the requested size and theme, also saved to <see cref="ChartToolOptions.OutputDirectory"/>
-    /// when that is set. Does not raise <see cref="ChartCreated"/>.
+    /// when that is set. Raises <see cref="ChartCreated"/>.
     /// </summary>
     public async Task<ChartToolResult> RenderChartAsync(string spec, ChartImageRequest? request = null, CancellationToken cancellationToken = default)
     {
@@ -201,7 +212,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
             }
         }
 
-        return result with
+        result = result with
         {
             Png = png,
             Svg = svg,
@@ -209,7 +220,10 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
             Width = (int)Math.Round(export.Width),
             Height = (int)Math.Round(export.Height),
             File = file,
+            Tool = RenderToolName,
         };
+        ChartCreated?.Invoke(result);
+        return result;
     }
 
     /// <inheritdoc cref="RenderChartAsync(string, ChartImageRequest?, CancellationToken)"/>

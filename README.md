@@ -132,7 +132,7 @@ tool validates it (errors name the path and the valid options), renders it and d
 var tool = new ChartTool(new InMemoryDataSource([ChartDataset.FromItems("shop", rows, "Online store traffic per channel, hourly")]));
 var chat = new ChatOptions { Tools = tool.AsAIFunctions() };          // Microsoft.Extensions.AI
 builder.Services.AddMcpServer().WithHttpTransport().WithRioChartsTools(tool); // or as an MCP server
-tool.ChartCreated += result => Show(result.Png);
+tool.ChartCreated += result => Show(result.Png); // every chart made, by either tool (result.Tool)
 ```
 
 When the agent needs the image itself (for a report, an email, a document), it calls `render_chart`

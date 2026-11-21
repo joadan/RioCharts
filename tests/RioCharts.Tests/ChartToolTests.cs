@@ -37,6 +37,7 @@ public class ChartToolTests
         Assert.Contains(result.Warnings, w => w.Contains("spline", StringComparison.Ordinal));
         Assert.Equal(2, result.BoundSpec!.Series.Count);
         Assert.Same(result, created);
+        Assert.Equal(ChartTool.ToolName, created!.Tool);
         var json = JsonSerializer.Serialize(result, JsonSerializerOptions.Web);
         Assert.DoesNotContain("png", json, StringComparison.OrdinalIgnoreCase); // the image is not sent to the model
     }
@@ -95,9 +96,9 @@ public class ChartToolTests
     [Fact]
     public async Task Render_chart_returns_png_or_svg_at_the_requested_size_and_theme()
     {
-        var created = false;
+        var created = new List<ChartToolResult>();
         var tool = Tool();
-        tool.ChartCreated += _ => created = true;
+        tool.ChartCreated += created.Add;
         const string spec = """{"dataset":"ahu","series":[{"x":"timestamp","y":"supplyTemp"}]}""";
 
         var png = await tool.RenderChartAsync(spec, new ChartImageRequest { Width = 400, Height = 200 });
@@ -112,7 +113,8 @@ public class ChartToolTests
         Assert.Null(svg.Png);
         Assert.StartsWith("<svg", svg.Svg!.TrimStart());
         Assert.Contains("width=\"800\"", svg.Svg);
-        Assert.False(created); // render_chart is for the agent, not shown to the user
+        Assert.Equal([png, svg], created); // the app sees what the agent made too
+        Assert.All(created, r => Assert.Equal(ChartTool.RenderToolName, r.Tool));
         Assert.Null(png.File);
     }
 
@@ -120,6 +122,8 @@ public class ChartToolTests
     public async Task Render_chart_rejects_bad_options_and_names_itself_in_errors()
     {
         var tool = Tool();
+        var created = 0;
+        tool.ChartCreated += _ => created++;
 
         var bad = await tool.RenderChartAsync("""{"dataset":"ahu","series":[{"x":"timestamp","y":"supplyTemp"}]}""",
             new ChartImageRequest { Width = 20000, Theme = "neon" });
@@ -129,6 +133,7 @@ public class ChartToolTests
         Assert.Contains(bad.Errors, e => e.StartsWith("width: 20000 is out of range", StringComparison.Ordinal));
         Assert.Contains(bad.Errors, e => e.StartsWith("theme: 'neon'", StringComparison.Ordinal));
         Assert.Contains(badSpec.Errors, e => e.Contains("call render_chart again", StringComparison.Ordinal));
+        Assert.Equal(0, created); // only charts that were made
     }
 
     [Fact]
@@ -138,12 +143,15 @@ public class ChartToolTests
         try
         {
             var tool = new ChartTool(new InMemoryDataSource([Ahu]), new ChartToolOptions { OutputDirectory = directory });
+            string? createdFile = null;
+            tool.ChartCreated += r => createdFile ??= r.File;
             const string spec = """{"dataset":"ahu","title":"Supply air / AHU 1","series":[{"x":"timestamp","y":"supplyTemp"}]}""";
 
             var fromTitle = await tool.RenderChartAsync(spec);
             var named = await tool.RenderChartAsync(spec, new ChartImageRequest { Format = ChartImageFormat.Svg, FileName = "../../evil.png" });
 
             Assert.Equal(Path.Combine(directory, "supply-air---ahu-1.png"), fromTitle.File);
+            Assert.Equal(fromTitle.File, createdFile); // raised after the file is written
             Assert.Equal(Path.Combine(directory, "evil.svg"), named.File);
             Assert.Equal(fromTitle.Png, await File.ReadAllBytesAsync(fromTitle.File!));
             Assert.Equal(named.Svg, await File.ReadAllTextAsync(named.File!));

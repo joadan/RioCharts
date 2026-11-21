@@ -58,7 +58,8 @@
             new Dictionary<string, string> { ["orders"] = "orders per hour", ["revenue"] = "revenue per hour, €" });
         var source = new InMemoryDataSource([shop]);   // or implement IChartDataSource to load on demand
         var tool = new ChartTool(source, new ChartToolOptions { Export = new ExportOptions { Width = 720, Height = 360 } });
-        tool.ChartCreated += result => ShowToUser(result.Png!, result.Summary);
+        // Every chart the tools make (result.Tool says which: create_chart or render_chart).
+        tool.ChartCreated += result => { if (result.Png is { } png) ShowToUser(png, result.Summary); };
         """;
 
     private const string AiCode = """

@@ -211,8 +211,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `MaxImageSize`, default 4000), `theme` (light or dark) and `fileName`, and returns the image to
   the agent: as `DataContent` (image/png or image/svg+xml) after the result JSON for
   Microsoft.Extensions.AI, and over MCP as an image block (PNG) or an embedded text resource with
-  MIME type image/svg+xml (MCP image blocks are for raster images). It does not raise
-  `ChartCreated`. With `ChartToolOptions.OutputDirectory` set it also writes the file and returns
+  MIME type image/svg+xml (MCP image blocks are for raster images). It raises `ChartCreated`
+  too (after writing the file), so an app can show what the agent made; `ChartToolResult.Tool`
+  says which tool made a chart, and a render_chart result can be SVG with `Png` null. With `ChartToolOptions.OutputDirectory` set it also writes the file and returns
   its full path in `file`; the name comes from `fileName` or the title, with folders stripped,
   unsafe characters replaced and the extension forced to the format, so the agent cannot write
   outside the directory. Whether a model can see an SVG it gets back depends on the provider; most
