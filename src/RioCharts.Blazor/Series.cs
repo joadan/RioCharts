@@ -396,6 +396,86 @@ public sealed class RangeAreaSeries<TItem> : SeriesBase<TItem>
     }
 }
 
+/// <summary>
+/// Box plot: the spread of values per x, e.g. supply temperatures per unit. Give the raw values
+/// (<c>XValue</c> and <c>YValue</c>, one item per value: items with the same x form a box, with
+/// quartiles, whiskers at 1.5 × the box length and outliers computed here), or boxes computed
+/// elsewhere (<see cref="Q1Value"/>, <see cref="Q3Value"/> and the others, one item per box).
+/// Several box series sit side by side like grouped bars.
+/// </summary>
+public sealed class BoxPlotSeries<TItem> : SeriesBase<TItem>
+{
+    private Func<IReadOnlyList<TItem>, double?>? _median;
+
+    /// <summary>Precomputed boxes: the lower whisker end.</summary>
+    [Parameter] public Func<TItem, double?>? LowValue { get; set; }
+
+    /// <summary>Precomputed boxes: the lower quartile. With <see cref="Q3Value"/>, each item is one box.</summary>
+    [Parameter] public Func<TItem, double?>? Q1Value { get; set; }
+
+    /// <summary>Precomputed boxes: the median (the same as <c>YValue</c>).</summary>
+    [Parameter] public Func<TItem, double?>? MedianValue { get; set; }
+
+    /// <summary>Precomputed boxes: the upper quartile.</summary>
+    [Parameter] public Func<TItem, double?>? Q3Value { get; set; }
+
+    /// <summary>Precomputed boxes: the upper whisker end.</summary>
+    [Parameter] public Func<TItem, double?>? HighValue { get; set; }
+
+    /// <summary>Precomputed boxes: values beyond the whiskers, drawn as dots (optional).</summary>
+    [Parameter] public Func<TItem, IEnumerable<double>?>? OutliersValue { get; set; }
+
+    /// <summary>Precomputed boxes: how many values the box summarizes, for the tooltip (optional).</summary>
+    [Parameter] public Func<TItem, int?>? CountValue { get; set; }
+
+    private bool Precomputed => Q1Value is not null && Q3Value is not null;
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.BoxPlot;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (Precomputed)
+        {
+            YValue = MedianValue ?? YValue;
+            YAggregate = null;
+            Aggregate = null;
+        }
+        else
+        {
+            // Raw values: group the items by x (the medians are replaced by the boxes in Complete).
+            YAggregate = _median ??= _ => 0;
+            Aggregate = null;
+        }
+
+        base.OnParametersSet();
+    }
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (groups is not null && YValue is { } value)
+        {
+            var boxes = new BoxSummary[groups.Count];
+            for (var g = 0; g < boxes.Length; g++)
+            {
+                boxes[g] = BoxSummary.FromValues(groups[g].Select(i => value(items[i]) ?? double.NaN));
+            }
+
+            return data.WithBox(boxes);
+        }
+
+        if (groups is null && Precomputed)
+        {
+            double V(Func<TItem, double?>? f, TItem item) => f?.Invoke(item) ?? double.NaN;
+            return data.WithBox(items.Select(item => BoxSummary.FromFiveNumbers(V(LowValue, item), V(Q1Value, item), V(YValue, item),
+                V(Q3Value, item), V(HighValue, item), OutliersValue?.Invoke(item), CountValue?.Invoke(item) ?? 0)).ToArray());
+        }
+
+        return data;
+    }
+}
+
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>
 public sealed class BarSeries<TItem> : SeriesBase<TItem>
 {

@@ -117,6 +117,7 @@ public static class ChartRazor
                 SeriesType.Scatter => "ScatterSeries",
                 SeriesType.Heatmap => "HeatmapSeries",
                 SeriesType.RangeArea => "RangeAreaSeries",
+                SeriesType.BoxPlot => "BoxPlotSeries",
                 _ => "LineSeries",
             };
 
@@ -131,6 +132,22 @@ public static class ChartRazor
             {
                 sb.Append($" LowValue=\"r => r.{Property(lowField)}\"");
             }
+
+            if (s.Type == SeriesType.BoxPlot && s.Q1 is { } q1Field && s.Q3 is { } q3Field)
+            {
+                // Precomputed boxes; without them the component computes the boxes from YValue per x.
+                sb.Append($" Q1Value=\"r => r.{Property(q1Field)}\" Q3Value=\"r => r.{Property(q3Field)}\"");
+                if (s.Low is { } boxLow)
+                {
+                    sb.Append($" LowValue=\"r => r.{Property(boxLow)}\"");
+                }
+
+                if (s.High is { } boxHigh)
+                {
+                    sb.Append($" HighValue=\"r => r.{Property(boxHigh)}\"");
+                }
+            }
+
             if (componentAggregate != Aggregate.Count || s.Y is not null)
             {
                 sb.Append($" YValue=\"r => r.{Property(s.Y ?? "value")}\"");

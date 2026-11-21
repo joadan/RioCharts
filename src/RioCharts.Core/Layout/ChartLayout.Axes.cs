@@ -85,6 +85,13 @@ public static partial class ChartLayout
             {
                 Include(r.Lower, r.Data.X);
             }
+
+            if (r.Data.Box is { } box)
+            {
+                // The whole box plot, outliers included.
+                Include(box.Min, r.Data.X);
+                Include(box.Max, r.Data.X);
+            }
         }
 
         if (double.IsFinite(min))

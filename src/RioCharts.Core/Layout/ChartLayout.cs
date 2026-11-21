@@ -224,6 +224,11 @@ public static partial class ChartLayout
                 warnings.Add($"series '{s.Id}': a range area needs low values (LowValue, or \"low\" in a spec); nothing is drawn.");
             }
 
+            if (s.Type == SeriesType.BoxPlot && d.Box is null && d.Count > 0)
+            {
+                warnings.Add($"series '{s.Id}': a box plot needs boxes (BoxPlotSeries, SeriesData.WithBox or FromBoxGroups); nothing is drawn.");
+            }
+
             r.Axis = FindAxis(axes, s.YAxisId, $"series[{i}].yAxisId", warnings) ?? primary;
             if ((d.Kind == XKind.Category || r.Type.UsesSlots) && RepeatsX(d) is { } repeated)
             {
@@ -591,7 +596,7 @@ public static partial class ChartLayout
             if (context.Hits is { } hits)
             {
                 hitTest.Add(hits);
-                tooltipSeries.Add(TooltipFor(r, hitTest.Series[^1], context, formatX, culture, xKind, xBand, plotWidth, spec.X.Title, sharedXLabels));
+                tooltipSeries.Add(TooltipFor(r, hitTest.Series[^1], context, formatX, culture, texts, xKind, xBand, plotWidth, spec.X.Title, sharedXLabels));
             }
 
             if (context.Labels.Count > 0)
@@ -725,7 +730,7 @@ public static partial class ChartLayout
     /// <summary>Selected points: a marker in the series color (ringed in the surface color), or an outline around a bar.</summary>
     private static IEnumerable<Node> SelectionMarks(Resolved r, SeriesBuildContext c, IReadOnlyCollection<int> picked, StyleTable styles)
     {
-        var bar = r.Spec.Type == SeriesType.Bar;
+        var bar = r.Spec.Type is SeriesType.Bar or SeriesType.BoxPlot;
         var style = bar
             ? styles.Add("selected-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.5f })
             : styles.Add($"series-{r.ColorIndex}-selected", new Style { Fill = r.Color, Stroke = ThemeTokens.Surface, StrokeWidth = 2 });
@@ -746,7 +751,8 @@ public static partial class ChartLayout
             var y = c.MapY(top);
             if (bar)
             {
-                var y0 = c.Lower is { } lower && double.IsFinite(lower[i]) ? c.MapY(lower[i]) : c.ZeroY;
+                var y0 = r.Data.Box is { } box ? c.MapY(box.Q1[i]) : c.Lower is { } lower && double.IsFinite(lower[i]) ? c.MapY(lower[i]) : c.ZeroY;
+                y = r.Data.Box is { } b ? c.MapY(b.Q3[i]) : y;
                 var left = x + c.BarOffset - c.BarWidth / 2;
                 yield return new RectNode(new RectF((float)(left - 1.5), (float)(Math.Min(y, y0) - 1.5), (float)(c.BarWidth + 3), (float)(Math.Abs(y0 - y) + 3)), style)
                 {
@@ -761,7 +767,8 @@ public static partial class ChartLayout
         }
     }
 
-    private static string SlotKey(Resolved r) => r.Spec.Stack is { Length: > 0 } stack ? $"stack|{r.Axis.Id}|{stack}" : "series|" + r.Spec.Id;
+    // Box plots are never stacked: each series gets its own slot even with a Stack name.
+    private static string SlotKey(Resolved r) => r.Spec.Stack is { Length: > 0 } stack && r.Spec.Type != SeriesType.BoxPlot ? $"stack|{r.Axis.Id}|{stack}" : "series|" + r.Spec.Id;
 
     // ---------- Styles ----------
 
@@ -858,7 +865,7 @@ public static partial class ChartLayout
     private static void ApplyStacking(List<Resolved> drawable, XKind kind, Dictionary<string, int> categoryIndex)
     {
         var groups = drawable
-            .Where(r => r.Spec.Stack is { Length: > 0 } && r.Spec.Type != SeriesType.RangeArea)
+            .Where(r => r.Spec.Stack is { Length: > 0 } && r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot))
             .GroupBy(r => (r.Axis.Id, r.Spec.Stack, r.Type.UsesSlots));
         foreach (var group in groups)
         {
@@ -1021,13 +1028,14 @@ public static partial class ChartLayout
     }
 
     private static TooltipSeries TooltipFor(Resolved r, HitTestIndex.SeriesHits hits, SeriesBuildContext context, Func<double, string> formatX,
-        CultureInfo culture, XKind kind, BandScale? band, double plotWidth, string? xAxisTitle = null, string?[]? sharedXLabels = null)
+        CultureInfo culture, ChartTexts texts, XKind kind, BandScale? band, double plotWidth, string? xAxisTitle = null, string?[]? sharedXLabels = null)
     {
         var n = hits.X.Length;
         var xLabels = new string[n];
         var values = new string[n];
         var format = r.Spec.Format ?? r.Axis.Spec.Format;
         var xTitle = r.Spec.Type == SeriesType.Scatter && !string.IsNullOrWhiteSpace(xAxisTitle) ? xAxisTitle : null;
+        var boxParts = r.Spec.Type == SeriesType.BoxPlot && r.Data.Box is not null ? new string[n][] : null;
         for (var i = 0; i < n; i++)
         {
             var j = hits.Index[i];
@@ -1042,6 +1050,10 @@ public static partial class ChartLayout
             values[i] = r.Spec.Type == SeriesType.RangeArea && r.Data.Low is { } low
                 ? $"{ValueFormatter.Format(low[j], culture, format)} – {ValueFormatter.Format(r.Data.Y[j], culture, format)}"
                 : ValueFormatter.Format(r.Data.Y[j], culture, format);
+            if (boxParts is not null && r.Data.Box is { } box)
+            {
+                boxParts[i] = BoxPartValues(box, j, r.Data.Y[j], culture, format);
+            }
         }
 
         float snap;
@@ -1073,7 +1085,28 @@ public static partial class ChartLayout
             hits.X, hits.Y, hits.Index, xLabels, values)
         {
             Step = r.Spec.Curve == CurveType.Step && !r.Type.UsesSlots && kind != XKind.Category,
+            PartLabels = boxParts is null ? null : BoxPartLabels(texts),
+            PartValues = boxParts,
         };
+    }
+
+    /// <summary>The rows under a box's median in its tooltip, highest first (as drawn).</summary>
+    private static string[] BoxPartLabels(ChartTexts texts) =>
+        [texts.BoxMax, texts.BoxUpperQuartile, texts.BoxMedian, texts.BoxLowerQuartile, texts.BoxMin, texts.BoxCount, texts.BoxOutliers];
+
+    private static string[] BoxPartValues(BoxColumns box, int i, double median, CultureInfo culture, string? format)
+    {
+        string F(double v) => double.IsFinite(v) ? ValueFormatter.Format(v, culture, format) : "–";
+        var outliers = box.OutliersOf(i);
+        var shown = outliers.Length <= 5
+            ? string.Join(", ", outliers.ToArray().Select(F))
+            : string.Join(", ", outliers[..2].ToArray().Select(F)) + " … " + string.Join(", ", outliers[^2..].ToArray().Select(F));
+        return
+        [
+            F(box.Max[i]), F(box.Q3[i]), F(median), F(box.Q1[i]), F(box.Min[i]),
+            box.Count[i] > 0 ? box.Count[i].ToString("N0", culture) : "",
+            outliers.Length == 0 ? "" : $"{outliers.Length.ToString("N0", culture)}: {shown}",
+        ];
     }
 
     // ---------- Compact ----------

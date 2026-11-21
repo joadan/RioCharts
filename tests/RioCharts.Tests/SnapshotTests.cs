@@ -218,6 +218,32 @@ public class SnapshotTests
                 Enumerable.Range(0, 30).Select(d => Math.Round(9000 + 2500 * Math.Sin(d / 7.0 * Math.PI))).ToArray()),
         }),
 
+        // Supply air temperatures in °C per unit: a tight one, a wide one, one with outliers, and a
+        // second series (last week) beside each box.
+        ["box-plot"] = new(new ChartSpec
+        {
+            Y = new AxisSpec { Title = "Supply air °C", Format = "0.0" },
+            Series =
+            [
+                new SeriesSpec { Id = "now", Name = "This week", Type = SeriesType.BoxPlot },
+                new SeriesSpec { Id = "before", Name = "Last week", Type = SeriesType.BoxPlot },
+            ],
+        }, new()
+        {
+            ["now"] = SeriesData.FromCategories(["AHU 1", "AHU 2", "AHU 3"], [0.0, 0, 0]).WithBox(
+            [
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.5 + Math.Sin(i * 1.7) * 0.6)),
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 20.0 + Math.Sin(i * 2.3) * 2.2)),
+                BoxSummary.FromValues([.. Enumerable.Range(0, 40).Select(i => 18.8 + Math.Sin(i * 1.3) * 0.8), 24.6, 15.2]),
+            ]),
+            ["before"] = SeriesData.FromCategories(["AHU 1", "AHU 2", "AHU 3"], [0.0, 0, 0]).WithBox(
+            [
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.8 + Math.Sin(i * 1.1) * 0.9)),
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 20.6 + Math.Sin(i * 2.9) * 1.4)),
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.1 + Math.Sin(i * 0.7) * 1.0)),
+            ]),
+        }),
+
         ["bars-horizontal"] = new(new ChartSpec
         {
             Horizontal = true,

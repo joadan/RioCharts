@@ -1116,6 +1116,11 @@ function drawTooltip(state, rows, pos) {
         value.textContent = s.v[i];
         row.append(dot, name, value);
         tip.appendChild(row);
+        if (s.pl && s.pv && s.pv[i]) {
+            // Box plots: the box under its median (rows without a value are left out).
+            const keep = s.pl.map((_, k) => k).filter(k => s.pv[i][k]);
+            tip.appendChild(partRows(keep.map(k => s.pl[k]), keep.map(k => s.pv[i][k])));
+        }
     }
 
     placeTooltip(state, pos, rows.anchor !== undefined ? rows.anchor : first.s.x[first.i], pos.y);
@@ -1458,9 +1463,19 @@ function showKey(state, announce) {
     }
 
     if (announce) {
-        const values = rows.map(r => `${r.s.name} ${r.s.v[r.i]}`).join(', ');
+        const values = rows.map(r => `${r.s.name} ${r.s.v[r.i]}${boxText(r.s, r.i)}`).join(', ');
         say(state, `${s.xl[kb.i]}: ${values}. ${position(m, kb.i + 1, s.x.length)}`);
     }
+}
+
+// Box plots: the rest of the box for screen readers, "(Max 21.0, Upper quartile 20.3, …)".
+function boxText(s, i) {
+    if (!s.pl || !s.pv || !s.pv[i]) {
+        return '';
+    }
+
+    const parts = s.pl.map((l, k) => s.pv[i][k] ? `${l} ${s.pv[i][k]}` : null).filter(p => p);
+    return parts.length > 0 ? ` (${parts.join(', ')})` : '';
 }
 
 function blurKeys(state) {

@@ -41,6 +41,13 @@ changes are called out under **Breaking**.
   your own elements over a chart.
 - `ApplyAsync(changes)` runs several changes (zoom, selection, hidden series, …) and draws the
   chart once at the end.
+- Box plots: `BoxPlotSeries` shows the spread of values per x: a box from the lower to the upper
+  quartile with the median, whiskers to 1.5 box lengths and outliers as dots. Give one item per
+  value (the boxes are computed per x) or precomputed boxes (`Q1Value`, `MedianValue`, `Q3Value`,
+  `LowValue`, `HighValue`, optional `OutliersValue` and `CountValue`). Several series sit side by
+  side; the tooltip lists the box's numbers. JSON specs: `"type": "boxPlot"`, with optional `q1`,
+  `q3` and `high` fields (and `low`). Core: `SeriesType.BoxPlot`, `BoxSummary`, `BoxColumns`,
+  `SeriesData.WithBox` and `FromBoxGroups`; new `ChartTexts` keys for the tooltip rows.
 
 ## 0.1.50-preview (2026-11-21)
 

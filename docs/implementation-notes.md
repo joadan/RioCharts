@@ -588,6 +588,36 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Not yet:** an outline option, live data with lows, and error bars.
 
 
+## Box plot
+
+Design.md "Box plot" (milestone 7).
+
+- **Data:** `SeriesData.Box` (`BoxColumns`): per point the whisker ends, quartiles, extremes and
+  count, plus the outliers as one flat list with point indexes. `Y` is the median, so everything
+  that reads y (hit test, describer, selection, keyboard) works unchanged. `WithBox` takes boxes in
+  input order and places them by `SourceIndex`; `WithX` carries them.
+- **Statistics** (`BoxSummary.FromValues`): quartiles by linear interpolation (type 7, as Excel's
+  QUARTILE.INC and NumPy), whiskers at the furthest values within 1.5 × IQR (Tukey), outliers
+  beyond. `FromFiveNumbers` takes precomputed boxes and sorts the five numbers.
+- **Two ways in:** raw values (`BoxPlotSeries` with `XValue`/`YValue`, one item per value; items
+  with the same x form a box, so clicking a box selects all its items) or precomputed boxes
+  (`Q1Value`, `Q3Value`, `MedianValue`, `LowValue`, `HighValue`, optional `OutliersValue` and
+  `CountValue`, one item per box). JSON specs: `"type": "boxPlot"` (aliases box, boxAndWhisker,
+  whisker); with `q1` and `q3` each row is a box, otherwise boxes come from y per x. Raw values
+  never trigger the "x repeats, using sum" aggregate.
+- **Drawing:** a band slot per series like grouped bars (never stacked, also with `Stack`), boxes
+  at most 56 px wide, fill 0.22 with a 1.5 px outline, a 2.5 px median line, 1.25 px whiskers
+  without caps, outliers as hollow dots (r 2.5) in the surface color. The y domain covers the
+  extremes, outliers included, and does not force zero.
+- **Tooltip:** the median as the row's value, then Max, Upper quartile, Median, Lower quartile,
+  Min, Count and Outliers as smaller rows (from `ChartTexts`, all languages); empty rows (no
+  count, no outliers) are left out, more than five outliers are shortened. The keyboard
+  announcement reads the same. Outliers are listed in the tooltip rather than hovered one by one
+  (Design.md: "hovering an outlier shows its value"): simpler, and it works from the keyboard.
+- **Selection:** a selected box is outlined from quartile to quartile.
+- **Not yet:** `Horizontal` box plots, hovering a single outlier (with its item), notches, and a
+  box plot description for screen readers beyond the medians.
+
 ## Horizontal bars
 
 - **A chart option, not a series type** (`ChartSpec.Horizontal`): orientation is a property of the

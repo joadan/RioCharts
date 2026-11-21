@@ -35,6 +35,7 @@ internal interface ISeriesType
         SeriesType.Scatter => ScatterSeriesType.Instance,
         SeriesType.Heatmap => HeatmapSeriesType.Instance,
         SeriesType.RangeArea => RangeAreaSeriesType.Instance,
+        SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar => new PolarSeriesType(type),
         _ => LineSeriesType.Instance,
     };
@@ -505,6 +506,118 @@ internal sealed class RangeAreaSeriesType : ISeriesType
         var fill = c.Styles.Add($"series-{c.ColorIndex}-range", new Style { Fill = c.Color, FillOpacity = 0.2f });
         c.Output.Add(new PathNode(LineGenerator.AreaBetween(xs, ys, y0, c.Spec.Curve), fill) { Class = "rio-range" });
         c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
+    }
+}
+
+/// <summary>
+/// Box plots: per point a box from the lower to the upper quartile with a stronger median line,
+/// thin whiskers to the whisker ends (no caps) and outliers as small hollow dots. Several box
+/// series share the x band like grouped bars. Points without a box are gaps.
+/// </summary>
+internal sealed class BoxPlotSeriesType : ISeriesType
+{
+    /// <summary>Boxes wider than this look like bars; they stay centered in their slot.</summary>
+    private const double MaxWidth = 56;
+    private const double OutlierRadius = 2.5;
+
+    public static BoxPlotSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.BoxPlot;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 1;
+    public bool IncludesZero => false;
+    public bool UsesSlots => true;
+
+    public void Build(SeriesBuildContext c)
+    {
+        if (c.Data.Box is not { } box)
+        {
+            return; // no boxes (the layout warns)
+        }
+
+        var slot = c.SlotWidth / Math.Max(1, c.SlotCount);
+        var width = Math.Clamp(slot - (slot > 12 ? 6 : 0), 1, MaxWidth);
+        c.BarWidth = width;
+        c.BarOffset = -c.SlotWidth / 2 + c.SlotIndex * slot + slot / 2;
+
+        var boxStyle = c.Styles.Add($"series-{c.ColorIndex}-box", new Style { Fill = c.Color, FillOpacity = 0.22f, Stroke = c.Color, StrokeWidth = 1.5f });
+        var whiskerStyle = c.Styles.Add($"series-{c.ColorIndex}-whisker", new Style { Stroke = c.Color, StrokeWidth = 1.25f, Fill = "none" });
+        var medianStyle = c.Styles.Add($"series-{c.ColorIndex}-median", new Style { Stroke = c.Color, StrokeWidth = 2.5f, Fill = "none" });
+        var outlierStyle = c.Styles.Add($"series-{c.ColorIndex}-outlier", new Style { Fill = ThemeTokens.Surface, Stroke = c.Color, StrokeWidth = 1.25f });
+
+        var boxes = new List<Node>();
+        var whiskers = new PathBuilder();
+        var medians = new PathBuilder();
+        var outliers = new PathBuilder();
+        var (hasWhiskers, hasMedians, hasOutliers) = (false, false, false);
+        var hx = new List<float>();
+        var hy = new List<float>();
+        var hi = new List<int>();
+        var hs = new List<int>();
+        for (var i = 0; i < c.Data.Count; i++)
+        {
+            var center = c.PixelX[i];
+            var (median, q1, q3) = (c.Data.Y[i], box.Q1[i], box.Q3[i]);
+            if (!double.IsFinite(center) || !double.IsFinite(median) || !double.IsFinite(q1) || !double.IsFinite(q3) || !c.InPlotX(center))
+            {
+                continue;
+            }
+
+            var x = center + c.BarOffset;
+            var left = x - width / 2;
+            var (y1, y3, ym) = (c.MapY(q1), c.MapY(q3), c.MapY(median));
+            var top = Math.Min(y1, y3);
+            boxes.Add(new RectNode(new RectF((float)left, (float)top, (float)width, (float)Math.Max(1, Math.Abs(y1 - y3))), boxStyle)
+            {
+                CornerRadius = (float)Math.Min(2, width / 6),
+                Class = "rio-box",
+            });
+            medians.MoveTo(left, ym).LineTo(left + width, ym);
+            hasMedians = true;
+
+            // Whiskers from the box edges to the whisker ends.
+            if (double.IsFinite(box.High[i]) && box.High[i] > q3)
+            {
+                whiskers.MoveTo(x, y3).LineTo(x, c.MapY(box.High[i]));
+                hasWhiskers = true;
+            }
+
+            if (double.IsFinite(box.Low[i]) && box.Low[i] < q1)
+            {
+                whiskers.MoveTo(x, y1).LineTo(x, c.MapY(box.Low[i]));
+                hasWhiskers = true;
+            }
+
+            foreach (var v in box.OutliersOf(i))
+            {
+                var oy = c.MapY(v);
+                outliers.MoveTo(x, oy - OutlierRadius).Arc(x, oy, OutlierRadius, 0, Math.PI * 2).Close();
+                hasOutliers = true;
+            }
+
+            // Hits at the x position (shared by grouped series), at the median.
+            hx.Add((float)center);
+            hy.Add((float)ym);
+            hi.Add(i);
+            hs.Add(c.Data.ToSourceIndex(i));
+        }
+
+        if (hasWhiskers)
+        {
+            c.Output.Add(new PathNode(whiskers.Build(), whiskerStyle) { Class = "rio-whiskers" });
+        }
+
+        c.Output.AddRange(boxes);
+        if (hasMedians)
+        {
+            c.Output.Add(new PathNode(medians.Build(), medianStyle) { Class = "rio-medians" });
+        }
+
+        if (hasOutliers)
+        {
+            c.Output.Add(new PathNode(outliers.Build(), outlierStyle) { Class = "rio-outliers" });
+        }
+
+        c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
     }
 }
 

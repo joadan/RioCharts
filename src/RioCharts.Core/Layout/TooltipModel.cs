@@ -31,6 +31,15 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
     /// </summary>
     public bool Step { get; init; }
 
+    /// <summary>
+    /// Box plots: the names of the rows shown under each point's value (max, quartiles, median,
+    /// min, count, outliers); null for other series.
+    /// </summary>
+    public string[]? PartLabels { get; init; }
+
+    /// <summary>Box plots: per point, the values for <see cref="PartLabels"/> (empty: leave the row out).</summary>
+    public string[][]? PartValues { get; init; }
+
     /// <summary>Heatmap: the cell height (a cell is <see cref="BarWidth"/> wide, centered on its point).</summary>
     public float CellHeight { get; init; }
 

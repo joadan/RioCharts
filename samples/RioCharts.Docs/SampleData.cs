@@ -156,6 +156,32 @@ public static class SampleData
         return new DayRange(date, Math.Round(average - 1400 - (Noise(d, 62) + 0.5) * 1600), average, Math.Round(average + 1300 + (Noise(d, 63) + 0.5) * 1800));
     }).ToList();
 
+    /// <summary>One order: the weekday, the channel and its value in €.</summary>
+    public sealed record OrderValue(string Day, string Channel, double Value);
+
+    /// <summary>
+    /// Last month's orders, one row each: values spread wide (most small, a few large), a little
+    /// higher at the weekend, and the app's a bit higher than the web's.
+    /// </summary>
+    public static readonly List<OrderValue> OrderValues = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }
+        .SelectMany((day, d) => new[] { ("Web", 0.0), ("App", 0.12) }.SelectMany(c => Enumerable.Range(0, 60).Select(i =>
+        {
+            var weekend = d >= 5 ? 0.15 : 0;
+            var spread = Noise(d * 1000 + i * 7 + (c.Item1 == "App" ? 500 : 0), 71) + Noise(i * 13 + d, 72) * 0.6;
+            var big = Noise(i * 31 + d * 17, 73) > 0.46 ? 2.2 : 1; // now and then a large order
+            return new OrderValue(day, c.Item1, Math.Round(Math.Exp(4.1 + weekend + c.Item2 + spread * 0.9) * big, 2));
+        })))
+        .ToList();
+
+    /// <summary>Response time percentiles per API endpoint, ms, as a monitoring tool reports them.</summary>
+    public sealed record Percentiles(string Endpoint, double P5, double P25, double P50, double P75, double P95);
+
+    public static readonly List<Percentiles> ResponseTimes =
+    [
+        new("/products", 38, 52, 61, 74, 112), new("/search", 71, 95, 118, 156, 260), new("/cart", 22, 29, 34, 41, 63),
+        new("/checkout", 140, 182, 215, 268, 410), new("/account", 30, 41, 47, 58, 90),
+    ];
+
     public static readonly List<Sales> Quarters =
     [
         new("Q1", 182_000, 214_000), new("Q2", 236_000, 251_000), new("Q3", 198_000, 243_000), new("Q4", 271_000, 305_000),

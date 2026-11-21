@@ -1,0 +1,86 @@
+@page "/box-plots"
+
+<PageTitle>Box plots · RioCharts</PageTitle>
+
+<h1>Box plots</h1>
+<p class="lead">
+    A box plot shows how values spread, not just their average: where the middle half lies, how far the rest reaches, and which values
+    stand out. Order values per weekday, response times per endpoint, temperatures per unit.
+</p>
+
+<Example Title="From raw values" Code="@RawCode">
+    <Description>
+        <p>
+            Give <code>BoxPlotSeries</code> one item per value: items with the same <code>XValue</code> form a box. The box runs from the
+            lower to the upper quartile with the median as a line; the whiskers reach the furthest values within 1.5 box lengths, and values
+            beyond them are dots. Two series sit side by side, like grouped bars. Hover a box for its numbers; with
+            <code>Selection="SelectionMode.Points"</code>, clicking a box selects all its orders.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="OrderValue" Items="OrderValues" YAxis="Euros" Height="280" Selection="SelectionMode.Points" @bind-SelectedItems="_orders">
+            <BoxPlotSeries Name="Web" Items="Web" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
+            <BoxPlotSeries Name="App" Items="App" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
+        </RioChart>
+        <p class="note">
+            @if (_orders.Count == 0)
+            {
+                <span>Click a box to select its orders.</span>
+            }
+            else
+            {
+                <span>@_orders.Count orders selected, @($"{_orders.Sum(o => o.Value):#,0} €") in all, the largest @($"{_orders.Max(o => o.Value):#,0} €").</span>
+            }
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="From numbers computed elsewhere" Code="@PrecomputedCode">
+    <Description>
+        <p>
+            When a database or monitoring tool already gives the percentiles, pass one item per box with <code>Q1Value</code>,
+            <code>MedianValue</code> and <code>Q3Value</code>, and the whisker ends with <code>LowValue</code> and <code>HighValue</code>
+            (here the 5th and 95th percentiles). <code>OutliersValue</code> and <code>CountValue</code> are optional.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Percentiles" Items="ResponseTimes" YAxis="Milliseconds" Height="260">
+            <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint" LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
+                           Q3Value="p => p.P75" HighValue="p => p.P95" Format="0 'ms'" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON specs</h2>
+<p>
+    <code>"type": "boxPlot"</code> (also <code>"box"</code>) with <code>x</code> and <code>y</code> computes the boxes from the rows' y values
+    per x. With <code>q1</code> and <code>q3</code> (and <code>low</code>, <code>high</code>), each row is a box and <code>y</code> its median.
+    Automatic chart types never pick a box plot.
+</p>
+
+@code {
+    private static readonly AxisSpec Euros = new() { Title = "Order value, €" };
+    private static readonly AxisSpec Milliseconds = new() { Title = "ms" };
+    private static readonly List<OrderValue> Web = OrderValues.Where(o => o.Channel == "Web").ToList();
+    private static readonly List<OrderValue> App = OrderValues.Where(o => o.Channel == "App").ToList();
+    private IReadOnlyCollection<OrderValue> _orders = [];
+
+    private const string RawCode = """
+        <RioChart TItem="OrderValue" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+            <BoxPlotSeries Name="Web" Items="web" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
+            <BoxPlotSeries Name="App" Items="app" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
+        </RioChart>
+
+        @code {
+            record OrderValue(string Day, string Channel, double Value); // one row per order
+        }
+        """;
+
+    private const string PrecomputedCode = """
+        <RioChart TItem="Percentiles" Items="responseTimes">
+            <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint"
+                           LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
+                           Q3Value="p => p.P75" HighValue="p => p.P95" Format="0 'ms'" />
+        </RioChart>
+        """;
+}

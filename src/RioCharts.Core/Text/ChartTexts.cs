@@ -123,6 +123,27 @@ public sealed record ChartTexts
     /// <summary>A compact chart's last value. {0}: the value.</summary>
     public string LastValue { get => Get(); init => Set(value); }
 
+    /// <summary>Box plot tooltip: the highest value.</summary>
+    public string BoxMax { get => Get(); init => Set(value); }
+
+    /// <summary>Box plot tooltip: the upper quartile.</summary>
+    public string BoxUpperQuartile { get => Get(); init => Set(value); }
+
+    /// <summary>Box plot tooltip: the median.</summary>
+    public string BoxMedian { get => Get(); init => Set(value); }
+
+    /// <summary>Box plot tooltip: the lower quartile.</summary>
+    public string BoxLowerQuartile { get => Get(); init => Set(value); }
+
+    /// <summary>Box plot tooltip: the lowest value.</summary>
+    public string BoxMin { get => Get(); init => Set(value); }
+
+    /// <summary>Box plot tooltip: how many values a box summarizes.</summary>
+    public string BoxCount { get => Get(); init => Set(value); }
+
+    /// <summary>Box plot tooltip: the values beyond the whiskers.</summary>
+    public string BoxOutliers { get => Get(); init => Set(value); }
+
     /// <summary>A compact chart's description when there is no data.</summary>
     public string NoDataShort { get => Get(); init => Set(value); }
 
@@ -321,6 +342,13 @@ public sealed record ChartTexts
         [nameof(ValueRange)] = "{0} to {1}",
         [nameof(LastValue)] = "last {0}",
         [nameof(NoDataShort)] = "No data.",
+        [nameof(BoxMax)] = "Max",
+        [nameof(BoxUpperQuartile)] = "Upper quartile",
+        [nameof(BoxMedian)] = "Median",
+        [nameof(BoxLowerQuartile)] = "Lower quartile",
+        [nameof(BoxMin)] = "Min",
+        [nameof(BoxCount)] = "Count",
+        [nameof(BoxOutliers)] = "Outliers",
         [nameof(PieChart)] = "Pie chart",
         [nameof(DonutChart)] = "Donut chart",
         [nameof(RadialBarChart)] = "Radial bar chart",
@@ -370,6 +398,13 @@ public sealed record ChartTexts
         Falling = "fallande",
         Stable = "stabil",
         ValueRange = "{0} till {1}",
+        BoxMax = "Max",
+        BoxUpperQuartile = "Övre kvartil",
+        BoxMedian = "Median",
+        BoxLowerQuartile = "Nedre kvartil",
+        BoxMin = "Min",
+        BoxCount = "Antal",
+        BoxOutliers = "Avvikande värden",
         LastValue = "senast {0}",
         NoDataShort = "Inga data.",
         PieChart = "Cirkeldiagram",
@@ -415,6 +450,13 @@ public sealed record ChartTexts
         Falling = "synkende",
         Stable = "stabil",
         ValueRange = "{0} til {1}",
+        BoxMax = "Maks",
+        BoxUpperQuartile = "Øvre kvartil",
+        BoxMedian = "Median",
+        BoxLowerQuartile = "Nedre kvartil",
+        BoxMin = "Min",
+        BoxCount = "Antall",
+        BoxOutliers = "Uteliggere",
         LastValue = "sist {0}",
         NoDataShort = "Ingen data.",
         PieChart = "Sektordiagram",
@@ -460,6 +502,13 @@ public sealed record ChartTexts
         Falling = "faldende",
         Stable = "stabil",
         ValueRange = "{0} til {1}",
+        BoxMax = "Maks",
+        BoxUpperQuartile = "Øvre kvartil",
+        BoxMedian = "Median",
+        BoxLowerQuartile = "Nedre kvartil",
+        BoxMin = "Min",
+        BoxCount = "Antal",
+        BoxOutliers = "Afvigere",
         LastValue = "senest {0}",
         NoDataShort = "Ingen data.",
         PieChart = "Cirkeldiagram",
@@ -505,6 +554,13 @@ public sealed record ChartTexts
         Falling = "laskeva",
         Stable = "vakaa",
         ValueRange = "{0}–{1}",
+        BoxMax = "Maksimi",
+        BoxUpperQuartile = "Yläkvartiili",
+        BoxMedian = "Mediaani",
+        BoxLowerQuartile = "Alakvartiili",
+        BoxMin = "Minimi",
+        BoxCount = "Määrä",
+        BoxOutliers = "Poikkeavat arvot",
         LastValue = "viimeisin {0}",
         NoDataShort = "Ei tietoja.",
         PieChart = "Ympyräkaavio",
@@ -550,6 +606,13 @@ public sealed record ChartTexts
         Falling = "fallend",
         Stable = "stabil",
         ValueRange = "{0} bis {1}",
+        BoxMax = "Max",
+        BoxUpperQuartile = "Oberes Quartil",
+        BoxMedian = "Median",
+        BoxLowerQuartile = "Unteres Quartil",
+        BoxMin = "Min",
+        BoxCount = "Anzahl",
+        BoxOutliers = "Ausreißer",
         LastValue = "zuletzt {0}",
         NoDataShort = "Keine Daten.",
         PieChart = "Kreisdiagramm",
@@ -595,6 +658,13 @@ public sealed record ChartTexts
         Falling = "à la baisse",
         Stable = "stable",
         ValueRange = "{0} à {1}",
+        BoxMax = "Max",
+        BoxUpperQuartile = "Quartile supérieur",
+        BoxMedian = "Médiane",
+        BoxLowerQuartile = "Quartile inférieur",
+        BoxMin = "Min",
+        BoxCount = "Nombre",
+        BoxOutliers = "Valeurs aberrantes",
         LastValue = "dernière valeur {0}",
         NoDataShort = "Aucune donnée.",
         PieChart = "Graphique en secteurs",
@@ -640,6 +710,13 @@ public sealed record ChartTexts
         Falling = "a la baja",
         Stable = "estable",
         ValueRange = "{0} a {1}",
+        BoxMax = "Máx.",
+        BoxUpperQuartile = "Cuartil superior",
+        BoxMedian = "Mediana",
+        BoxLowerQuartile = "Cuartil inferior",
+        BoxMin = "Mín.",
+        BoxCount = "Recuento",
+        BoxOutliers = "Valores atípicos",
         LastValue = "último {0}",
         NoDataShort = "Sin datos.",
         PieChart = "Gráfico circular",

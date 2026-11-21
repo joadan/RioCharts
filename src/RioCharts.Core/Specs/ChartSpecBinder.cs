@@ -147,6 +147,20 @@ public static class ChartSpecBinder
             errors.Add(new SpecError($"{path}.low", $"a range area needs the field with the low values (y is the high value); numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
         }
 
+        // Box plots: precomputed boxes (q1 and q3, with low and high for the whiskers), or raw y values per x.
+        DataField? q1 = null, q3 = null, high = null;
+        if (s.Type == SeriesType.BoxPlot)
+        {
+            q1 = s.Q1 is null ? null : Find(dataset, s.Q1, $"{path}.q1", FieldType.Number, errors);
+            q3 = s.Q3 is null ? null : Find(dataset, s.Q3, $"{path}.q3", FieldType.Number, errors);
+            high = s.High is null ? null : Find(dataset, s.High, $"{path}.high", FieldType.Number, errors);
+            if ((s.Q1 is null) != (s.Q3 is null))
+            {
+                errors.Add(new SpecError($"{path}.{(s.Q1 is null ? "q1" : "q3")}",
+                    "precomputed boxes need both q1 and q3 (y is the median, low and high the whisker ends); leave out q1, q3, low and high to compute the boxes from the y values."));
+            }
+        }
+
         var groupBy = s.GroupBy is null ? null : Find(dataset, s.GroupBy, $"{path}.groupBy", null, errors);
         var filters = new List<(FilterSpec Spec, DataField Field)>();
         for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
@@ -190,7 +204,7 @@ public static class ChartSpecBinder
             aggregate = Aggregate.Average;
             warnings.Add($"{path}.aggregate: not set with timeBucket; using average.");
         }
-        else if (aggregate is null && x.Type == FieldType.Text && groups.Any(g => g.Rows.Select(r => Text(x.Values[r])).Distinct().Count() < g.Rows.Count))
+        else if (aggregate is null && s.Type != SeriesType.BoxPlot && x.Type == FieldType.Text && groups.Any(g => g.Rows.Select(r => Text(x.Values[r])).Distinct().Count() < g.Rows.Count))
         {
             aggregate = Aggregate.Sum;
             warnings.Add($"{path}.aggregate: '{x.Name}' repeats; using sum per value (set aggregate to change).");
@@ -198,6 +212,15 @@ public static class ChartSpecBinder
 
         foreach (var (key, groupRows) in groups)
         {
+            if (s.Type == SeriesType.BoxPlot)
+            {
+                var boxId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "values") : s.Id, key, usedIds);
+                var boxName = key is null ? s.Name ?? Humanize(y?.Name ?? "values") : s.Name is null ? key : $"{s.Name}: {key}";
+                output.Add(s with { Id = boxId, Name = boxName });
+                data[boxId] = Boxes(groupRows, x, y, s.TimeBucket, low, q1, q3, high);
+                continue;
+            }
+
             var points = Points(groupRows, x, y, s.TimeBucket, aggregate, low);
             if (s.Sort is { } sort)
             {
@@ -225,6 +248,22 @@ public static class ChartSpecBinder
             var series = SeriesData.FromItems(points, p => p.X, p => p.Y);
             data[id] = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
         }
+    }
+
+    /// <summary>Box plot data: one box per row (precomputed, with q1 and q3), or per x from the rows' y values.</summary>
+    private static SeriesData Boxes(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, DataField? low, DataField? q1, DataField? q3, DataField? high)
+    {
+        object? XAt(int r) => x.Values[r] is { } v && bucket is { } b ? Floor(v, b) : x.Values[r];
+        double At(DataField? field, int r) => field?.Values[r] is double d ? d : double.NaN;
+
+        var kept = rows.Where(r => x.Values[r] is not null).ToList();
+        if (q1 is not null && q3 is not null)
+        {
+            return SeriesData.FromItems(kept, XAt, r => At(y, r) is var m && double.IsFinite(m) ? m : null)
+                .WithBox(kept.Select(r => BoxSummary.FromFiveNumbers(At(low, r), At(q1, r), At(y, r), At(q3, r), At(high, r))).ToArray());
+        }
+
+        return SeriesData.FromBoxGroups(kept, XAt, r => At(y, r) is var v && double.IsFinite(v) ? v : null, out _);
     }
 
     private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null)

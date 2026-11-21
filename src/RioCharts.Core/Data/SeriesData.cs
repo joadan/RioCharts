@@ -70,6 +70,52 @@ public sealed class SeriesData
     }
 
     /// <summary>
+    /// Box plots: the quartiles, whiskers, extremes and outliers of each point (<see cref="Y"/> is
+    /// the median); null for other series. Set with <see cref="WithBox"/>.
+    /// </summary>
+    public BoxColumns? Box { get; private set; }
+
+    /// <summary>
+    /// The same points as boxes: <paramref name="boxes"/> is in input order, like the y values given
+    /// when creating the data (index i is the box of input item or group i). Each point's y becomes
+    /// its box's median.
+    /// </summary>
+    public SeriesData WithBox(ReadOnlySpan<BoxSummary> boxes)
+    {
+        var ordered = new BoxSummary[Count];
+        var y = new double[Count];
+        for (var i = 0; i < ordered.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            ordered[i] = source < boxes.Length ? boxes[source] : BoxSummary.Empty;
+            y[i] = ordered[i].HasBox ? ordered[i].Median : double.NaN;
+        }
+
+        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = Low, Box = BoxColumns.From(ordered) };
+    }
+
+    /// <summary>
+    /// Box plot data from raw values: items with the same x form one box, summarized with
+    /// <see cref="BoxSummary.FromValues"/>. Categories keep the order of first appearance; numbers
+    /// and times are sorted. Null values are skipped.
+    /// </summary>
+    /// <param name="groups">Each box's item indexes; a point's source index is its group's index.</param>
+    public static SeriesData FromBoxGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> value,
+        out IReadOnlyList<int[]> groups)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var list = items as IReadOnlyList<TItem> ?? items?.ToList() ?? throw new ArgumentNullException(nameof(items));
+        var data = FromGroups(list, xValue, _ => 0, out groups);
+        var boxes = new BoxSummary[groups.Count];
+        for (var g = 0; g < boxes.Length; g++)
+        {
+            boxes[g] = BoxSummary.FromValues(groups[g].Select(i => value(list[i]) ?? double.NaN));
+        }
+
+        return data.WithBox(boxes);
+    }
+
+    /// <summary>
     /// Time data: the UTC offset (milliseconds) of each point when the input had one (DateTimeOffset,
     /// or DateTime with Kind Utc or Local), NaN otherwise; null when no point had one. Used only
     /// when the chart has a display time zone; by default times are shown as given.
@@ -99,7 +145,7 @@ public sealed class SeriesData
     {
         if (IsSorted(x))
         {
-            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low };
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box };
         }
 
         var order = Enumerable.Range(0, x.Length).ToArray();
@@ -119,7 +165,14 @@ public sealed class SeriesData
             source[i] = ToSourceIndex(order[i]);
         }
 
-        return new SeriesData(keys, y, Kind, Categories, source) { Low = low };
+        var result = new SeriesData(keys, y, Kind, Categories, source) { Low = low };
+        if (Box is { } box)
+        {
+            // The boxes follow their points.
+            result.Box = BoxColumns.From([.. order.Select(i => box.At(i, Y[i]))]);
+        }
+
+        return result;
     }
 
     /// <summary>A series with no points.</summary>
