@@ -21,6 +21,11 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   hidden series, canvas series layer and the page's CSS theme; images reach .NET as a stream, so
   Blazor Server's message size limit does not apply. Core: `ChartCsv` and `CsvOptions` (an x column
   and one column per series, invariant numbers and ISO 8601 times by default).
+- Download menu: `ExportFormats` picks the formats it offers (`Png | Svg | Csv`, default all; with
+  one format the button saves it directly, with none there is no button). `OnExporting` runs when
+  the user picks a format, before the file is saved: change `FileName`, `ImageOptions` or
+  `CsvOptions`, or set `Cancel` and handle the content yourself with `GetPngAsync`, `GetSvgAsync`
+  or `GetCsv`, which make it only when called. Not raised for the export methods called from code.
 - Fix: the Reset zoom button now resets every zoomable chart in the same `Group`, as
   double-click already did; before it reset only the chart it was on.
 - Series components combine items with the same x into one point: `Aggregate` (`Sum`,

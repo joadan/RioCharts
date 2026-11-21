@@ -49,11 +49,34 @@
     </ChildContent>
 </Example>
 
+<Example Title="Choose formats and handle the export" Code="@HandlerCode">
+    <Description>
+        <p>
+            <code>ExportFormats</code> picks the menu items; with a single format the button saves it directly. <code>OnExporting</code> runs when
+            the user picks one, before the file is saved: change <code>FileName</code>, <code>ImageOptions</code> or <code>CsvOptions</code>, or set
+            <code>Cancel</code> and do something else with the content, such as uploading it. <code>GetPngAsync</code>, <code>GetSvgAsync</code> and
+            <code>GetCsv</code> make the content only when called, so a handler that just renames the file sends nothing to .NET.
+        </p>
+        <p>Here PNG is saved with the date in its name at 3×, and CSV is shown below instead of downloaded.</p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Celsius" Exportable="true" ExportFormats="ExportFormats.Png | ExportFormats.Csv" OnExporting="HandleExport">
+            <LineSeries Items="Outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        @if (_handled is not null)
+        {
+            <pre class="note">@_handled</pre>
+        }
+    </ChildContent>
+</Example>
+
 <h2>Options</h2>
 <table class="docs">
     <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
     <tr><td><code>ChartImageOptions.Scale</code></td><td>2</td><td>PNG pixels per CSS pixel.</td></tr>
     <tr><td><code>ChartImageOptions.Background</code></td><td>the surface color</td><td>Any CSS color; <code>"transparent"</code> for none.</td></tr>
+    <tr><td><code>ExportFormats</code></td><td><code>All</code></td><td>Formats in the menu (<code>Png</code>, <code>Svg</code>, <code>Csv</code>); one format saves directly.</td></tr>
+    <tr><td><code>OnExporting</code></td><td></td><td>Raised on a menu pick before the file is saved; not raised for calls from code.</td></tr>
     <tr><td><code>CsvOptions.Delimiter</code></td><td><code>,</code></td><td>Column separator, e.g. <code>;</code> for spreadsheets with a decimal comma.</td></tr>
     <tr><td><code>CsvOptions.Culture</code></td><td>invariant</td><td>Culture for numbers.</td></tr>
     <tr><td><code>CsvOptions.XHeader</code></td><td>the x axis title, else <code>x</code></td><td>Header of the x column.</td></tr>
@@ -70,6 +93,23 @@
     private RioChart<Reading>? _chart;
     private string? _pngInfo;
 
+    private string? _handled;
+
+    private void HandleExport(ChartExportingEventArgs e)
+    {
+        e.FileName = $"outdoor-{DateTime.Today:yyyy-MM-dd}.{e.Format.ToString().ToLowerInvariant()}";
+        if (e.Format == ExportFormat.Png)
+        {
+            e.ImageOptions = new ChartImageOptions { Scale = 3 };
+        }
+        else if (e.Format == ExportFormat.Csv)
+        {
+            e.Cancel = true; // no download: use the data here instead
+            var lines = e.GetCsv().Split("\r\n");
+            _handled = $"{e.FileName}, {lines.Length - 2} rows:\n{string.Join("\n", lines.Take(4))}\n...";
+        }
+    }
+
     private async Task SizeOfPng()
     {
         var png = await _chart!.ExportPngAsync();
@@ -81,6 +121,28 @@
             <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
             <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
         </RioChart>
+        """;
+
+    private const string HandlerCode = """
+        <RioChart TItem="Reading" Exportable="true" ExportFormats="ExportFormats.Png | ExportFormats.Csv" OnExporting="HandleExport">
+            <LineSeries Items="outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+
+        @code {
+            async Task HandleExport(ChartExportingEventArgs e)
+            {
+                e.FileName = $"outdoor-{DateTime.Today:yyyy-MM-dd}.{e.Format.ToString().ToLowerInvariant()}";
+                if (e.Format == ExportFormat.Png)
+                {
+                    e.ImageOptions = new ChartImageOptions { Scale = 3 };
+                }
+                else if (e.Format == ExportFormat.Csv)
+                {
+                    e.Cancel = true; // no download
+                    await storage.UploadAsync(e.FileName, e.GetCsv());
+                }
+            }
+        }
         """;
 
     private const string CodeCode = """

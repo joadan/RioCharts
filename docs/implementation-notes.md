@@ -277,5 +277,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   a UTF-8 byte order mark so Excel reads non-ASCII names.
 - **Menu:** plain Blazor state with a transparent backdrop that closes it on an outside click,
   and Escape; focus moves to the first item on open. Its selectors are prefixed with `.rio-chart`
-  so broad app rules (e.g. a docs site's `.doc button`) do not restyle it. Design.md asks that
-  every UI interaction raise an event; the menu raises none yet.
+  so broad app rules (e.g. a docs site's `.doc button`) do not restyle it.
+- **`OnExporting`** is the menu's event, cancelable like `OnZoomChanging`. Its content getters
+  are lazy, so on Blazor Server an image crosses to .NET only when the handler asks for it. It is
+  raised for menu picks only: code that calls `Download…Async` already decides what happens.
+- **`ExportFormats`** is a flags enum (menu order stays PNG, SVG, CSV); a single format turns the
+  button into a direct download (labelled with the format, no `aria-haspopup`).
