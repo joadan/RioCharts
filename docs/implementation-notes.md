@@ -295,3 +295,29 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `internal` so the tests can name it (`InternalsVisibleTo`).
 - Not covered: what runs in the JS module (image export, hover, zoom drags, canvas painting).
   That needs browser tests (e.g. Playwright against the docs site), not set up yet.
+
+## Keyboard navigation
+
+- **Focus target:** the chart's `<svg>` itself (`tabindex="0"`) with `role="application"` and
+  `aria-roledescription="chart"`, so screen readers pass the arrow keys to it (with `role="img"`
+  they would stay in browse mode). Its `aria-describedby` names the text summary and a hidden
+  instructions span. Charts without points (empty, or `KeyboardNavigation="false"`) keep
+  `role="img"` and no tab stop. Legend items and clickable annotations stay their own tab stops
+  inside it.
+- **In the browser:** the JS module moves through the tooltip model it already has (pixel
+  positions, formatted values), so keys cost no round trip; the model is now sent whenever
+  keyboard navigation is on, also with tooltips off (then only the crosshair shows). Points are
+  the drawn ones: downsampled and limited to the zoomed range. Only Enter calls .NET
+  (`OnPointClicked`, as a pointer click).
+- **Keys:** Left/Right step along the focused series, Up/Down move to the next series' point
+  nearest the same x, Home/End, PageUp/PageDown (a tenth of the points); pies and radial bars
+  step through the slices with any arrow. The first key lands on the first point (the last for
+  Left/End). Escape or leaving the chart clears the focus; the next key starts again.
+- **Announcements:** a visually hidden `aria-live="polite"` region gets "x: series value, ...
+  n of N" (the focused series first) or "series, slice: value. n of N". Texts are English, like
+  the Reset zoom button; localizing the built-in texts is a separate topic.
+- **Live data and resizes:** a new layout keeps the focused point (by index, clamped) while the
+  chart has focus, without announcing it again.
+- **Not yet:** keyboard zoom and pan (e.g. +/- and Shift+arrows), and moving through hidden
+  series' data or annotations with the arrows.
+

@@ -12,6 +12,15 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Keyboard navigation (`KeyboardNavigation`, on by default): a chart with data is a tab stop
+  (`role="application"`, a focus ring, instructions for screen readers). With it focused, arrow
+  keys move between points and Up/Down between series (pies: between slices), Home/End and
+  PageUp/PageDown jump; the crosshair and tooltip follow (and linked charts), each point is
+  announced through a live region, Enter raises `OnPointClick` and Escape leaves. Handled in the
+  browser from the points it already has. The download menu also moves with Up/Down/Home/End.
+- **Breaking (markup):** the chart's `<svg>` now has `role="application"` and `tabindex="0"`
+  instead of `role="img"` when keyboard navigation is on; `KeyboardNavigation="false"` restores
+  the old markup.
 - Client-side export. `Exportable` adds a download button (top-right, shown on hover or focus) with
   a menu for PNG, SVG and CSV; `ExportFileName` names the files (default: the
   title). From code: `DownloadPngAsync`, `DownloadSvgAsync`, `DownloadCsvAsync`, and `ExportPngAsync`

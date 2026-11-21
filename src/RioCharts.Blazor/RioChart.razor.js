@@ -7,6 +7,8 @@
 //   share the crosshair here in the browser and the zoom through each chart's .NET side.
 // - With a TooltipTemplate, .NET renders the tooltip content: JS asks for it only when the hovered
 //   points change (one call in flight, the latest wins) and places the card when it arrives.
+// - Keyboard: with the chart focused, arrow keys move between the drawn points (or slices) here,
+//   drawing the crosshair and tooltip and announcing the point through a live region.
 // - Export: copies the drawn chart into a standalone SVG (theme colors resolved) and rasterizes it
 //   for PNG, so images match the page's CSS; downloads are saved here without a round trip.
 // Only clicks, finished zooms and (with a template) hovered-point changes call back into .NET.
@@ -83,6 +85,10 @@ export function init(container, dotnet) {
         }
     };
     state.onClick = e => click(state, e);
+    state.onKey = e => keyDown(state, e);
+    state.onBlur = () => blurKeys(state);
+    state.onMenuKey = e => menuKey(e);
+    container.addEventListener('keydown', state.onMenuKey);
     state.onWheel = e => wheel(state, e);
     state.onDblClick = e => {
         const m = state.model;
@@ -102,6 +108,8 @@ export function init(container, dotnet) {
         svg.addEventListener('click', state.onClick);
         svg.addEventListener('dblclick', state.onDblClick);
         svg.addEventListener('wheel', state.onWheel, { passive: false });
+        svg.addEventListener('keydown', state.onKey);
+        svg.addEventListener('blur', state.onBlur);
     }
 
     states.set(container, state);
@@ -124,7 +132,10 @@ export function update(container, model) {
         // keep the selection or pan preview
     } else if (state.hovering && state.lastEvent && model) {
         move(state, state.lastEvent);
+    } else if (state.kb && model && model.keys && document.activeElement === state.svg) {
+        showKey(state, false); // live data or a resize: stay on the focused point
     } else {
+        state.kb = null;
         hide(state);
     }
     joinGroup(state, model && model.group);
@@ -155,6 +166,7 @@ export function dispose(container) {
         }
 
         cancelAnimationFrame(state.frame);
+        container.removeEventListener('keydown', state.onMenuKey);
         state.observer.disconnect();
         state.tipObserver.disconnect();
         joinGroup(state, null);
@@ -168,6 +180,8 @@ export function dispose(container) {
             svg.removeEventListener('click', state.onClick);
             svg.removeEventListener('dblclick', state.onDblClick);
             svg.removeEventListener('wheel', state.onWheel);
+            svg.removeEventListener('keydown', state.onKey);
+            svg.removeEventListener('blur', state.onBlur);
         }
 
         states.delete(container);
@@ -590,8 +604,8 @@ function ringPath(cx, cy, r0, r1, a0, a1) {
     return `M${f(x0)} ${f(y0)}` + arc(r1, a0, a1) + ` L${f(x1)} ${f(y1)}` + (r0 > 0 ? arc(r0, a1, a0) : '') + ' Z';
 }
 
-function movePolar(state, m, pos) {
-    const s = pos ? findSlice(m, pos) : null;
+function movePolar(state, m, pos, slice) {
+    const s = slice || (pos ? findSlice(m, pos) : null);
     if (!s) {
         hide(state);
         return;
@@ -809,6 +823,180 @@ function el(name, attrs) {
     }
 
     return node;
+}
+
+// ---------- Keyboard navigation ----------
+
+// With the chart focused: Left/Right move along the series (Home/End: first/last, PageUp/PageDown:
+// a tenth), Up/Down change series; on pies every arrow moves between slices. Enter/Space clicks
+// the point, Escape leaves it. Only clicks go to .NET.
+function keyDown(state, e) {
+    const m = state.model;
+    if (e.target !== state.svg || !m || !m.keys || e.altKey || e.ctrlKey || e.metaKey) {
+        return; // legend items and annotations handle their own keys
+    }
+
+    const polar = !!(m.slices && m.slices.length > 0);
+    const series = polar ? [] : m.series.filter(s => s.x.length > 0);
+    if (!polar && series.length === 0) {
+        return;
+    }
+
+    let kb = state.kb;
+    const key = e.key;
+    if (key === 'Escape') {
+        if (kb) {
+            e.preventDefault();
+            blurKeys(state);
+        }
+
+        return;
+    }
+
+    if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+        if (!kb) {
+            return;
+        }
+
+        e.preventDefault();
+        const target = polar ? m.slices[kb.i] : series[kb.s] && { id: series[kb.s].id, index: series[kb.s].index[kb.i] };
+        if (m.click && target && target.index >= 0) {
+            state.dotnet.invokeMethodAsync('OnPointClicked', target.id, target.index).catch(() => { });
+        }
+
+        return;
+    }
+
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(key)) {
+        return;
+    }
+
+    e.preventDefault();
+    const back = key === 'ArrowLeft' || key === 'End' || (polar && key === 'ArrowUp');
+    if (!kb) {
+        // The first key lands on the first point (the last for Left and End).
+        state.kb = polar ? { i: back ? m.slices.length - 1 : 0 } : { s: 0, i: back ? series[0].x.length - 1 : 0 };
+        showKey(state, true);
+        return;
+    }
+
+    if (polar) {
+        const last = m.slices.length - 1;
+        const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1, PageUp: -5, PageDown: 5 }[key];
+        kb.i = key === 'Home' ? 0 : key === 'End' ? last : Math.max(0, Math.min(last, kb.i + step));
+    } else {
+        kb.s = Math.min(kb.s, series.length - 1);
+        const s = series[kb.s];
+        const last = s.x.length - 1;
+        const page = Math.max(1, Math.round(s.x.length / 10));
+        if (key === 'ArrowUp' || key === 'ArrowDown') {
+            // Another series: its point nearest the current x.
+            const next = Math.max(0, Math.min(series.length - 1, kb.s + (key === 'ArrowUp' ? -1 : 1)));
+            if (next !== kb.s) {
+                const x = s.x[Math.min(kb.i, last)];
+                kb.s = next;
+                kb.i = Math.max(0, nearest(series[next].x, x));
+            }
+        } else {
+            const step = { ArrowLeft: -1, ArrowRight: 1, PageUp: -page, PageDown: page }[key];
+            kb.i = key === 'Home' ? 0 : key === 'End' ? last : Math.max(0, Math.min(last, kb.i + step));
+        }
+    }
+
+    showKey(state, true);
+}
+
+// Draws the focused point like a hover and (when announce) tells screen readers about it.
+function showKey(state, announce) {
+    const m = state.model, kb = state.kb;
+    if (!m || !kb || !state.svg) {
+        return;
+    }
+
+    const rect = state.svg.getBoundingClientRect();
+    const vb = state.svg.viewBox.baseVal;
+    const k = vb && vb.width && rect.width ? vb.width / rect.width : 1;
+    if (m.slices && m.slices.length > 0) {
+        kb.i = Math.max(0, Math.min(m.slices.length - 1, kb.i));
+        const slice = m.slices[kb.i];
+        const [x, y] = arcPoint(slice.cx, slice.cy, (slice.r0 + slice.r1) / 2, (slice.a0 + slice.a1) / 2);
+        if (m.tooltip) {
+            movePolar(state, m, { x, y, k, rect }, slice);
+        } else if (state.hover) {
+            state.hover.replaceChildren(el('path', {
+                class: 'rio-hover-halo', d: ringPath(slice.cx, slice.cy, slice.r1 + 1.5, slice.r1 + 5, slice.a0, slice.a1), style: `fill:${slice.color}`,
+            }));
+        }
+
+        if (announce) {
+            say(state, `${slice.header ? slice.header + ', ' : ''}${slice.label}: ${slice.value}. ${kb.i + 1} of ${m.slices.length}`);
+        }
+
+        return;
+    }
+
+    const series = m.series.filter(s => s.x.length > 0);
+    if (series.length === 0) {
+        blurKeys(state);
+        return;
+    }
+
+    kb.s = Math.max(0, Math.min(series.length - 1, kb.s));
+    const s = series[kb.s];
+    kb.i = Math.max(0, Math.min(s.x.length - 1, kb.i));
+    const rows = m.shared ? findShared(m, s.x[kb.i]) : [{ s, i: kb.i }];
+    if (!rows.some(r => r.s === s)) {
+        rows.unshift({ s, i: kb.i });
+    }
+
+    // The focused series first, so the tooltip and the announcement start with it.
+    rows.sort((a, b) => (a.s === s ? -1 : b.s === s ? 1 : 0));
+    drawHover(state, rows, m);
+    if (m.tooltip) {
+        drawTooltip(state, rows, { x: s.x[kb.i], y: s.y[kb.i], k, rect });
+    }
+
+    if (state.group && m.xscale) {
+        broadcastHover(state, toData(m.xscale, s.x[kb.i]));
+    }
+
+    if (announce) {
+        const values = rows.map(r => `${r.s.name} ${r.s.v[r.i]}`).join(', ');
+        say(state, `${s.xl[kb.i]}: ${values}. ${kb.i + 1} of ${s.x.length}`);
+    }
+}
+
+function blurKeys(state) {
+    if (state.kb) {
+        state.kb = null;
+        hide(state);
+        broadcastHover(state, null);
+        say(state, '');
+    }
+}
+
+// The download menu: Up/Down (wrapping), Home and End move between its items. Blazor handles
+// Escape and the clicks.
+function menuKey(e) {
+    const item = e.target && e.target.closest ? e.target.closest('[role=menuitem]') : null;
+    const menu = item ? item.closest('[role=menu]') : null;
+    if (!menu || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
+        return;
+    }
+
+    e.preventDefault();
+    const items = [...menu.querySelectorAll('[role=menuitem]')];
+    const i = items.indexOf(item), n = items.length;
+    const next = { ArrowDown: (i + 1) % n, ArrowUp: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+    items[next].focus();
+}
+
+// The live region (Blazor renders it empty): screen readers read what is written here.
+function say(state, text) {
+    const live = state.container.querySelector('.rio-live');
+    if (live) {
+        live.textContent = text;
+    }
 }
 
 // ---------- Clicks ----------

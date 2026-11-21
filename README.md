@@ -52,7 +52,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
   Copilot render charts to PNG or SVG files from CSV/JSON files or inline data (`RioCharts.Mcp`)
 
 All six milestones of [Design.md](Design.md) are in, plus client-side export and a WASM docs site.
-Later topics there (keyboard navigation, compact modes, AOT) are not done yet.
+Later topics there (compact modes, AOT) are not done yet.
 
 ## Install
 

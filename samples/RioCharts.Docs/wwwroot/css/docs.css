@@ -1393,3 +1393,17 @@ table.docs tr:last-child td {
     0%, 40%, 52%, 100% { transform: none; }
     46% { transform: scaleY(0.1); }
 }
+
+.site .doc kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 1px 6px;
+    border: 1px solid var(--doc-border-strong);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--doc-surface);
+    font: inherit;
+    font-size: 0.85em;
+    line-height: 1.5;
+    text-align: center;
+}

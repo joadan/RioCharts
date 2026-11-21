@@ -1,0 +1,102 @@
+@inherits ChartTestBase
+
+@code {
+    private static object? LastUpdateModel(IReadOnlyList<JSRuntimeInvocation> calls) => calls[^1].Arguments[1];
+
+    private static object? Field(object? model, string name) => model?.GetType().GetProperty(name)?.GetValue(model);
+
+    [Fact]
+    public void A_chart_with_data_is_a_focusable_application_with_instructions()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var svg = cut.Find("svg.rio-chart-svg");
+        Assert.Equal("application", svg.GetAttribute("role"));
+        Assert.Equal("chart", svg.GetAttribute("aria-roledescription"));
+        Assert.Equal("0", svg.GetAttribute("tabindex"));
+        Assert.Equal("Supply air", svg.GetAttribute("aria-label"));
+
+        var described = svg.GetAttribute("aria-describedby")!.Split(' ');
+        Assert.Equal(2, described.Length);
+        var help = cut.Find($"#{described[1]}").TextContent;
+        Assert.Equal("Use Left and Right to move between points, Up and Down to change series. Press Escape to leave.", help);
+
+        var live = cut.Find(".rio-live");
+        Assert.Equal("polite", live.GetAttribute("aria-live"));
+        Assert.Empty(live.TextContent); // written by JS only
+    }
+
+    [Fact]
+    public void Instructions_mention_Enter_when_points_are_clickable()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" OnPointClick="@((PointClickEventArgs<Reading> _) => { })">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal("Use Left and Right to move between points. Press Enter to select a point, Escape to leave.", cut.Find(".rio-sr-only").TextContent);
+    }
+
+    [Fact]
+    public void Pies_move_between_slices()
+    {
+        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms">
+            <PieSeries Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        Assert.Equal("application", cut.Find("svg.rio-chart-svg").GetAttribute("role"));
+        Assert.StartsWith("Use the arrow keys to move between slices.", cut.Find(".rio-sr-only").TextContent);
+        Assert.Equal(true, Field(LastUpdateModel(Calls("update")), "keys"));
+    }
+
+    [Fact]
+    public void Turned_off_the_chart_stays_an_image()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" KeyboardNavigation="false">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var svg = cut.Find("svg.rio-chart-svg");
+        Assert.Equal("img", svg.GetAttribute("role"));
+        Assert.Null(svg.GetAttribute("tabindex"));
+        Assert.Empty(cut.FindAll(".rio-live"));
+    }
+
+    [Fact]
+    public void Without_data_there_is_nothing_to_move_through()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Array.Empty<Reading>()">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal("img", cut.Find("svg.rio-chart-svg").GetAttribute("role"));
+        Assert.Null(cut.Find("svg.rio-chart-svg").GetAttribute("tabindex"));
+    }
+
+    [Fact]
+    public void Points_go_to_the_browser_even_without_a_tooltip()
+    {
+        var off = new TooltipSpec { Enabled = false };
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Tooltip="off">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var model = LastUpdateModel(Calls("update"));
+        Assert.NotNull(model);
+        Assert.Equal(true, Field(model, "keys"));
+        Assert.Equal(false, Field(model, "tooltip"));
+    }
+
+    [Fact]
+    public void Without_keyboard_or_tooltip_no_points_are_sent()
+    {
+        var off = new TooltipSpec { Enabled = false };
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Tooltip="off" KeyboardNavigation="false">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Null(LastUpdateModel(Calls("update")));
+    }
+}

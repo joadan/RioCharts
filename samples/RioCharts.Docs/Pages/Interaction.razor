@@ -24,6 +24,26 @@
     </ChildContent>
 </Example>
 
+<Example Title="Keyboard and screen readers" Code="@KeyboardCode">
+    <Description>
+        <p>
+            Every chart with data is a tab stop. With it focused, <kbd>←</kbd> and <kbd>→</kbd> move between points, <kbd>↑</kbd> and
+            <kbd>↓</kbd> between series (on pies, every arrow moves between slices), <kbd>Home</kbd>, <kbd>End</kbd>, <kbd>Page Up</kbd> and
+            <kbd>Page Down</kbd> jump. The crosshair and tooltip follow, linked charts follow too, and screen readers hear each point
+            (for example "Tue 01:00: Supply 20.1 °C, Extract 22.3 °C. 5 of 96"). <kbd>Enter</kbd> raises <code>OnPointClick</code> and
+            <kbd>Esc</kbd> leaves. It all runs in the browser, without server round trips.
+        </p>
+        <p>Click the chart below or Tab to it, then use the arrow keys. <code>KeyboardNavigation="false"</code> turns it off.</p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Celsius" OnPointClick="e => _keyPoint = e">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        <p class="note">Selected with Enter: @(_keyPoint is null ? "nothing yet" : $"{_keyPoint.SeriesName} {_keyPoint.Item?.Value:0.0} °C at {_keyPoint.Item?.Time:g}")</p>
+    </ChildContent>
+</Example>
+
 <Example Title="Custom tooltip text" Code="@FormatCode">
     <Description>
         <p>
@@ -109,6 +129,15 @@
 
     private const string ClickCode = """
         <RioChart TItem="Reading" @bind-HiddenSeries="hidden" OnPointClick="e => clicked = e">
+            <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        """;
+
+    private PointClickEventArgs<Reading>? _keyPoint;
+
+    private const string KeyboardCode = """
+        <RioChart TItem="Reading" OnPointClick="e => selected = e">
             <LineSeries Items="supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
             <LineSeries Items="extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
         </RioChart>

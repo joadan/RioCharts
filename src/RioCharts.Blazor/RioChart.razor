@@ -12,6 +12,7 @@
     var layout = EnsureLayout();
     var scene = layout.Scene;
     var label = string.IsNullOrWhiteSpace(Title) ? "Chart" : Title;
+    var keys = KeyboardEnabled(layout);
 }
 
 <div @ref="_container" class="rio-chart @Class" style="@ContainerStyle">
@@ -20,13 +21,21 @@
          width="100%"
          height="@SvgWriter.N(scene.Height)"
          viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"
-         role="img"
+         role="@(keys ? "application" : "img")"
+         aria-roledescription="@(keys ? "chart" : null)"
+         tabindex="@(keys ? "0" : null)"
          aria-label="@label"
-         aria-describedby="@(_id + "-desc")">
+         aria-describedby="@(keys ? $"{_id}-desc {_id}-keys" : _id + "-desc")">
         <title>@label</title>
         <desc id="@(_id + "-desc")">@scene.Description</desc>
         <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" OmitSeries="SeriesLayer == SeriesLayer.Canvas" />
     </svg>
+    @if (keys)
+    {
+        <span id="@(_id + "-keys")" class="rio-sr-only">@KeyboardHelp(layout)</span>
+        @* Written by the JS module when a point gets keyboard focus; Blazor renders it empty. *@
+        <div class="rio-live rio-sr-only" aria-live="polite" aria-atomic="true"></div>
+    }
     @if (SeriesLayer == SeriesLayer.Canvas)
     {
         @* Painted by the JS module; Blazor renders it empty. *@

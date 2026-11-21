@@ -156,6 +156,13 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Live data (series with a <c>Buffer</c>): the shortest time between redraws, in milliseconds. Default 100.</summary>
     [Parameter] public int RefreshInterval { get; set; } = 100;
 
+    /// <summary>
+    /// Keyboard navigation (default on): the chart is a tab stop, and with it focused the arrow keys
+    /// move between points (Up/Down: between series; pies: between slices), showing the tooltip and
+    /// announcing the point to screen readers; Enter clicks it, Escape leaves. Handled in the browser.
+    /// </summary>
+    [Parameter] public bool KeyboardNavigation { get; set; } = true;
+
     /// <summary>Extra CSS class on the container.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -568,7 +575,8 @@ public partial class RioChart<TItem> : IChartContext
             return;
         }
 
-        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group, SeriesLayer, TooltipTemplate is not null);
+        var keys = KeyboardEnabled(_layout);
+        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group, SeriesLayer, TooltipTemplate is not null, keys);
         if (Equals(key, _sentInteraction))
         {
             return;
@@ -585,7 +593,7 @@ public partial class RioChart<TItem> : IChartContext
         var scale = _layout.XScale;
         var zoom = Zoomable && scale is not null && _layout.HasData;
         var drags = _layout.DragHandles;
-        object? payload = model.Enabled || click || zoom || drags.Count > 0 || (Group is not null && scale is not null)
+        object? payload = model.Enabled || click || zoom || keys || drags.Count > 0 || (Group is not null && scale is not null)
             ? new
             {
                 drags = drags.Select(d => new { id = d.Id, x = d.IsX, pos = d.Pixel, s = new { d0 = d.DomainMin, d1 = d.DomainMax, r0 = d.RangeStart, r1 = d.RangeEnd } }),
@@ -595,6 +603,7 @@ public partial class RioChart<TItem> : IChartContext
                 shared = model.Shared,
                 band = model.BandWidth,
                 click,
+                keys,
                 zoom,
                 zoomed = _layout.Zoomed,
                 group = Group,
@@ -633,6 +642,22 @@ public partial class RioChart<TItem> : IChartContext
             }
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
+    }
+
+    // ---------- Keyboard ----------
+
+    /// <summary>Whether the chart is a tab stop with arrow-key navigation: on, with points or slices to move between.</summary>
+    private bool KeyboardEnabled(ChartLayoutResult layout) =>
+        KeyboardNavigation && layout.HasData && (layout.Tooltip.Series.Any(s => s.X.Length > 0) || layout.Tooltip.Slices.Count > 0);
+
+    /// <summary>The instructions screen readers read with the chart (aria-describedby).</summary>
+    private string KeyboardHelp(ChartLayoutResult layout)
+    {
+        var polar = layout.Tooltip.Slices.Count > 0;
+        var series = layout.Tooltip.Series.Count(s => s.X.Length > 0);
+        var move = polar ? "Use the arrow keys to move between slices." :
+            series > 1 ? "Use Left and Right to move between points, Up and Down to change series." : "Use Left and Right to move between points.";
+        return OnPointClick.HasDelegate ? $"{move} Press Enter to select a point, Escape to leave." : $"{move} Press Escape to leave.";
     }
 
     // ---------- Zoom and pan ----------
