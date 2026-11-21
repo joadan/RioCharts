@@ -469,3 +469,20 @@
     font-size: 12px;
     line-height: 1.5;
 }
+
+/* HighlightSeriesAsync and legend hover: the other series fade. */
+.rio-chart ::deep .rio-series,
+.rio-chart ::deep .rio-data-labels {
+    transition: opacity 150ms ease;
+}
+
+.rio-chart ::deep .rio-dimmed {
+    opacity: 0.2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rio-chart ::deep .rio-series,
+    .rio-chart ::deep .rio-data-labels {
+        transition: none;
+    }
+}

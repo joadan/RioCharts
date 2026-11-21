@@ -675,6 +675,30 @@ Design.md "Programmatic interaction": selection (`@bind-SelectedItems`, `@bind-S
   with the keyboard or on touch screens, a shared selection across linked charts, and
   highlighting a series from code.
 
+## Series, coordinates and batching from code
+
+The rest of Design.md "Programmatic interaction".
+
+- **Series:** `ShowSeriesAsync`, `HideSeriesAsync`, `ToggleSeriesAsync` and `IsSeriesVisible` change
+  the same hidden set as the legend and raise `HiddenSeriesChanged`, but not the legend events.
+  `OnLegendClicking` (cancelable) comes before a legend click's toggle; `OnLegendClick` follows only
+  when the series was toggled.
+- **Highlight:** `HighlightSeriesAsync(id)` fades the other series and their data labels (opacity
+  0.2, 150 ms, none with reduced motion). It is a class the JS module sets on the series groups, not
+  a layout: no round trip per hover, and it is applied again after each layout. Hovering or focusing
+  a legend item highlights its series meanwhile (JS only). The SVG renderer now writes `data-key`
+  on series, data label and legend groups (before: annotations only) so the module can find them.
+  Nothing fades when the series is not drawn as such (hidden, pie slices, the canvas layer).
+- **Coordinates:** `ValueToPixel(x, y, yAxis)` and `PixelToValue(x, y, yAxis)` use the last
+  layout's scales; pixels are CSS pixels from the chart's top left (its SVG coordinates). Category
+  axes give the nearest category. Null for pies and horizontal bars.
+- **Batching:** `ApplyAsync(changes)` holds rendering (`ShouldRender` is false while it runs) and
+  renders once at the end. Events and bound parameters are still raised as each change happens;
+  JS calls (tooltip, highlight) go out at once.
+- **Not yet:** highlight on pies and the canvas layer, coordinates for horizontal bars, an
+  `OnSeriesClick` event, opt-in hover events, legend and data label templates, a custom overlay
+  `RenderFragment`, and undo/redo.
+
 ## Public API surface
 
 - Reviewed before the first release. Public: the spec model, data types, scales, formatters, the

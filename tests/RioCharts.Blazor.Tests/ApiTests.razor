@@ -1,0 +1,141 @@
+@inherits ChartTestBase
+
+@code {
+    [Fact]
+    public void OnLegendClicking_can_cancel_the_toggle()
+    {
+        LegendClickingEventArgs? clicking = null;
+        var clicked = false;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading"
+                                                      OnLegendClicking="@((LegendClickingEventArgs e) => { clicking = e; e.Cancel = true; })"
+                                                      OnLegendClick="@((LegendClickEventArgs _) => clicked = true)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Supply")).Click();
+
+        Assert.Equal("supply", clicking?.SeriesId);
+        Assert.Equal("Supply", clicking?.Name);
+        Assert.False(clicking?.Visible); // it would have been hidden
+        Assert.False(clicked);
+        Assert.True(cut.Instance.IsSeriesVisible("supply"));
+    }
+
+    [Fact]
+    public void Series_are_shown_and_hidden_from_code()
+    {
+        IReadOnlyCollection<string>? hidden = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" HiddenSeriesChanged="@((IReadOnlyCollection<string> h) => hidden = h)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.HideSeriesAsync("extract"));
+        Assert.Equal(["extract"], hidden);
+        Assert.False(cut.Instance.IsSeriesVisible("extract"));
+        Assert.Equal("false", cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Extract")).GetAttribute("aria-pressed"));
+
+        cut.InvokeAsync(() => cut.Instance.ToggleSeriesAsync("extract"));
+        Assert.Empty(hidden!);
+
+        hidden = null;
+        cut.InvokeAsync(() => cut.Instance.ShowSeriesAsync("extract")); // already shown: nothing happens
+        Assert.Null(hidden);
+    }
+
+    [Fact]
+    public void HighlightSeries_tells_the_module_once_per_change()
+    {
+        Module.SetupVoid("highlight", _ => true).SetVoidResult();
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.HighlightSeriesAsync("extract"));
+        cut.InvokeAsync(() => cut.Instance.HighlightSeriesAsync("extract"));
+        cut.InvokeAsync(() => cut.Instance.OnResize(500)); // a new layout: JS keeps it, no new call
+
+        // What the module looks for to fade series and to know which legend item is hovered.
+        Assert.Single(cut.FindAll("[data-key='series:extract']"));
+        Assert.Single(cut.FindAll("[data-key='legend:extract']"));
+        Assert.Equal("extract", cut.Instance.GetHighlightedSeries());
+        Assert.Single(Calls("highlight"));
+        Assert.Equal("extract", Calls("highlight")[0].Arguments[1]);
+
+        cut.InvokeAsync(() => cut.Instance.HighlightSeriesAsync(null));
+        Assert.Equal(2, Calls("highlight").Count);
+        Assert.Null(Calls("highlight")[1].Arguments[1]);
+    }
+
+    [Fact]
+    public void Values_and_pixels_convert_both_ways()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var layout = cut.Instance.Layout!;
+
+        var point = cut.Instance.ValueToPixel(Start.AddHours(2), 20.8);
+
+        Assert.NotNull(point);
+        Assert.InRange(point.Value.X, layout.Plot.X, layout.Plot.Right);
+        Assert.InRange(point.Value.Y, layout.Plot.Y, layout.Plot.Y + layout.Plot.Height);
+        var value = cut.Instance.PixelToValue(point.Value.X, point.Value.Y);
+        Assert.Equal(Start.AddHours(2), (DateTime)value!.X, TimeSpan.FromSeconds(1));
+        Assert.Equal(20.8, value.Y, 6);
+        Assert.Null(cut.Instance.ValueToPixel(Start, 1, yAxis: "nope"));
+    }
+
+    [Fact]
+    public void Category_pixels_give_the_nearest_category()
+    {
+        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms">
+            <BarSeries Id="alarms" Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        var ahu2 = cut.Instance.ValueToPixel("AHU 2", 0)!.Value;
+
+        Assert.Equal("AHU 2", cut.Instance.PixelToValue(ahu2.X + 3, 0)?.X);
+        Assert.Null(cut.Instance.ValueToPixel("AHU 9", 0));
+    }
+
+    [Fact]
+    public void Coordinates_are_null_for_pies()
+    {
+        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms">
+            <PieSeries Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        Assert.Null(cut.Instance.ValueToPixel("AHU 1", 10));
+        Assert.Null(cut.Instance.PixelToValue(100, 100));
+    }
+
+    [Fact]
+    public void ApplyAsync_draws_once_after_several_changes()
+    {
+        ChartRange? visible = null;
+        IReadOnlyCollection<string>? hidden = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true"
+                                                      VisibleRangeChanged="@((ChartRange? r) => visible = r)"
+                                                      HiddenSeriesChanged="@((IReadOnlyCollection<string> h) => hidden = h)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var renders = cut.RenderCount;
+
+        cut.InvokeAsync(() => cut.Instance.ApplyAsync(async () =>
+        {
+            await cut.Instance.ZoomToAsync(ChartRange.Of(Start.AddHours(1), Start.AddHours(2)));
+            await cut.Instance.HideSeriesAsync("extract");
+            await cut.Instance.SelectRangeAsync(ChartRange.Of(Start.AddHours(1), Start.AddHours(1.5)));
+        }));
+
+        Assert.Equal(renders + 1, cut.RenderCount);
+        Assert.NotNull(visible); // events are raised as the changes happen
+        Assert.Equal(["extract"], hidden);
+        Assert.Single(cut.FindAll(".rio-selection"));
+        Assert.NotEmpty(cut.FindAll(".rio-reset-zoom"));
+    }
+}

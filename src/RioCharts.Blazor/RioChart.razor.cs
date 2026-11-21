@@ -495,24 +495,7 @@ public partial class RioChart<TItem> : IChartContext
             return;
         }
 
-        var id = interaction.Id;
-        var visible = _hidden.Remove(id);
-        if (!visible)
-        {
-            _hidden.Add(id);
-        }
-
-        _dirty = true;
-        var hidden = _hidden.ToList();
-        if (HiddenSeriesChanged.HasDelegate)
-        {
-            // The parent will pass this list back as HiddenSeries; it matches the current state.
-            _lastHiddenParameter = hidden;
-            await HiddenSeriesChanged.InvokeAsync(hidden);
-        }
-
-        var name = _series.FirstOrDefault(s => s.Spec.Id == id)?.Spec.DisplayName ?? id;
-        await OnLegendClick.InvokeAsync(new LegendClickEventArgs(id, name, visible));
+        await LegendClickedAsync(interaction.Id);
     }
 
     /// <summary>Called by JS when a draggable line is dropped (value in data units).</summary>
@@ -740,6 +723,7 @@ public partial class RioChart<TItem> : IChartContext
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
         await SendTooltipAsync(); // a tooltip shown from code moves with the new layout
+        await SendHighlightAsync(); // set before the module was loaded
     }
 
     // ---------- Keyboard ----------

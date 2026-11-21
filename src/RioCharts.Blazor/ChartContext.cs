@@ -153,3 +153,32 @@ public enum SelectionMode
 /// </param>
 /// <param name="Range">The selected x range, or null when points (or nothing) are selected.</param>
 public sealed record SelectionChangedEventArgs<TItem>(IReadOnlyList<TItem> Items, ChartRange? Range);
+
+/// <summary>
+/// Raised before a legend click shows or hides its series. Set <see cref="Cancel"/> to keep it as
+/// it is, e.g. to do something else instead (show only that series, open details).
+/// </summary>
+public sealed class LegendClickingEventArgs
+{
+    /// <summary>The clicked item's series id (or category, for pies).</summary>
+    public required string SeriesId { get; init; }
+
+    /// <summary>The clicked item's name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>Whether the series is about to be shown (true) or hidden (false).</summary>
+    public required bool Visible { get; init; }
+
+    /// <summary>Set to true to leave the series as it is.</summary>
+    public bool Cancel { get; set; }
+}
+
+/// <summary>A position in the chart, in CSS pixels from its top left corner (the chart's SVG coordinates).</summary>
+/// <param name="X">Pixels from the left edge.</param>
+/// <param name="Y">Pixels from the top edge.</param>
+public readonly record struct ChartPoint(double X, double Y);
+
+/// <summary>A data position: an x value and a y value.</summary>
+/// <param name="X">DateTime on time axes, double on numeric axes, the category name on category axes.</param>
+/// <param name="Y">The value on the y axis.</param>
+public sealed record ChartValue(object X, double Y);

@@ -32,6 +32,15 @@ changes are called out under **Breaking**.
   range a light band. Core: `LayoutOptions.SelectedRange` and `SelectedPoints`.
 - `ShowTooltipAsync(x)` and `HideTooltipAsync()` show and hide the crosshair and tooltip at an x
   value from code, e.g. when hovering a table row; linked charts follow.
+- Series from code: `ShowSeriesAsync`, `HideSeriesAsync`, `ToggleSeriesAsync`, `IsSeriesVisible`,
+  and `HighlightSeriesAsync(id)`, which fades the other series (null: none). Hovering or focusing a
+  legend item now highlights its series the same way.
+- `OnLegendClicking`: raised before a legend click toggles its series; set `Cancel` to do
+  something else instead (e.g. show only that series).
+- `ValueToPixel` and `PixelToValue` convert between data values and chart pixels, for placing
+  your own elements over a chart.
+- `ApplyAsync(changes)` runs several changes (zoom, selection, hidden series, …) and draws the
+  chart once at the end.
 
 ## 0.1.50-preview (2026-11-21)
 

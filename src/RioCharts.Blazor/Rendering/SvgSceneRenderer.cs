@@ -148,7 +148,10 @@ internal sealed class SvgSceneRenderer : ComponentBase
             }
         }
 
-        if (g.Key is not null && g.Key.StartsWith("annotation:", StringComparison.Ordinal))
+        // The JS module finds these by key: draggable annotations, and series, data labels and
+        // legend items for HighlightSeriesAsync and legend hover.
+        if (g.Key is not null && (g.Key.StartsWith("annotation:", StringComparison.Ordinal) || g.Key.StartsWith("series:", StringComparison.Ordinal)
+            || g.Key.StartsWith("labels:", StringComparison.Ordinal) || g.Key.StartsWith("legend:", StringComparison.Ordinal)))
         {
             b.AddAttribute(61, "data-key", g.Key);
         }

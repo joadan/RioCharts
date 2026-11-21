@@ -121,8 +121,14 @@ export function init(container, dotnet) {
     state.onKey = e => keyDown(state, e);
     state.onBlur = () => blurKeys(state);
     state.onMenuKey = e => menuKey(e);
-    state.onTipOver = e => showLegendTip(state, e.target);
-    state.onTipOut = e => hideLegendTip(state, e.relatedTarget);
+    state.onTipOver = e => {
+        showLegendTip(state, e.target);
+        hoverLegend(state, e.target);
+    };
+    state.onTipOut = e => {
+        hideLegendTip(state, e.relatedTarget);
+        hoverLegend(state, e.relatedTarget);
+    };
     container.addEventListener('keydown', state.onMenuKey);
     state.onWheel = e => wheel(state, e);
     state.onDblClick = e => {
@@ -197,9 +203,45 @@ export function update(container, model) {
     }
     joinGroup(state, model && model.group);
     alignGroup(state.group);
+    applyHighlight(state);
     if (state.svg) {
         state.svg.classList.toggle('rio-clickable', !!(model && model.click));
         state.svg.classList.toggle('rio-zoomable', !!(model && (model.zoom || model.select === 'range')));
+    }
+}
+
+// HighlightSeriesAsync: fade every series but this one (null: none). A hovered or focused legend
+// item highlights its series meanwhile.
+export function highlight(container, id) {
+    const state = states.get(container);
+    if (state) {
+        state.highlight = id || null;
+        applyHighlight(state);
+    }
+}
+
+function hoverLegend(state, target) {
+    const item = target && target.closest ? target.closest('[data-key^="legend:"]') : null;
+    const id = item && state.svg && state.svg.contains(item) ? item.getAttribute('data-key').slice(7) : null;
+    if (id !== (state.legendHover || null)) {
+        state.legendHover = id;
+        applyHighlight(state);
+    }
+}
+
+// Fades the other series' groups and data labels; nothing when the series is not drawn (hidden,
+// a pie slice, the canvas layer).
+function applyHighlight(state) {
+    if (!state.svg) {
+        return;
+    }
+
+    const id = state.legendHover || state.highlight || null;
+    const groups = state.svg.querySelectorAll('[data-key^="series:"], [data-key^="labels:"]');
+    const drawn = id !== null && [...groups].some(g => g.getAttribute('data-key') === 'series:' + id);
+    for (const g of groups) {
+        const key = g.getAttribute('data-key');
+        g.classList.toggle('rio-dimmed', drawn && key !== 'series:' + id && key !== 'labels:' + id);
     }
 }
 

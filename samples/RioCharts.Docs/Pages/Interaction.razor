@@ -183,11 +183,41 @@
     </ChildContent>
 </Example>
 
+<Example Title="Highlight and show series from code" Code="@SeriesCode">
+    <Description>
+        <p>
+            Hover or focus a legend item, or one of the buttons below the chart, to fade the other series: <code>HighlightSeriesAsync(id)</code>.
+            Here <code>OnLegendClicking</code> cancels the usual toggle and shows only the clicked series instead, with
+            <code>ShowSeriesAsync</code>/<code>HideSeriesAsync</code> inside <code>ApplyAsync</code> so the chart draws once.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart @ref="_sourcesChart" TItem="Reading" Height="220" YAxis="Sessions" OnLegendClicking="ShowOnly">
+            <LineSeries Id="search" Items="Search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Id="social" Items="Social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Id="email" Items="Email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </RioChart>
+        <p class="note">
+            @foreach (var (id, name) in Sources)
+            {
+                <button class="small" @onmouseenter="() => _sourcesChart!.HighlightSeriesAsync(id)" @onmouseleave="() => _sourcesChart!.HighlightSeriesAsync(null)"
+                        @onfocus="() => _sourcesChart!.HighlightSeriesAsync(id)" @onblur="() => _sourcesChart!.HighlightSeriesAsync(null)"
+                        @onclick="() => _sourcesChart!.ToggleSeriesAsync(id)">@name</button>
+            }
+            <button class="small" @onclick="ShowAll">Show all</button>
+        </p>
+    </ChildContent>
+</Example>
+
 <h2>From code</h2>
 <p>Everything the user can do has an API: take a reference with <code>@@ref</code> and call
     <code>ZoomToAsync</code>, <code>PanAsync</code>, <code>ResetZoomAsync</code>, <code>GetVisibleRange</code>, <code>SelectItemsAsync</code>,
-    <code>SelectRangeAsync</code>, <code>ClearSelectionAsync</code>, <code>GetItemsInRange</code>, <code>ShowTooltipAsync</code> or <code>Refresh</code>.
-    <code>OnZoomChanging</code> can clamp or cancel a zoom. <code>Layout</code> exposes the scales and the hit-test index.</p>
+    <code>SelectRangeAsync</code>, <code>ClearSelectionAsync</code>, <code>GetItemsInRange</code>, <code>ShowTooltipAsync</code>,
+    <code>ShowSeriesAsync</code>, <code>HideSeriesAsync</code>, <code>ToggleSeriesAsync</code>, <code>HighlightSeriesAsync</code> or <code>Refresh</code>.
+    <code>ApplyAsync(async () => …)</code> groups several of them into one redraw. <code>OnZoomChanging</code> and <code>OnLegendClicking</code>
+    can change or cancel what the user did.</p>
+<p>To place your own elements over a chart, <code>ValueToPixel(x, y)</code> gives the position of a data value in CSS pixels from the chart's
+    top left corner, and <code>PixelToValue(x, y)</code> the value at a position. <code>Layout</code> exposes the scales and the hit-test index.</p>
 
 @code {
     private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
@@ -201,6 +231,54 @@
     private IReadOnlyCollection<Ticket> _selectedTickets = [];
     private RioChart<Reading>? _ordersChart;
     private static readonly List<Reading> LastWeek = DailyOrders.TakeLast(7).ToList();
+    private RioChart<Reading>? _sourcesChart;
+    private static readonly (string Id, string Name)[] Sources = [("search", "Search"), ("social", "Social"), ("email", "Email")];
+
+    // A legend click shows only that series (or all again when it already is the only one).
+    private async Task ShowOnly(LegendClickingEventArgs e)
+    {
+        e.Cancel = true;
+        var chart = _sourcesChart!;
+        var alone = Sources.All(s => chart.IsSeriesVisible(s.Id) == (s.Id == e.SeriesId));
+        await chart.ApplyAsync(async () =>
+        {
+            foreach (var (id, _) in Sources)
+            {
+                await (alone || id == e.SeriesId ? chart.ShowSeriesAsync(id) : chart.HideSeriesAsync(id));
+            }
+        });
+    }
+
+    private Task ShowAll() => _sourcesChart!.ApplyAsync(async () =>
+    {
+        foreach (var (id, _) in Sources)
+        {
+            await _sourcesChart.ShowSeriesAsync(id);
+        }
+    });
+
+    private const string SeriesCode = """
+        <RioChart @ref="chart" TItem="Reading" OnLegendClicking="ShowOnly">
+            <LineSeries Id="search" Items="search" Name="Search" ... />
+            <LineSeries Id="social" Items="social" Name="Social" ... />
+            <LineSeries Id="email" Items="email" Name="Email" ... />
+        </RioChart>
+
+        <button @onmouseenter="() => chart.HighlightSeriesAsync("social")"
+                @onmouseleave="() => chart.HighlightSeriesAsync(null)">Social</button>
+
+        @code {
+            async Task ShowOnly(LegendClickingEventArgs e)
+            {
+                e.Cancel = true; // instead of toggling: show only the clicked series
+                await chart.ApplyAsync(async () =>
+                {
+                    foreach (var id in ids)
+                        await (id == e.SeriesId ? chart.ShowSeriesAsync(id) : chart.HideSeriesAsync(id));
+                });
+            }
+        }
+        """;
 
     private const string ClickCode = """
         <RioChart TItem="Reading" @bind-HiddenSeries="hidden" OnPointClick="e => clicked = e">
