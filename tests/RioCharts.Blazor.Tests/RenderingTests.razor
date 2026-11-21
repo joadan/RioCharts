@@ -1,0 +1,87 @@
+@inherits ChartTestBase
+
+@code {
+    [Fact]
+    public void Lays_out_at_the_width_the_browser_reports()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Height="240">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal($"0 0 {Width} 240", cut.Find("svg.rio-chart-svg").GetAttribute("viewBox"));
+        Assert.Single(Calls("init"));
+        Assert.NotEmpty(Calls("update")); // the hover model went to JS
+    }
+
+    [Fact]
+    public void Renders_without_JS_at_the_fallback_width()
+    {
+        Init.SetException(new JSException("No JS (static rendering)"));
+
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var svg = cut.Find("svg.rio-chart-svg");
+        Assert.Equal("0 0 640 300", svg.GetAttribute("viewBox"));
+        Assert.Equal("Supply air", svg.GetAttribute("aria-label"));
+        Assert.NotEmpty(cut.FindAll("path"));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Empty_and_single_point_data_render_a_clean_chart(int count)
+    {
+        var items = Supply.Take(count).ToArray();
+
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="items" Exportable="true">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.NotNull(cut.Find("svg.rio-chart-svg"));
+        Assert.Empty(cut.FindAll(".rio-spec-errors"));
+        Assert.StartsWith("x,Supply", cut.Instance.ExportCsv());
+    }
+
+    [Fact]
+    public void Spec_errors_are_listed()
+    {
+        var spec = new ChartSpec
+        {
+            Data = [new Dictionary<string, object?> { ["time"] = "2026-11-16T00:00:00", ["temp"] = 20.5 }],
+            Series = [new SeriesSpec { Id = "t", X = "time", Y = "tmep" }],
+        };
+
+        var cut = Render<RioChart<object>>(@<RioChart TItem="object" Spec="spec" />);
+
+        Assert.NotEmpty(cut.Instance.SpecErrors);
+        Assert.Contains("tmep", cut.Find(".rio-spec-errors").TextContent);
+    }
+
+    [Fact]
+    public void Changing_items_lays_out_again()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply.Take(2).ToArray()">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var before = cut.Instance.Layout;
+
+        cut.Render(p => p.Add(c => c.Items, Supply));
+
+        Assert.NotSame(before, cut.Instance.Layout);
+        Assert.Contains("4 values", cut.Instance.Layout!.Scene.Description);
+    }
+
+    [Fact]
+    public async Task Disposing_releases_the_module()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        await DisposeComponentsAsync();
+
+        Assert.Single(Calls("dispose"));
+    }
+}

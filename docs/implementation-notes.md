@@ -283,3 +283,15 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   raised for menu picks only: code that calls `Download…Async` already decides what happens.
 - **`ExportFormats`** is a flags enum (menu order stays PNG, SVG, CSV); a single format turns the
   button into a direct download (labelled with the format, no `aria-haspopup`).
+
+## Component tests (bUnit)
+
+- Design.md's testing list names Core unit tests, Verify snapshots and BenchmarkDotNet; component
+  tests with bUnit are added on top, in their own project (`tests/RioCharts.Blazor.Tests`) so the
+  main test project has no ASP.NET test dependencies.
+- `ChartTestBase` sets bUnit's JS interop to strict mode and sets up the module's functions
+  (`init` reports a 600 px container). A test that needs JS to fail (static rendering) sets an
+  exception on `Init`. `ChartContainerInfo` moved out of the generic component and became
+  `internal` so the tests can name it (`InternalsVisibleTo`).
+- Not covered: what runs in the JS module (image export, hover, zoom drags, canvas painting).
+  That needs browser tests (e.g. Playwright against the docs site), not set up yet.

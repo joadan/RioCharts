@@ -47,6 +47,14 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - Fixed: a point click on a live-data series could report the wrong point when the buffer had
   changed since the last layout.
 
+### Tests
+
+- Component tests with bUnit (`tests/RioCharts.Blazor.Tests`): the download menu and
+  `OnExporting`, legend clicks and `@bind-HiddenSeries`, zoom binding and `OnZoomChanging`, point
+  clicks on aggregated series, rendering without JS, empty and single-point data, spec errors and
+  disposal. The JS module is faked in strict mode, so an unexpected JS call fails a test. The
+  release workflow runs both test projects.
+
 ### Packaging
 
 - NuGet packages for RioCharts.Core, .Blazor, .Skia, .AI and the `RioCharts.Mcp` tool, with a

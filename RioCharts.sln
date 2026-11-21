@@ -32,6 +32,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RioCharts.Docs", "samples\R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RioCharts.Mcp", "src\RioCharts.Mcp\RioCharts.Mcp.csproj", "{68BA0076-936E-4016-A81D-34A7DCD54745}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RioCharts.Blazor.Tests", "tests\RioCharts.Blazor.Tests\RioCharts.Blazor.Tests.csproj", "{20C29647-7AD4-479F-8115-E752F47733AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -138,6 +140,18 @@ Global
 		{68BA0076-936E-4016-A81D-34A7DCD54745}.Release|x64.Build.0 = Release|Any CPU
 		{68BA0076-936E-4016-A81D-34A7DCD54745}.Release|x86.ActiveCfg = Release|Any CPU
 		{68BA0076-936E-4016-A81D-34A7DCD54745}.Release|x86.Build.0 = Release|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Debug|x64.Build.0 = Debug|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Debug|x86.Build.0 = Debug|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Release|x64.ActiveCfg = Release|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Release|x64.Build.0 = Release|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Release|x86.ActiveCfg = Release|Any CPU
+		{20C29647-7AD4-479F-8115-E752F47733AB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -151,6 +165,7 @@ Global
 		{DA4AD510-3903-4AE9-9785-0E801427EB6C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{2E9B9FF5-AE47-4751-9487-686CC8D623D9} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{68BA0076-936E-4016-A81D-34A7DCD54745} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{20C29647-7AD4-479F-8115-E752F47733AB} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3BB1AE8D-64C4-4287-9C94-F50E2252DF7B}

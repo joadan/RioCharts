@@ -1,0 +1,162 @@
+@inherits ChartTestBase
+
+@code {
+    private IRenderedComponent<RioChart<Reading>> Chart(ExportFormats formats = ExportFormats.All, EventCallback<ChartExportingEventArgs> onExporting = default,
+        bool exportable = true) =>
+        Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air" Exportable="exportable" ExportFormats="formats" OnExporting="onExporting">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+    private static string[] MenuItems(IRenderedComponent<RioChart<Reading>> cut) =>
+        cut.FindAll(".rio-export-menu button").Select(b => b.TextContent).ToArray();
+
+    [Fact]
+    public void No_button_unless_exportable()
+    {
+        var cut = Chart(exportable: false);
+
+        Assert.Empty(cut.FindAll(".rio-export-button"));
+    }
+
+    [Fact]
+    public void Button_opens_a_menu_with_every_format_and_focuses_the_first()
+    {
+        var cut = Chart();
+        var button = cut.Find(".rio-export-button");
+        Assert.Equal("false", button.GetAttribute("aria-expanded"));
+        Assert.Empty(cut.FindAll(".rio-export-menu"));
+
+        button.Click();
+
+        Assert.Equal(["PNG", "SVG", "CSV"], MenuItems(cut));
+        Assert.Equal("true", cut.Find(".rio-export-button").GetAttribute("aria-expanded"));
+        JSInterop.VerifyFocusAsyncInvoke();
+    }
+
+    [Fact]
+    public void Escape_and_an_outside_click_close_the_menu()
+    {
+        var cut = Chart();
+        cut.Find(".rio-export-button").Click();
+        cut.Find(".rio-export").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        Assert.Empty(cut.FindAll(".rio-export-menu"));
+
+        cut.Find(".rio-export-button").Click();
+        cut.Find(".rio-export-backdrop").Click();
+        Assert.Empty(cut.FindAll(".rio-export-menu"));
+    }
+
+    [Fact]
+    public void Export_formats_choose_the_menu_items()
+    {
+        var cut = Chart(ExportFormats.Png | ExportFormats.Csv);
+
+        cut.Find(".rio-export-button").Click();
+
+        Assert.Equal(["PNG", "CSV"], MenuItems(cut));
+    }
+
+    [Fact]
+    public void A_single_format_downloads_directly_without_a_menu()
+    {
+        var cut = Chart(ExportFormats.Csv);
+        var button = cut.Find(".rio-export-button");
+        Assert.Equal("Download CSV", button.GetAttribute("aria-label"));
+        Assert.Null(button.GetAttribute("aria-haspopup"));
+
+        button.Click();
+
+        Assert.Empty(cut.FindAll(".rio-export-menu"));
+        var call = Assert.Single(Calls("downloadText"));
+        Assert.Equal("Supply air.csv", call.Arguments[0]);
+        Assert.StartsWith("x,Supply\r\n2026-11-16T00:00:00,19.5", (string)call.Arguments[1]!);
+    }
+
+    [Fact]
+    public void No_formats_means_no_button()
+    {
+        var cut = Chart(ExportFormats.None);
+
+        Assert.Empty(cut.FindAll(".rio-export-button"));
+    }
+
+    [Fact]
+    public void Picking_a_format_downloads_it_named_after_the_title()
+    {
+        var cut = Chart();
+        cut.Find(".rio-export-button").Click();
+
+        cut.FindAll(".rio-export-menu button")[1].Click(); // SVG
+
+        var call = Assert.Single(Calls("download"));
+        Assert.Equal("svg", call.Arguments[1]);
+        Assert.Equal("Supply air.svg", call.Arguments[2]);
+        Assert.Empty(cut.FindAll(".rio-export-menu"));
+    }
+
+    [Fact]
+    public void OnExporting_can_rename_and_change_the_options()
+    {
+        ChartExportingEventArgs? raised = null;
+        var cut = Chart(onExporting: EventCallback.Factory.Create<ChartExportingEventArgs>(this, e =>
+        {
+            raised = e;
+            e.FileName = "report";
+            e.ImageOptions = new ChartImageOptions { Scale = 3, Background = "transparent" };
+        }));
+        cut.Find(".rio-export-button").Click();
+
+        cut.FindAll(".rio-export-menu button")[0].Click(); // PNG
+
+        Assert.Equal(ExportFormat.Png, raised!.Format);
+        var call = Assert.Single(Calls("download"));
+        Assert.Equal("png", call.Arguments[1]);
+        Assert.Equal("report.png", call.Arguments[2]); // the extension is added
+        Assert.Equal("{ scale = 3, background = transparent }", call.Arguments[3]!.ToString());
+    }
+
+    [Fact]
+    public void OnExporting_can_cancel_and_use_the_content_instead()
+    {
+        string? csv = null;
+        var cut = Chart(onExporting: EventCallback.Factory.Create<ChartExportingEventArgs>(this, e =>
+        {
+            e.Cancel = true;
+            e.CsvOptions = new CsvOptions { Delimiter = ';' };
+            csv = e.GetCsv();
+        }));
+        cut.Find(".rio-export-button").Click();
+
+        cut.FindAll(".rio-export-menu button")[2].Click(); // CSV
+
+        Assert.Empty(Calls("downloadText"));
+        Assert.StartsWith("x;Supply\r\n", csv);
+    }
+
+    [Fact]
+    public void Download_methods_from_code_do_not_raise_OnExporting()
+    {
+        var raised = false;
+        var cut = Chart(onExporting: EventCallback.Factory.Create<ChartExportingEventArgs>(this, _ => raised = true));
+
+        cut.InvokeAsync(() => cut.Instance.DownloadPngAsync("mine"));
+
+        Assert.False(raised);
+        Assert.Equal("mine.png", Assert.Single(Calls("download")).Arguments[2]);
+    }
+
+    [Fact]
+    public void Csv_uses_the_x_axis_title_and_every_series()
+    {
+        var axis = new AxisSpec { Title = "Time" };
+        string[] hidden = ["extract"];
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" XAxis="axis" HiddenSeries="hidden">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var csv = cut.Instance.ExportCsv();
+
+        Assert.StartsWith("Time,Supply,Extract\r\n2026-11-16T00:00:00,19.5,21.9\r\n", csv);
+    }
+}

@@ -188,6 +188,7 @@ plot on instants and label in that zone.
 | `src/RioCharts.AI` | `create_chart` and `render_chart` tools for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
 | `src/RioCharts.Mcp` | `riocharts-mcp`: local MCP server (stdio, .NET tool) that renders charts to PNG/SVG files. |
 | `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
+| `tests/RioCharts.Blazor.Tests` | bUnit component tests for `<RioChart>` (parameters, events, markup). |
 | `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
 | `samples/RioCharts.Mcp.Sample` | Sample data and agent config (`.mcp.json`, `.vscode/mcp.json`) for trying `riocharts-mcp`. |
 | `samples/RioCharts.Docs` | Docs site with live examples (Blazor WebAssembly, published to GitHub Pages). |

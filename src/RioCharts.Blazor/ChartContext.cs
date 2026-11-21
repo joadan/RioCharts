@@ -115,3 +115,6 @@ public enum SeriesLayer
     /// </summary>
     Canvas,
 }
+
+/// <summary>What the JS module's init reports: the container width, font metrics and the viewer's time zone.</summary>
+internal sealed record ChartContainerInfo(double Width, double[]? Widths, string? TimeZone);

@@ -521,7 +521,7 @@ public partial class RioChart<TItem> : IChartContext
             {
                 _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/RioChart.razor.js");
                 _dotnet = DotNetObjectReference.Create(this);
-                var info = await _module.InvokeAsync<ContainerInfo>("init", _container, _dotnet);
+                var info = await _module.InvokeAsync<ChartContainerInfo>("init", _container, _dotnet);
                 var changed = false;
                 if (info.Widths is { Length: > 0 } widths)
                 {
@@ -798,5 +798,5 @@ public partial class RioChart<TItem> : IChartContext
         GC.SuppressFinalize(this);
     }
 
-    private sealed record ContainerInfo(double Width, double[]? Widths, string? TimeZone);
+
 }

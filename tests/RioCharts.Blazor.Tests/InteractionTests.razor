@@ -1,0 +1,102 @@
+@inherits ChartTestBase
+
+@code {
+    [Fact]
+    public void Legend_click_hides_the_series_and_raises_the_events()
+    {
+        IReadOnlyCollection<string>? hidden = null;
+        LegendClickEventArgs? clicked = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading"
+                                                      HiddenSeriesChanged="@((IReadOnlyCollection<string> h) => hidden = h)"
+                                                      OnLegendClick="@((LegendClickEventArgs e) => clicked = e)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var supply = cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Supply"));
+        Assert.Equal("true", supply.GetAttribute("aria-pressed"));
+
+        supply.Click();
+
+        Assert.Equal(["supply"], hidden);
+        Assert.Equal(new LegendClickEventArgs("supply", "Supply", false), clicked);
+        var after = cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Supply"));
+        Assert.Equal("false", after.GetAttribute("aria-pressed"));
+    }
+
+    [Fact]
+    public void Legend_responds_to_the_keyboard()
+    {
+        LegendClickEventArgs? clicked = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" OnLegendClick="@((LegendClickEventArgs e) => clicked = e)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Extract")).KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        Assert.Equal("extract", clicked?.SeriesId);
+    }
+
+    [Fact]
+    public void ZoomTo_raises_VisibleRangeChanged_with_the_range()
+    {
+        ChartRange? range = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true" VisibleRangeChanged="@((ChartRange? r) => range = r)">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.ZoomToAsync(ChartRange.Of(Start.AddHours(1), Start.AddHours(2))));
+
+        Assert.Equal(Start.AddHours(1), range?.Min);
+        Assert.Equal(Start.AddHours(2), range?.Max);
+        Assert.NotNull(cut.Instance.GetVisibleRange());
+        Assert.NotEmpty(cut.FindAll(".rio-reset-zoom"));
+    }
+
+    [Fact]
+    public void OnZoomChanging_can_cancel_a_zoom()
+    {
+        var changed = false;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true"
+                                                      OnZoomChanging="@((ZoomChangingEventArgs e) => e.Cancel = true)"
+                                                      VisibleRangeChanged="@((ChartRange? _) => changed = true)">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.ZoomToAsync(ChartRange.Of(Start.AddHours(1), Start.AddHours(2))));
+
+        Assert.False(changed);
+        Assert.Null(cut.Instance.GetVisibleRange());
+        Assert.Empty(cut.FindAll(".rio-reset-zoom"));
+    }
+
+    [Fact]
+    public void Point_click_reports_every_item_of_an_aggregated_point()
+    {
+        PointClickEventArgs<Alarm>? clicked = null;
+        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms" OnPointClick="@((PointClickEventArgs<Alarm> e) => clicked = e)">
+            <BarSeries Id="alarms" Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("alarms", 0)); // what the JS module calls
+
+        Assert.Equal("AHU 1", clicked?.X);
+        Assert.Equal(15, clicked?.Y);
+        Assert.Equal([Alarms[0], Alarms[2]], clicked?.Items);
+        Assert.Equal(Alarms[0], clicked?.Item);
+    }
+
+    [Fact]
+    public void Point_click_out_of_range_is_ignored()
+    {
+        var raised = false;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" OnPointClick="@((PointClickEventArgs<Reading> _) => raised = true)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 99));
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("nope", 0));
+
+        Assert.False(raised);
+    }
+}

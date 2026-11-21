@@ -20,7 +20,8 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.AI/` — AI chart creation: `ChartTool` (create_chart as AIFunction), `RioChartsMcpTools` (MCP), `ChartRazor` (spec → Razor).
 - `src/RioCharts.Mcp/` — `riocharts-mcp`, a local stdio MCP server packed as a .NET tool: `ServerOptions` (arguments), `LocalServer` (tools: render_chart, list_datasets, get_chart_schema).
 - `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
-- `tests/RioCharts.Tests/` — xUnit tests.
+- `tests/RioCharts.Tests/` — xUnit tests (Core, AI, MCP, Skia).
+- `tests/RioCharts.Blazor.Tests/` — bUnit component tests for `<RioChart>`; `ChartTestBase` fakes the JS module in strict mode, so add a setup when the component calls a new JS function.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `samples/RioCharts.Mcp.Sample/` — sample data (CSV/JSON) and agent config for trying `riocharts-mcp`; not a .NET project. Its `.mcp.json` applies only when an agent is opened in that folder.
 - `samples/RioCharts.Docs/` — docs site, Blazor WebAssembly (http://localhost:5031); `.github/workflows/docs.yml` publishes it to GitHub Pages. Add new features there with a live example.

@@ -46,7 +46,9 @@ jobs:
         uses: dotnet/nbgv@v0.5.2
 
       - name: Test
-        run: dotnet test tests/RioCharts.Tests/RioCharts.Tests.csproj -c Release
+        run: |
+          dotnet test tests/RioCharts.Tests/RioCharts.Tests.csproj -c Release
+          dotnet test tests/RioCharts.Blazor.Tests/RioCharts.Blazor.Tests.csproj -c Release
 
       - name: Pack libraries and the riocharts-mcp tool
         run: |
