@@ -13,7 +13,7 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
 - Scatter series (`<ScatterSeries>`, `SeriesType.Scatter`, `"scatter"` or `"points"` in JSON): a
-  translucent marker per point (`MarkerSize`, default 7 px) and an optional dashed least-squares
+  translucent marker per point (`MarkerSize`, default 5 px) and an optional dashed least-squares
   `TrendLine`. Numeric x axes get a nice range so points are not on the edge; the tooltip shows the
   nearest point in 2D with the x axis title ("Outdoor °C: -2.2"), so charts with scatter series are
   not shared. Legend swatch is a dot; the legend tooltip and compact summary give the number of

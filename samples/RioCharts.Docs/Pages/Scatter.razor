@@ -33,7 +33,7 @@
     </Description>
     <ChildContent>
         <RioChart Items="Hourly" XAxis="_outdoorAxis" YAxis="_heatingAxis" Height="280">
-            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="5" />
+            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="4" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -42,7 +42,7 @@
 <div class="table-scroll">
     <table class="docs">
         <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
-        <tr><td><code>MarkerSize</code></td><td>7</td><td>Marker diameter in pixels.</td></tr>
+        <tr><td><code>MarkerSize</code></td><td>5</td><td>Marker diameter in pixels.</td></tr>
         <tr><td><code>TrendLine</code></td><td>false</td><td>A dashed least-squares line from the first to the last point.</td></tr>
         <tr><td><code>XValue</code></td><td></td><td>Numbers or times. Numeric axes get nice ranges with room at the edges.</td></tr>
         <tr><td>JSON</td><td></td><td><code>"type": "scatter"</code> (also <code>"points"</code>), with <code>"markerSize"</code> and <code>"trendLine"</code>.</td></tr>
@@ -68,7 +68,7 @@
 
     private const string SignatureCode = """
         <RioChart Items="hourly" XAxis="@(new AxisSpec { Title = "Outdoor °C" })" YAxis="@(new AxisSpec { Title = "kW" })">
-            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="5" />
+            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="4" />
         </RioChart>
         """;
 }

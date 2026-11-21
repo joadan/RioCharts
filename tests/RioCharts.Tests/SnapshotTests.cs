@@ -182,7 +182,7 @@ public class SnapshotTests
             Series =
             [
                 new SeriesSpec { Id = "s", Name = "AHU 1", Type = SeriesType.Scatter, TrendLine = true },
-                new SeriesSpec { Id = "t", Name = "AHU 2", Type = SeriesType.Scatter, MarkerSize = 5 },
+                new SeriesSpec { Id = "t", Name = "AHU 2", Type = SeriesType.Scatter, MarkerSize = 4 },
             ],
         }, new()
         {

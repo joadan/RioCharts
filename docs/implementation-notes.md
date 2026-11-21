@@ -494,7 +494,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 
 ## Scatter
 
-- **Type:** `ScatterSeriesType` draws one path of circles (translucent fill, no outline), every
+- **Type:** `ScatterSeriesType` draws one path of circles (5 px by default, translucent fill, no outline), every
   visible point: no downsampling, since each point is data. Default layer 3, above lines.
 - **Trend line:** least squares over the drawn points in data units, drawn from the first to the
   last point's x (dashed, series color). No equation or r²: the legend tooltip says rising/falling.

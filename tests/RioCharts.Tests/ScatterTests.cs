@@ -60,7 +60,7 @@ public class ScatterTests
         var hover = layout.Tooltip.Series[0];
         Assert.Equal(Outdoor.Length, hover.X.Length);
         Assert.True(hover.X.Zip(hover.X.Skip(1)).All(p => p.First <= p.Second)); // ascending x for the tooltip search
-        Assert.Contains(starts, p => Math.Abs(p.X - hover.X[0]) < 0.01 && Math.Abs(p.Y - (hover.Y[0] - 3.5)) < 0.01); // radius 3.5 (7 px)
+        Assert.Contains(starts, p => Math.Abs(p.X - hover.X[0]) < 0.01 && Math.Abs(p.Y - (hover.Y[0] - 2.5)) < 0.01); // radius 2.5 (5 px)
         Assert.Equal("Outdoor °C: -8.4", hover.XLabels[0]); // the tooltip says what x is
     }
 
@@ -141,15 +141,15 @@ public class ScatterTests
     [InlineData("scatterPlot")]
     public void Json_specs_read_scatter(string type)
     {
-        var parsed = ChartSpecJson.Parse($$"""{ "series": [ { "type": "{{type}}", "x": "outdoor", "y": "supply", "markerSize": 5, "trendLine": true } ] }""");
+        var parsed = ChartSpecJson.Parse($$"""{ "series": [ { "type": "{{type}}", "x": "outdoor", "y": "supply", "markerSize": 3, "trendLine": true } ] }""");
 
         Assert.Empty(parsed.Errors);
         var s = parsed.Spec!.Series[0];
         Assert.Equal(SeriesType.Scatter, s.Type);
-        Assert.Equal(5, s.MarkerSize);
+        Assert.Equal(3, s.MarkerSize);
         Assert.True(s.TrendLine);
         Assert.Contains("<ScatterSeries", ChartRazor.FromSpec(parsed.Spec, "Reading", "readings"), StringComparison.Ordinal);
-        Assert.Contains(" MarkerSize=\"5\" TrendLine=\"true\"", ChartRazor.FromSpec(parsed.Spec, "Reading", "readings"), StringComparison.Ordinal);
+        Assert.Contains(" MarkerSize=\"3\" TrendLine=\"true\"", ChartRazor.FromSpec(parsed.Spec, "Reading", "readings"), StringComparison.Ordinal);
     }
 
     [Fact]

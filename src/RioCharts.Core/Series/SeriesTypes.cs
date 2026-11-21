@@ -298,8 +298,8 @@ internal sealed class ScatterSeriesType : ISeriesType
     public bool IncludesZero => false;
     public bool UsesSlots => false;
 
-    /// <summary>Marker radius from <see cref="SeriesSpec.MarkerSize"/> (a diameter, default 7 px).</summary>
-    internal static double Radius(SeriesSpec spec) => Math.Clamp((spec.MarkerSize is > 0 and var size ? size : 7) / 2, 1, 30);
+    /// <summary>Marker radius from <see cref="SeriesSpec.MarkerSize"/> (a diameter, default 5 px).</summary>
+    internal static double Radius(SeriesSpec spec) => Math.Clamp((spec.MarkerSize is > 0 and var size ? size : 5) / 2, 1, 30);
 
     public void Build(SeriesBuildContext c)
     {

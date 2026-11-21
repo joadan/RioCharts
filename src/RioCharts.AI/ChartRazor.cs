@@ -136,7 +136,7 @@ public static class ChartRazor
 
             if (s.Type == SeriesType.Scatter)
             {
-                if (s.MarkerSize is { } size && size != 7)
+                if (s.MarkerSize is { } size && size != 5)
                 {
                     sb.Append(" MarkerSize=\"").Append(size.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('"');
                 }

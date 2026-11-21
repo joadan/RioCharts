@@ -155,7 +155,7 @@ public sealed record SeriesSpec
     [Description("Show values on the chart. Null uses the default: on for pie, donut and radial bar, off otherwise.")]
     public bool? DataLabels { get; init; }
 
-    [Description("Scatter: marker diameter in pixels. Default 7.")]
+    [Description("Scatter: marker diameter in pixels. Default 5.")]
     public double? MarkerSize { get; init; }
 
     [Description("Scatter: draw a dashed least-squares trend line through the points.")]

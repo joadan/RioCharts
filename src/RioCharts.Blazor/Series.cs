@@ -289,8 +289,8 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 /// </summary>
 public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
 {
-    /// <summary>Marker diameter in pixels. Default 7.</summary>
-    [Parameter] public double MarkerSize { get; set; } = 7;
+    /// <summary>Marker diameter in pixels. Default 5.</summary>
+    [Parameter] public double MarkerSize { get; set; } = 5;
 
     /// <summary>Draw a dashed least-squares trend line through the points.</summary>
     [Parameter] public bool TrendLine { get; set; }
