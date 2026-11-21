@@ -137,6 +137,8 @@ public sealed partial class ChartDataset
         {
             case null:
                 return null;
+            case double:
+                return value;
             case JsonElement json:
                 return json.ValueKind switch
                 {
@@ -183,7 +185,62 @@ public sealed partial class ChartDataset
             return o;
         }
 
+        if (TryParseIsoLocal(s, out var local))
+        {
+            return local;
+        }
+
         return DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
+    }
+
+    /// <summary>
+    /// A fast path for the ISO pattern without an offset (already matched): "yyyy-MM-dd", then
+    /// optionally "THH:mm", ":ss" and a fraction. Same result as DateTime.TryParse (Kind Unspecified).
+    /// </summary>
+    private static bool TryParseIsoLocal(string s, out DateTime value)
+    {
+        value = default;
+        static int Digits(string s, int start, int count)
+        {
+            var n = 0;
+            for (var i = start; i < start + count; i++)
+            {
+                n = n * 10 + (s[i] - '0');
+            }
+
+            return n;
+        }
+
+        int hour = 0, minute = 0, second = 0;
+        long fraction = 0;
+        if (s.Length >= 16)
+        {
+            (hour, minute) = (Digits(s, 11, 2), Digits(s, 14, 2));
+        }
+
+        if (s.Length >= 19)
+        {
+            second = Digits(s, 17, 2);
+        }
+
+        if (s.Length > 20)
+        {
+            var digits = Math.Min(7, s.Length - 20);
+            fraction = Digits(s, 20, digits);
+            for (var i = digits; i < 7; i++)
+            {
+                fraction *= 10;
+            }
+        }
+
+        var (year, month, day) = (Digits(s, 0, 4), Digits(s, 5, 2), Digits(s, 8, 2));
+        if (month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(Math.Max(1, year), month) || hour > 23 || minute > 59 || second > 59 || year < 1)
+        {
+            return false;
+        }
+
+        value = new DateTime(year, month, day, hour, minute, second).AddTicks(fraction);
+        return true;
     }
 
     private static DataField Column(string name, object?[] values, string? description)

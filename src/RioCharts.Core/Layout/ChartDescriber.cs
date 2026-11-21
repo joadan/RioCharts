@@ -4,7 +4,7 @@ using RioCharts.Core.Data;
 
 namespace RioCharts.Core.Layout;
 
-/// <summary>The overall direction of a series, from <see cref="ChartDescriber.ComputeTrend"/>.</summary>
+/// <summary>The overall direction of a series, from <see cref="ChartDescriber.ComputeTrend(IReadOnlyList{ValueTuple{double, double}})"/>.</summary>
 public enum Trend
 {
     /// <summary>No trend can be computed (fewer than two points, or no x range).</summary>
@@ -51,20 +51,19 @@ public static class ChartDescriber
 
         foreach (var (s, d, _) in visible)
         {
-            var points = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i])).Select(i => (X: d.X[i], Y: d.Y[i])).ToList();
-            sb.Append(' ').Append(texts.FillCount(nameof(ChartTexts.SeriesValues), points.Count, culture, s.DisplayName, points.Count));
-            if (points.Count == 0)
+            var stats = Scan(d);
+            sb.Append(' ').Append(texts.FillCount(nameof(ChartTexts.SeriesValues), stats.Count, culture, s.DisplayName, stats.Count));
+            if (stats.Count == 0)
             {
                 sb.Append('.');
                 continue;
             }
 
-            var min = points.MinBy(p => p.Y);
-            var max = points.MaxBy(p => p.Y);
+            var (min, max) = (stats.Min, stats.Max);
             sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LowestHighest), culture,
-                min.Y.ToString("G4", culture), FormatX(min.X, d, xKind, culture), max.Y.ToString("G4", culture), FormatX(max.X, d, xKind, culture)));
+                d.Y[min].ToString("G4", culture), FormatX(d.X[min], d, xKind, culture), d.Y[max].ToString("G4", culture), FormatX(d.X[max], d, xKind, culture)));
 
-            var trend = xKind == XKind.Category ? Trend.None : ComputeTrend(points);
+            var trend = xKind == XKind.Category ? Trend.None : ComputeTrend(d.X, d.Y);
             if (trend != Trend.None)
             {
                 sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.Trend), culture, TrendText(trend, texts)));
@@ -117,8 +116,8 @@ public static class ChartDescriber
     public static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts? texts = null)
     {
         texts ??= ChartTexts.For(culture);
-        var points = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i])).Select(i => (X: d.X[i], Y: d.Y[i])).ToList();
-        if (points.Count == 0)
+        var stats = Scan(d);
+        if (stats.Count == 0)
         {
             return null;
         }
@@ -126,7 +125,7 @@ public static class ChartDescriber
         var axis = s.YAxisId is { } id ? spec.YAxes.FirstOrDefault(a => a.Id == id) ?? spec.Y : spec.Y;
         var format = s.Format ?? axis.Format;
         string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
-        var (min, max) = (points.Min(p => p.Y), points.Max(p => p.Y));
+        var (min, max) = (d.Y[stats.Min], d.Y[stats.Max]);
         var sb = new StringBuilder();
         if (s.Type == SeriesType.RangeArea && d.Low is { } lows)
         {
@@ -145,9 +144,9 @@ public static class ChartDescriber
         if (s.Type == SeriesType.Scatter)
         {
             // Points in no order: their number, the y range and whether y rises with x.
-            sb.Append(texts.FillCount(nameof(ChartTexts.SeriesPoints), points.Count, culture, s.DisplayName, points.Count)).Append(", ");
+            sb.Append(texts.FillCount(nameof(ChartTexts.SeriesPoints), stats.Count, culture, s.DisplayName, stats.Count)).Append(", ");
             sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
-            if (xKind != XKind.Category && ComputeTrend(points) is var t && t != Trend.None)
+            if (xKind != XKind.Category && ComputeTrend(d.X, d.Y) is var t && t != Trend.None)
             {
                 sb.Append(", ").Append(TrendText(t, texts));
             }
@@ -157,10 +156,10 @@ public static class ChartDescriber
 
         sb.Append(s.DisplayName).Append(": ");
         sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
-        if (xKind != XKind.Category && points.Count > 1)
+        if (xKind != XKind.Category && stats.Count > 1)
         {
-            sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, F(points[^1].Y)));
-            var trend = ComputeTrend(points);
+            sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, F(d.Y[stats.Last])));
+            var trend = ComputeTrend(d.X, d.Y);
             if (trend != Trend.None)
             {
                 sb.Append(", ").Append(TrendText(trend, texts));
@@ -186,22 +185,58 @@ public static class ChartDescriber
     /// </summary>
     public static Trend ComputeTrend(IReadOnlyList<(double X, double Y)> points)
     {
-        if (points.Count < 2)
+        var x = new double[points.Count];
+        var y = new double[points.Count];
+        for (var i = 0; i < points.Count; i++)
+        {
+            (x[i], y[i]) = points[i];
+        }
+
+        return ComputeTrend(x, y);
+    }
+
+    /// <summary>The trend of the points with a finite y (and x), without copying them.</summary>
+    internal static Trend ComputeTrend(ReadOnlySpan<double> xs, ReadOnlySpan<double> ys)
+    {
+        var n = 0;
+        double sumX = 0, sumY = 0;
+        double minX = double.PositiveInfinity, maxX = double.NegativeInfinity, minY = double.PositiveInfinity, maxY = double.NegativeInfinity;
+        for (var i = 0; i < ys.Length; i++)
+        {
+            var (x, y) = (xs[i], ys[i]);
+            if (!double.IsFinite(y) || !double.IsFinite(x))
+            {
+                continue;
+            }
+
+            n++;
+            sumX += x;
+            sumY += y;
+            (minX, maxX, minY, maxY) = (Math.Min(minX, x), Math.Max(maxX, x), Math.Min(minY, y), Math.Max(maxY, y));
+        }
+
+        if (n < 2)
         {
             return Trend.None;
         }
 
-        double meanX = points.Average(p => p.X), meanY = points.Average(p => p.Y);
+        double meanX = sumX / n, meanY = sumY / n;
         double sxy = 0, sxx = 0, syy = 0;
-        foreach (var (x, y) in points)
+        for (var i = 0; i < ys.Length; i++)
         {
+            var (x, y) = (xs[i], ys[i]);
+            if (!double.IsFinite(y) || !double.IsFinite(x))
+            {
+                continue;
+            }
+
             sxy += (x - meanX) * (y - meanY);
             sxx += (x - meanX) * (x - meanX);
             syy += (y - meanY) * (y - meanY);
         }
 
-        var rangeX = points.Max(p => p.X) - points.Min(p => p.X);
-        var rangeY = points.Max(p => p.Y) - points.Min(p => p.Y);
+        var rangeX = maxX - minX;
+        var rangeY = maxY - minY;
         if (sxx == 0 || rangeX == 0)
         {
             return Trend.None;
@@ -219,5 +254,33 @@ public static class ChartDescriber
 
         var relative = sxy / sxx * rangeX / rangeY;
         return relative > 0.1 ? Trend.Increasing : relative < -0.1 ? Trend.Decreasing : Trend.Stable;
+    }
+
+    /// <summary>One pass over a series: the number of finite y values and the indexes of the lowest, highest and last.</summary>
+    private static (int Count, int Min, int Max, int Last) Scan(SeriesData d)
+    {
+        int count = 0, min = -1, max = -1, last = -1;
+        for (var i = 0; i < d.Count; i++)
+        {
+            var y = d.Y[i];
+            if (!double.IsFinite(y))
+            {
+                continue;
+            }
+
+            count++;
+            last = i;
+            if (min < 0 || y < d.Y[min])
+            {
+                min = i;
+            }
+
+            if (max < 0 || y > d.Y[max])
+            {
+                max = i;
+            }
+        }
+
+        return (count, min, max, last);
     }
 }

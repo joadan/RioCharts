@@ -25,30 +25,27 @@ public sealed partial class ChartDataset
 
         var header = UniqueNames(records[0]);
         var decimalComma = delimiter != ',';
-        var rows = new List<IReadOnlyDictionary<string, object?>>(records.Count - 1);
-        foreach (var record in records.Skip(1))
+
+        // Straight into columns (the header names are already unique).
+        var columns = header.Select(_ => new List<object?>(records.Count - 1)).ToArray();
+        for (var r = 1; r < records.Count; r++)
         {
+            var record = records[r];
             if (record.Count == 1 && string.IsNullOrWhiteSpace(record[0]))
             {
                 continue; // blank line
             }
 
-            var row = new Dictionary<string, object?>(header.Count, StringComparer.Ordinal);
             for (var i = 0; i < header.Count; i++)
             {
-                row[header[i]] = i < record.Count ? CsvValue(record[i], decimalComma) : null;
+                columns[i].Add(i < record.Count ? Normalize(CsvValue(record[i], decimalComma)) : null);
             }
-
-            rows.Add(row);
         }
 
-        if (rows.Count == 0)
-        {
-            // Keep the columns so the agent sees the fields, even without values.
-            return new ChartDataset(name, [.. header.Select(h => new DataField(h, FieldType.Text, [], fieldDescriptions?.GetValueOrDefault(h)))], description);
-        }
-
-        return FromRows(name, rows, description, fieldDescriptions);
+        // Without rows the columns stay, so the agent sees the fields, even without values.
+        return new ChartDataset(name, [.. header.Select((h, i) => columns[i].Count == 0
+            ? new DataField(h, FieldType.Text, [], fieldDescriptions?.GetValueOrDefault(h))
+            : Column(h, [.. columns[i]], fieldDescriptions?.GetValueOrDefault(h)))], description);
     }
 
     private static object? CsvValue(string cell, bool decimalComma)
@@ -70,7 +67,7 @@ public sealed partial class ChartDataset
             return d;
         }
 
-        return s; // text, or an ISO time (read as a time by FromRows)
+        return s; // text, or an ISO time (read as a time by Normalize)
     }
 
     private static char DetectDelimiter(string csv)

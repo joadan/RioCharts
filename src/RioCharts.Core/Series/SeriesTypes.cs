@@ -1,6 +1,7 @@
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Paths;
+using RioCharts.Core.Scales;
 using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Series;
@@ -44,6 +45,37 @@ internal interface ISeriesType
 /// <param name="Width">Bar width (0 for points).</param>
 internal readonly record struct LabelAnchor(double Value, double X, double Y, double Y0, double Width, bool Stacked);
 
+/// <summary>
+/// The x pixel of each data point. Numbers and times are mapped when asked for, so a large series
+/// that is drawn downsampled (or zoomed in) never maps every point.
+/// </summary>
+internal sealed class PixelPositions
+{
+    private readonly SeriesData _data;
+    private readonly LinearScale? _scale;
+    private readonly double[]? _categories;
+
+    public PixelPositions(SeriesData data, XKind kind, LinearScale? scale, BandScale? band, IReadOnlyDictionary<string, int> categoryIndex)
+    {
+        _data = data;
+        _scale = scale;
+        if (kind == XKind.Category)
+        {
+            // Few points: look each category up once.
+            _categories = new double[data.Count];
+            for (var i = 0; i < data.Count; i++)
+            {
+                var local = (int)data.X[i];
+                _categories[i] = band is not null && local >= 0 && local < data.Categories.Count && categoryIndex.TryGetValue(data.Categories[local], out var global)
+                    ? band.Center(global)
+                    : double.NaN;
+            }
+        }
+    }
+
+    public double this[int index] => _categories is not null ? _categories[index] : _scale?.Map(_data.X[index]) ?? double.NaN;
+}
+
 /// <summary>Everything a series type needs to draw itself.</summary>
 internal sealed class SeriesBuildContext
 {
@@ -54,8 +86,8 @@ internal sealed class SeriesBuildContext
     public required StyleTable Styles { get; init; }
     public required RectF Plot { get; init; }
 
-    /// <summary>X pixel for each data point (NaN when it cannot be placed).</summary>
-    public required double[] PixelX { get; init; }
+    /// <summary>X pixel for each data point (NaN when it cannot be placed), mapped on demand.</summary>
+    public required PixelPositions PixelX { get; init; }
 
     /// <summary>Value to draw for each point: the data value, or the top of its stack segment.</summary>
     public required double[] Upper { get; init; }

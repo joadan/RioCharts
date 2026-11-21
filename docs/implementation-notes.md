@@ -562,6 +562,44 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Hover:** `TooltipSeries.CellWidths` gives each bar's length; JS checks the rectangle under the
   pointer (a linear scan, also used for heatmap cells now) and outlines it. No zoom.
 
+## Performance
+
+- **Check (2026-11):** a Stopwatch program over Core, Skia and the Blazor static render (median of
+  5 runs, Release, .NET 10, one desktop core), plus the docs site in the browser. Guards in
+  `LargeDataTests` catch a return to quadratic work.
+- **After the fixes**, plot about 900 px wide:
+
+  | Case | Time | Allocated |
+  | --- | --- | --- |
+  | Line, 100k / 1M time points | 5 / 40 ms | 0.3 MB |
+  | Line, 1M points, zoomed to 10% | 23 ms | 0.3 MB |
+  | 3 lines, 1M points each | 95 ms | 1 MB |
+  | 3 stacked areas, 1M points each | 117 ms | 63 MB |
+  | Scatter, 100k points | 100 ms | 36 MB |
+  | Bars, 10k categories | 7 ms | 4 MB |
+  | Pie, 1000 / 10 000 slices | 40 / 35 ms | 2 / 20 MB |
+  | Heatmap, 50 rows x 365 days | 25 ms | 7 MB |
+  | Live buffer, 100k points: append + snapshot + layout | 4 ms | 2 MB |
+  | `SeriesData.From` 1M times / `FromItems` 1M items | 11 / 60 ms | 23 / 53 MB |
+  | Spec binding, 200k rows into day buckets per store | 30–70 ms | 20 MB |
+  | `ChartDataset.FromCsv`, 200k rows | 200–320 ms | 64 MB |
+  | Skia PNG, 900 x 360 at 2x | 45–85 ms | 0.5 MB |
+  | Blazor static render, 1M items | 100 ms | 54 MB |
+
+- **What was slow:** pie outside labels untangled leader lines in up to 40·n² steps over all pairs
+  (now: only labels that fit, 40·n steps, no allocation per check); pie color and legend lookups
+  used `IndexOf` per category; the description copied every point into a list of tuples (twice per
+  series with legend tooltips); stacking kept a dictionary entry per point; every x was mapped to
+  a pixel before downsampling (`PixelPositions` maps on demand); PNG encoding tried every filter.
+- **Known costs, left as is:**
+  - Scatter is never downsampled: every point is drawn and goes to the tooltip model (4 MB of
+    JSON at 100k points). Fine to about 10k points.
+  - `FromItems` boxes each x (the selectors return `object`); `SeriesData.From` with columns is
+    the fast path for big data, as the Large data page says.
+  - In the browser, hover handling is about 0.05 ms per pointer move at 200k points. A full layout
+    (zoom, data change) runs in WebAssembly's interpreter, several times slower than on the
+    server: about 0.6 s for 200k points on the published docs site before these fixes.
+
 ## Public API surface
 
 - Reviewed before the first release. Public: the spec model, data types, scales, formatters, the

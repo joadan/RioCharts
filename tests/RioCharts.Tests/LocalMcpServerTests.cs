@@ -45,6 +45,27 @@ public sealed class LocalMcpServerTests : IDisposable
         Assert.Equal(FieldType.Text, ChartDataset.FromCsv("c", "a,b\n\"1,5\",2").Field("a")!.Type); // decimal comma only with ; or tab
     }
 
+    [Theory]
+    [InlineData("2026-03-01")]
+    [InlineData("2026-03-01T12:30")]
+    [InlineData("2026-03-01 12:30:45")]
+    [InlineData("2026-03-01T12:30:45.5")]
+    [InlineData("2026-03-01T12:30:45.1234567")]
+    [InlineData("2024-02-29T23:59:59")]
+    public void Csv_times_read_like_DateTime_parse(string cell)
+    {
+        var dataset = ChartDataset.FromCsv("t", "time\n" + cell);
+
+        Assert.Equal(DateTime.Parse(cell, CultureInfo.InvariantCulture), Assert.IsType<DateTime>(dataset.Field("time")!.Values[0]));
+    }
+
+    [Theory]
+    [InlineData("2026-02-30")]
+    [InlineData("2026-13-01")]
+    [InlineData("2026-03-01T24:00")]
+    public void Csv_impossible_dates_stay_text(string cell) =>
+        Assert.Equal(FieldType.Text, ChartDataset.FromCsv("t", "time\n" + cell).Field("time")!.Type);
+
     [Fact]
     public async Task Folder_lists_files_rereads_changes_and_reports_bad_files()
     {

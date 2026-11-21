@@ -213,6 +213,19 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
 ### Fixed
 
+- Performance check with large data (numbers in `docs/implementation-notes.md`):
+  - Pies with many slices: outside labels are limited to what fits down each side (the largest
+    slices keep theirs; all slices stay in the tooltip), and the legend and color lookups are no
+    longer quadratic. 1000 slices: from about 1 s (10 000: minutes) to under 40 ms.
+  - Large line and area series: the screen reader description and legend tooltips no longer copy
+    every point, and x pixels are mapped only for the points drawn. A 1M-point line lays out in
+    about 40 ms instead of 100 ms and allocates 0.3 MB instead of 38 MB.
+  - Stacked series with the same x values stack per index: three stacked 1M-point areas from
+    590 ms to 120 ms.
+  - CSV datasets are read straight into columns with a fast path for ISO times: 200k rows in
+    about half the time and memory.
+  - PNG export uses one PNG filter (Up) instead of trying all: the same file size in about half
+    the encoding time.
 - Pie and donut labels inside slices no longer spill over the ring. The fit test now checks the
   horizontal label box against the slice, so on the sides of a thin donut a label that would run
   across the ring is placed outside with a leader line instead.

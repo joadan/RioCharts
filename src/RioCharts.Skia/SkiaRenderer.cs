@@ -30,6 +30,16 @@ public sealed partial class SkiaRenderer(ExportTheme theme, SkiaFonts fonts)
         Draw(canvas, scene);
         canvas.Flush();
         using var image = surface.Snapshot();
+        if (format == SKEncodedImageFormat.Png)
+        {
+            // Only the Up filter (rows repeat in charts: grid, bars, fills) at zlib level 6: the same size
+            // as Skia's default of trying all filters, in about half the time.
+            using var pixmap = image.PeekPixels();
+            using var png = pixmap.Encode(new SKPngEncoderOptions(SKPngEncoderFilterFlags.Up, 6))
+                ?? throw new InvalidOperationException("Could not encode the PNG.");
+            return png.ToArray();
+        }
+
         using var data = image.Encode(format, quality);
         return data.ToArray();
     }

@@ -50,16 +50,28 @@ public static partial class ChartLayout
         // ---------- Categories (the legend items) ----------
         var labelsPerSeries = polar.ToDictionary(r => r, r => SliceLabels(r.Data, culture));
         var categories = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var categoryIndex = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var label in labelsPerSeries.Values.SelectMany(l => l))
         {
-            if (seen.Add(label))
+            if (categoryIndex.TryAdd(label, categories.Count))
             {
                 categories.Add(label);
             }
         }
 
-        string ColorOf(string category) => ThemeTokens.Series(categories.IndexOf(category));
+        // Where each category sits in each series (the first occurrence), for the legend tooltips.
+        var indexPerSeries = labelsPerSeries.ToDictionary(p => p.Key, p =>
+        {
+            var index = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var i = 0; i < p.Value.Length; i++)
+            {
+                index.TryAdd(p.Value[i], i);
+            }
+
+            return index;
+        });
+
+        string ColorOf(string category) => ThemeTokens.Series(categoryIndex.TryGetValue(category, out var i) ? i : -1);
         bool Hidden(string category) => options.HiddenSeries?.Contains(category) == true;
 
         // Pies: categories grouped into "Other" in every ring they appear in get one "Other" legend item.
@@ -70,20 +82,20 @@ public static partial class ChartLayout
         var grouped = pieRings.SelectMany(p => p.Pie.Grouped).Select(s => s.Label).Where(l => !shown.Contains(l)).ToHashSet(StringComparer.Ordinal);
         var hasOther = pieRings.Any(p => p.Pie.Grouped.Count > 0);
 
+        var totals = pieRings.ToDictionary(p => p.Ring, p => p.Pie.Total);
         string SliceTip(string category)
         {
             var parts = new List<string>();
             foreach (var r in polar)
             {
-                var i = Array.IndexOf(labelsPerSeries[r], category);
-                if (i < 0 || !double.IsFinite(r.Data.Y[i]))
+                if (!indexPerSeries[r].TryGetValue(category, out var i) || !double.IsFinite(r.Data.Y[i]))
                 {
                     continue;
                 }
 
                 var v = r.Data.Y[i];
                 var value = ValueFormatter.Format(v, culture, r.Spec.Format ?? "");
-                var total = pieRings.FirstOrDefault(p => p.Ring == r).Pie.Total;
+                var total = totals.GetValueOrDefault(r);
                 var text = total > 0 && v > 0 ? $"{value} ({Percent(v / total, culture)})" : value;
                 parts.Add(polar.Count > 1 ? $"{r.Spec.DisplayName} {text}" : text);
             }
@@ -460,7 +472,7 @@ public static partial class ChartLayout
         var cx = (float)(plot.CenterX - (box.MinX + box.MaxX) / 2 * radius);
         var cy = (float)(plot.CenterY - (box.MinY + box.MaxY) / 2 * radius);
         var gap = n > 1 ? 3 : 0;
-        var outsideLabels = new List<(double Angle, string Text, double Width)>();
+        var outsideLabels = new List<(double Angle, string Text, double Width, double Sweep)>();
         for (var k = 0; k < n; k++)
         {
             var (ring, slices, total) = slicesPerRing[k];
@@ -514,7 +526,7 @@ public static partial class ChartLayout
                 }
                 else if (k == 0 && outsideAllowed)
                 {
-                    outsideLabels.Add((mid, text, w));
+                    outsideLabels.Add((mid, text, w, Math.Abs(a1 - a0)));
                 }
             }
 
@@ -555,7 +567,7 @@ public static partial class ChartLayout
     /// Labels outside the pie with leader lines. Each side is stacked top to bottom so labels
     /// never overlap, then shifted up if the stack runs past the plot.
     /// </summary>
-    private static List<Node> PlaceOutsideLabels(List<(double Angle, string Text, double Width)> labels, double cx, double cy, double radius,
+    private static List<Node> PlaceOutsideLabels(List<(double Angle, string Text, double Width, double Sweep)> labels, double cx, double cy, double radius,
         RectF plot, double textHeight)
     {
         var nodes = new List<Node>();
@@ -563,12 +575,20 @@ public static partial class ChartLayout
         {
             var side = labels
                 .Where(l => Math.Sin(l.Angle) >= 0 == right)
-                .Select(l => (l.Angle, l.Text, l.Width, Y: Polar(cx, cy, radius + 10, l.Angle).Y))
+                .Select(l => (l.Angle, l.Text, l.Width, l.Sweep, Y: Polar(cx, cy, radius + 10, l.Angle).Y))
                 .OrderBy(l => l.Y)
                 .ToList();
             if (side.Count == 0)
             {
                 continue;
+            }
+
+            // Only as many labels as fit down the side: the largest slices keep theirs (the rest are in
+            // the tooltip). This also keeps the untangling below, which is quadratic per step, cheap.
+            var room = Math.Max(1, (int)(plot.Height / textHeight));
+            if (side.Count > room)
+            {
+                side = side.OrderByDescending(l => l.Sweep).Take(room).OrderBy(l => l.Y).ToList();
             }
 
             var ys = side.Select(l => Math.Max(l.Y, plot.Y + textHeight / 2)).ToArray();
@@ -599,7 +619,7 @@ public static partial class ChartLayout
             var natural = side.Select(l => Polar(cx, cy, radius + 10, l.Angle).X).ToArray();
             var bend = new double[side.Count];
             var slot = Enumerable.Range(0, side.Count).ToArray();
-            (double X, double Y)[] Route(int i) => [points[i], (bend[i], ys[slot[i]]), (endX, ys[slot[i]])];
+            ((double X, double Y) A, (double X, double Y) B, (double X, double Y) C) Route(int i) => (points[i], (bend[i], ys[slot[i]]), (endX, ys[slot[i]]));
 
             void PlaceBends()
             {
@@ -649,25 +669,30 @@ public static partial class ChartLayout
             bool Crosses(int a, int b)
             {
                 var (ra, rb) = (Route(a), Route(b));
-                for (var s = 1; s < ra.Length; s++)
+                return SegmentsCross(ra.A, ra.B, rb.A, rb.B) || SegmentsCross(ra.A, ra.B, rb.B, rb.C)
+                    || SegmentsCross(ra.B, ra.C, rb.A, rb.B) || SegmentsCross(ra.B, ra.C, rb.B, rb.C);
+            }
+
+            (int a, int b) FirstCrossing()
+            {
+                for (var a = 0; a < side.Count; a++)
                 {
-                    for (var t = 1; t < rb.Length; t++)
+                    for (var b = a + 1; b < side.Count; b++)
                     {
-                        if (SegmentsCross(ra[s - 1], ra[s], rb[t - 1], rb[t]))
+                        if (Crosses(a, b))
                         {
-                            return true;
+                            return (a, b);
                         }
                     }
                 }
 
-                return false;
+                return (-1, -1);
             }
 
             PlaceBends();
-            for (var step = 0; step < 40 * side.Count * side.Count; step++)
+            for (var step = 0; step < 40 * side.Count; step++)
             {
-                var pair = Enumerable.Range(0, side.Count).SelectMany(a => Enumerable.Range(a + 1, side.Count - a - 1).Select(b => (a: a, b: b)))
-                    .FirstOrDefault(p => Crosses(p.a, p.b), (a: -1, b: -1));
+                var pair = FirstCrossing();
                 if (pair.a < 0)
                 {
                     break;
@@ -708,11 +733,9 @@ public static partial class ChartLayout
                 var y = ys[slot[i]];
                 var path = new PathBuilder();
                 var r = Route(i);
-                path.MoveTo(r[0].X, r[0].Y);
-                foreach (var (x, py) in r.Skip(1))
-                {
-                    path.LineTo(x, py);
-                }
+                path.MoveTo(r.A.X, r.A.Y);
+                path.LineTo(r.B.X, r.B.Y);
+                path.LineTo(r.C.X, r.C.Y);
 
                 var leader = path.Build();
                 nodes.Add(new PathNode(leader, new StyleRef("leader")) { Class = "rio-leader" });

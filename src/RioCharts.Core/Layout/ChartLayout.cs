@@ -515,7 +515,7 @@ public static partial class ChartLayout
                 ColorIndex = r.ColorIndex,
                 Styles = styles,
                 Plot = plot,
-                PixelX = PixelX(r.Data, xKind, xScale, xBand, categoryIndex),
+                PixelX = new PixelPositions(r.Data, xKind, xScale, xBand, categoryIndex),
                 Upper = r.Upper,
                 Lower = r.Lower,
                 MapY = axisScale.Map,
@@ -717,6 +717,11 @@ public static partial class ChartLayout
             .GroupBy(r => (r.Axis.Id, r.Spec.Stack, r.Type.UsesSlots));
         foreach (var group in groups)
         {
+            if (kind != XKind.Category && StackByIndex(group.ToList()))
+            {
+                continue;
+            }
+
             var positive = new Dictionary<double, double>();
             var negative = new Dictionary<double, double>();
             foreach (var r in group)
@@ -747,6 +752,48 @@ public static partial class ChartLayout
                 r.Lower = lower;
             }
         }
+    }
+
+    /// <summary>
+    /// The usual case: every series in the stack has the same x values (one row per x with a column
+    /// per series), so the running sums are kept per index instead of per x value. False (nothing
+    /// done) when the x values differ.
+    /// </summary>
+    private static bool StackByIndex(List<Resolved> group)
+    {
+        var x = group[0].Data.X;
+        if (group.Any(r => r.Data.X.Length != x.Length || (!ReferenceEquals(r.Data.X, x) && !r.Data.X.AsSpan().SequenceEqual(x))))
+        {
+            return false;
+        }
+
+        var positive = new double[x.Length];
+        var negative = new double[x.Length];
+        foreach (var r in group)
+        {
+            var y = r.Data.Y;
+            var upper = new double[y.Length];
+            var lower = new double[y.Length];
+            for (var i = 0; i < y.Length; i++)
+            {
+                var v = y[i];
+                if (!double.IsFinite(v))
+                {
+                    upper[i] = lower[i] = double.NaN;
+                    continue;
+                }
+
+                ref var sum = ref v >= 0 ? ref positive[i] : ref negative[i];
+                lower[i] = sum;
+                upper[i] = sum + v;
+                sum += v;
+            }
+
+            r.Upper = upper;
+            r.Lower = lower;
+        }
+
+        return true;
     }
 
     private static (double Min, double Max, double BarSpacing) XExtent(List<Resolved> series, AxisSpec axis, XKind kind, bool hasBars,
@@ -816,27 +863,6 @@ public static partial class ChartLayout
         }
 
         return (axis.Min ?? min, axis.Max ?? max, spacing);
-    }
-
-    private static double[] PixelX(SeriesData data, XKind kind, LinearScale? scale, BandScale? band, Dictionary<string, int> categoryIndex)
-    {
-        var px = new double[data.Count];
-        for (var i = 0; i < px.Length; i++)
-        {
-            if (kind == XKind.Category)
-            {
-                var local = (int)data.X[i];
-                px[i] = local >= 0 && local < data.Categories.Count && categoryIndex.TryGetValue(data.Categories[local], out var global)
-                    ? band!.Center(global)
-                    : double.NaN;
-            }
-            else
-            {
-                px[i] = scale!.Map(data.X[i]);
-            }
-        }
-
-        return px;
     }
 
     private static TooltipSeries TooltipFor(Resolved r, HitTestIndex.SeriesHits hits, SeriesBuildContext context, Func<double, string> formatX,
