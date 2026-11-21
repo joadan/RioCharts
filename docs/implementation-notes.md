@@ -392,3 +392,35 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   fails to format falls back to the English one, never throwing.
 - **Description wording:** the full description says "trend rising/falling/stable" (was
   "increasing/decreasing"), the same words as the compact summary.
+
+
+## Trimming, native AOT and static rendering
+
+- **Analyzers:** Core, Blazor, Skia and AI set `IsAotCompatible` (trimmable, trim/AOT/single-file
+  analyzers on). The only warnings were reflection-based System.Text.Json in `ChartSpecJson` and
+  the AI tool's result JSON.
+- **Spec JSON** uses `ChartSpecJsonContext` (source-generated, Web defaults, plus primitive types
+  for the `object?` values of specs built in code). camelCase enum values come from generic
+  `JsonStringEnumConverter<T>` instances, one per spec enum, added to the options.
+- **Init-only properties:** the generator treats them as constructor arguments. It has no
+  `CreateObject` for the spec records, cannot set them afterwards ("Setting init-only properties
+  is not supported in source generation mode") and writes `default(T)` for a property missing
+  from the JSON, so an annotation's axis became x and `"tooltip": {}` turned the tooltip off.
+  `Parse` therefore fills every missing property from a serialized default instance before
+  deserializing, walking nested objects and lists through the generated metadata. The default
+  instances come from `Factories` (one entry per spec record). A test checks that every object type
+  reachable from `ChartSpec` has one. Changing the records to `set` would have avoided this but
+  made the spec mutable.
+- **Skipping defaults when writing** uses the same factories (`JsonTypeInfo.CreateObject` is null
+  for these types).
+- **Proof:** `tests/RioCharts.AotSmoke` (`PublishAot`, warnings as errors except NuGet audit
+  advisories). Locally it is published trimmed (no C++ linker on the dev machine) and passes. The
+  "Native AOT" workflow publishes and runs it on Linux. The docs site (Blazor WebAssembly, trimmed
+  on publish) publishes without trimming warnings.
+- **Static rendering:** `HtmlRenderer` renders the chart without calling JS. `Live` (`Interactive`
+  and `RendererInfo.IsInteractive`) gates the tab stop, hover layer, download button and canvas.
+  Static pages and prerendering get plain SVG at `Width` or the default width, and the interactive
+  render adds the rest. bUnit tests set an interactive `RendererInfo`.
+- **NuGet advisory:** restoring the smoke app pulls `Microsoft.DotNet.ILCompiler` 10.0.12, which
+  has a high-severity advisory (NU1903). It is a build-time compiler for this test app only, not
+  a dependency of the packages; a newer SDK brings a fixed version.

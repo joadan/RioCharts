@@ -225,7 +225,13 @@ public partial class RioChart<TItem> : IChartContext
         : BuildSpec();
 
     /// <summary>The canvas series layer needs the JS module; without it the series stay SVG.</summary>
-    private bool UsesCanvas => SeriesLayer == SeriesLayer.Canvas && Interactive;
+    private bool UsesCanvas => SeriesLayer == SeriesLayer.Canvas && Live;
+
+    /// <summary>
+    /// Interactive and rendered interactively. Static server rendering and prerendering have no JS,
+    /// so they draw plain SVG: no tab stop, download button, hover layer or (blank) canvas.
+    /// </summary>
+    private bool Live => Interactive && RendererInfo.IsInteractive;
 
     /// <summary>Compact from the parameter or the spec.</summary>
     private bool IsCompact => Compact || Spec?.Compact == true;
@@ -700,7 +706,7 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>Whether the chart is a tab stop with arrow-key navigation: on, with points or slices to move between.</summary>
     private bool KeyboardEnabled(ChartLayoutResult layout) =>
-        (KeyboardNavigation ?? !IsCompact) && Interactive && layout.HasData && (layout.Tooltip.Series.Any(s => s.X.Length > 0) || layout.Tooltip.Slices.Count > 0);
+        (KeyboardNavigation ?? !IsCompact) && Live && layout.HasData && (layout.Tooltip.Series.Any(s => s.X.Length > 0) || layout.Tooltip.Slices.Count > 0);
 
     /// <summary>The instructions screen readers read with the chart (aria-describedby).</summary>
     private string KeyboardHelp(ChartLayoutResult layout)

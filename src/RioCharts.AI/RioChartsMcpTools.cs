@@ -60,7 +60,7 @@ public sealed class RioChartsMcpTools(ChartTool tool)
     /// </summary>
     internal static CallToolResult ToCallToolResult(ChartToolResult result)
     {
-        var text = JsonSerializer.Serialize(result, JsonSerializerOptions.Web);
+        var text = JsonSerializer.Serialize(result, ChartToolJsonContext.Default.ChartToolResult);
         var content = new List<ContentBlock> { new TextContentBlock { Text = text } };
         if (result.Png is { } png)
         {

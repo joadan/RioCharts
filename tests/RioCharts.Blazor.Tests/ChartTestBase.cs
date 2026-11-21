@@ -13,6 +13,8 @@ public abstract class ChartTestBase : BunitContext
 
     protected ChartTestBase()
     {
+        // Like a chart on an interactive page (static rendering is in StaticRenderingTests).
+        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", isInteractive: true));
         JSInterop.Mode = JSRuntimeMode.Strict;
         Module = JSInterop.SetupModule(ModulePath);
         Init = Module.Setup<ChartContainerInfo>("init", _ => true);

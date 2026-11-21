@@ -21,6 +21,7 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.Mcp/` — `riocharts-mcp`, a local stdio MCP server packed as a .NET tool: `ServerOptions` (arguments), `LocalServer` (tools: render_chart, list_datasets, get_chart_schema).
 - `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
 - `tests/RioCharts.Tests/` — xUnit tests (Core, AI, MCP, Skia).
+- `tests/RioCharts.AotSmoke/` — console app published with native AOT (`.github/workflows/aot.yml`); exits 0 when its checks pass. Locally without a C++ linker: `dotnet publish tests/RioCharts.AotSmoke -c Release -r win-x64 --self-contained -p:PublishAot=false -p:PublishTrimmed=true`.
 - `tests/RioCharts.Blazor.Tests/` — bUnit component tests for `<RioChart>`; `ChartTestBase` fakes the JS module in strict mode, so add a setup when the component calls a new JS function.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `samples/RioCharts.Mcp.Sample/` — sample data (CSV/JSON) and agent config for trying `riocharts-mcp`; not a .NET project. Its `.mcp.json` applies only when an agent is opened in that folder.
@@ -54,4 +55,6 @@ Stop the running demo before rebuilding; it locks the library DLLs.
 - Edge cases (empty, single point, equal values, gaps) must render a clean state, never throw.
 - Keep the JS module tiny: measurement and high-frequency interaction only.
 - Temperatures in examples are in °C.
+- Libraries are `IsAotCompatible`: keep the build free of IL2xxx/IL3xxx warnings. JSON goes through source-generated contexts (`ChartSpecJsonContext`, `ChartToolJsonContext`), never reflection. A new spec record type needs an entry in `ChartSpecJson.Factories`.
+- Blazor features that need JS check `Live` (interactive and rendered interactively), not `Interactive` alone.
 - Text a chart writes itself (empty states, buttons, screen reader text) comes from `ChartTexts`, never a string literal; add a key with English and all built-in languages. Warnings and errors for developers stay English.

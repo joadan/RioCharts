@@ -1,0 +1,34 @@
+name: Native AOT
+
+# Publishes tests/RioCharts.AotSmoke with native AOT (trimmed, no JIT) and runs it: JSON specs,
+# binding, layout, texts, SVG/PNG export and the AI tool. The publish fails on any trimming or
+# AOT warning, and the run fails when a check does.
+on:
+  push:
+    branches: [master]
+    paths: ['src/**', 'tests/RioCharts.AotSmoke/**', '.github/workflows/aot.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # Nerdbank.GitVersioning needs the history
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Native toolchain
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish with native AOT
+        run: dotnet publish tests/RioCharts.AotSmoke/RioCharts.AotSmoke.csproj -c Release -r linux-x64 -o aot
+
+      - name: Run
+        run: ./aot/RioCharts.AotSmoke

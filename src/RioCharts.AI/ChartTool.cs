@@ -254,7 +254,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
     /// <summary>A render_chart result as AI content: the result JSON and, on success, the image.</summary>
     public static List<AIContent> ToAIContents(ChartToolResult result)
     {
-        var contents = new List<AIContent> { new TextContent(JsonSerializer.Serialize(result, JsonSerializerOptions.Web)) };
+        var contents = new List<AIContent> { new TextContent(JsonSerializer.Serialize(result, ChartToolJsonContext.Default.ChartToolResult)) };
         if (result.Png is { } png)
         {
             contents.Add(new DataContent(png, "image/png") { Name = ImageName(result, "chart.png") });
@@ -456,3 +456,8 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         return sb.ToString();
     }
 }
+
+/// <summary>Source-generated JSON for tool results (trimming and native AOT safe).</summary>
+[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
+[JsonSerializable(typeof(ChartToolResult))]
+internal sealed partial class ChartToolJsonContext : JsonSerializerContext;

@@ -33,11 +33,16 @@ public static class ChartSpecJson
     public const int MaxInlineRows = 1000;
     public const int MaxAnnotations = 50;
 
-    /// <summary>camelCase names and enum values, nulls and defaults left out when writing.</summary>
+    /// <summary>
+    /// camelCase names and enum values, nulls and defaults left out when writing. Read specs with
+    /// <see cref="Parse"/>: the source-generated metadata cannot keep the defaults of properties
+    /// missing from the JSON, so Parse fills them in first.
+    /// </summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
     private static JsonSerializerOptions CreateOptions()
     {
+        // Source-generated metadata (ChartSpecJsonContext): no reflection, so trimming and native AOT keep working.
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
             WriteIndented = true,
@@ -45,26 +50,104 @@ public static class ChartSpecJson
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { SkipDefaults } },
+            TypeInfoResolver = ChartSpecJsonContext.Default.WithAddedModifier(SkipDefaults),
         };
-        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+
+        // camelCase enum values ("line", "monotone"); generic converters need no runtime code generation.
+        var camel = JsonNamingPolicy.CamelCase;
+        options.Converters.Add(new JsonStringEnumConverter<SeriesType>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<CurveType>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<PointHighlight>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<ScaleType>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<AxisPosition>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<LegendMode>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<LegendPosition>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<AnnotationType>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<AnnotationAxis>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<LabelPosition>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<AnnotationLayer>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<FilterOp>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<TimeBucket>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<Aggregate>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<SortOrder>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<UnspecifiedTimes>(camel));
         options.MakeReadOnly();
         return options;
     }
 
+    private static JsonTypeInfo<ChartSpec> SpecInfo => (JsonTypeInfo<ChartSpec>)Options.GetTypeInfo(typeof(ChartSpec));
+
     // ---------- Writing ----------
 
     /// <summary>The spec as compact JSON (only what differs from the defaults).</summary>
-    public static string Serialize(ChartSpec spec) => JsonSerializer.Serialize(spec, Options);
+    public static string Serialize(ChartSpec spec) => JsonSerializer.Serialize(spec, SpecInfo);
+
+    /// <summary>
+    /// The spec types, created with their defaults. Source generation treats init-only properties
+    /// as constructor arguments, so it has no CreateObject for them and would write default(T) for
+    /// a property missing from the JSON (an annotation's axis would become x, a tooltip disabled).
+    /// </summary>
+    private static readonly Dictionary<Type, Func<object>> Factories = new()
+    {
+        [typeof(ChartSpec)] = () => new ChartSpec(),
+        [typeof(AxisSpec)] = () => new AxisSpec(),
+        [typeof(LegendSpec)] = () => new LegendSpec(),
+        [typeof(TooltipSpec)] = () => new TooltipSpec(),
+        [typeof(SeriesSpec)] = () => new SeriesSpec(),
+        [typeof(AnnotationSpec)] = () => new AnnotationSpec(),
+        [typeof(FilterSpec)] = () => new FilterSpec(),
+    };
+
+    /// <summary>The spec types with defaults (for a test that every object type in a spec is listed).</summary>
+    internal static IEnumerable<Type> TypesWithDefaults => Factories.Keys;
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, JsonObject> DefaultNodes = new();
+
+    /// <summary>Adds the default value of every property missing from the JSON, through nested objects and lists.</summary>
+    private static void FillDefaults(JsonNode node, JsonTypeInfo info)
+    {
+        if (info.Kind == JsonTypeInfoKind.Object && node is JsonObject obj)
+        {
+            var defaults = Factories.TryGetValue(info.Type, out var create)
+                ? DefaultNodes.GetOrAdd(info.Type, t => (JsonObject)JsonSerializer.SerializeToNode(create(), ChartSpecJsonContext.Default.GetTypeInfo(t)!)!)
+                : null;
+            foreach (var property in info.Properties)
+            {
+                if (obj.TryGetPropertyValue(property.Name, out var value))
+                {
+                    if (value is not null && Options.TryGetTypeInfo(property.PropertyType, out var child))
+                    {
+                        FillDefaults(value, child);
+                    }
+                }
+                else if (defaults?[property.Name] is { } defaultValue)
+                {
+                    obj[property.Name] = defaultValue.DeepClone();
+                }
+            }
+        }
+        else if (info.Kind == JsonTypeInfoKind.Enumerable && node is JsonArray array && info.ElementType is { } elementType
+            && Options.TryGetTypeInfo(elementType, out var element))
+        {
+            foreach (var item in array)
+            {
+                if (item is not null)
+                {
+                    FillDefaults(item, element);
+                }
+            }
+        }
+    }
 
     private static void SkipDefaults(JsonTypeInfo type)
     {
-        if (type.Kind != JsonTypeInfoKind.Object || type.Type.GetConstructor(Type.EmptyTypes) is null)
+        var create = type.CreateObject ?? Factories.GetValueOrDefault(type.Type);
+        if (type.Kind != JsonTypeInfoKind.Object || create is null)
         {
             return;
         }
 
-        var defaults = Activator.CreateInstance(type.Type);
+        var defaults = create();
         foreach (var property in type.Properties)
         {
             var getter = property.Get;
@@ -90,7 +173,7 @@ public static class ChartSpecJson
     /// <summary>The JSON schema of a chart spec, with a description for every property.</summary>
     public static JsonNode Schema()
     {
-        var schema = Options.GetJsonSchemaAsNode(typeof(ChartSpec), new JsonSchemaExporterOptions
+        var schema = SpecInfo.GetJsonSchemaAsNode(new JsonSchemaExporterOptions
         {
             TreatNullObliviousAsNonNullable = true,
             TransformSchemaNode = (context, node) =>
@@ -150,7 +233,8 @@ public static class ChartSpecJson
 
         try
         {
-            var spec = root.Deserialize<ChartSpec>(Options);
+            FillDefaults(root, SpecInfo);
+            var spec = root.Deserialize(SpecInfo);
             return new SpecParseResult(spec, errors, warnings);
         }
         catch (JsonException e)
@@ -419,3 +503,23 @@ public static class ChartSpecJson
         }
     }
 }
+
+/// <summary>
+/// Source-generated JSON metadata for specs. The primitive types are for the <c>object?</c> values
+/// in specs built in code (inline data rows, annotation positions); parsed specs hold JsonElements.
+/// </summary>
+[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
+[JsonSerializable(typeof(ChartSpec))]
+[JsonSerializable(typeof(JsonElement))]
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(double))]
+[JsonSerializable(typeof(float))]
+[JsonSerializable(typeof(decimal))]
+[JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(long))]
+[JsonSerializable(typeof(bool))]
+[JsonSerializable(typeof(DateTime))]
+[JsonSerializable(typeof(DateTimeOffset))]
+[JsonSerializable(typeof(DateOnly))]
+[JsonSerializable(typeof(TimeOnly))]
+internal sealed partial class ChartSpecJsonContext : JsonSerializerContext;

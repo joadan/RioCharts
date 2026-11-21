@@ -75,6 +75,24 @@
     <li>The chart fills its container's width and is 300 px high by default (<code>Height</code>).</li>
 </ul>
 
+<h2>Render modes, trimming and native AOT</h2>
+<ul>
+    <li>
+        <strong>Interactive pages</strong> (Server, WebAssembly or Auto) get everything: tooltips, zoom, keyboard navigation and downloads.
+    </li>
+    <li>
+        <strong>Static server rendering and prerendering</strong> draw the chart as plain SVG, with no JS. It is laid out at <code>Width</code>
+        (or 640 px) and scales to its container. Tooltips, the download button and keyboard navigation appear once the page is interactive.
+        Canvas series are drawn as SVG until then, so the prerendered chart is never blank.
+    </li>
+    <li>
+        <strong>Trimming and native AOT:</strong> the libraries are marked AOT-compatible and publish without trimming warnings. JSON specs use
+        source-generated serialization, so Blazor WebAssembly, trimmed servers and native AOT apps (also with Skia export and the AI tool) work
+        as they do in development. Read specs with <code>ChartSpecJson.Parse</code>; it fills in defaults that the generated serializer
+        cannot.
+    </li>
+</ul>
+
 @code {
     private sealed record Package(string Id, string Text);
 

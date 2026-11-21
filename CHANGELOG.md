@@ -12,6 +12,17 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Trimming and native AOT: Core, Blazor, Skia and AI are marked `IsAotCompatible` and build
+  without trimming or AOT warnings. Spec JSON uses source-generated metadata
+  (`ChartSpecJson.Options`); `ChartSpecJson.Parse` fills in the defaults of properties missing from
+  the JSON, which generated metadata cannot keep for `init` properties. Deserializing a
+  `ChartSpec` yourself with `JsonSerializer` and `ChartSpecJson.Options` does not do that: use
+  `Parse`. The AI tool's result JSON is source-generated too. `tests/RioCharts.AotSmoke` checks
+  specs, binding, layout, texts, SVG/PNG export and the AI tool in a native AOT build (the "Native
+  AOT" workflow runs it on Linux).
+- Static server rendering and prerendering draw plain SVG (`RendererInfo.IsInteractive`): no
+  tab stop, download button or hover layer, and canvas series are drawn as SVG until the page is
+  interactive, so a prerendered canvas chart is no longer blank.
 - Languages: the chart's own texts ("No data available", "Reset zoom", "Total", "Other", the
   download button, the chart description, axis and legend names and keyboard help for screen
   readers) are in `ChartTexts`, built in for English, Swedish, Norwegian, Danish, Finnish, German,
