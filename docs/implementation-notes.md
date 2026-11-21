@@ -655,7 +655,10 @@ Design.md "Programmatic interaction": selection (`@bind-SelectedItems`, `@bind-S
   and Shift+drag still pans; zoom with Ctrl/Cmd+wheel, pinch or the keys.
 - **State is items, not indexes:** the chart keeps the selected `TItem`s, so a selection survives
   new data, sorting and zoom. A range also keeps its x values, and selects the items of the visible
-  series' points inside it (`GetItemsInRange`, binary search on the sorted x).
+  series' points inside it (`GetItemsInRange`, binary search on the sorted x). When the parent changes
+  `SelectedRange` without new `SelectedItems` (e.g. a Clear button setting the range to null), the
+  items follow the range after the next layout and `SelectedItemsChanged` reports them; until then
+  no point markers are drawn, so the old range's items never show as selected points.
 - **Drawn by Core** (`LayoutOptions.SelectedRange`, `SelectedPoints`): a band in the first series
   color behind the series with edge lines (like the zoom drag), markers on lines, areas and
   scatter points, an outline around bars (its own segment when stacked). In the scene, not the JS

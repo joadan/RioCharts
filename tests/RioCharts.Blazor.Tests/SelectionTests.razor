@@ -169,4 +169,43 @@
         Assert.Equal(2, calls.Count);
         Assert.True((double)calls[^1].Arguments[1]! < (double)calls[0].Arguments[1]!); // narrower chart, same x
     }
+
+    [Fact]
+    public void Clearing_a_bound_range_clears_its_items_instead_of_showing_them_as_points()
+    {
+        // Like @bind-SelectedRange and @bind-SelectedItems on a page with a Clear button.
+        ChartRange? range = null;
+        IReadOnlyCollection<Reading> items = [];
+        RenderFragment Chart() => @<RioChart TItem="Reading" Selection="SelectionMode.Range"
+                                             SelectedRange="range" SelectedRangeChanged="@((ChartRange? r) => range = r)"
+                                             SelectedItems="items" SelectedItemsChanged="@((IReadOnlyCollection<Reading> i) => items = i)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>;
+        var cut = Render<RioChart<Reading>>(Chart());
+
+        cut.InvokeAsync(() => cut.Instance.OnRangeSelected(TimeValue.FromDateTime(Start), TimeValue.FromDateTime(Start.AddHours(2))));
+        Assert.Equal(3, items.Count);
+
+        // The page's Clear button: the range goes, the bound items stay what the chart last reported.
+        cut.Render(p => p.Add(c => c.SelectedRange, null).Add(c => c.SelectedItems, items));
+
+        Assert.Empty(items);
+        Assert.Empty(cut.Instance.GetSelectedItems());
+        Assert.Empty(cut.FindAll(".rio-selected-point"));
+        Assert.Empty(cut.FindAll(".rio-selection"));
+    }
+
+    [Fact]
+    public void A_range_from_the_parent_selects_the_items_inside_it()
+    {
+        IReadOnlyCollection<Reading>? items = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" SelectedRange="@ChartRange.Of(Start.AddHours(2), Start.AddHours(3))"
+                                                      SelectedItemsChanged="@((IReadOnlyCollection<Reading> i) => items = i)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.WaitForAssertion(() => Assert.Equal([Supply[2], Supply[3]], items));
+        Assert.Single(cut.FindAll(".rio-selection"));
+        Assert.Empty(cut.FindAll(".rio-selected-point"));
+    }
 }

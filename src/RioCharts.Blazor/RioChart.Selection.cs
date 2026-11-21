@@ -14,6 +14,10 @@ public partial class RioChart<TItem>
     private ChartRange? _lastSelectedRangeParameter;
     private object? _tooltipX;
 
+    // SelectedRange changed from the parent without new SelectedItems: the items follow the range
+    // after the next layout (they may need the data), e.g. clearing the range clears its items.
+    private bool _rangeItemsPending;
+
     /// <summary>
     /// What the user can select: points (click) or an x range (drag). Default none. Selections
     /// from code (<see cref="SelectedItems"/>, <see cref="SelectedRange"/>, <see cref="SelectItemsAsync"/>)
@@ -134,7 +138,8 @@ public partial class RioChart<TItem>
     /// <summary>Takes SelectedItems/SelectedRange from the parent when they are new references.</summary>
     private void SelectionParametersSet()
     {
-        if (!ReferenceEquals(SelectedItems, _lastSelectedItemsParameter))
+        var itemsChanged = !ReferenceEquals(SelectedItems, _lastSelectedItemsParameter);
+        if (itemsChanged)
         {
             _lastSelectedItemsParameter = SelectedItems;
             _selected = [.. (SelectedItems ?? []).Distinct()];
@@ -145,8 +150,22 @@ public partial class RioChart<TItem>
         {
             _lastSelectedRangeParameter = SelectedRange;
             _selectedRange = SelectedRange;
+            _rangeItemsPending = !itemsChanged;
             _dirty = true;
         }
+    }
+
+    /// <summary>After a layout: give the items of a range set by the parent (none when it was cleared).</summary>
+    private Task SyncRangeItemsAsync()
+    {
+        if (!_rangeItemsPending || _layout is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        _rangeItemsPending = false;
+        var items = ToRange(_selectedRange) is { } r ? ItemsInRange(r) : [];
+        return items.SequenceEqual(_selected) ? Task.CompletedTask : SetItemsAsync(items);
     }
 
     /// <summary>The selection for the layout: the range, or else the selected points per series.</summary>
@@ -154,7 +173,7 @@ public partial class RioChart<TItem>
     {
         range = _selectedRange is null ? null : ToRange(_selectedRange);
         points = null;
-        if (range is not null || _selected.Count == 0 || Spec is not null)
+        if (range is not null || _rangeItemsPending || _selected.Count == 0 || Spec is not null)
         {
             return;
         }
@@ -240,16 +259,11 @@ public partial class RioChart<TItem>
             return;
         }
 
+        _rangeItemsPending = false;
         _selected = [.. items];
         _selectedRange = range;
         _dirty = true;
-        if (SelectedItemsChanged.HasDelegate)
-        {
-            // The parent passes this list back as SelectedItems; it matches the current state.
-            IReadOnlyCollection<TItem> bound = _selected.ToArray();
-            _lastSelectedItemsParameter = bound;
-            await SelectedItemsChanged.InvokeAsync(bound);
-        }
+        await NotifyItemsAsync();
 
         if (SelectedRangeChanged.HasDelegate)
         {
@@ -259,6 +273,27 @@ public partial class RioChart<TItem>
 
         await OnSelectionChanged.InvokeAsync(new SelectionChangedEventArgs<TItem>([.. _selected], range));
         StateHasChanged();
+    }
+
+    /// <summary>The range came from the parent; only the items change (and are reported).</summary>
+    private async Task SetItemsAsync(IReadOnlyList<TItem> items)
+    {
+        _selected = [.. items];
+        _dirty = true;
+        await NotifyItemsAsync();
+        await OnSelectionChanged.InvokeAsync(new SelectionChangedEventArgs<TItem>([.. _selected], _selectedRange));
+        StateHasChanged();
+    }
+
+    private async Task NotifyItemsAsync()
+    {
+        if (SelectedItemsChanged.HasDelegate)
+        {
+            // The parent passes this list back as SelectedItems; it matches the current state.
+            IReadOnlyCollection<TItem> bound = _selected.ToArray();
+            _lastSelectedItemsParameter = bound;
+            await SelectedItemsChanged.InvokeAsync(bound);
+        }
     }
 
     /// <summary>A click on a point with Selection="Points": select it, or add/remove it (additive: Ctrl/Cmd/Shift).</summary>

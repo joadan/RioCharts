@@ -632,6 +632,7 @@ public partial class RioChart<TItem> : IChartContext
             return;
         }
 
+        await SyncRangeItemsAsync();
         await FocusExportMenuAsync();
         try
         {
