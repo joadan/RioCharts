@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
@@ -18,7 +17,22 @@ public class SnapshotTests
 {
     private static readonly DateTime Start = new(2026, 11, 16);
 
-    private static string SnapshotDir([CallerFilePath] string path = "") => Path.Combine(Path.GetDirectoryName(path)!, "Snapshots");
+    /// <summary>
+    /// The Snapshots folder next to the test project, found from the test assembly (bin/…): CI builds
+    /// map source paths to "/_/", so [CallerFilePath] does not point at the checkout there.
+    /// </summary>
+    private static string SnapshotDir()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "RioCharts.Tests.csproj")))
+            {
+                return Path.Combine(dir.FullName, "Snapshots");
+            }
+        }
+
+        throw new InvalidOperationException($"RioCharts.Tests.csproj not found above {AppContext.BaseDirectory}.");
+    }
 
     private static SeriesData Hourly(int hours, Func<int, double> value, int step = 1) =>
         SeriesData.From(Enumerable.Range(0, hours / step).Select(i => Start.AddHours(i * step)).ToArray(),
