@@ -642,6 +642,36 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
     server: for the 200k points on the published docs site, about 0.6 s before these fixes and
     0.1 s after.
 
+## Selection and tooltip from code
+
+Design.md "Programmatic interaction": selection (`@bind-SelectedItems`, `@bind-SelectedRange`,
+`OnSelectionChanged`) and `ShowTooltipAsync`/`HideTooltipAsync`.
+
+- **Modes:** `Selection="SelectionMode.Points"` or `Range`; `None` (default) still shows selections
+  set from code. Points: a click selects the point's items (all of them when the series
+  aggregates), Ctrl/Cmd/Shift+click adds or removes, a click beside the points or clicking the only
+  selected point again clears; Enter on a focused point selects it (Shift+Enter adds). Range: a
+  mouse drag across the plot, a click without a drag clears. With `Zoomable` too, the drag selects
+  and Shift+drag still pans; zoom with Ctrl/Cmd+wheel, pinch or the keys.
+- **State is items, not indexes:** the chart keeps the selected `TItem`s, so a selection survives
+  new data, sorting and zoom. A range also keeps its x values, and selects the items of the visible
+  series' points inside it (`GetItemsInRange`, binary search on the sorted x).
+- **Drawn by Core** (`LayoutOptions.SelectedRange`, `SelectedPoints`): a band in the first series
+  color behind the series with edge lines (like the zoom drag), markers on lines, areas and
+  scatter points, an outline around bars (its own segment when stacked). In the scene, not the JS
+  hover layer, so it shows without JS, in exports and moves with the pan preview. A range shows as
+  the band only, not as markers.
+- **Item to point:** each layout maps the selected items to point indexes per series (through
+  `InputIndexes`), O(points) per layout and only while points are selected.
+- **Tooltip from code:** .NET maps the x value to a pixel (scale or category band) and calls
+  `showTooltip`; JS draws it like keyboard focus (shared rows, or the nearest point when the
+  tooltip is not shared), and linked charts show the crosshair. .NET sends it again after each new
+  layout, and JS puts it back when the pointer leaves, until `HideTooltipAsync`.
+- **Not yet:** drawing the selection on horizontal bars, heatmaps and pies (clicks there still
+  select and raise the events), point selection for columnar data (no items), selecting a range
+  with the keyboard or on touch screens, a shared selection across linked charts, and
+  highlighting a series from code.
+
 ## Public API surface
 
 - Reviewed before the first release. Public: the spec model, data types, scales, formatters, the

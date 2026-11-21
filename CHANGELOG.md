@@ -24,6 +24,14 @@ changes are called out under **Breaking**.
   group, so the same time sits at the same place in all of them and the crosshair runs in one
   vertical line. Before, a chart with narrower labels (e.g. "2k" under "400") started its plot
   further left. Core: `LayoutOptions.MinInsets` and `ChartLayoutResult.NeededInsets`.
+- Selection: `Selection="SelectionMode.Points"` selects points and bars by clicking
+  (Ctrl/Cmd/Shift+click adds or removes), `SelectionMode.Range` selects an x range by dragging.
+  Bind `@bind-SelectedItems` and `@bind-SelectedRange`, handle `OnSelectionChanged`, or call
+  `SelectItemsAsync`, `SelectRangeAsync`, `ClearSelectionAsync`, `GetSelectedItems`,
+  `GetSelectedRange` and `GetItemsInRange`. Selected points get a marker (bars an outline), a
+  range a light band. Core: `LayoutOptions.SelectedRange` and `SelectedPoints`.
+- `ShowTooltipAsync(x)` and `HideTooltipAsync()` show and hide the crosshair and tooltip at an x
+  value from code, e.g. when hovering a table row; linked charts follow.
 
 ## 0.1.50-preview (2026-11-21)
 

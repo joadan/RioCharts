@@ -1,0 +1,172 @@
+@inherits ChartTestBase
+
+@code {
+    [Fact]
+    public void Clicking_a_point_selects_it_and_clicking_it_again_clears_it()
+    {
+        IReadOnlyCollection<Reading>? bound = null;
+        SelectionChangedEventArgs<Reading>? changed = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="SelectionMode.Points"
+                                                      SelectedItemsChanged="@((IReadOnlyCollection<Reading> items) => bound = items)"
+                                                      OnSelectionChanged="@((SelectionChangedEventArgs<Reading> e) => changed = e)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 1, false)); // what the JS module calls
+
+        Assert.Equal([Supply[1]], bound);
+        Assert.Equal([Supply[1]], changed?.Items);
+        Assert.Null(changed?.Range);
+        Assert.Single(cut.FindAll(".rio-selected-point"));
+        Assert.Equal("points", Field(Payload(Calls("update")[^1]), "select"));
+        Assert.Equal(true, Field(Payload(Calls("update")[^1]), "sel"));
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 1, false));
+
+        Assert.Empty(bound!);
+        Assert.Empty(cut.FindAll(".rio-selected-point"));
+    }
+
+    [Fact]
+    public void Additive_clicks_add_and_remove_points()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="SelectionMode.Points">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 0, false));
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 2, true));
+        Assert.Equal([Supply[0], Supply[2]], cut.Instance.GetSelectedItems());
+        Assert.Equal(2, cut.FindAll(".rio-selected-point").Count);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 0, true));
+        Assert.Equal([Supply[2]], cut.Instance.GetSelectedItems());
+
+        cut.InvokeAsync(() => cut.Instance.OnSelectionCleared()); // a click beside the points
+        Assert.Empty(cut.Instance.GetSelectedItems());
+    }
+
+    [Fact]
+    public void Clicks_do_not_select_without_a_selection_mode()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" OnPointClick="@((PointClickEventArgs<Reading> _) => { })">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 1, false));
+
+        Assert.Empty(cut.Instance.GetSelectedItems());
+        Assert.Null(Field(Payload(Calls("update")[^1]), "select"));
+    }
+
+    [Fact]
+    public void A_dragged_range_selects_the_items_inside_it()
+    {
+        ChartRange? range = null;
+        IReadOnlyCollection<Reading>? items = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="SelectionMode.Range"
+                                                      SelectedRangeChanged="@((ChartRange? r) => range = r)"
+                                                      SelectedItemsChanged="@((IReadOnlyCollection<Reading> i) => items = i)">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        Assert.Equal("range", Field(Payload(Calls("update")[^1]), "select"));
+
+        var min = TimeValue.FromDateTime(Start.AddMinutes(30));
+        var max = TimeValue.FromDateTime(Start.AddMinutes(150));
+        cut.InvokeAsync(() => cut.Instance.OnRangeSelected(min, max));
+
+        Assert.Equal(Start.AddMinutes(30), range?.Min);
+        Assert.Equal(Start.AddMinutes(150), range?.Max);
+        Assert.Equal([Supply[1], Supply[2], Extract[1], Extract[2]], items);
+        Assert.Single(cut.FindAll(".rio-selection"));
+        Assert.Empty(cut.FindAll(".rio-selected-point")); // a range shows as a band only
+
+        cut.InvokeAsync(() => cut.Instance.OnSelectionCleared());
+        Assert.Null(range);
+        Assert.Empty(cut.FindAll(".rio-selection"));
+    }
+
+    [Fact]
+    public void Selection_from_parameters_and_code_is_drawn_without_a_selection_mode()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" SelectedItems="@([Supply[3]])">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        Assert.Single(cut.FindAll(".rio-selected-point"));
+
+        cut.InvokeAsync(() => cut.Instance.SelectRangeAsync(ChartRange.Of(Start, Start.AddHours(1))));
+        Assert.Single(cut.FindAll(".rio-selection"));
+        Assert.Equal([Supply[0], Supply[1]], cut.Instance.GetSelectedItems());
+
+        cut.InvokeAsync(() => cut.Instance.ClearSelectionAsync());
+        Assert.Empty(cut.FindAll(".rio-selection"));
+        Assert.Null(cut.Instance.GetSelectedRange());
+    }
+
+    [Fact]
+    public void Bars_get_an_outline_when_selected()
+    {
+        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms" Selection="SelectionMode.Points">
+            <BarSeries Id="alarms" Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("alarms", 0, false));
+
+        // The aggregated bar stands for two alarms: both are selected, one bar is outlined.
+        Assert.Equal([Alarms[0], Alarms[2]], cut.Instance.GetSelectedItems());
+        Assert.Single(cut.FindAll(".rio-selected-bar"));
+    }
+
+    [Fact]
+    public void GetItemsInRange_skips_hidden_series()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" HiddenSeries="@(["extract"])">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal([Supply[2], Supply[3]], cut.Instance.GetItemsInRange(ChartRange.Of(Start.AddHours(2), Start.AddHours(5))));
+    }
+
+    [Fact]
+    public void ShowTooltip_sends_the_x_position_and_HideTooltip_hides_it()
+    {
+        var show = Module.SetupVoid("showTooltip", _ => true);
+        show.SetVoidResult();
+        Module.SetupVoid("hideTooltip", _ => true).SetVoidResult();
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.ShowTooltipAsync(Start.AddHours(3)));
+        cut.InvokeAsync(() => cut.Instance.ShowTooltipAsync(Start));
+
+        var calls = Calls("showTooltip");
+        Assert.Equal(2, calls.Count);
+        Assert.True((double)calls[0].Arguments[1]! > (double)calls[1].Arguments[1]!); // 03:00 is right of 00:00
+
+        cut.InvokeAsync(() => cut.Instance.HideTooltipAsync());
+        Assert.Single(Calls("hideTooltip"));
+
+        // Hidden: a new layout (here after a resize) no longer brings it back.
+        cut.InvokeAsync(() => cut.Instance.OnResize(500));
+        Assert.Equal(2, Calls("showTooltip").Count);
+    }
+
+    [Fact]
+    public void A_tooltip_shown_from_code_follows_a_new_layout()
+    {
+        Module.SetupVoid("showTooltip", _ => true).SetVoidResult();
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.ShowTooltipAsync(Start.AddHours(3)));
+        cut.InvokeAsync(() => cut.Instance.OnResize(400));
+
+        var calls = Calls("showTooltip");
+        Assert.Equal(2, calls.Count);
+        Assert.True((double)calls[^1].Arguments[1]! < (double)calls[0].Arguments[1]!); // narrower chart, same x
+    }
+}

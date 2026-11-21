@@ -27,7 +27,9 @@ internal sealed record UpdateModel(
     IReadOnlyList<SeriesModel> Series,
     IReadOnlyList<SliceModel> Slices,
     InsetsModel? Need = null,
-    InsetsModel? At = null);
+    InsetsModel? At = null,
+    string? Select = null,
+    bool Sel = false);
 
 /// <summary>Plot insets: what the chart's labels need, or the group minimum it was laid out with.</summary>
 internal sealed record InsetsModel(double L, double R);

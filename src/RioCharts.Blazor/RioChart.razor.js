@@ -114,6 +114,7 @@ export function init(container, dotnet) {
         if (!state.drag) {
             hide(state);
             broadcastHover(state, null);
+            showShown(state);
         }
     };
     state.onClick = e => click(state, e);
@@ -192,12 +193,67 @@ export function update(container, model) {
     } else {
         state.kb = null;
         hide(state);
+        showShown(state);
     }
     joinGroup(state, model && model.group);
     alignGroup(state.group);
     if (state.svg) {
         state.svg.classList.toggle('rio-clickable', !!(model && model.click));
-        state.svg.classList.toggle('rio-zoomable', !!(model && model.zoom));
+        state.svg.classList.toggle('rio-zoomable', !!(model && (model.zoom || model.select === 'range')));
+    }
+}
+
+// ShowTooltipAsync: the crosshair and tooltip at an x (chart units), as if hovered. It stays until
+// hideTooltip, and comes back when the pointer leaves the chart (or after a new layout).
+export function showTooltip(container, px) {
+    const state = states.get(container);
+    if (state) {
+        state.shown = px;
+        if (!state.hovering && !state.drag) {
+            showShown(state);
+        }
+    }
+}
+
+export function hideTooltip(container) {
+    const state = states.get(container);
+    if (state && state.shown !== null && state.shown !== undefined) {
+        state.shown = null;
+        if (!state.hovering && !state.drag) {
+            hide(state);
+            broadcastHover(state, null);
+        }
+    }
+}
+
+function showShown(state) {
+    const m = state.model, px = state.shown;
+    if (px === null || px === undefined || !m || !m.series || !state.svg || (m.slices && m.slices.length > 0)) {
+        return;
+    }
+
+    let rows = findShared(m, px);
+    if (!m.shared) {
+        rows = rows.slice(0, 1);
+    }
+
+    if (rows.length === 0) {
+        hide(state);
+        return;
+    }
+
+    const first = rows[0];
+    rows.anchor = first.s.x[first.i];
+    const rect = state.svg.getBoundingClientRect();
+    const vb = state.svg.viewBox.baseVal;
+    const k = vb && vb.width && rect.width ? vb.width / rect.width : 1;
+    drawHover(state, rows, m);
+    if (m.tooltip) {
+        drawTooltip(state, rows, { x: rows.anchor, y: first.s.y[first.i], k, rect });
+    }
+
+    if (state.group && m.xscale) {
+        broadcastHover(state, toData(m.xscale, rows.anchor));
     }
 }
 
@@ -388,7 +444,8 @@ function dragStart(state, e) {
     }
 
     const m = state.model;
-    if (!m || !m.zoom || !m.xscale || e.button !== 0 || e.pointerType !== 'mouse') {
+    const range = !!(m && m.select === 'range');
+    if (!m || !(m.zoom || range) || !m.xscale || e.button !== 0 || e.pointerType !== 'mouse') {
         return false;
     }
 
@@ -397,8 +454,10 @@ function dragStart(state, e) {
         return false;
     }
 
+    // With Selection="Range" a drag selects (Shift+drag still pans a zoomable chart).
     state.suppressClick = false;
-    state.drag = { mode: e.shiftKey ? 'pan' : 'select', x0: pos.x, x1: pos.x, moved: false, id: e.pointerId };
+    const mode = e.shiftKey && m.zoom ? 'pan' : range ? 'range' : 'select';
+    state.drag = { mode, x0: pos.x, x1: pos.x, moved: false, id: e.pointerId };
     try {
         state.svg.setPointerCapture(e.pointerId);
     } catch {
@@ -553,6 +612,17 @@ function dragEnd(state, e) {
     }
 
     const s = state.model.xscale;
+    if (d.mode === 'range') {
+        if (d.moved && s && Math.abs(d.x1 - d.x0) >= 6) {
+            state.suppressClick = true;
+            state.dotnet.invokeMethodAsync('OnRangeSelected', toData(s, Math.min(d.x0, d.x1)), toData(s, Math.max(d.x0, d.x1))).catch(() => { });
+        } else if (!d.moved && state.model.sel) {
+            state.dotnet.invokeMethodAsync('OnSelectionCleared').catch(() => { }); // a click without a drag
+        }
+
+        return;
+    }
+
     if (!d.moved || !s) {
         resetPreview(state);
         return;
@@ -1202,7 +1272,7 @@ function keyDown(state, e) {
         e.preventDefault();
         const target = polar ? m.slices[kb.i] : series[kb.s] && { id: series[kb.s].id, index: series[kb.s].index[kb.i] };
         if (m.click && target && target.index >= 0) {
-            state.dotnet.invokeMethodAsync('OnPointClicked', target.id, target.index).catch(() => { });
+            state.dotnet.invokeMethodAsync('OnPointClicked', target.id, target.index, !!e.shiftKey).catch(() => { });
         }
 
         return;
@@ -1411,7 +1481,7 @@ function click(state, e) {
         const s = findSlice(m, pos);
         if (s && s.index >= 0) {
             e.stopPropagation();
-            state.dotnet.invokeMethodAsync('OnPointClicked', s.id, s.index).catch(() => { });
+            state.dotnet.invokeMethodAsync('OnPointClicked', s.id, s.index, additive(e)).catch(() => { });
         }
 
         return;
@@ -1436,8 +1506,15 @@ function click(state, e) {
         // Points win over annotations underneath (Blazor handles clicks at the document root, after this).
         e.stopPropagation();
         const { s, i } = hits[0];
-        state.dotnet.invokeMethodAsync('OnPointClicked', s.id, s.index[i]).catch(() => { });
+        state.dotnet.invokeMethodAsync('OnPointClicked', s.id, s.index[i], additive(e)).catch(() => { });
+    } else if (m.select === 'points' && m.sel && !additive(e)) {
+        state.dotnet.invokeMethodAsync('OnSelectionCleared').catch(() => { }); // a click beside the points
     }
+}
+
+// Ctrl/Cmd or Shift: add a point to the selection (or remove it) instead of replacing it.
+function additive(e) {
+    return !!(e.ctrlKey || e.metaKey || e.shiftKey);
 }
 
 // ---------- Font ----------

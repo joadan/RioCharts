@@ -126,3 +126,30 @@ public enum SeriesLayer
     Canvas,
 }
 
+/// <summary>What the user can select on a chart with the pointer or keyboard.</summary>
+public enum SelectionMode
+{
+    /// <summary>Nothing (default). Selections set from code still show.</summary>
+    None,
+
+    /// <summary>
+    /// Points and bars: a click (or Enter on a focused point) selects one, Ctrl/Cmd or Shift+click
+    /// adds or removes one, a click on an empty part of the plot clears the selection.
+    /// </summary>
+    Points,
+
+    /// <summary>
+    /// An x range: drag across the plot (mouse). A click without a drag clears it. With
+    /// <c>Zoomable</c>, drag selects; zoom with Ctrl/Cmd+wheel, pinch or the keyboard instead.
+    /// </summary>
+    Range,
+}
+
+/// <summary>Raised when the selection changes, by the user or from code.</summary>
+/// <typeparam name="TItem">The chart's item type.</typeparam>
+/// <param name="Items">
+/// The selected items: the selected points' items, or with a range the items of the visible
+/// series' points inside it. Empty for columnar data.
+/// </param>
+/// <param name="Range">The selected x range, or null when points (or nothing) are selected.</param>
+public sealed record SelectionChangedEventArgs<TItem>(IReadOnlyList<TItem> Items, ChartRange? Range);

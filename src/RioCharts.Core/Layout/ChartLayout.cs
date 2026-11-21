@@ -56,6 +56,18 @@ public sealed record LayoutOptions
     /// Null: only what the chart's own labels need. Cartesian charts with vertical value axes only.
     /// </summary>
     public PlotInsets? MinInsets { get; init; }
+
+    /// <summary>
+    /// The selected x range in data units (numbers, or milliseconds for time axes), drawn as a
+    /// shaded band behind the series. Null: none. Ignored for category axes.
+    /// </summary>
+    public (double Min, double Max)? SelectedRange { get; init; }
+
+    /// <summary>
+    /// Selected points per series id, as indexes into that series' <see cref="SeriesData"/>. Drawn
+    /// as markers on lines, areas and scatter points, and as outlines around bars. Null: none.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyCollection<int>>? SelectedPoints { get; init; }
 }
 
 /// <summary>The space between the chart's edges and its plot, in pixels.</summary>
@@ -541,6 +553,7 @@ public static partial class ChartLayout
         var hitTest = new HitTestIndex();
         var tooltipSeries = new List<TooltipSeries>();
         var seriesNodes = new List<(int Order, int Index, Node Node)>();
+        var selectedMarks = new List<Node>();
         var labelAnchors = new List<(Resolved Series, List<LabelAnchor> Anchors)>();
         var formatX = TimeFormat(xKind, drawable.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format, time, options.ViewerTimeZone);
         // Series with the same x values (common: several measurements per timestamp) share their
@@ -586,6 +599,11 @@ public static partial class ChartLayout
                 labelAnchors.Add((r, context.Labels));
             }
 
+            if (options.SelectedPoints is { } selected && selected.TryGetValue(r.Spec.Id, out var picked) && picked.Count > 0)
+            {
+                selectedMarks.AddRange(SelectionMarks(r, context, picked, styles));
+            }
+
             var order = r.Spec.ZIndex ?? r.Type.DefaultLayer * 1000;
             seriesNodes.Add((order, r.ColorIndex, new GroupNode(context.Output)
             {
@@ -613,8 +631,17 @@ public static partial class ChartLayout
         }
 
         var plotNodes = new List<Node>(below);
+        if (hasData && xScale is not null && options.SelectedRange is { } selectedRange && SelectionBand(selectedRange, xScale, plot, styles) is { } band)
+        {
+            plotNodes.Add(band);
+        }
+
         plotNodes.AddRange(seriesNodes.OrderBy(t => t.Order).ThenBy(t => t.Index).Select(t => t.Node));
         plotNodes.AddRange(above);
+        if (selectedMarks.Count > 0)
+        {
+            plotNodes.Add(new GroupNode(selectedMarks) { Key = "selection:points", Class = "rio-selected-points" });
+        }
         var seriesLayer = new GroupNode(
         [
             new GroupNode(plotNodes, Clip: Inflate(plot, (float)Math.Max(2, scatter.Count > 0 ? scatter.Max(r => ScatterSeriesType.Radius(r.Spec)) + 1 : 0))) { Class = "rio-plot" },
@@ -663,6 +690,75 @@ public static partial class ChartLayout
             DragHandles = dragHandles,
             NeededInsets = compact ? null : neededInsets,
         };
+    }
+
+    // ---------- Selection ----------
+
+    /// <summary>The selected x range: a light band in the first series color with edge lines, like the zoom drag.</summary>
+    private static GroupNode? SelectionBand((double Min, double Max) range, LinearScale x, RectF plot, StyleTable styles)
+    {
+        if (!double.IsFinite(range.Min) || !double.IsFinite(range.Max))
+        {
+            return null;
+        }
+
+        var x0 = Math.Clamp(x.Map(Math.Min(range.Min, range.Max)), plot.X, plot.Right);
+        var x1 = Math.Clamp(x.Map(Math.Max(range.Min, range.Max)), plot.X, plot.Right);
+        if (x1 - x0 < 0.5)
+        {
+            return null; // outside the visible range
+        }
+
+        var fill = styles.Add("selection", new Style { Fill = ThemeTokens.Series(0), FillOpacity = 0.1f });
+        var edge = styles.Add("selection-edge", new Style { Stroke = ThemeTokens.Series(0), StrokeWidth = 1, Opacity = 0.6f });
+        return new GroupNode(
+        [
+            new RectNode(new RectF((float)x0, plot.Y, (float)(x1 - x0), plot.Height), fill),
+            new PathNode(new PathBuilder().MoveTo(x0, plot.Y).LineTo(x0, plot.Bottom).MoveTo(x1, plot.Y).LineTo(x1, plot.Bottom).Build(), edge),
+        ])
+        {
+            Key = "selection:range",
+            Class = "rio-selection",
+        };
+    }
+
+    /// <summary>Selected points: a marker in the series color (ringed in the surface color), or an outline around a bar.</summary>
+    private static IEnumerable<Node> SelectionMarks(Resolved r, SeriesBuildContext c, IReadOnlyCollection<int> picked, StyleTable styles)
+    {
+        var bar = r.Spec.Type == SeriesType.Bar;
+        var style = bar
+            ? styles.Add("selected-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.5f })
+            : styles.Add($"series-{r.ColorIndex}-selected", new Style { Fill = r.Color, Stroke = ThemeTokens.Surface, StrokeWidth = 2 });
+        foreach (var i in picked.Distinct().Order())
+        {
+            if (i < 0 || i >= r.Data.Count || i >= c.Upper.Length)
+            {
+                continue;
+            }
+
+            var x = c.PixelX[i];
+            var top = c.Upper[i];
+            if (!double.IsFinite(x) || !double.IsFinite(top))
+            {
+                continue; // a gap: nothing drawn there
+            }
+
+            var y = c.MapY(top);
+            if (bar)
+            {
+                var y0 = c.Lower is { } lower && double.IsFinite(lower[i]) ? c.MapY(lower[i]) : c.ZeroY;
+                var left = x + c.BarOffset - c.BarWidth / 2;
+                yield return new RectNode(new RectF((float)(left - 1.5), (float)(Math.Min(y, y0) - 1.5), (float)(c.BarWidth + 3), (float)(Math.Abs(y0 - y) + 3)), style)
+                {
+                    CornerRadius = 3,
+                    Class = "rio-selected-bar",
+                };
+            }
+            else
+            {
+                yield return new PathNode(new PathBuilder().MoveTo(x, y - 5).Arc(x, y, 5, 0, Math.PI * 2).Close().Build(), style) { Class = "rio-selected-point" };
+            }
+        }
     }
 
     private static string SlotKey(Resolved r) => r.Spec.Stack is { Length: > 0 } stack ? $"stack|{r.Axis.Id}|{stack}" : "series|" + r.Spec.Id;

@@ -117,9 +117,76 @@
     </ChildContent>
 </Example>
 
+<Example Title="Selecting points and ranges" Code="@SelectionCode">
+    <Description>
+        <p>
+            <code>Selection="SelectionMode.Range"</code>: drag across the plot to select a range, click to clear it.
+            <code>SelectionMode.Points</code>: click a point or bar to select it, Ctrl/⌘ or Shift+click to add or remove one, click beside
+            the points to clear. Bind <code>@@bind-SelectedItems</code> and <code>@@bind-SelectedRange</code>, or handle <code>OnSelectionChanged</code>.
+            A range selects the items of the visible series inside it.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="200" YAxis="Sessions" Selection="SelectionMode.Range"
+                  @bind-SelectedRange="_selectedRange" @bind-SelectedItems="_selectedReadings">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </RioChart>
+        <p class="note">
+            @if (_selectedRange is null)
+            {
+                <span>Drag across the chart to select a range.</span>
+            }
+            else
+            {
+                <span>@($"{_selectedRange.Min:g} – {_selectedRange.Max:g}"): @_selectedReadings.Count readings, @($"{_selectedReadings.Sum(r => r.Value ?? 0):#,0}") sessions.</span>
+                <button class="small" @onclick="() => _selectedRange = null">Clear</button>
+            }
+        </p>
+        <RioChart TItem="Ticket" Items="Tickets" Height="200" YAxis="Minutes" Selection="SelectionMode.Points" @bind-SelectedItems="_selectedTickets">
+            <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>
+        <p class="note">
+            @if (_selectedTickets.Count == 0)
+            {
+                <span>Click a bar to see its tickets.</span>
+            }
+            else
+            {
+                <span>@string.Join(", ", _selectedTickets.Select(t => $"{t.Subject} ({t.Minutes} min)"))</span>
+            }
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="Tooltip from code" Code="@ShowTooltipCode">
+    <Description>
+        <p>
+            <code>ShowTooltipAsync(x)</code> shows the crosshair and tooltip at an x value as if the pointer were there, and linked charts follow;
+            <code>HideTooltipAsync()</code> hides it. Here, hovering a row of the table points it out in the chart.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart @ref="_ordersChart" TItem="Reading" Items="LastWeek" Height="200">
+            <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
+        </RioChart>
+        <table class="docs hover-table">
+            <thead><tr><th>Day</th><th>Orders</th></tr></thead>
+            <tbody>
+                @foreach (var day in LastWeek)
+                {
+                    <tr @onmouseenter="() => _ordersChart!.ShowTooltipAsync(day.Time)" @onmouseleave="() => _ordersChart!.HideTooltipAsync()">
+                        <td>@day.Time.ToString("ddd d MMM")</td><td class="num">@($"{day.Value:#,0}")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </ChildContent>
+</Example>
+
 <h2>From code</h2>
 <p>Everything the user can do has an API: take a reference with <code>@@ref</code> and call
-    <code>ZoomToAsync</code>, <code>PanAsync</code>, <code>ResetZoomAsync</code>, <code>GetVisibleRange</code> or <code>Refresh</code>.
+    <code>ZoomToAsync</code>, <code>PanAsync</code>, <code>ResetZoomAsync</code>, <code>GetVisibleRange</code>, <code>SelectItemsAsync</code>,
+    <code>SelectRangeAsync</code>, <code>ClearSelectionAsync</code>, <code>GetItemsInRange</code>, <code>ShowTooltipAsync</code> or <code>Refresh</code>.
     <code>OnZoomChanging</code> can clamp or cancel a zoom. <code>Layout</code> exposes the scales and the hit-test index.</p>
 
 @code {
@@ -129,6 +196,11 @@
     private IReadOnlyCollection<string> _hidden = [];
     private PointClickEventArgs<Reading>? _point;
     private ChartRange? _range;
+    private ChartRange? _selectedRange;
+    private IReadOnlyCollection<Reading> _selectedReadings = [];
+    private IReadOnlyCollection<Ticket> _selectedTickets = [];
+    private RioChart<Reading>? _ordersChart;
+    private static readonly List<Reading> LastWeek = DailyOrders.TakeLast(7).ToList();
 
     private const string ClickCode = """
         <RioChart TItem="Reading" @bind-HiddenSeries="hidden" OnPointClick="e => clicked = e">
@@ -170,6 +242,28 @@
                 }
             </TooltipTemplate>
         </RioChart>
+        """;
+
+    private const string SelectionCode = """
+        <RioChart TItem="Reading" Selection="SelectionMode.Range" @bind-SelectedRange="range" @bind-SelectedItems="readings">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+        <p>@readings.Count readings, @readings.Sum(r => r.Value) sessions</p>
+
+        <RioChart TItem="Ticket" Items="tickets" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+            <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>
+        """;
+
+    private const string ShowTooltipCode = """
+        <RioChart @ref="chart" TItem="Reading" Items="orders">
+            <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+
+        @foreach (var day in orders)
+        {
+            <tr @onmouseenter="() => chart.ShowTooltipAsync(day.Time)" @onmouseleave="() => chart.HideTooltipAsync()">…</tr>
+        }
         """;
 
     private const string ZoomCode = """

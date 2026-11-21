@@ -386,6 +386,7 @@ public partial class RioChart<TItem> : IChartContext
             _dirty = true;
         }
 
+        SelectionParametersSet();
         if (Group != _lastGroup)
         {
             _lastGroup = Group;
@@ -457,6 +458,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         _layoutData = data;
+        SelectionForLayout(out var selectedRange, out var selectedPoints);
         _layout = ChartLayout.Compute(CurrentSpec(), data, new LayoutOptions
         {
             Width = Width ?? _measuredWidth ?? DefaultWidth,
@@ -470,6 +472,8 @@ public partial class RioChart<TItem> : IChartContext
             XRange = _range,
             ViewerTimeZone = _viewerZone,
             MinInsets = Group is null ? null : _groupInsets,
+            SelectedRange = selectedRange,
+            SelectedPoints = selectedPoints,
         });
         _dirty = false;
         return _layout;
@@ -546,7 +550,7 @@ public partial class RioChart<TItem> : IChartContext
     }
 
     /// <summary>Called by JS when a point or bar is clicked.</summary>
-    internal async Task OnPointClicked(string seriesId, int index)
+    internal async Task OnPointClicked(string seriesId, int index, bool additive = false)
     {
         // The data the layout was computed from: a live buffer may have moved on since.
         var series = SourceOf(seriesId);
@@ -564,6 +568,7 @@ public partial class RioChart<TItem> : IChartContext
         {
             Items = items,
         });
+        await SelectPointAsync(items, additive);
     }
 
     // ---------- Custom tooltips ----------
@@ -688,7 +693,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var keys = KeyboardEnabled(_layout);
-        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group, SeriesLayer, TooltipTemplate is not null, keys);
+        var key = (_layout, OnPointClick.HasDelegate, Zoomable, Group, SeriesLayer, TooltipTemplate is not null, keys, Selection);
         if (Equals(key, _sentInteraction))
         {
             return;
@@ -701,12 +706,13 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var model = CustomTooltip(_layout);
-        var click = OnPointClick.HasDelegate;
+        var click = OnPointClick.HasDelegate || Selection == SelectionMode.Points;
         var scale = _layout.XScale;
+        var select = Selection == SelectionMode.Range && scale is not null && _layout.HasData ? "range" : Selection == SelectionMode.Points ? "points" : null;
         var zoom = Zoomable && scale is not null && _layout.HasData;
         var drags = _layout.DragHandles;
         // UTF-8 JSON from source-generated metadata (Rendering/Interop.cs): trimming and AOT safe.
-        byte[]? payload = model.Enabled || click || zoom || keys || drags.Count > 0 || (Group is not null && scale is not null)
+        byte[]? payload = model.Enabled || click || zoom || keys || select is not null || drags.Count > 0 || (Group is not null && scale is not null)
             ? InteropJson.Bytes(new UpdateModel(
                 Drags: [.. drags.Select(d => new DragModel(d.Id, d.IsX, d.Pixel, new ScaleModel(d.DomainMin, d.DomainMax, d.RangeStart, d.RangeEnd)))],
                 Plot: new PlotModel(model.Plot.X, model.Plot.Y, model.Plot.Width, model.Plot.Height),
@@ -727,9 +733,12 @@ public partial class RioChart<TItem> : IChartContext
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd,
                     s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))],
                 Need: Group is not null && _layout.NeededInsets is { } need ? new InsetsModel(need.Left, need.Right) : null,
-                At: Group is not null && _groupInsets is { } at ? new InsetsModel(at.Left, at.Right) : null))
+                At: Group is not null && _groupInsets is { } at ? new InsetsModel(at.Left, at.Right) : null,
+                Select: select,
+                Sel: _selected.Count > 0 || _selectedRange is not null))
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
+        await SendTooltipAsync(); // a tooltip shown from code moves with the new layout
     }
 
     // ---------- Keyboard ----------
@@ -878,8 +887,7 @@ public partial class RioChart<TItem> : IChartContext
         return double.IsFinite(min) && double.IsFinite(max) && max != min ? (Math.Min(min, max), Math.Max(min, max)) : null;
     }
 
-    /// <summary>Called by the JS ResizeObserver when the container width changes.</summary>
-    // A linked chart (same Group) needs more space beside its plot: line up with it.
+    /// <summary>Called by JS when a linked chart (same Group) needs more space beside its plot: line up with it.</summary>
     internal void OnGroupInsets(double left, double right)
     {
         var insets = new PlotInsets(left, right);
@@ -890,6 +898,7 @@ public partial class RioChart<TItem> : IChartContext
         }
     }
 
+    /// <summary>Called by the JS ResizeObserver when the container width changes.</summary>
     internal void OnResize(double width)
     {
         if (width > 0 && Width is null && Math.Abs(width - (_measuredWidth ?? 0)) >= 1)
@@ -930,7 +939,11 @@ public partial class RioChart<TItem> : IChartContext
     {
         [JSInvokable] public Task OnAnnotationDragged(string id, double value) => chart.OnAnnotationDragged(id, value);
 
-        [JSInvokable] public Task OnPointClicked(string seriesId, int index) => chart.OnPointClicked(seriesId, index);
+        [JSInvokable] public Task OnPointClicked(string seriesId, int index, bool additive) => chart.OnPointClicked(seriesId, index, additive);
+
+        [JSInvokable] public Task OnRangeSelected(double min, double max) => chart.OnRangeSelected(min, max);
+
+        [JSInvokable] public Task OnSelectionCleared() => chart.OnSelectionCleared();
 
         [JSInvokable] public Task OnTooltipHover(string[] seriesIds, int[] indexes) => chart.OnTooltipHover(seriesIds, indexes);
 

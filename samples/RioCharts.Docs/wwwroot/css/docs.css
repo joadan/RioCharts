@@ -1518,3 +1518,17 @@ table.texts-table td:first-child {
     outline: 1px dashed var(--doc-border);
     outline-offset: 2px;
 }
+
+/* Interaction: hovering a row shows that day's tooltip in the chart above. */
+table.hover-table tbody tr {
+    cursor: default;
+}
+
+table.hover-table tbody tr:hover td {
+    background: var(--doc-accent-soft);
+}
+
+table.hover-table td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
