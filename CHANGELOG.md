@@ -219,7 +219,8 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
     longer quadratic. 1000 slices: from about 1 s (10 000: minutes) to under 40 ms.
   - Large line and area series: the screen reader description and legend tooltips no longer copy
     every point, and x pixels are mapped only for the points drawn. A 1M-point line lays out in
-    about 40 ms instead of 100 ms and allocates 0.3 MB instead of 38 MB.
+    about 40 ms instead of 100 ms and allocates 0.3 MB instead of 38 MB. In the browser, zooming
+    the docs site's 200k-point chart (WebAssembly) went from about 0.6 s to 0.1 s.
   - Stacked series with the same x values stack per index: three stacked 1M-point areas from
     590 ms to 120 ms.
   - CSV datasets are read straight into columns with a fast path for ISO times: 200k rows in

@@ -598,7 +598,8 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
     the fast path for big data, as the Large data page says.
   - In the browser, hover handling is about 0.05 ms per pointer move at 200k points. A full layout
     (zoom, data change) runs in WebAssembly's interpreter, several times slower than on the
-    server: about 0.6 s for 200k points on the published docs site before these fixes.
+    server: for the 200k points on the published docs site, about 0.6 s before these fixes and
+    0.1 s after.
 
 ## Public API surface
 
