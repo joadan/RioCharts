@@ -79,10 +79,14 @@ public sealed record PointClickEventArgs<TItem>(string SeriesId, string SeriesNa
 /// time axes and <see cref="double"/> on numeric axes; DateTimeOffset, DateOnly and numbers are
 /// accepted as input.
 /// </summary>
+/// <param name="Min">Start of the range.</param>
+/// <param name="Max">End of the range.</param>
 public sealed record ChartRange(object Min, object Max)
 {
+    /// <summary>A range on a time axis.</summary>
     public static ChartRange Of(DateTime min, DateTime max) => new(min, max);
 
+    /// <summary>A range on a numeric axis.</summary>
     public static ChartRange Of(double min, double max) => new(min, max);
 }
 
@@ -92,15 +96,21 @@ public sealed record ChartRange(object Min, object Max)
 /// </summary>
 public sealed class ZoomChangingEventArgs
 {
+    /// <summary>The range about to be shown; null when the zoom is reset.</summary>
     public ChartRange? Range { get; set; }
+    /// <summary>Set to true to keep the current view.</summary>
     public bool Cancel { get; set; }
 }
 
 /// <summary>Raised when the user has dragged a reference line to a new value.</summary>
+/// <param name="AnnotationId">The annotation's <c>Id</c>.</param>
+/// <param name="Label">The annotation's label.</param>
 /// <param name="Value">The new value: DateTime on time axes, else double.</param>
 public sealed record AnnotationChangedEventArgs(string AnnotationId, string? Label, object Value);
 
 /// <summary>Raised when a reference line or band is clicked.</summary>
+/// <param name="AnnotationId">The annotation's <c>Id</c>.</param>
+/// <param name="Label">The annotation's label.</param>
 public sealed record AnnotationClickEventArgs(string AnnotationId, string? Label);
 
 /// <summary>Where the chart draws its series.</summary>

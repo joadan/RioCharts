@@ -2,7 +2,30 @@ using RioCharts.Core.Data;
 
 namespace RioCharts.Core.Scales;
 
-public enum TimeUnit { Second, Minute, Hour, Day, Week, Month, Year }
+/// <summary>A calendar unit for time tick intervals.</summary>
+public enum TimeUnit
+{
+    /// <summary>Seconds.</summary>
+    Second,
+
+    /// <summary>Minutes.</summary>
+    Minute,
+
+    /// <summary>Hours.</summary>
+    Hour,
+
+    /// <summary>Days (midnights).</summary>
+    Day,
+
+    /// <summary>Weeks starting on Monday.</summary>
+    Week,
+
+    /// <summary>Months (first of the month).</summary>
+    Month,
+
+    /// <summary>Years (January 1).</summary>
+    Year,
+}
 
 /// <summary>A calendar tick interval such as "every 6 hours" or "every 3 months".</summary>
 public readonly record struct TimeInterval(TimeUnit Unit, int Step)
@@ -26,6 +49,7 @@ public readonly record struct TimeInterval(TimeUnit Unit, int Step)
 /// </summary>
 public static class TimeTicks
 {
+    /// <summary>The candidate tick intervals, from 1 second to 1000 years, shortest first.</summary>
     public static IReadOnlyList<TimeInterval> Intervals { get; } =
     [
         new(TimeUnit.Second, 1), new(TimeUnit.Second, 5), new(TimeUnit.Second, 15), new(TimeUnit.Second, 30),

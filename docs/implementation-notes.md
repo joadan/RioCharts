@@ -389,6 +389,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Templates:** composite format strings; "one|other" picks the first form for a count of 1
   (enough for the built-in languages, not for languages with more plural forms). A template that
   fails to format falls back to the English one, never throwing.
+- **Filling templates from code:** `texts.Fill(key, provider, args)` (the key is the property
+  name, e.g. `nameof(ChartTexts.DownloadFormat)`) fills a template the same way, with the English
+  fallback; the static helper behind it is internal.
 - **Description wording:** the full description says "trend rising/falling/stable" (was
   "increasing/decreasing"), the same words as the compact summary.
 
@@ -558,3 +561,19 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   annotations are skipped with a warning); their labels sit in a strip above the rows.
 - **Hover:** `TooltipSeries.CellWidths` gives each bar's length; JS checks the rectangle under the
   pointer (a linear scan, also used for heatmap cells now) and outlines it. No zoom.
+
+## Public API surface
+
+- Reviewed before the first release. Public: the spec model, data types, scales, formatters, the
+  scene types (renderers in other packages and custom renderers draw them), `ChartLayout`, and
+  each package's entry points. Internal: SVG/canvas writers and the scene renderer component in
+  Blazor, Skia's color and path helpers, `ChartSpecJson.Options` (deserializing with it skips the
+  defaults fix-up that `Parse` does) and the components' `Spec`.
+- **JS callbacks:** the module calls a private `JsCallbacks` object (`DotNetObjectReference`), so
+  the `[JSInvokable]` entry points are not methods on `RioChart`. The method names are unchanged.
+- **`SvgSceneRenderer`** is internal, and Razor only resolves public components as tags, so
+  `RioChart` renders it from code (`SceneFragment`).
+- **`ChartTool` names stay constants** (`ToolName`, `RenderToolName`, `RenderDescription`): the MCP
+  attributes need compile-time values.
+- **Missing XML docs** (CS1591) warn in the libraries; test and sample projects turn it off.
+

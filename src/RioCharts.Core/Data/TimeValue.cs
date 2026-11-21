@@ -10,10 +10,13 @@ public static class TimeValue
 {
     private const long EpochTicks = 621355968000000000; // DateTime.UnixEpoch.Ticks
 
+    /// <summary>Milliseconds since 1970-01-01 of the time as given, whatever its Kind.</summary>
     public static double FromDateTime(DateTime value) => (value.Ticks - EpochTicks) / (double)TimeSpan.TicksPerMillisecond;
 
+    /// <summary>Milliseconds since 1970-01-01 of the value's own wall-clock time (the offset is ignored).</summary>
     public static double FromDateTimeOffset(DateTimeOffset value) => FromDateTime(value.DateTime);
 
+    /// <summary>Milliseconds since 1970-01-01 of the date at midnight.</summary>
     public static double FromDateOnly(DateOnly value) => FromDateTime(value.ToDateTime(TimeOnly.MinValue));
 
     /// <summary>

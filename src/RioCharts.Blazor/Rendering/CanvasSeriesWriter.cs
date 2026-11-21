@@ -7,7 +7,7 @@ namespace RioCharts.Blazor.Rendering;
 /// (which canvas reads with <c>Path2D</c>), rectangles and paint. Colors stay CSS (tokens become
 /// <c>var(...)</c>); the JS side resolves them against the chart's styles.
 /// </summary>
-public static class CanvasSeriesWriter
+internal static class CanvasSeriesWriter
 {
     internal static CanvasModel Build(Scene scene)
     {

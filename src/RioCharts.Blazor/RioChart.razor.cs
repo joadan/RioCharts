@@ -36,7 +36,7 @@ public partial class RioChart<TItem> : IChartContext
     private double? _measuredWidth;
     private ITextMeasurer _measurer = ApproximateTextMeasurer.Instance;
     private IJSObjectReference? _module;
-    private DotNetObjectReference<RioChart<TItem>>? _dotnet;
+    private DotNetObjectReference<JsCallbacks>? _dotnet;
     private object? _sentInteraction;
     private (double Min, double Max)? _range;
     private ChartRange? _lastVisibleRangeParameter;
@@ -51,6 +51,7 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Items shared by all series that do not set their own.</summary>
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
 
+    /// <summary>The series and annotation components, e.g. &lt;LineSeries&gt; and &lt;ReferenceLine&gt;.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Height in pixels. Default 300.</summary>
@@ -59,8 +60,10 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Fixed width in pixels. Default: the container's width (responsive).</summary>
     [Parameter] public double? Width { get; set; }
 
+    /// <summary>Title shown above the chart.</summary>
     [Parameter] public string? Title { get; set; }
 
+    /// <summary>The horizontal axis: title, range, scale and label format. Default: the scale is picked from the data.</summary>
     [Parameter] public AxisSpec? XAxis { get; set; }
 
     /// <summary>The primary vertical axis (id "y" unless set).</summary>
@@ -69,6 +72,7 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Additional vertical axes; series pick one with <c>YAxisId</c>.</summary>
     [Parameter] public IReadOnlyList<AxisSpec>? YAxes { get; set; }
 
+    /// <summary>Legend settings. Default: at the top, shown when there is more than one series.</summary>
     [Parameter] public LegendSpec? Legend { get; set; }
 
     /// <summary>Tooltip settings. On and shared across series by default.</summary>
@@ -122,6 +126,7 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Ids of hidden series. Two-way bindable with <c>@bind-HiddenSeries</c>.</summary>
     [Parameter] public IReadOnlyCollection<string>? HiddenSeries { get; set; }
 
+    /// <summary>Called with the new hidden series when the user toggles one in the legend.</summary>
     [Parameter] public EventCallback<IReadOnlyCollection<string>> HiddenSeriesChanged { get; set; }
 
     /// <summary>Raised after a legend click has toggled a series.</summary>
@@ -148,6 +153,7 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>The visible x range (null: all data). Two-way bindable with <c>@bind-VisibleRange</c>.</summary>
     [Parameter] public ChartRange? VisibleRange { get; set; }
 
+    /// <summary>Called with the new visible range after a zoom, pan or reset (null: all data).</summary>
     [Parameter] public EventCallback<ChartRange?> VisibleRangeChanged { get; set; }
 
     /// <summary>Raised before a zoom or pan is applied; the handler may change or cancel it.</summary>
@@ -352,6 +358,7 @@ public partial class RioChart<TItem> : IChartContext
 
     // ---------- Parameters and layout ----------
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (!ReferenceEquals(HiddenSeries, _lastHiddenParameter))
@@ -489,8 +496,7 @@ public partial class RioChart<TItem> : IChartContext
     }
 
     /// <summary>Called by JS when a draggable line is dropped (value in data units).</summary>
-    [JSInvokable]
-    public async Task OnAnnotationDragged(string id, double value)
+    internal async Task OnAnnotationDragged(string id, double value)
     {
         var all = CurrentSpec().Annotations;
         var index = -1;
@@ -524,8 +530,7 @@ public partial class RioChart<TItem> : IChartContext
     }
 
     /// <summary>Called by JS when a point or bar is clicked.</summary>
-    [JSInvokable]
-    public async Task OnPointClicked(string seriesId, int index)
+    internal async Task OnPointClicked(string seriesId, int index)
     {
         // The data the layout was computed from: a live buffer may have moved on since.
         var series = SourceOf(seriesId);
@@ -564,6 +569,18 @@ public partial class RioChart<TItem> : IChartContext
         return model;
     }
 
+    // SvgSceneRenderer is internal, and Razor only resolves public components as tags.
+    private RenderFragment SceneFragment(Scene scene) => builder =>
+    {
+        builder.OpenComponent<SvgSceneRenderer>(0);
+        builder.AddComponentParameter(1, nameof(SvgSceneRenderer.Scene), scene);
+        builder.AddComponentParameter(2, nameof(SvgSceneRenderer.IdPrefix), _id);
+        builder.AddComponentParameter(3, nameof(SvgSceneRenderer.OnInteraction), EventCallback.Factory.Create<NodeInteraction>(this, HandleInteraction));
+        builder.AddComponentParameter(4, nameof(SvgSceneRenderer.OmitSeries), UsesCanvas);
+        builder.AddComponentParameter(5, nameof(SvgSceneRenderer.LegendTips), Live);
+        builder.CloseComponent();
+    };
+
     private RenderFragment TooltipHostFragment => builder =>
     {
         builder.OpenComponent<TooltipHost<TItem>>(0);
@@ -573,8 +590,7 @@ public partial class RioChart<TItem> : IChartContext
     };
 
     /// <summary>Called by JS when the hovered points change and the chart has a TooltipTemplate.</summary>
-    [JSInvokable]
-    public Task OnTooltipHover(string[] seriesIds, int[] indexes)
+    internal Task OnTooltipHover(string[] seriesIds, int[] indexes)
     {
         if (TooltipTemplate is null || _tooltipHost is null || _layout is null)
         {
@@ -587,6 +603,7 @@ public partial class RioChart<TItem> : IChartContext
 
     // ---------- Responsive sizing, font metrics and pointer interaction (JS) ----------
 
+    /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_disposed)
@@ -606,7 +623,7 @@ public partial class RioChart<TItem> : IChartContext
             if (firstRender)
             {
                 _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/RioChart.razor.js");
-                _dotnet = DotNetObjectReference.Create(this);
+                _dotnet = DotNetObjectReference.Create(new JsCallbacks(this));
                 var info = ChartContainerInfo.From(await _module.InvokeAsync<System.Text.Json.JsonElement>("init", _container, _dotnet));
                 var changed = false;
                 if (info.Widths is { Length: > 0 } widths)
@@ -737,11 +754,10 @@ public partial class RioChart<TItem> : IChartContext
     }
 
     /// <summary>Called by JS at the end of a drag, pan or wheel zoom (data units).</summary>
-    [JSInvokable]
-    public Task OnZoom(double min, double max) => ApplyRangeAsync((min, max));
+    internal Task OnZoom(double min, double max) => ApplyRangeAsync((min, max));
 
-    [JSInvokable]
-    public Task OnZoomReset() => ApplyRangeAsync(null);
+    /// <summary>Called by JS on a double-click (zoom reset).</summary>
+    internal Task OnZoomReset() => ApplyRangeAsync(null);
 
     // The Reset zoom button: linked charts (same Group) reset together, as with a double-click.
     private async Task OnResetZoomClick()
@@ -844,8 +860,7 @@ public partial class RioChart<TItem> : IChartContext
     }
 
     /// <summary>Called by the JS ResizeObserver when the container width changes.</summary>
-    [JSInvokable]
-    public void OnResize(double width)
+    internal void OnResize(double width)
     {
         if (width > 0 && Width is null && Math.Abs(width - (_measuredWidth ?? 0)) >= 1)
         {
@@ -854,6 +869,7 @@ public partial class RioChart<TItem> : IChartContext
         }
     }
 
+    /// <summary>Releases the JS module and its event handlers.</summary>
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
@@ -874,6 +890,25 @@ public partial class RioChart<TItem> : IChartContext
 
         _dotnet?.Dispose();
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// The object the JS module calls back into. Keeps the [JSInvokable] entry points off the
+    /// component's public API; the method names are the ones the module invokes.
+    /// </summary>
+    private sealed class JsCallbacks(RioChart<TItem> chart)
+    {
+        [JSInvokable] public Task OnAnnotationDragged(string id, double value) => chart.OnAnnotationDragged(id, value);
+
+        [JSInvokable] public Task OnPointClicked(string seriesId, int index) => chart.OnPointClicked(seriesId, index);
+
+        [JSInvokable] public Task OnTooltipHover(string[] seriesIds, int[] indexes) => chart.OnTooltipHover(seriesIds, indexes);
+
+        [JSInvokable] public Task OnZoom(double min, double max) => chart.OnZoom(min, max);
+
+        [JSInvokable] public Task OnZoomReset() => chart.OnZoomReset();
+
+        [JSInvokable] public void OnResize(double width) => chart.OnResize(width);
     }
 
 

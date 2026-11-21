@@ -13,6 +13,7 @@ public sealed class ExportTheme
 
     private ExportTheme(Dictionary<string, string> colors) => _colors = colors;
 
+    /// <summary>The built-in light theme.</summary>
     public static ExportTheme Light { get; } = new(new(StringComparer.Ordinal)
     {
         [ThemeTokens.Text] = "#1f2328",
@@ -34,6 +35,7 @@ public sealed class ExportTheme
         ["--rio-series-10"] = "#9498a0",
     });
 
+    /// <summary>The built-in dark theme.</summary>
     public static ExportTheme Dark { get; } = new(new(StringComparer.Ordinal)
     {
         [ThemeTokens.Text] = "#e6e8eb",
@@ -73,5 +75,6 @@ public sealed class ExportTheme
         return ThemeTokens.IsToken(color) ? _colors.GetValueOrDefault(color, "#808080") : color;
     }
 
+    /// <summary>The theme's colors by token name.</summary>
     public IReadOnlyDictionary<string, string> Colors => _colors;
 }

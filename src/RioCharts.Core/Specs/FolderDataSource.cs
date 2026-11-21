@@ -26,9 +26,11 @@ public sealed class FolderDataSource : IChartDataSource
     /// <summary>The full path of the folder.</summary>
     public string Folder => _folder;
 
+    /// <inheritdoc />
     public IReadOnlyList<ChartDataset> Describe() =>
         [.. Files().Select(f => Read(f)).OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase)];
 
+    /// <inheritdoc />
     public Task<ChartDataset?> LoadAsync(string name, CancellationToken cancellationToken = default)
     {
         var file = Files().FirstOrDefault(f => string.Equals(Path.GetFileNameWithoutExtension(f), name, StringComparison.OrdinalIgnoreCase));

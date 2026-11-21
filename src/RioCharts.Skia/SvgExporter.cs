@@ -11,6 +11,13 @@ namespace RioCharts.Skia;
 /// </summary>
 public static class SvgExporter
 {
+    /// <summary>Writes <paramref name="scene"/> as an SVG document.</summary>
+    /// <param name="scene">The laid-out chart.</param>
+    /// <param name="theme">Colors for the theme tokens.</param>
+    /// <param name="fontFamily">Written as the SVG's font-family.</param>
+    /// <param name="background">Background color or token; null for transparent.</param>
+    /// <param name="cssVariables">Write theme colors as CSS variables with the theme's colors as fallback.</param>
+    /// <returns>The SVG markup.</returns>
     public static string Write(Scene scene, ExportTheme theme, string fontFamily, string? background, bool cssVariables = false)
     {
         var writer = new Writer(scene.Styles, theme, cssVariables);
@@ -183,7 +190,7 @@ public static class SvgExporter
     }
 
     /// <summary>SVG path data; arcs (center and angles clockwise from 12 o'clock) become endpoint arcs.</summary>
-    public static string PathData(PathData path)
+    internal static string PathData(PathData path)
     {
         var sb = new StringBuilder(path.Commands.Count * 14);
         var k = path.Coords;
@@ -256,7 +263,7 @@ public static class SvgExporter
             .Append(sweep > 0 ? 1 : 0).Append(' ').Append(N(cx + Math.Sin(end) * r)).Append(' ').Append(N(cy - Math.Cos(end) * r));
 
     /// <summary>At most two decimals, invariant, no negative zero.</summary>
-    public static string N(double value)
+    internal static string N(double value)
     {
         if (!double.IsFinite(value))
         {

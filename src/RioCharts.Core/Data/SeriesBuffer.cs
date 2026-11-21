@@ -41,10 +41,13 @@ public sealed class SeriesBuffer
         _y = new double[initial];
     }
 
+    /// <summary>The most points kept; the oldest drop out beyond it.</summary>
     public int Capacity { get; }
 
+    /// <summary>For time data: points further than this behind the newest one drop out. Null keeps them until <see cref="Capacity"/>.</summary>
     public TimeSpan? TimeWindow { get; }
 
+    /// <summary>Time or Numeric x values.</summary>
     public XKind Kind { get; }
 
     /// <summary>Raised after points are appended or cleared (on the appending thread).</summary>
@@ -53,6 +56,7 @@ public sealed class SeriesBuffer
     /// <summary>Increases with every change; charts compare it to know when to redraw.</summary>
     public long Version => Interlocked.Read(ref _version);
 
+    /// <summary>The number of points in the buffer now.</summary>
     public int Count
     {
         get
@@ -64,8 +68,10 @@ public sealed class SeriesBuffer
         }
     }
 
+    /// <summary>Appends a point at a time (used as given, see <see cref="TimeValue"/>). Thread-safe.</summary>
     public void Append(DateTime x, double y) => Append(TimeValue.FromDateTime(x), y);
 
+    /// <summary>Appends a point at a time (its own wall-clock time). Thread-safe.</summary>
     public void Append(DateTimeOffset x, double y) => Append(TimeValue.FromDateTimeOffset(x), y);
 
     /// <summary>Appends a point; y may be NaN for a gap. On time buffers x is in milliseconds (<see cref="TimeValue"/>).</summary>
@@ -112,6 +118,7 @@ public sealed class SeriesBuffer
         Changed?.Invoke();
     }
 
+    /// <summary>Removes all points. Thread-safe.</summary>
     public void Clear()
     {
         lock (_lock)

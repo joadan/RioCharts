@@ -18,6 +18,7 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
     /// <summary>Vertical axis id for Y annotations, points and callouts. Default: the primary axis.</summary>
     [Parameter] public string? YAxisId { get; set; }
 
+    /// <summary>Text shown next to the annotation.</summary>
     [Parameter] public string? Label { get; set; }
 
     /// <summary>CSS color. Default: the muted annotation color (<c>--rio-annotation</c>).</summary>
@@ -29,10 +30,14 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
     /// <summary>Draw below or above the series. Default: bands below, the rest above.</summary>
     [Parameter] public AnnotationLayer? Layer { get; set; }
 
-    public AnnotationSpec Spec { get; private set; } = new();
+    internal AnnotationSpec Spec { get; private set; } = new();
 
+    AnnotationSpec IAnnotationSource.Spec => Spec;
+
+    /// <summary>The annotation's spec from the current parameters.</summary>
     protected abstract AnnotationSpec CreateSpec();
 
+    /// <summary>A spec of the given type with the parameters every annotation shares.</summary>
     protected AnnotationSpec Common(AnnotationType type) => new()
     {
         Id = Id,
@@ -46,6 +51,7 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
 
     private bool _registered;
 
+    /// <summary>Registers the annotation with the chart, or updates it when its spec changed.</summary>
     protected override void OnParametersSet()
     {
         if (Chart is null)
@@ -67,8 +73,10 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
     /// <summary>A draggable annotation was dropped at a new value (DateTime on time axes, else double).</summary>
     protected virtual Task OnDraggedAsync(object value) => Task.CompletedTask;
 
+    /// <summary>Never renders: the chart draws annotations.</summary>
     protected override bool ShouldRender() => false;
 
+    /// <summary>Removes the annotation from the chart.</summary>
     public void Dispose()
     {
         Chart?.Unregister(this);
@@ -87,6 +95,7 @@ public sealed class ReferenceLine<TValue> : AnnotationBase
     /// <summary>Position in data units.</summary>
     [Parameter, EditorRequired] public TValue? Value { get; set; }
 
+    /// <summary>Called with the new value when the user drags the line.</summary>
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
 
     /// <summary>X for a vertical line; Y (default) for a horizontal one.</summary>
@@ -98,6 +107,7 @@ public sealed class ReferenceLine<TValue> : AnnotationBase
     /// <summary>Let the user drag the line; the new value goes to <see cref="ValueChanged"/>.</summary>
     [Parameter] public bool Draggable { get; set; }
 
+    /// <inheritdoc />
     protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Line) with
     {
         Value = Value,
@@ -106,6 +116,7 @@ public sealed class ReferenceLine<TValue> : AnnotationBase
         Draggable = Draggable,
     };
 
+    /// <inheritdoc />
     protected override Task OnDraggedAsync(object value) =>
         AxisValues.TryConvert<TValue>(value, Value, out var converted) ? ValueChanged.InvokeAsync(converted) : Task.CompletedTask;
 }
@@ -116,8 +127,10 @@ public sealed class ReferenceLine<TValue> : AnnotationBase
 /// </summary>
 public sealed class ReferenceBand : AnnotationBase
 {
+    /// <summary>Start of the range: a number, DateTime, DateTimeOffset, DateOnly or category name.</summary>
     [Parameter, EditorRequired] public object? From { get; set; }
 
+    /// <summary>End of the range, in the same units as <see cref="From"/>.</summary>
     [Parameter, EditorRequired] public object? To { get; set; }
 
     /// <summary>X for a time period or category range; Y (default) for a value range.</summary>
@@ -126,6 +139,7 @@ public sealed class ReferenceBand : AnnotationBase
     /// <summary>Where the label sits. Default: Start.</summary>
     [Parameter] public LabelPosition? LabelPosition { get; set; }
 
+    /// <inheritdoc />
     protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Band) with
     {
         From = From,
@@ -147,6 +161,7 @@ public sealed class PointAnnotation : AnnotationBase
     /// <summary>The y value on the annotation's vertical axis.</summary>
     [Parameter, EditorRequired] public double Y { get; set; }
 
+    /// <inheritdoc />
     protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Point) with { X = X, Y = Y };
 }
 
@@ -156,8 +171,10 @@ public sealed class PointAnnotation : AnnotationBase
 /// </summary>
 public sealed class Callout : AnnotationBase
 {
+    /// <summary>The x value of the point: a number, DateTime, DateTimeOffset, DateOnly or category name.</summary>
     [Parameter, EditorRequired] public object? X { get; set; }
 
+    /// <summary>The y value of the point on the annotation's vertical axis.</summary>
     [Parameter, EditorRequired] public double Y { get; set; }
 
     /// <summary>Horizontal offset of the box from the point in pixels (negative: to the left). Default 24.</summary>
@@ -166,6 +183,7 @@ public sealed class Callout : AnnotationBase
     /// <summary>Vertical offset of the box from the point in pixels (negative: up). Default -32.</summary>
     [Parameter] public double? OffsetY { get; set; }
 
+    /// <inheritdoc />
     protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Callout) with { X = X, Y = Y, OffsetX = OffsetX, OffsetY = OffsetY };
 }
 

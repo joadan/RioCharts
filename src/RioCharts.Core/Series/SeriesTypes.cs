@@ -5,7 +5,7 @@ using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Series;
 
-public enum CoordinateSystem { Cartesian, Polar }
+internal enum CoordinateSystem { Cartesian, Polar }
 
 /// <summary>
 /// What a series type contributes: its coordinate system, extent rules, layout needs and

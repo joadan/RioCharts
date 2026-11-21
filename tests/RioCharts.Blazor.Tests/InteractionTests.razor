@@ -178,4 +178,27 @@
         Assert.Equal(2, series.GetProperty("cw").GetArrayLength());
         Assert.True(series.GetProperty("ch").GetSingle() > 0);
     }
+
+    [Fact]
+    public async Task Js_callbacks_go_to_a_private_object_not_the_component()
+    {
+        var zoomed = new List<ChartRange?>();
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" VisibleRangeChanged="@((ChartRange? r) => zoomed.Add(r))">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.DoesNotContain(typeof(RioChart<Reading>).GetMethods(), m => m.IsDefined(typeof(Microsoft.JSInterop.JSInvokableAttribute), true));
+        var reference = Calls("init")[0].Arguments[1]!;
+        var target = reference.GetType().GetProperty("Value")!.GetValue(reference)!;
+        Assert.IsNotType<RioChart<Reading>>(target);
+
+        // What the JS module does at the end of a drag zoom.
+        var start = new DateTimeOffset(DateTime.SpecifyKind(Supply[0].Time, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+        var onZoom = target.GetType().GetMethod("OnZoom")!;
+        Assert.True(onZoom.IsDefined(typeof(Microsoft.JSInterop.JSInvokableAttribute), true));
+        await cut.InvokeAsync(() => (Task)onZoom.Invoke(target, [(double)start, (double)start + 3_600_000])!);
+
+        Assert.Single(zoomed);
+        Assert.NotNull(zoomed[0]);
+    }
 }

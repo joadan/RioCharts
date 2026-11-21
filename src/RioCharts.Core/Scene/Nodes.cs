@@ -10,27 +10,67 @@ public abstract record Node
     public string? Key { get; init; }
 }
 
+/// <summary>A path (lines, curves, arcs) drawn with a paint style.</summary>
+/// <param name="Path">The geometry, in pixels.</param>
+/// <param name="Style">Fill and stroke, looked up in <see cref="Scene.Styles"/>.</param>
 public sealed record PathNode(PathData Path, StyleRef Style) : Node;
 
+/// <summary>An axis-aligned rectangle drawn with a paint style.</summary>
+/// <param name="Bounds">Position and size in pixels.</param>
+/// <param name="Style">Fill and stroke, looked up in <see cref="Scene.Styles"/>.</param>
 public sealed record RectNode(RectF Bounds, StyleRef Style) : Node
 {
+    /// <summary>Corner radius in pixels; 0 (the default) for square corners.</summary>
     public float CornerRadius { get; init; }
 }
 
-public enum Anchor { Start, Middle, End }
+/// <summary>Horizontal text alignment relative to the anchor point.</summary>
+public enum Anchor
+{
+    /// <summary>Text starts at the point.</summary>
+    Start,
 
-public enum Baseline { Top, Middle, Bottom }
+    /// <summary>Text is centered on the point.</summary>
+    Middle,
 
+    /// <summary>Text ends at the point.</summary>
+    End,
+}
+
+/// <summary>Vertical text alignment relative to the anchor point.</summary>
+public enum Baseline
+{
+    /// <summary>Top of the text at the point.</summary>
+    Top,
+
+    /// <summary>Text vertically centered on the point.</summary>
+    Middle,
+
+    /// <summary>Bottom of the text at the point.</summary>
+    Bottom,
+}
+
+/// <summary>A single line of text.</summary>
+/// <param name="Text">The text to draw.</param>
+/// <param name="At">Anchor point in pixels.</param>
+/// <param name="Style">Font and color, looked up in <see cref="Scene.Styles"/>.</param>
+/// <param name="Anchor">Horizontal alignment relative to <paramref name="At"/>.</param>
 public sealed record TextNode(string Text, PointF At, TextStyle Style, Anchor Anchor) : Node
 {
+    /// <summary>Vertical alignment relative to <see cref="At"/>. Default <see cref="Baseline.Middle"/>.</summary>
     public Baseline Baseline { get; init; } = Baseline.Middle;
 
     /// <summary>Rotation in degrees around <see cref="TextNode.At"/>.</summary>
     public float Rotation { get; init; }
 }
 
+/// <summary>A group of nodes with optional clipping and transform.</summary>
+/// <param name="Children">The nodes in the group, drawn in order.</param>
+/// <param name="Clip">Clip rectangle in pixels; null for no clipping.</param>
+/// <param name="Transform">Transform applied to the children; null for none.</param>
 public sealed record GroupNode(IReadOnlyList<Node> Children, RectF? Clip = null, Matrix? Transform = null) : Node
 {
+    /// <summary>A group with no children.</summary>
     public static GroupNode Empty { get; } = new([]);
 
     /// <summary>Set when the group is interactive (legend items, later points and annotations).</summary>
@@ -59,8 +99,13 @@ public sealed record NodeInteraction(string Kind, string Id)
 /// </summary>
 public sealed record Scene(Node Static, Node Series, Node Overlay)
 {
+    /// <summary>Width of the chart in pixels.</summary>
     public float Width { get; init; }
+
+    /// <summary>Height of the chart in pixels.</summary>
     public float Height { get; init; }
+
+    /// <summary>The paint and text styles that the nodes reference by name.</summary>
     public StyleTable Styles { get; init; } = new();
 
     /// <summary>Text alternative describing the chart (for screen readers and agents).</summary>

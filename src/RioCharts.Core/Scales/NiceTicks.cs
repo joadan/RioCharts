@@ -3,6 +3,10 @@ namespace RioCharts.Core.Scales;
 /// <summary>"Nice" numeric ticks: steps of 1, 2 or 5 times a power of ten.</summary>
 public static class NiceTicks
 {
+    /// <summary>
+    /// The smallest nice step (1, 2, 5 or 10 times a power of ten) that is at least
+    /// <paramref name="span"/> / <paramref name="targetCount"/>. Returns 1 for an empty or invalid span.
+    /// </summary>
     public static double Step(double span, int targetCount)
     {
         var raw = Math.Abs(span) / Math.Max(1, targetCount);

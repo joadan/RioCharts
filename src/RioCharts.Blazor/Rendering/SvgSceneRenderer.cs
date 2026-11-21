@@ -9,7 +9,7 @@ namespace RioCharts.Blazor.Rendering;
 /// Renders a <see cref="Core.Scene.Scene"/> as SVG elements. Re-renders only when it gets a new
 /// scene instance, so chart re-renders without layout changes cost nothing here.
 /// </summary>
-public sealed class SvgSceneRenderer : ComponentBase
+internal sealed class SvgSceneRenderer : ComponentBase
 {
     private Scene? _rendered;
     private int _clipCounter;

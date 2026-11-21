@@ -17,15 +17,16 @@ public sealed partial class SkiaRenderer(ExportTheme theme, SkiaFonts fonts)
     }
 
     /// <summary>Renders the scene to an encoded image (PNG by default).</summary>
-    public byte[] Encode(Scene scene, float scale, string? background, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
+    public byte[] Encode(Scene scene, double scale, string? background, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
     {
+        scale = scale > 0 && double.IsFinite(scale) ? scale : 1;
         var width = Math.Max(1, (int)Math.Ceiling(scene.Width * scale));
         var height = Math.Max(1, (int)Math.Ceiling(scene.Height * scale));
         using var surface = SKSurface.Create(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul))
             ?? throw new InvalidOperationException("Could not create a Skia surface.");
         var canvas = surface.Canvas;
         canvas.Clear(background is null ? SKColors.Transparent : ParseColor(theme.Resolve(background)));
-        canvas.Scale(scale);
+        canvas.Scale((float)scale);
         Draw(canvas, scene);
         canvas.Flush();
         using var image = surface.Snapshot();
@@ -157,7 +158,7 @@ public sealed partial class SkiaRenderer(ExportTheme theme, SkiaFonts fonts)
     }
 
     /// <summary>Path commands to a Skia path. Arcs use center and angles clockwise from 12 o'clock.</summary>
-    public static SKPath ToSkPath(PathData data)
+    internal static SKPath ToSkPath(PathData data)
     {
         using var path = new SKPathBuilder();
         var k = data.Coords;
@@ -227,7 +228,7 @@ public sealed partial class SkiaRenderer(ExportTheme theme, SkiaFonts fonts)
     }
 
     /// <summary>CSS colors: #rgb, #rrggbb, #rrggbbaa, rgb()/rgba() and a few names.</summary>
-    public static SKColor ParseColor(string color)
+    internal static SKColor ParseColor(string color)
     {
         color = color.Trim();
         if (SKColor.TryParse(color, out var parsed))

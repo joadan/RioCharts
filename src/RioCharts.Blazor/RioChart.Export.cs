@@ -22,8 +22,11 @@ public sealed record ChartImageOptions
 /// <summary>An export format.</summary>
 public enum ExportFormat
 {
+    /// <summary>A PNG image.</summary>
     Png,
+    /// <summary>An SVG document.</summary>
     Svg,
+    /// <summary>The chart's data as CSV.</summary>
     Csv,
 }
 
@@ -31,10 +34,15 @@ public enum ExportFormat
 [Flags]
 public enum ExportFormats
 {
+    /// <summary>No download menu.</summary>
     None = 0,
+    /// <summary>PNG image.</summary>
     Png = 1,
+    /// <summary>SVG document.</summary>
     Svg = 2,
+    /// <summary>The data as CSV.</summary>
     Csv = 4,
+    /// <summary>All formats.</summary>
     All = Png | Svg | Csv,
 }
 

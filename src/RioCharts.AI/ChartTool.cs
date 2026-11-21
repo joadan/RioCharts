@@ -35,13 +35,16 @@ public sealed record ChartToolOptions
 [JsonConverter(typeof(JsonStringEnumConverter<ChartImageFormat>))]
 public enum ChartImageFormat
 {
+    /// <summary>A PNG image.</summary>
     Png,
+    /// <summary>An SVG document.</summary>
     Svg,
 }
 
 /// <summary>What the agent asks of a rendered image (render_chart). Unset values come from <see cref="ChartToolOptions.Export"/>.</summary>
 public sealed record ChartImageRequest
 {
+    /// <summary>PNG or SVG. Default PNG.</summary>
     public ChartImageFormat Format { get; init; } = ChartImageFormat.Png;
 
     /// <summary>Width in chart units (PNG pixels are this times <see cref="ExportOptions.Scale"/>).</summary>
@@ -64,6 +67,7 @@ public sealed record ChartImageRequest
 /// </summary>
 public sealed record ChartToolResult
 {
+    /// <summary>True when the chart was created; false when <see cref="Errors"/> lists what to fix.</summary>
     public bool Success { get; init; }
 
     /// <summary>Problems with the spec, each with its path and what to do ("series[0].y: field 'temp' not found; available: ...").</summary>
@@ -90,8 +94,10 @@ public sealed record ChartToolResult
     /// <summary>render_chart: the file the image was saved to, when the tool has an <see cref="ChartToolOptions.OutputDirectory"/>.</summary>
     public string? File { get; init; }
 
+    /// <summary>The chart as PNG (create_chart, or render_chart with format png).</summary>
     [JsonIgnore] public byte[]? Png { get; init; }
 
+    /// <summary>The chart as SVG (create_chart with <see cref="ChartToolOptions.RenderSvg"/>, or render_chart with format svg).</summary>
     [JsonIgnore] public string? Svg { get; init; }
 
     /// <summary>The spec with concrete series (types resolved, groups expanded).</summary>
@@ -111,8 +117,10 @@ public sealed record ChartToolResult
 /// </summary>
 public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? options = null)
 {
+    /// <summary>The name of the create_chart tool.</summary>
     public const string ToolName = "create_chart";
 
+    /// <summary>The name of the render_chart tool.</summary>
     public const string RenderToolName = "render_chart";
 
     /// <summary>The render_chart description for the model.</summary>

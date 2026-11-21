@@ -29,7 +29,7 @@
          aria-describedby="@(keys ? $"{_id}-desc {_id}-keys" : _id + "-desc")">
         <title>@label</title>
         <desc id="@(_id + "-desc")">@scene.Description</desc>
-        <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" OmitSeries="UsesCanvas" LegendTips="Live" />
+        @SceneFragment(scene)
     </svg>
     @if (keys)
     {
@@ -75,7 +75,7 @@
     {
         var offered = OfferedFormats();
         var single = offered.Count == 1;
-        var buttonLabel = single ? ChartTexts.Format(texts.DownloadFormat, Culture, null, ChartTexts.English.DownloadFormat, offered[0].Label) : texts.DownloadChart;
+        var buttonLabel = single ? texts.Fill(nameof(ChartTexts.DownloadFormat), Culture, offered[0].Label) : texts.DownloadChart;
         <div class="rio-export @(_exportMenuOpen ? "rio-export-open" : null)" @onkeydown="OnExportMenuKey">
             <button type="button" class="rio-export-button" title="@buttonLabel" aria-label="@buttonLabel"
                     aria-haspopup="@(single ? null : "menu")" aria-expanded="@(single ? null : _exportMenuOpen ? "true" : "false")"

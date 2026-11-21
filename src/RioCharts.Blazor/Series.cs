@@ -85,6 +85,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// </summary>
     [Parameter] public Func<TooltipPoint<TItem>, string?>? TooltipValue { get; set; }
 
+    /// <summary>The series type this component registers.</summary>
     protected abstract SeriesType Type { get; }
 
     /// <summary>
@@ -98,6 +99,8 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     string? ISeriesSource.FormatTooltipValue(TooltipPointInfo point) =>
         TooltipValue?.Invoke(TooltipBuilder.Point<TItem>(point, this));
 
+    /// <summary>The series' spec from the current parameters; derived series add their own settings.</summary>
+    /// <param name="id">The id the chart assigned to the series.</param>
     protected virtual SeriesSpec CreateSpec(string id) => new()
     {
         Id = id,
@@ -117,7 +120,9 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     IReadOnlyList<int> ISeriesSource.InputIndexes(int sourceIndex) =>
         _groups is null ? [sourceIndex] : sourceIndex >= 0 && sourceIndex < _groups.Count ? _groups[sourceIndex] : [];
 
-    public SeriesSpec Spec { get; private set; } = new() { Id = "" };
+    internal SeriesSpec Spec { get; private set; } = new() { Id = "" };
+
+    SeriesSpec ISeriesSource.Spec => Spec;
 
     SeriesData ISeriesSource.Data
     {
@@ -147,8 +152,9 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     private void OnBufferChanged() => Chart?.DataArrived();
 
     /// <summary>The items behind the plotted points (index = the point's source index).</summary>
-    public IReadOnlyList<TItem> ItemList { get; private set; } = [];
+    internal IReadOnlyList<TItem> ItemList { get; private set; } = [];
 
+    /// <summary>Registers the series with the chart and updates its data when Items, Data, DataVersion or Buffer changed.</summary>
     protected override void OnParametersSet()
     {
         if (Chart is null)
@@ -245,8 +251,10 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     }
 
     // Series draw nothing themselves; the chart renders the scene.
+    /// <summary>Never renders: the chart draws the series.</summary>
     protected override bool ShouldRender() => false;
 
+    /// <summary>Removes the series from the chart and stops listening to its <see cref="Buffer"/>.</summary>
     public void Dispose()
     {
         if (_buffer is not null)
@@ -271,22 +279,29 @@ public sealed class LineSeries<TItem> : SeriesBase<TItem>
     /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last | PointHighlight.Max</c>. Default none.</summary>
     [Parameter] public PointHighlight Highlight { get; set; }
 
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Line;
 
+    /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
 
 /// <summary>Area series, filled down to zero.</summary>
 public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 {
+    /// <summary>Shape of the top edge: Linear, Monotone (smooth, no overshoot) or Step.</summary>
     [Parameter] public CurveType Curve { get; set; } = CurveType.Linear;
+
+    /// <summary>Width of the top line in pixels. Default 2.</summary>
     [Parameter] public double StrokeWidth { get; set; } = 2;
 
     /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last</c>. Default none.</summary>
     [Parameter] public PointHighlight Highlight { get; set; }
 
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Area;
 
+    /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
 
@@ -302,8 +317,10 @@ public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
     /// <summary>Draw a dashed least-squares trend line through the points.</summary>
     [Parameter] public bool TrendLine { get; set; }
 
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Scatter;
 
+    /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { MarkerSize = MarkerSize, TrendLine = TrendLine };
 }
 
@@ -317,8 +334,10 @@ public sealed class HeatmapSeries<TItem> : SeriesBase<TItem>
     /// <summary>The value that gets the full color (e.g. 100 for percentages). Default: the highest value.</summary>
     [Parameter] public double? Max { get; set; }
 
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Heatmap;
 
+    /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Max = Max };
 }
 
@@ -337,8 +356,10 @@ public sealed class RangeAreaSeries<TItem> : SeriesBase<TItem>
     /// <summary>Line shape of the band's edges: Linear or Monotone.</summary>
     [Parameter] public CurveType Curve { get; set; } = CurveType.Linear;
 
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.RangeArea;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (HighValue is not null)
@@ -349,6 +370,7 @@ public sealed class RangeAreaSeries<TItem> : SeriesBase<TItem>
         base.OnParametersSet();
     }
 
+    /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve };
 
     private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
@@ -377,6 +399,7 @@ public sealed class RangeAreaSeries<TItem> : SeriesBase<TItem>
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>
 public sealed class BarSeries<TItem> : SeriesBase<TItem>
 {
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Bar;
 }
 
@@ -386,11 +409,14 @@ public sealed class BarSeries<TItem> : SeriesBase<TItem>
 /// </summary>
 public class PieSeries<TItem> : SeriesBase<TItem>
 {
-    /// <summary>Inner radius as a fraction of the outer radius; above 0 makes a donut.</summary>
-    [Parameter] public double InnerRadius { get; set; }
+    /// <summary>
+    /// Inner radius as a fraction of the outer radius; above 0 makes a donut. Default: 0 for one
+    /// pie, 0.4 when several pie series are drawn as rings.
+    /// </summary>
+    [Parameter] public double? InnerRadius { get; set; }
 
-    /// <summary>Start angle in degrees, clockwise from 12 o'clock.</summary>
-    [Parameter] public double StartAngle { get; set; }
+    /// <summary>Start angle in degrees, clockwise from 12 o'clock. Default 0.</summary>
+    [Parameter] public double? StartAngle { get; set; }
 
     /// <summary>End angle in degrees. Default: a full circle. 180 with StartAngle -90 makes a half donut.</summary>
     [Parameter] public double? EndAngle { get; set; }
@@ -398,8 +424,10 @@ public class PieSeries<TItem> : SeriesBase<TItem>
     /// <summary>Group slices below this share of the total (e.g. 0.03) into one "Other" slice.</summary>
     [Parameter] public double? GroupSmallSlices { get; set; }
 
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Pie;
 
+    /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
     {
         InnerRadius = InnerRadius,
@@ -412,6 +440,7 @@ public class PieSeries<TItem> : SeriesBase<TItem>
 /// <summary>A pie with a hole (inner radius 0.6 by default); shows the total in the middle.</summary>
 public sealed class DonutSeries<TItem> : PieSeries<TItem>
 {
+    /// <summary>Creates a donut series with an inner radius of 0.6.</summary>
     public DonutSeries() => InnerRadius = 0.6;
 }
 
@@ -425,13 +454,15 @@ public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
     [Parameter] public double? InnerRadius { get; set; }
 
     /// <summary>Start angle in degrees, clockwise from 12 o'clock. Default 0.</summary>
-    [Parameter] public double StartAngle { get; set; }
+    [Parameter] public double? StartAngle { get; set; }
 
     /// <summary>End angle in degrees. Default 270.</summary>
-    [Parameter] public double EndAngle { get; set; } = 270;
+    [Parameter] public double? EndAngle { get; set; }
 
+    /// <inheritdoc />
     protected override SeriesType Type => SeriesType.RadialBar;
 
+    /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
     {
         Max = Max,

@@ -13,8 +13,10 @@ public interface ITextMeasurer
 /// </summary>
 public sealed class ApproximateTextMeasurer : ITextMeasurer
 {
+    /// <summary>The shared instance.</summary>
     public static ApproximateTextMeasurer Instance { get; } = new();
 
+    /// <inheritdoc />
     public double Measure(string text, double fontSize)
     {
         if (string.IsNullOrEmpty(text))
@@ -65,6 +67,7 @@ public sealed class WidthTableTextMeasurer : ITextMeasurer
         _average = _widths.Length > 0 ? _widths.Average() : 0.55;
     }
 
+    /// <inheritdoc />
     public double Measure(string text, double fontSize)
     {
         if (string.IsNullOrEmpty(text))

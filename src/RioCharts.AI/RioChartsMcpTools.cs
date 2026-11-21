@@ -15,6 +15,7 @@ namespace RioCharts.AI;
 [McpServerToolType]
 public sealed class RioChartsMcpTools(ChartTool tool)
 {
+    /// <summary>create_chart: validates and renders a spec, returning the result JSON and the PNG.</summary>
     [McpServerTool(Name = ChartTool.ToolName, Title = "Create chart")]
     [Description("Creates a chart from a JSON spec and returns it as a PNG with a short description, or errors to fix (then call again). "
         + "Call list_datasets first to see the datasets and fields. Minimal spec: "
@@ -30,6 +31,7 @@ public sealed class RioChartsMcpTools(ChartTool tool)
         return ToCallToolResult(result);
     }
 
+    /// <summary>render_chart: renders a spec as a PNG or SVG image for the agent.</summary>
     [McpServerTool(Name = ChartTool.RenderToolName, Title = "Render chart image")]
     [Description(ChartTool.RenderDescription)]
     public async Task<CallToolResult> RenderChart(
@@ -46,10 +48,12 @@ public sealed class RioChartsMcpTools(ChartTool tool)
         return ToCallToolResult(result);
     }
 
+    /// <summary>Lists the datasets that charts can use, with their fields and types.</summary>
     [McpServerTool(Name = "list_datasets", Title = "List datasets", ReadOnly = true)]
     [Description("Lists the datasets that charts can use, with their fields and types.")]
     public string ListDatasets() => tool.ListDatasets();
 
+    /// <summary>Returns the JSON schema of a chart spec, with a description of every option.</summary>
     [McpServerTool(Name = "get_chart_schema", Title = "Chart spec schema", ReadOnly = true)]
     [Description("Returns the JSON schema of a chart spec, with a description of every option.")]
     public string GetChartSchema() => ChartTool.GetSchema();
@@ -79,6 +83,7 @@ public sealed class RioChartsMcpTools(ChartTool tool)
     }
 }
 
+/// <summary>Registers the RioCharts chart tools with an MCP server.</summary>
 public static class RioChartsMcpServerBuilderExtensions
 {
     /// <summary>Adds create_chart, render_chart, list_datasets and get_chart_schema to an MCP server.</summary>

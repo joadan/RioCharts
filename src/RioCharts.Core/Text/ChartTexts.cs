@@ -229,7 +229,7 @@ public sealed record ChartTexts
     /// the first form of a "one|other" template when the count is 1. Never throws: a broken template
     /// falls back to <paramref name="fallback"/>, then to the template itself.
     /// </summary>
-    public static string Format(string template, IFormatProvider? provider, long? count, string? fallback, params object?[] args)
+    internal static string Format(string template, IFormatProvider? provider, long? count, string? fallback, params object?[] args)
     {
         try
         {
@@ -245,8 +245,13 @@ public sealed record ChartTexts
         }
     }
 
-    /// <summary>Fills in this set's template for <paramref name="key"/>, falling back to the English template.</summary>
-    internal string Fill(string key, IFormatProvider? provider, params object?[] args) =>
+    /// <summary>
+    /// Fills in this set's template for <paramref name="key"/> (a property name, see <see cref="Keys"/>)
+    /// with <paramref name="args"/>, the way charts do. Never throws: a template that cannot be
+    /// filled falls back to the English one.
+    /// </summary>
+    /// <example><c>texts.Fill(nameof(ChartTexts.DownloadFormat), culture, "PNG")</c> gives "Download PNG".</example>
+    public string Fill(string key, IFormatProvider? provider, params object?[] args) =>
         Format(_texts[key], provider, null, Defaults[key], args);
 
     /// <summary>Fills in a "one|other" template for <paramref name="key"/>.</summary>
@@ -269,9 +274,11 @@ public sealed record ChartTexts
     private void Set(string? value, [CallerMemberName] string key = "") =>
         _texts[key] = string.IsNullOrEmpty(value) ? Defaults[key] : value;
 
+    /// <summary>True when both sets have the same texts.</summary>
     public bool Equals(ChartTexts? other) =>
         other is not null && (ReferenceEquals(this, other) || (_texts.Count == other._texts.Count && _texts.All(p => other._texts.TryGetValue(p.Key, out var v) && v == p.Value)));
 
+    /// <summary>A hash of the texts, consistent with <see cref="Equals(ChartTexts?)"/>.</summary>
     public override int GetHashCode()
     {
         var hash = 0;

@@ -17,8 +17,9 @@ public sealed record ExportOptions
     public double Height { get; init; } = 400;
 
     /// <summary>Pixel density of PNG output (2 = sharp on high-density screens). Default 2.</summary>
-    public float Scale { get; init; } = 2;
+    public double Scale { get; init; } = 2;
 
+    /// <summary>Colors for the theme tokens. Default <see cref="ExportTheme.Light"/>.</summary>
     public ExportTheme Theme { get; init; } = ExportTheme.Light;
 
     /// <summary>Background color or token; null for transparent. Default: the theme's surface color.</summary>
@@ -27,6 +28,7 @@ public sealed record ExportOptions
     /// <summary>Font families in order of preference (the first installed one is used for PNG and measurement).</summary>
     public string FontFamily { get; init; } = "Segoe UI, Inter, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif";
 
+    /// <summary>Culture for number and date labels. Default: the current culture.</summary>
     public CultureInfo Culture { get; init; } = CultureInfo.CurrentCulture;
 
     /// <summary>The chart's own texts ("No data available", "Total", "Other", the description). Null: <see cref="ChartTexts.For"/> the culture.</summary>

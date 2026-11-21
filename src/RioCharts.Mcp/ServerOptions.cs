@@ -6,6 +6,7 @@ namespace RioCharts.Mcp;
 /// <summary>Command-line options of riocharts-mcp.</summary>
 public sealed record ServerOptions
 {
+    /// <summary>The help text printed for <c>--help</c>.</summary>
     public const string Usage = """
         riocharts-mcp: an MCP server (stdio) that renders charts as PNG or SVG files for AI agents.
 
@@ -24,18 +25,25 @@ public sealed record ServerOptions
           { "mcpServers": { "riocharts": { "command": "riocharts-mcp", "args": ["--data", "data"] } } }
         """;
 
+    /// <summary>Folder of CSV and JSON files offered as datasets (<c>--data</c>). Default null: no datasets.</summary>
     public string? DataFolder { get; init; }
 
+    /// <summary>Folder images are saved to (<c>--out</c>). Default <c>charts</c>.</summary>
     public string OutputFolder { get; init; } = "charts";
 
+    /// <summary>Default image width in pixels (<c>--width</c>). Default 800.</summary>
     public int Width { get; init; } = 800;
 
+    /// <summary>Default image height in pixels (<c>--height</c>). Default 400.</summary>
     public int Height { get; init; } = 400;
 
+    /// <summary>Use the dark theme by default (<c>--theme dark</c>).</summary>
     public bool Dark { get; init; }
 
+    /// <summary>Culture for labels (<c>--culture</c>). Default: the system culture.</summary>
     public CultureInfo Culture { get; init; } = CultureInfo.CurrentCulture;
 
+    /// <summary>Show the help text and exit (<c>--help</c>).</summary>
     public bool Help { get; init; }
 
     /// <summary>The export defaults these options give.</summary>

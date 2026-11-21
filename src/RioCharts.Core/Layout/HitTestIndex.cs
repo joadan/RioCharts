@@ -13,8 +13,15 @@ public sealed class HitTestIndex
 {
     private readonly List<SeriesHits> _series = [];
 
+    /// <summary>The indexed points, one entry per series.</summary>
     public IReadOnlyList<SeriesHits> Series => _series;
 
+    /// <summary>Drawn points of one series, sorted by x. The arrays are parallel.</summary>
+    /// <param name="SeriesId">The series id.</param>
+    /// <param name="X">Horizontal pixel positions, ascending.</param>
+    /// <param name="Y">Vertical pixel positions.</param>
+    /// <param name="Index">Index of each point into the series' <see cref="Data.SeriesData"/>.</param>
+    /// <param name="SourceIndex">Index of each point into the original input (items list or columns).</param>
     public sealed record SeriesHits(string SeriesId, float[] X, float[] Y, int[] Index, int[] SourceIndex);
 
     internal void Add(SeriesHits hits)

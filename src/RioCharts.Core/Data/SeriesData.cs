@@ -31,9 +31,13 @@ public sealed class SeriesData
         SourceIndex = sourceIndex;
     }
 
+    /// <summary>The x values, sorted ascending: numbers, time in milliseconds (see <see cref="TimeValue"/>) or category indexes. Treat as read-only; the arrays are exposed for speed.</summary>
     public double[] X { get; }
+    /// <summary>The y values, one per x; NaN is a gap. Treat as read-only.</summary>
     public double[] Y { get; }
+    /// <summary>What the x values are: numbers, times or categories.</summary>
     public XKind Kind { get; }
+    /// <summary>The number of points.</summary>
     public int Count => X.Length;
 
     /// <summary>Category names when <see cref="Kind"/> is Category; X holds indexes into this list.</summary>
@@ -118,6 +122,7 @@ public sealed class SeriesData
         return new SeriesData(keys, y, Kind, Categories, source) { Low = low };
     }
 
+    /// <summary>A series with no points.</summary>
     public static SeriesData Empty { get; } = new([], [], XKind.Numeric, null, null);
 
     /// <summary>Index of the point in the original input (items list or columns).</summary>
@@ -125,11 +130,14 @@ public sealed class SeriesData
 
     // ---------- Columnar fast path ----------
 
+    /// <summary>Numeric x and y columns (copied). Points without a finite x are dropped, unsorted x is sorted, and missing y values are NaN (gaps).</summary>
     public static SeriesData From(ReadOnlySpan<double> x, ReadOnlySpan<double> y) =>
         Create(x.ToArray(), CopyY(y, x.Length), XKind.Numeric);
 
+    /// <summary>Numeric x and y columns (copied).</summary>
     public static SeriesData From(ReadOnlyMemory<double> x, ReadOnlyMemory<double> y) => From(x.Span, y.Span);
 
+    /// <summary>Time x and y columns (copied); times are used as given, see <see cref="TimeValue"/>.</summary>
     public static SeriesData From(ReadOnlySpan<DateTime> x, ReadOnlySpan<double> y)
     {
         var xs = new double[x.Length];
@@ -147,8 +155,10 @@ public sealed class SeriesData
         return Create(xs, CopyY(y, x.Length), XKind.Time).WithOffsets(offsets);
     }
 
+    /// <summary>Time x and y columns (copied).</summary>
     public static SeriesData From(ReadOnlyMemory<DateTime> x, ReadOnlyMemory<double> y) => From(x.Span, y.Span);
 
+    /// <summary>Time x and y columns (copied); each value contributes its own wall-clock time.</summary>
     public static SeriesData From(ReadOnlySpan<DateTimeOffset> x, ReadOnlySpan<double> y)
     {
         var xs = new double[x.Length];
@@ -166,6 +176,7 @@ public sealed class SeriesData
         return Create(xs, CopyY(y, x.Length), XKind.Time).WithOffsets(offsets);
     }
 
+    /// <summary>Time x and y columns (copied).</summary>
     public static SeriesData From(ReadOnlyMemory<DateTimeOffset> x, ReadOnlyMemory<double> y) => From(x.Span, y.Span);
 
     /// <summary>Category data; order of first appearance is kept.</summary>

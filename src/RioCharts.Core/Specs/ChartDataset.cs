@@ -9,14 +9,22 @@ namespace RioCharts.Core.Specs;
 /// <summary>The kind of values in a dataset field.</summary>
 public enum FieldType
 {
+    /// <summary>Numbers (double).</summary>
     Number,
+    /// <summary>Times (DateTime or DateTimeOffset).</summary>
     Time,
+    /// <summary>Text (string).</summary>
     Text,
 }
 
 /// <summary>A named column: its type and values (double, DateTime/DateTimeOffset or string; null for missing).</summary>
 public sealed class DataField
 {
+    /// <summary>Creates a field.</summary>
+    /// <param name="name">The field name specs refer to.</param>
+    /// <param name="type">The kind of values.</param>
+    /// <param name="values">One value per row; null for missing.</param>
+    /// <param name="description">What the field means (shown to AI agents).</param>
     public DataField(string name, FieldType type, object?[] values, string? description = null)
     {
         Name = name;
@@ -25,8 +33,11 @@ public sealed class DataField
         Description = description;
     }
 
+    /// <summary>The field name specs refer to (matched case-insensitively).</summary>
     public string Name { get; }
+    /// <summary>The kind of values.</summary>
     public FieldType Type { get; }
+    /// <summary>One value per row: double, DateTime/DateTimeOffset or string; null for missing.</summary>
     public object?[] Values { get; }
 
     /// <summary>What the field means (shown to AI agents), e.g. "Revenue in €".</summary>
@@ -41,6 +52,10 @@ public sealed partial class ChartDataset
 {
     private readonly Dictionary<string, DataField> _byName;
 
+    /// <summary>Creates a dataset.</summary>
+    /// <param name="name">The name specs refer to.</param>
+    /// <param name="fields">The columns.</param>
+    /// <param name="description">What the data is (shown to AI agents).</param>
     public ChartDataset(string name, IReadOnlyList<DataField> fields, string? description = null)
     {
         Name = name;
@@ -50,9 +65,13 @@ public sealed partial class ChartDataset
         _byName = fields.ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>The name specs refer to (matched case-insensitively).</summary>
     public string Name { get; }
+    /// <summary>What the data is (shown to AI agents), e.g. "Orders per day and store".</summary>
     public string? Description { get; }
+    /// <summary>The columns.</summary>
     public IReadOnlyList<DataField> Fields { get; }
+    /// <summary>The number of rows (the longest field).</summary>
     public int RowCount { get; }
 
     /// <summary>The field with this name (case-insensitive), or null.</summary>
@@ -214,8 +233,10 @@ public sealed class InMemoryDataSource(IEnumerable<ChartDataset> datasets) : ICh
 {
     private readonly Dictionary<string, ChartDataset> _datasets = datasets.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 
+    /// <inheritdoc />
     public IReadOnlyList<ChartDataset> Describe() => [.. _datasets.Values];
 
+    /// <inheritdoc />
     public Task<ChartDataset?> LoadAsync(string name, CancellationToken cancellationToken = default) =>
         Task.FromResult(_datasets.GetValueOrDefault(name));
 }

@@ -8,6 +8,7 @@ namespace RioCharts.Core.Specs;
 /// <summary>A spec bound to data: concrete series (types resolved, groups expanded) and their columns.</summary>
 public sealed record SpecBindResult(ChartSpec Spec, IReadOnlyDictionary<string, SeriesData> Data, IReadOnlyList<SpecError> Errors, IReadOnlyList<string> Warnings)
 {
+    /// <summary>True when the spec was bound without errors.</summary>
     public bool Success => Errors.Count == 0;
 }
 

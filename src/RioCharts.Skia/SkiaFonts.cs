@@ -12,6 +12,8 @@ public sealed class SkiaFonts
     private readonly Dictionary<int, SKTypeface> _typefaces = [];
     private readonly Lock _lock = new();
 
+    /// <summary>Picks the first installed family of <paramref name="familyList"/>, or Skia's default font.</summary>
+    /// <param name="familyList">Font families in order of preference, comma-separated as in CSS.</param>
     public SkiaFonts(string familyList)
     {
         FamilyList = familyList;
@@ -28,6 +30,7 @@ public sealed class SkiaFonts
     /// <summary>The family Skia found and uses for PNG and measurement.</summary>
     public string Family { get; }
 
+    /// <summary>The typeface for a font weight (400 normal, 700 bold), cached.</summary>
     public SKTypeface Typeface(int weight)
     {
         lock (_lock)
@@ -55,6 +58,7 @@ public sealed class SkiaTextMeasurer(SkiaFonts fonts) : ITextMeasurer
 {
     private readonly Lock _lock = new();
 
+    /// <summary>Width of <paramref name="text"/> in pixels at <paramref name="fontSize"/> (normal weight).</summary>
     public double Measure(string text, double fontSize)
     {
         if (string.IsNullOrEmpty(text))

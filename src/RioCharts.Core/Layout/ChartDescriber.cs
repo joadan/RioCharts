@@ -4,11 +4,35 @@ using RioCharts.Core.Data;
 
 namespace RioCharts.Core.Layout;
 
-public enum Trend { None, Increasing, Decreasing, Stable }
+/// <summary>The overall direction of a series, from <see cref="ChartDescriber.ComputeTrend"/>.</summary>
+public enum Trend
+{
+    /// <summary>No trend can be computed (fewer than two points, or no x range).</summary>
+    None,
+
+    /// <summary>Clearly rising.</summary>
+    Increasing,
+
+    /// <summary>Clearly falling.</summary>
+    Decreasing,
+
+    /// <summary>Flat, or no clear direction.</summary>
+    Stable,
+}
 
 /// <summary>Text alternative for a chart: series, ranges and trends.</summary>
 public static class ChartDescriber
 {
+    /// <summary>
+    /// Describes the chart in a few sentences in the chart's language: title, series count and,
+    /// per visible series, its value count, lowest and highest values with their x, and its trend
+    /// (no trend for category axes).
+    /// </summary>
+    /// <param name="spec">The chart (for its title).</param>
+    /// <param name="series">The series with their data; hidden ones are left out.</param>
+    /// <param name="xKind">The kind of x axis.</param>
+    /// <param name="culture">Culture for numbers and dates.</param>
+    /// <param name="texts">The chart's own texts. Null: <see cref="ChartTexts.For"/> the culture.</param>
     public static string Describe(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
         ChartTexts? texts = null)
     {

@@ -22,7 +22,9 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591;CS1573;CS1734</NoWarn>
+    <NoWarn>$(NoWarn);CS1573;CS1734</NoWarn>
+    <!-- Missing XML docs (CS1591) warn in the libraries under src only. -->
+    <NoWarn Condition="!$(MSBuildProjectDirectory.Replace('\', '/').Contains('/src/'))">$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <!-- Deterministic paths in CI builds (GitHub Actions sets GITHUB_ACTIONS=true). -->

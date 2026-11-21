@@ -9,6 +9,26 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 
 ### Blazor
 
+- API review before the first release:
+  - **Breaking:** the JS callbacks (`OnPointClicked`, `OnZoom`, `OnZoomReset`, `OnResize`,
+    `OnTooltipHover`, `OnAnnotationDragged`) are no longer public methods on `RioChart`; the JS
+    module calls a private callback object. Use the events (`OnPointClick`, `VisibleRangeChanged`,
+    `OnAnnotationChanged`, …) and `ZoomToAsync`/`ResetZoomAsync`.
+  - **Breaking:** rendering internals are internal: `SvgSceneRenderer`, `SvgWriter`,
+    `CanvasSeriesWriter` (Blazor), `CoordinateSystem` and `ChartSpecJson.Options` (Core; use
+    `ChartSpecJson.Parse`/`Serialize`, which fill in defaults), `SvgExporter.N`/`PathData` and
+    `SkiaRenderer.ParseColor`/`ToSkPath` (Skia), and `Spec`/`ItemList` on series and annotation
+    components.
+  - **Breaking:** `ChartTexts.Format(template, provider, count, fallback, args)` is internal;
+    `texts.Fill(key, provider, args)` fills one of a set's templates with the English fallback.
+  - **Breaking:** `ExportOptions.Scale` is a `double` (was `float`), like
+    `ChartImageOptions.Scale`; `SkiaRenderer.Encode` takes a `double` scale, and a scale that is not
+    positive draws at 1.
+  - **Breaking:** `PieSeries.InnerRadius`/`StartAngle` and `RadialBarSeries.StartAngle`/`EndAngle`
+    are `double?` like the spec: null is the chart's default. This also fixes nested pie rings
+    without an `InnerRadius`: the innermost had no hole, unlike the same chart from a JSON spec (0.4).
+  - Every public type and member has an XML doc comment, and the build now warns about missing
+    ones (CS1591).
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.

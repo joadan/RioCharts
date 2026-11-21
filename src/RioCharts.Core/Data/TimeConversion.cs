@@ -20,14 +20,19 @@ public enum UnspecifiedTimes
 /// </summary>
 public sealed class TimeConversion
 {
+    /// <summary>Creates a conversion for a display zone.</summary>
+    /// <param name="zone">The zone ticks, labels and tooltips are shown in.</param>
+    /// <param name="unspecified">How times without a zone are read.</param>
     public TimeConversion(TimeZoneInfo zone, UnspecifiedTimes unspecified)
     {
         Zone = zone ?? throw new ArgumentNullException(nameof(zone));
         Unspecified = unspecified;
     }
 
+    /// <summary>The display zone.</summary>
     public TimeZoneInfo Zone { get; }
 
+    /// <summary>How times without a zone are read.</summary>
     public UnspecifiedTimes Unspecified { get; }
 
     /// <summary>Wall-clock milliseconds in the display zone for an instant.</summary>

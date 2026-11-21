@@ -8,11 +8,19 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
+/// <summary>Size, fonts and environment for a layout pass (<see cref="ChartLayout.Compute"/>).</summary>
 public sealed record LayoutOptions
 {
+    /// <summary>Chart width in pixels. Default 640.</summary>
     public double Width { get; init; } = 640;
+
+    /// <summary>Chart height in pixels. Default 300.</summary>
     public double Height { get; init; } = 300;
+
+    /// <summary>Measures label text to fit ticks and margins. Default: <see cref="ApproximateTextMeasurer"/>.</summary>
     public ITextMeasurer Measurer { get; init; } = ApproximateTextMeasurer.Instance;
+
+    /// <summary>Culture for numbers and dates in labels. Default: the current culture.</summary>
     public CultureInfo Culture { get; init; } = CultureInfo.CurrentCulture;
 
     /// <summary>The chart's own texts (empty states, descriptions, screen reader names). Null: <see cref="ChartTexts.For"/> the culture.</summary>
@@ -21,7 +29,10 @@ public sealed record LayoutOptions
     /// <summary>Ids of series hidden through the legend (they keep their color and legend item).</summary>
     public IReadOnlySet<string>? HiddenSeries { get; init; }
 
+    /// <summary>Font size of labels in pixels. Default 12.</summary>
     public double FontSize { get; init; } = 12;
+
+    /// <summary>Font size of the title in pixels. Default 15.</summary>
     public double TitleFontSize { get; init; } = 15;
 
     /// <summary>Line/area series with more points than this are downsampled. Null: twice the plot width (at least 500).</summary>
@@ -43,14 +54,28 @@ public sealed record LayoutOptions
 /// <summary>A legend item. <paramref name="Tooltip"/>: a summary shown on hover (lines separated by \n).</summary>
 public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty, string? Tooltip = null);
 
+/// <summary>The output of <see cref="ChartLayout.Compute"/>: the scene plus what interaction needs.</summary>
 public sealed class ChartLayoutResult
 {
+    /// <summary>The nodes to draw.</summary>
     public required Scene.Scene Scene { get; init; }
+
+    /// <summary>The plot area in pixels (inside axes, legend and title).</summary>
     public required RectF Plot { get; init; }
+
+    /// <summary>Pixel positions of drawn points, for finding the point under the pointer.</summary>
     public required HitTestIndex HitTest { get; init; }
+
+    /// <summary>What the interactive layer needs for tooltips, crosshair and point clicks.</summary>
     public required TooltipModel Tooltip { get; init; }
+
+    /// <summary>The legend items, in order.</summary>
     public required IReadOnlyList<LegendEntry> Legend { get; init; }
+
+    /// <summary>Problems found in the spec or data, for developers (English).</summary>
     public required IReadOnlyList<string> Warnings { get; init; }
+
+    /// <summary>The kind of x axis used.</summary>
     public required XKind XKind { get; init; }
 
     /// <summary>X scale for numeric and time axes (time in milliseconds); null for category axes.</summary>
@@ -74,6 +99,7 @@ public sealed class ChartLayoutResult
     /// <summary>Scales of all vertical axes by axis id, including hidden ones.</summary>
     public required IReadOnlyDictionary<string, LinearScale> YScales { get; init; }
 
+    /// <summary>True when there was something to draw; false when the chart shows its empty state.</summary>
     public required bool HasData { get; init; }
 
     /// <summary>Draggable reference lines (for the interactive layer).</summary>
@@ -109,6 +135,10 @@ public static partial class ChartLayout
         public double[]? Lower { get; set; }
     }
 
+    /// <summary>Lays out a chart. Never throws for empty or odd data; it renders an empty state instead.</summary>
+    /// <param name="spec">The chart.</param>
+    /// <param name="data">Data per series id.</param>
+    /// <param name="options">Size, fonts and culture; null for the defaults.</param>
     public static ChartLayoutResult Compute(ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, LayoutOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(spec);

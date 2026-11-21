@@ -53,6 +53,7 @@ public sealed class NumberFormatter
         return formatter.Format;
     }
 
+    /// <summary>Formats a tick value with this axis's compact suffix and decimals.</summary>
     public string Format(double value)
     {
         if (!double.IsFinite(value))
@@ -183,6 +184,11 @@ public static class ValueFormatter
 /// <summary>Time tick labels that adapt to the interval: times, days, months or years.</summary>
 public static class TimeFormatter
 {
+    /// <summary>Formats a time tick label.</summary>
+    /// <param name="milliseconds">The time as an x value (see <see cref="Data.TimeValue"/>).</param>
+    /// <param name="interval">The tick interval; picks how much of the time to show.</param>
+    /// <param name="culture">The culture for month and day names.</param>
+    /// <param name="customFormat">A .NET date format that replaces the adaptive one.</param>
     public static string Format(double milliseconds, TimeInterval interval, CultureInfo culture, string? customFormat = null)
     {
         var t = TimeValue.ToDateTime(milliseconds);

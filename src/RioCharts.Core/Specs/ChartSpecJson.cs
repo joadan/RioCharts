@@ -13,12 +13,14 @@ namespace RioCharts.Core.Specs;
 /// <summary>A problem in a spec: where (a JSON path such as <c>series[0].y</c>) and what to do about it.</summary>
 public sealed record SpecError(string Path, string Message)
 {
+    /// <summary>"path: message".</summary>
     public override string ToString() => $"{Path}: {Message}";
 }
 
 /// <summary>The result of reading a JSON spec: the spec (null when it could not be read), errors and notes.</summary>
 public sealed record SpecParseResult(ChartSpec? Spec, IReadOnlyList<SpecError> Errors, IReadOnlyList<string> Warnings)
 {
+    /// <summary>True when the spec was read without errors.</summary>
     public bool Success => Spec is not null && Errors.Count == 0;
 }
 
@@ -29,8 +31,11 @@ public sealed record SpecParseResult(ChartSpec? Spec, IReadOnlyList<SpecError> E
 /// </summary>
 public static class ChartSpecJson
 {
+    /// <summary>The most series a JSON spec may have.</summary>
     public const int MaxSeries = 20;
+    /// <summary>The most inline data rows a JSON spec may have.</summary>
     public const int MaxInlineRows = 1000;
+    /// <summary>The most annotations a JSON spec may have.</summary>
     public const int MaxAnnotations = 50;
 
     /// <summary>
@@ -38,7 +43,7 @@ public static class ChartSpecJson
     /// <see cref="Parse"/>: the source-generated metadata cannot keep the defaults of properties
     /// missing from the JSON, so Parse fills them in first.
     /// </summary>
-    public static JsonSerializerOptions Options { get; } = CreateOptions();
+    internal static JsonSerializerOptions Options { get; } = CreateOptions();
 
     private static JsonSerializerOptions CreateOptions()
     {

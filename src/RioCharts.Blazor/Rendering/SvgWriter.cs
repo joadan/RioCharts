@@ -5,7 +5,7 @@ using RioCharts.Core.Scene;
 namespace RioCharts.Blazor.Rendering;
 
 /// <summary>Converts scene values to SVG attribute strings (always invariant culture).</summary>
-public static class SvgWriter
+internal static class SvgWriter
 {
     /// <summary>A number for an SVG attribute: at most two decimals, "." as separator, no negative zero.</summary>
     public static string N(double value)

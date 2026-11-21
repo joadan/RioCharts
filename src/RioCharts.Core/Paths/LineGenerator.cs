@@ -8,6 +8,7 @@ namespace RioCharts.Core.Paths;
 /// </summary>
 public static class LineGenerator
 {
+    /// <summary>A line through the points (pixel coordinates); NaN splits it into segments.</summary>
     public static PathData Line(ReadOnlySpan<double> x, ReadOnlySpan<double> y, CurveType curve)
     {
         var builder = new PathBuilder();
