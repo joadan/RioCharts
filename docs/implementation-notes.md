@@ -10,7 +10,8 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Selectors.** `XValue` is `Func<TItem, object?>` (numbers, dates and strings are boxed once per
   data change); `YValue` is `Func<TItem, double?>`, so `decimal` needs a cast.
 - **Time.** Inside Core, times are milliseconds since 1970-01-01 of the wall-clock time as given
-  (`TimeValue`); `DateTime.Kind` and `DateTimeOffset.Offset` are ignored. Display zones come later.
+  (`TimeValue`); `DateTime.Kind` and `DateTimeOffset.Offset` are ignored unless a display zone is set (see
+  Time zones below).
 - **Step curve** is step-after: a value holds until the next point (states and setpoints).
 - **Y axis title** is drawn horizontally above the axis labels instead of rotated.
 - **X labels** at the plot edges align to their tick (start/end) instead of centering.
@@ -115,7 +116,11 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Gestures:** drag selects a range (mouse only), Shift+drag pans, Ctrl/⌘+wheel zooms around the
   pointer (the plain wheel keeps scrolling the page), double-click resets. Pan previews by sliding
   the series inside the clip; wheel zoom has no preview and commits 140 ms after the last wheel
-  event. Pinch zoom on touch is not supported yet.
+  event. On touch, two fingers zoom and pan together: the x under the fingers' midpoint stays under
+  it, and the range scales with their horizontal spread (counted as at least 24 units, so fingers
+  above each other only pan). The preview stretches the series along x (strokes stretch too) and
+  commits when a finger lifts; the finger left on the chart shows no tooltip until it lifts. One
+  finger still shows the tooltip, and vertical swipes scroll the page (`touch-action: pan-y`).
 - **Y fits the visible data** (only points inside the range count), and line series draw the
   visible points plus one on each side, downsampled within that window.
 - **Linked charts:** charts with the same `Group` find each other in the JS module. Hover shows the

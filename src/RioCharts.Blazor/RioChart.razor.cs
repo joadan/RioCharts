@@ -146,7 +146,8 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>
     /// Zoom and pan on the x axis: drag to zoom in, Shift+drag to pan, Ctrl/⌘+wheel to zoom at the
-    /// pointer, double-click or the reset button to zoom out. Not for category axes.
+    /// pointer, pinch or two-finger drag on touch screens, double-click or the reset button to zoom
+    /// out. Not for category axes.
     /// </summary>
     [Parameter] public bool Zoomable { get; set; }
 

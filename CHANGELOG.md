@@ -11,6 +11,9 @@ changes are called out under **Breaking**.
   plain text that looked alike, and the slice tooltip showed only the total.
   `TooltipSlice.Parts` (Core) holds the parts. The legend tooltip text for "Other" is now
   `Other<tab>total` followed by `• part<tab>value` lines.
+- Pinch zoom on touch screens: on a `Zoomable` chart, two fingers zoom the x axis around them and
+  pan when moved together, with a live preview; the range is applied when a finger lifts and linked
+  charts follow, as with the mouse.
 - The Test workflow checks the JS module's syntax (the component tests fake the module).
 
 ## 0.1.50-preview (2026-11-21)

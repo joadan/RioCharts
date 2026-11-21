@@ -35,7 +35,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Point and annotation click events
 - Pie, donut (also half donut and nested rings) and radial bar, with inside and outside labels,
   leader lines and "Other" grouping
-- Zoom and pan on the x axis (drag, Shift+drag, Ctrl+wheel), `@bind-VisibleRange`, linked charts
+- Zoom and pan on the x axis (drag, Shift+drag, Ctrl+wheel, pinch), `@bind-VisibleRange`, linked charts
   sharing crosshair and zoom (`Group`)
 - Live data from a `SeriesBuffer` (append from any thread, time window, capped redraw rate)
 - Point markers, callouts and draggable reference lines (`@bind-Value`)

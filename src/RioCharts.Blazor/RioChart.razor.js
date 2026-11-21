@@ -37,6 +37,8 @@ export function init(container, dotnet) {
         drag: null,
         wheel: null,
         group: null,
+        touches: new Map(), // touch pointers down on the chart: id -> x in chart units
+        touchRest: false,
     };
 
     state.observer = new ResizeObserver(() => {
@@ -59,9 +61,20 @@ export function init(container, dotnet) {
     }
 
     state.onMove = e => {
+        if (e.pointerType === 'touch' && state.touches.has(e.pointerId)) {
+            const pos = pointer(state, e);
+            if (pos) {
+                state.touches.set(e.pointerId, pos.x);
+            }
+        }
+
         if (state.drag) {
             dragMove(state, e);
             return;
+        }
+
+        if (state.touchRest && e.pointerType === 'touch') {
+            return; // the finger left on the chart after a pinch shows no tooltip
         }
 
         state.lastEvent = e;
@@ -74,11 +87,28 @@ export function init(container, dotnet) {
         }
     };
     state.onDown = e => {
+        if (e.pointerType === 'touch') {
+            const pos = pointer(state, e);
+            if (pos) {
+                state.touches.set(e.pointerId, pos.x);
+            }
+
+            if (pinchStart(state, e)) {
+                return;
+            }
+        }
+
         if (!dragStart(state, e)) {
             state.onMove(e); // touch: show the tooltip where the finger lands
         }
     };
-    state.onUp = e => dragEnd(state, e);
+    state.onUp = e => {
+        state.touches.delete(e.pointerId);
+        dragEnd(state, e);
+        if (state.touches.size === 0) {
+            state.touchRest = false;
+        }
+    };
     state.onLeave = () => {
         state.hovering = false;
         if (!state.drag) {
@@ -348,9 +378,80 @@ function dragStart(state, e) {
     return true;
 }
 
+// Two fingers on a zoomable chart: pinch zooms x around the fingers, moving both pans. The x under
+// the fingers' midpoint stays under it; the range scales with the fingers' horizontal spread
+// (at least 24 units, so fingers above each other only pan).
+function pinchStart(state, e) {
+    const m = state.model;
+    const s = m && m.xscale;
+    if (!s || !m.zoom || state.touches.size !== 2 || state.drag) {
+        return false;
+    }
+
+    const pos = pointer(state, e);
+    if (!pos || !inPlot(m, pos, 0)) {
+        return false;
+    }
+
+    const ids = [...state.touches.keys()];
+    const xs = ids.map(i => state.touches.get(i));
+    const mid = (xs[0] + xs[1]) / 2;
+    hide(state);
+    broadcastHover(state, null);
+    state.suppressClick = false;
+    state.drag = {
+        mode: 'pinch', ids, mid, spread: Math.max(24, Math.abs(xs[0] - xs[1])),
+        s: { d0: s.d0, d1: s.d1, r0: s.r0, r1: s.r1 }, c: toData(s, mid), to: null, moved: false,
+    };
+    for (const id of ids) {
+        try {
+            state.svg.setPointerCapture(id);
+        } catch {
+            // not an active pointer (e.g. synthetic events)
+        }
+    }
+
+    e.preventDefault();
+    return true;
+}
+
+function pinchMove(state, e) {
+    const d = state.drag;
+    if (!d.ids.includes(e.pointerId)) {
+        return;
+    }
+
+    const xs = d.ids.map(i => state.touches.get(i));
+    const mid = (xs[0] + xs[1]) / 2;
+    const spread = Math.max(24, Math.abs(xs[0] - xs[1]));
+    d.moved = d.moved || Math.abs(mid - d.mid) > 3 || Math.abs(spread - d.spread) > 3;
+    if (!d.moved) {
+        return;
+    }
+
+    const s = d.s;
+    const span = (s.d1 - s.d0) * d.spread / spread;
+    if (!(span > 0) || !isFinite(span)) {
+        return;
+    }
+
+    const d0 = d.c - (mid - s.r0) / (s.r1 - s.r0) * span;
+    d.to = [d0, d0 + span];
+    // Preview: map the drawn x (old range) to the new range, x' = a·x + b.
+    const a = (s.d1 - s.d0) / span;
+    const b = s.r0 + (s.d0 - d0) * (s.r1 - s.r0) / span - s.r0 * a;
+    hide(state);
+    movePreview(state, b, a);
+}
+
 function dragMove(state, e) {
     const d = state.drag;
     const m = state.model;
+    if (d.mode === 'pinch') {
+        pinchMove(state, e);
+        return;
+    }
+
     const pos = pointer(state, e);
     if (!pos) {
         return;
@@ -382,19 +483,33 @@ function dragMove(state, e) {
     }
 }
 
-function dragEnd(state) {
+function dragEnd(state, e) {
     const d = state.drag;
-    if (!d) {
+    if (!d || (d.mode === 'pinch' && e && !d.ids.includes(e.pointerId))) {
         return;
     }
 
     state.drag = null;
-    if (state.svg.hasPointerCapture && state.svg.hasPointerCapture(d.id)) {
-        state.svg.releasePointerCapture(d.id);
+    for (const id of d.mode === 'pinch' ? d.ids : [d.id]) {
+        if (state.svg.hasPointerCapture && state.svg.hasPointerCapture(id)) {
+            state.svg.releasePointerCapture(id);
+        }
     }
 
     if (state.hover) {
         state.hover.replaceChildren();
+    }
+
+    if (d.mode === 'pinch') {
+        state.touchRest = state.touches.size > 0;
+        if (d.moved && d.to) {
+            state.suppressClick = true;
+            commitRange(state, d.to[0], d.to[1]);
+        } else {
+            resetPreview(state);
+        }
+
+        return;
     }
 
     if (d.mode === 'annotation') {
@@ -461,12 +576,13 @@ function commitReset(state) {
     }
 }
 
-// Pan preview: slide the series (the clip stays put) until .NET lays out the new range.
-function movePreview(state, dx) {
+// Pan and pinch preview: slide (and for a pinch, stretch) the series along x, x' = scale·x + dx;
+// the clip stays put until .NET lays out the new range.
+function movePreview(state, dx, scale = 1) {
     const plot = state.svg.querySelector('.rio-plot');
     if (plot) {
         for (const child of plot.children) {
-            child.style.transform = `translateX(${dx}px)`;
+            child.style.transform = scale === 1 ? `translateX(${dx}px)` : `matrix(${scale}, 0, 0, 1, ${dx}, 0)`;
         }
     }
 
@@ -476,7 +592,7 @@ function movePreview(state, dx) {
     }
 
     if (state.canvasScene) {
-        paintCanvas(state, dx);
+        paintCanvas(state, dx, scale);
     }
 }
 
@@ -1356,7 +1472,7 @@ function watchTheme() {
     }
 }
 
-function paintCanvas(state, dx) {
+function paintCanvas(state, dx, scale = 1) {
     const canvas = state.container.querySelector('canvas.rio-canvas');
     const scene = state.canvasScene;
     if (!canvas || !scene || !state.svg) {
@@ -1386,7 +1502,7 @@ function paintCanvas(state, dx) {
         ctx.clip();
     }
 
-    ctx.translate(dx, 0);
+    ctx.transform(scale, 0, 0, 1, dx, 0);
     const colors = new Map();
     const resolve = css => {
         if (!colors.has(css)) {
