@@ -38,7 +38,7 @@
     For agents on your machine, such as Claude Code, Claude Desktop or GitHub Copilot in VS Code, there is a ready-made MCP server. It runs over stdio,
     so the agent starts it; you write no host app. CSV and JSON files in the <code>--data</code> folder become datasets (read again when they change),
     and every chart is saved to <code>--out</code> as PNG or SVG, with the path returned to the agent. Tools: <code>render_chart</code>,
-    <code>list_datasets</code> and <code>get_chart_schema</code>.
+    <code>list_datasets</code> and <code>get_chart_schema</code>. It runs on Windows (x64, arm64, x86), macOS and Linux (x64 and arm64, glibc and musl).
 </p>
 <CodeBlock Language="shell" Code="@ToolInstallCode" />
 <CodeBlock Language="json" Code="@ToolConfigCode" />

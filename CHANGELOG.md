@@ -186,8 +186,12 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - Fixed: the `RioCharts.Mcp` tool package carried SkiaSharp's native Windows PDBs (about 100 MB
   each for x86, x64 and arm64). They made the package 162 MB and, not being portable PDBs, made
   nuget.org reject its symbol package (0.1.14-preview has no symbols). The tool now leaves native
-  PDBs out: 88 MB, symbols 0.2 MB. The release workflow checks that every PDB in a symbol package
+  PDBs out (symbols 0.2 MB), and the release workflow checks that every PDB in a symbol package
   is portable before pushing.
+- `RioCharts.Mcp` carries SkiaSharp's native library for the common platforms only: Windows x64,
+  arm64 and x86, macOS, and Linux x64 and arm64 (glibc and musl). Dropped: 32-bit ARM and x86
+  Linux, Android (Bionic), LoongArch and RISC-V. The package went from 162 MB to 45 MB. The
+  libraries (`RioCharts.Skia`) still bring every platform SkiaSharp supports.
 
 ### AI
 

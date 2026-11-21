@@ -141,7 +141,8 @@ as content (and is saved to `ChartToolOptions.OutputDirectory` when set).
 
 For local agents (Claude Code, Claude Desktop, GitHub Copilot in VS Code) there is a ready-made
 MCP server. Install it and register it with the agent; CSV and JSON files in `--data` become
-datasets, and charts are saved to `--out` (default `./charts`):
+datasets, and charts are saved to `--out` (default `./charts`). It runs on Windows (x64, arm64,
+x86), macOS and Linux (x64 and arm64, glibc and musl):
 
 ```
 dotnet tool install -g RioCharts.Mcp --prerelease
