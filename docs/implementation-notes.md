@@ -290,6 +290,14 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **`ExportFormats`** is a flags enum (menu order stays PNG, SVG, CSV); a single format turns the
   button into a direct download (labelled with the format, no `aria-haspopup`).
 
+## Benchmarks
+
+- `benchmarks/RioCharts.Benchmarks` (BenchmarkDotNet) measures public APIs only: Core layout,
+  data and spec work, and Skia export. The Blazor side (SVG render tree, interop payloads) and the
+  JS module are not benchmarked. Not run in CI (timings on shared runners are too noisy); the
+  project is in the solution, so CI builds it. `benchmarks/README.md` holds a baseline from one
+  machine, to compare changes on the same machine rather than as absolute numbers.
+
 ## Component tests (bUnit)
 
 - Design.md's testing list names Core unit tests, Verify snapshots and BenchmarkDotNet; component

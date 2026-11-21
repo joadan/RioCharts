@@ -14,6 +14,8 @@ changes are called out under **Breaking**.
 - Pinch zoom on touch screens: on a `Zoomable` chart, two fingers zoom the x axis around them and
   pan when moved together, with a live preview; the range is applied when a finger lifts and linked
   charts follow, as with the mouse.
+- Benchmarks (`benchmarks/RioCharts.Benchmarks`, BenchmarkDotNet): layout, items to columns, LTTB,
+  SVG/PNG export and JSON specs, with a baseline in `benchmarks/README.md`.
 - The Test workflow checks the JS module's syntax (the component tests fake the module).
 
 ## 0.1.50-preview (2026-11-21)
