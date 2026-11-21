@@ -12,6 +12,13 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Heatmaps (`<HeatmapSeries>`, `SeriesType.Heatmap`, `"heatmap"` in JSON): every heatmap series
+  is a row (named by the series; `groupBy` in JSON specs makes one row per value), its x values the
+  columns (categories, or numbers and times with cells as wide as the data's spacing) and its y
+  values the color: one hue, more opaque for higher values, so it works in light and dark themes
+  and in exports. The legend is a color scale; `Max` fixes the full-color value, `DataLabels` writes
+  values in the cells with contrast. Hover outlines a cell; arrow keys move between cells and rows.
+  Docs: a Heatmap page (traffic by weekday and hour, conversion per channel).
 - Samples: every example (docs site, demo app, MCP sample data, READMEs, doc comments and the JSON
   schema's example) now uses an online store (sessions, orders, revenue in €, stock, response times)
   instead of building climate data. The MCP sample's files are now `orders.csv`,

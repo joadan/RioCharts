@@ -255,6 +255,8 @@ public enum SeriesType
     /// <summary>A marker per point, for how two measures relate (e.g. delivery distance against delivery time).</summary>
     Scatter,
 
+    /// <summary>A grid of colored cells: every heatmap series is a row, x the columns, y the color.</summary>
+    Heatmap,
     /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,
 }

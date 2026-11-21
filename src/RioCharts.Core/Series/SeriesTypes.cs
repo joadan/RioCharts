@@ -32,6 +32,7 @@ internal interface ISeriesType
         SeriesType.Area => AreaSeriesType.Instance,
         SeriesType.Bar => BarSeriesType.Instance,
         SeriesType.Scatter => ScatterSeriesType.Instance,
+        SeriesType.Heatmap => HeatmapSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar => new PolarSeriesType(type),
         _ => LineSeriesType.Instance,
     };
@@ -479,6 +480,21 @@ internal sealed class BarSeriesType : ISeriesType
 /// Pie, donut and radial bar. They need the whole chart in polar coordinates, so the layout
 /// draws them in its polar pass instead of through <see cref="Build"/>.
 /// </summary>
+/// <summary>Heatmap rows are laid out together by <c>ChartLayout.ComputeHeatmap</c>, not one by one.</summary>
+internal sealed class HeatmapSeriesType : ISeriesType
+{
+    public static HeatmapSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.Heatmap;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 0;
+    public bool IncludesZero => false;
+    public bool UsesSlots => false;
+
+    public void Build(SeriesBuildContext context)
+    {
+    }
+}
+
 internal sealed class PolarSeriesType(SeriesType type) : ISeriesType
 {
     public SeriesType Type => type;

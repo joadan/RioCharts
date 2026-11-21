@@ -192,6 +192,15 @@ public class SnapshotTests
                 Enumerable.Range(0, 30).Select(i => 21 - 0.1 * (-8 + i * 0.9) + Math.Sin(i * 2.1) * 0.6).ToArray()),
         }),
 
+        ["heatmap-week"] = new(new ChartSpec
+        {
+            Title = "Sessions per hour",
+            Series = [.. new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select(d => new SeriesSpec { Id = d, Type = SeriesType.Heatmap, Format = "#,0" })],
+        }, new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select((d, k) => (d, SeriesData.FromCategories(
+                Enumerable.Range(0, 24).Select(h => h.ToString("00", CultureInfo.InvariantCulture)).ToList(),
+                Enumerable.Range(0, 24).Select(h => Math.Round(Math.Max(5, (k >= 5 ? 260 : 200) * Math.Max(0, Math.Sin((h - 6) / 18.0 * Math.PI)) + (h is >= 19 and <= 22 ? 90 : 0)))).ToArray())))
+            .ToDictionary(t => t.d, t => t.Item2), Width: 720),
+
         ["empty-swedish"] = new(new ChartSpec { Title = "Tilluft", Series = [new SeriesSpec { Id = "s", Name = "Tilluft" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 

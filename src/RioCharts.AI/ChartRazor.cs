@@ -110,6 +110,7 @@ public static class ChartRazor
                 SeriesType.Pie => "PieSeries",
                 SeriesType.RadialBar => "RadialBarSeries",
                 SeriesType.Scatter => "ScatterSeries",
+                SeriesType.Heatmap => "HeatmapSeries",
                 _ => "LineSeries",
             };
 

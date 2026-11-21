@@ -591,6 +591,16 @@ function headerOf(rows) {
 function findSingle(m, px, py) {
     let best = null;
     for (const s of m.series) {
+        if (s.ch > 0) {
+            // Heatmap: the cell under the pointer.
+            const j = nearest(s.x, px);
+            if (j >= 0 && Math.abs(s.x[j] - px) <= s.barWidth / 2 + 0.5 && Math.abs(s.y[j] - py) <= s.ch / 2 + 0.5) {
+                return [{ s, i: j, d: 0 }];
+            }
+
+            continue;
+        }
+
         if (s.dots) {
             // Scatter: every point within reach in x (x is ascending), the nearest in 2D.
             for (let j = atOrBefore(s.x, px - 40) + 1; j < s.x.length && s.x[j] <= px + 40; j++) {
@@ -764,7 +774,12 @@ function drawHover(state, rows, m) {
     const p = m.plot;
     const first = rows[0];
     const x = rows.anchor !== undefined ? rows.anchor : first.x !== undefined ? first.x : first.s.x[first.i];
-    if (first.s.dots) {
+    if (first.s.ch > 0) {
+        // Heatmap: outline the cell.
+        const w = first.s.barWidth, h = first.s.ch, cx = first.s.x[first.i], cy = first.s.y[first.i];
+        g.appendChild(el('rect', { class: 'rio-hover-cell', x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 2 }));
+        return;
+    } else if (first.s.dots) {
         // Scatter: no crosshair, the point is marked below.
     } else if (m.band > 0 && (m.shared || first.s.bar)) {
         const w = m.shared ? m.band : first.s.barWidth + 4;

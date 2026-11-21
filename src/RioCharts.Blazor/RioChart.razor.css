@@ -170,6 +170,12 @@
     white-space: pre-line;
 }
 
+.rio-chart ::deep .rio-hover-cell {
+    fill: none;
+    stroke: var(--rio-text, var(--_rio-text));
+    stroke-width: 2;
+}
+
 .rio-tooltip {
     position: absolute;
     top: 0;

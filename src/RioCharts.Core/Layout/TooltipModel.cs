@@ -30,6 +30,9 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
     /// shared tooltip shows the value in effect at the hovered x, not the nearest point's.
     /// </summary>
     public bool Step { get; init; }
+
+    /// <summary>Heatmap: the cell height (a cell is <see cref="BarWidth"/> wide, centered on its point).</summary>
+    public float CellHeight { get; init; }
 }
 
 /// <summary>

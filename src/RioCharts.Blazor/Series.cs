@@ -300,6 +300,21 @@ public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { MarkerSize = MarkerSize, TrendLine = TrendLine };
 }
 
+/// <summary>
+/// One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for
+/// higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one
+/// color scale (the first row's Color, Format and Max).
+/// </summary>
+public sealed class HeatmapSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>The value that gets the full color (e.g. 100 for percentages). Default: the highest value.</summary>
+    [Parameter] public double? Max { get; set; }
+
+    protected override SeriesType Type => SeriesType.Heatmap;
+
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Max = Max };
+}
+
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>
 public sealed class BarSeries<TItem> : SeriesBase<TItem>
 {

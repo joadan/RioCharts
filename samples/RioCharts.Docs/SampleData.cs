@@ -122,6 +122,28 @@ public static class SampleData
         ("Tent · Dome 2p", Series((i, t) => i is >= 30 and < 36 ? null : Math.Round(Math.Max(0, 3 + 2 * Cycle(t) + Drift(i, 15) * 2), 1), 48, 60)),
     ];
 
+    /// <summary>Sessions in one hour of the day ("00" to "23").</summary>
+    public sealed record HourCount(string Hour, double Sessions);
+
+    /// <summary>
+    /// Sessions per weekday and hour, averaged over the last month: quiet nights, a lunch bump, the
+    /// evening peak, and more traffic at the weekend.
+    /// </summary>
+    public static readonly List<(string Day, List<HourCount> Hours)> WeekTraffic =
+        new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select((day, d) => (day, Enumerable.Range(0, 24).Select(h =>
+        {
+            var weekend = d >= 5;
+            var daytime = Math.Max(0, Math.Sin((h - 6) / 17.0 * Math.PI));
+            var value = 12 + (weekend ? 230 : 170) * daytime + (h is 12 or 13 ? 35 : 0) + (h is >= 19 and <= 22 ? (weekend ? 60 : 95) : 0) + Noise(d * 24 + h, 51) * 25;
+            return new HourCount(h.ToString("00"), Math.Round(Math.Max(4, value)));
+        }).ToList())).ToList();
+
+    /// <summary>Conversion rate in % per sales channel and weekday.</summary>
+    public static readonly List<(string Channel, List<Share> Days)> ChannelConversion =
+        new[] { ("Web", 2.4), ("App", 3.6), ("Marketplace", 1.5) }.Select((c, k) => (c.Item1,
+            new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select((day, d) =>
+                new Share(day, Math.Round(c.Item2 + (d >= 5 ? 0.6 : 0) + Noise(k * 7 + d, 52) * 0.8, 1))).ToList())).ToList();
+
     public static readonly List<Sales> Quarters =
     [
         new("Q1", 182_000, 214_000), new("Q2", 236_000, 251_000), new("Q3", 198_000, 243_000), new("Q4", 271_000, 305_000),

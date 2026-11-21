@@ -128,4 +128,18 @@
         Assert.False(model.GetProperty("shared").GetBoolean());
         Assert.True(model.GetProperty("series")[0].GetProperty("dots").GetBoolean());
     }
+
+    [Fact]
+    public void Heatmap_rows_draw_cells_and_send_cell_sizes()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <HeatmapSeries Items="Supply" Name="Mon" XValue="r => r.Time" YValue="r => r.Value" />
+            <HeatmapSeries Items="Extract" Name="Tue" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal(["Mon", "Tue"], cut.FindAll("text.rio-row-label").Select(t => t.TextContent));
+        Assert.NotEmpty(cut.FindAll("g.rio-series-heatmap rect"));
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.True(series.GetProperty("ch").GetSingle() > 0);
+    }
 }

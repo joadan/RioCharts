@@ -507,3 +507,23 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   ring. The tooltip header is "x axis title: x" for scatter.
 - **Not yet:** bubble (a third, size field: `SeriesData` has no column for it), per-point colors,
   and log axes.
+
+
+## Heatmap
+
+- **Rows are series.** No third data column: each `HeatmapSeries` (or each `groupBy` group in a
+  spec) is a row, named by the series, top to bottom in series order. This reuses `SeriesData`, the
+  binder's grouping and the keyboard's row navigation as they are.
+- **Own layout path** (`ComputeHeatmap`, like polar): row labels on the left, x labels below, no
+  grid or y scale (`YScale` is a dummy 0..rows scale). Other series types in the same chart are
+  skipped with a warning. No zoom (`XScale` is null).
+- **Color:** the first row's color (default the first series token) with fill-opacity from 0.08
+  (lowest) to 1 (highest or `Max`). Opacity over the surface rather than computed colors keeps
+  theme tokens, dark mode and Skia export working without color math. Cells have a 1 px gap and
+  2 px corners when they are larger than 6 px.
+- **Legend:** a color scale (lowest value, five steps, highest value) instead of series items;
+  `ChartLayoutResult.Legend` is empty.
+- **Tooltip:** `TooltipSeries.CellHeight` marks heatmap rows; JS hit-tests the cell under the
+  pointer and outlines it. Not shared.
+- **Not yet:** diverging scales (below/above a midpoint), custom color ranges, and calendar layouts
+  (weeks × weekdays from dates) beyond what grouping gives.

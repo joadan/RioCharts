@@ -1,0 +1,80 @@
+@page "/heatmap"
+
+<PageTitle>Heatmap · RioCharts</PageTitle>
+
+<h1>Heatmap</h1>
+<p class="lead">
+    A grid of colored cells shows a value across two categories at once: traffic per weekday and hour, conversion per channel and day,
+    orders per week and weekday. Darker means more.
+</p>
+
+<Example Title="Traffic by weekday and hour" Code="@WeekCode">
+    <Description>
+        <p>
+            Each <code>HeatmapSeries</code> is a row, named by <code>Name</code>; its x values are the columns and its y values the colors.
+            All rows share one scale: the lowest value is pale, the highest has the full color, and the legend shows the range. Hover a
+            cell to see its value; with the chart focused, the arrow keys move between cells and rows.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="HourCount" Title="Sessions per hour, last month" XAxis="_hourAxis" Height="300">
+            @foreach (var (day, hours) in WeekTraffic)
+            {
+                <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" Format="#,0" />
+            }
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Values in the cells" Code="@ConversionCode">
+    <Description>
+        <p>
+            <code>DataLabels</code> writes each value in its cell when it fits, in light text on dark cells. <code>Max</code> sets the value
+            that gets the full color; here the app's weekend rate stands out against the others.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Share" Title="Conversion rate per channel" Height="200">
+            @foreach (var (channel, days) in ChannelConversion)
+            {
+                <HeatmapSeries Items="days" Name="@channel" XValue="d => d.Name" YValue="d => d.Value" Format="0.0'%'" DataLabels="true" Max="5" />
+            }
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>Options</h2>
+<div class="table-scroll">
+    <table class="docs">
+        <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+        <tr><td><code>Name</code></td><td></td><td>The row's label. Rows are drawn top to bottom in the order of the series.</td></tr>
+        <tr><td><code>XValue</code></td><td></td><td>The column: categories, numbers or times (cells as wide as the spacing of the data).</td></tr>
+        <tr><td><code>YValue</code></td><td></td><td>The value that sets the cell's color. Missing values leave the cell empty.</td></tr>
+        <tr><td><code>Color</code>, <code>Format</code>, <code>Max</code></td><td>first row's</td><td>The hue, value format and full-color value, shared by all rows.</td></tr>
+        <tr><td><code>DataLabels</code></td><td>false</td><td>Write the values in the cells (when they fit).</td></tr>
+        <tr><td>JSON</td><td></td><td><code>"type": "heatmap"</code> with <code>"groupBy"</code> on the row field makes one row per value, e.g. <code>"x": "hour", "y": "sessions", "groupBy": "weekday"</code>.</td></tr>
+    </table>
+</div>
+
+@code {
+    private readonly AxisSpec _hourAxis = new() { Title = "Hour" };
+
+    private const string WeekCode = """
+        <RioChart TItem="HourCount" Title="Sessions per hour, last month" XAxis="@(new AxisSpec { Title = "Hour" })">
+            @foreach (var (day, hours) in weekTraffic)
+            {
+                <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" Format="#,0" />
+            }
+        </RioChart>
+        """;
+
+    private const string ConversionCode = """
+        <RioChart TItem="Share" Title="Conversion rate per channel">
+            @foreach (var (channel, days) in channelConversion)
+            {
+                <HeatmapSeries Items="days" Name="@channel" XValue="d => d.Name" YValue="d => d.Value"
+                               Format="0.0'%'" DataLabels="true" Max="5" />
+            }
+        </RioChart>
+        """;
+}
