@@ -126,6 +126,8 @@ public static class TimeBuckets
             TimeBucket.Quarter => new DateTime(t.Year, (t.Month - 1) / 3 * 3 + 1, 1, 0, 0, 0, t.Kind),
             _ => new DateTime(t.Year, 1, 1, 0, 0, 0, t.Kind),
         };
-        return value is DateTimeOffset offset ? new DateTimeOffset(floored, offset.Offset) : floored;
+        // Each branch boxed on its own: a DateTime would otherwise widen to a DateTimeOffset with
+        // the machine's local offset.
+        return value is DateTimeOffset offset ? new DateTimeOffset(floored, offset.Offset) : (object)floored;
     }
 }

@@ -88,7 +88,7 @@ public class CandlestickTests
         ChartLayout.Compute(new ChartSpec { Series = series.Length > 0 ? series : [new SeriesSpec { Id = "t", Type = SeriesType.Candlestick }] }, data, options ?? Options);
 
     [Fact]
-    public void Rising_candles_are_hollow_and_falling_ones_filled()
+    public void Rising_candles_are_light_and_falling_ones_solid()
     {
         var layout = Layout(new() { ["t"] = Days(12) });
 
@@ -96,7 +96,7 @@ public class CandlestickTests
         Assert.Equal(12, bodies.Count);
         Assert.Equal(4, bodies.Count(b => b.Class == "rio-candle rio-candle-down")); // days 0, 3, 6, 9
         var up = layout.Scene.Styles.Get(bodies.First(b => b.Class == "rio-candle rio-candle-up").Style);
-        Assert.Equal((ThemeTokens.Surface, ThemeTokens.Positive), (up.Fill, up.Stroke));
+        Assert.Equal((ThemeTokens.Positive, ThemeTokens.Positive, 0.22f), (up.Fill, up.Stroke, up.FillOpacity)); // see-through, so it differs by more than color
         Assert.Equal(ThemeTokens.Negative, layout.Scene.Styles.Get(bodies.First(b => b.Class == "rio-candle rio-candle-down").Style).Fill);
         Assert.Contains(All<Node>(layout.Scene.Series), n => n.Class == "rio-wicks rio-wicks-up");
         Assert.Empty(layout.Warnings);
@@ -118,11 +118,28 @@ public class CandlestickTests
         var layout = Layout(new() { ["t"] = data });
 
         var bodies = All<RectNode>(layout.Scene.Series).Count(n => n.Class?.StartsWith("rio-candle", StringComparison.Ordinal) == true);
-        Assert.InRange(bodies, 50, 399); // fewer candles than days
+        Assert.InRange(bodies, 5, 399); // fewer candles than days
         var s = layout.Tooltip.Series.Single();
         Assert.Contains(" – ", s.XLabels[0]); // a merged candle says from when to when
         var highest = Enumerable.Range(0, data.Count).Max(i => data.Candles!.High[i]);
         Assert.Contains(s.PartValues!, p => p[1] == ValueFormatterInvariant(highest));
+    }
+
+    [Fact]
+    public void Merged_candles_follow_the_calendar()
+    {
+        // Three weeks of hourly candles: too narrow, so they merge into whole periods of the day.
+        var hours = SeriesData.From(Enumerable.Range(0, 21 * 24).Select(h => Start.AddHours(h)).ToArray(), new double[21 * 24])
+            .WithCandles(Enumerable.Range(0, 21 * 24).Select(h => new CandleSummary(20, 21, 19, 20.5 + h % 3 * 0.1)).ToArray());
+
+        var layout = Layout(new() { ["t"] = hours });
+
+        var s = layout.Tooltip.Series.Single();
+        var x = hours.X;
+        var period = x[s.Index[2]] - x[s.Index[1]];
+        Assert.Contains(period, new[] { 2.0, 3, 6, 12, 24 }.Select(h => h * 3_600_000)); // a whole number of hours that divides a day
+        Assert.All(s.Index.Take(s.Index.Length - 1), last => Assert.Equal(0, (x[last + 1] - x[0]) % period)); // each starts on the period
+        Assert.Contains(" – ", s.XLabels[0]);
     }
 
     private static string ValueFormatterInvariant(double v) => RioCharts.Core.Formatting.ValueFormatter.Format(v, CultureInfo.InvariantCulture, null);

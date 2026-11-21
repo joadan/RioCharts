@@ -629,17 +629,25 @@ Design.md "Candlestick" (milestone 7).
 - **Raw readings:** `FromCandleBuckets` (and `CandlestickSeries` with `Bucket`, JSON with
   `timeBucket`, a day when not set) groups per `TimeBucket` on wall-clock time, sorted by time
   inside each bucket. The bucket floor moved from the spec binder to the public
-  `TimeBuckets.Floor`, which now keeps the DateTime's `Kind`. The component wraps `XValue` to
+  `TimeBuckets.Floor`, which now keeps the DateTime's `Kind` and returns a DateTime for a DateTime
+  (the binder's version widened it to a DateTimeOffset with the machine's local offset). The component wraps `XValue` to
   floor it and keeps the caller's selector; a `DataSettings` hook in `SeriesBase` rebuilds the
   data when `Bucket` changes (before, only new `Items`, aggregates or `DataVersion` did).
 - **Drawing:** a band slot per series like bars (never stacked), bodies at most 32 px. Rising
-  (close ≥ open) is hollow with a `--rio-positive` outline, falling is filled `--rio-negative`, so
-  the direction does not depend on color alone. New theme tokens with light and dark defaults in
+  (close ≥ open) is a light fill (0.22) with a `--rio-positive` outline, falling is solid
+  `--rio-negative`, so the direction does not depend on color alone. The wick is drawn above and
+  below the body, not through it. (Hollow bodies were tried first: when narrow they read as
+  double lines.) New theme tokens with light and dark defaults in
   the CSS and `ExportTheme`. The legend swatch is a small falling and rising body.
-- **Zoomed out:** when a slot is under 3 px, consecutive candles merge into one per group of k
-  (groups start at multiples of k, so they stay put while panning). The merged candle keeps the
-  first open, highest high, lowest low and last close; its tooltip says from when to when. Not
-  for category axes. A selected candle is outlined from high to low, but not while merged.
+- **Zoomed out:** when a slot is under 5 px, candles merge into longer periods. On time axes the
+  shortest period from a ladder (2, 5, 10, 15, 30 minutes; 1, 2, 3, 6, 12 hours; a day; a week from
+  Monday; a month, quarter, year) whose width gives each series at least 12 px, aligned to the
+  clock and calendar; on numeric axes groups of k spacings from zero. Merged candles are centered
+  on their period (a day's at noon) and share 80% of its width. (Groups of k consecutive candles
+  were tried first: not aligned to anything, a daily rhythm turned into alternating noise.) The
+  merged candle keeps the first open, highest high, lowest low and last close; its tooltip says
+  from when to when. Not for category axes. A selected candle is outlined from high to low, but
+  not while merged.
 - **Tooltip:** the close as the row's value, then Open, High, Low, Close and Change ("+0.3 (+1.4%)")
   as smaller rows (`ChartTexts`, all languages).
 - **Not yet:** live data (`SeriesBuffer`) with candles, a hollow/filled option, a volume pane

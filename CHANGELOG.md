@@ -49,14 +49,17 @@ changes are called out under **Breaking**.
   `q3` and `high` fields (and `low`). Core: `SeriesType.BoxPlot`, `BoxSummary`, `BoxColumns`,
   `SeriesData.WithBox` and `FromBoxGroups`; new `ChartTexts` keys for the tooltip rows.
 - Candlesticks: `CandlestickSeries` shows how a value moved within each period: a wick from low to
-  high and a body from open to close, hollow when it rose and filled when it fell. Give raw
+  high and a body from open to close, lightly filled when it rose and solid when it fell. Give raw
   readings with a `Bucket` (e.g. `TimeBucket.Hour`: first, highest, lowest and last reading per
   hour) or precomputed candles (`OpenValue`, `HighValue`, `LowValue`, `CloseValue`). When zoomed
-  out, candles too narrow to see merge into wider ones that keep the highs and lows. The tooltip
+  out, candles too narrow to see merge into longer calendar periods (hours, a day, a week, …) that
+  keep the highs and lows. The tooltip
   shows open, high, low, close and the change. New theme tokens `--rio-positive` and
   `--rio-negative`. JSON specs: `"type": "candlestick"` (also `ohlc`) with `timeBucket`, or `open`,
   `high` and `low` fields. Core: `SeriesType.Candlestick`, `CandleSummary`, `CandleColumns`,
   `SeriesData.WithCandles` and `FromCandleBuckets`, `TimeBuckets.Floor`.
+- JSON specs with `timeBucket`: bucketed DateTime values were turned into DateTimeOffsets with the
+  machine's local offset; they stay DateTimes now.
 
 ## 0.1.50-preview (2026-11-21)
 

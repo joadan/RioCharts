@@ -629,16 +629,31 @@ internal sealed class BoxPlotSeriesType : ISeriesType
 }
 
 /// <summary>
-/// Candlesticks: a thin wick from low to high and a body from open to close, hollow in the rising
-/// color when the close is at or above the open, filled in the falling color below. Several series
-/// share the x band like grouped bars. When candles would be narrower than a few pixels (zoomed
-/// out), consecutive candles merge into one per group, so highs and lows are never lost.
+/// Candlesticks: a thin wick from low to high and a body from open to close, lightly filled in the
+/// rising color when the close is at or above the open, solid in the falling color below. Several
+/// series share the x band like grouped bars. When candles would be too narrow to see (zoomed out),
+/// they merge into longer periods: on time axes calendar periods (2, 3, 6 or 12 hours, a day, a
+/// week, a month, ...) aligned to the clock, otherwise groups of consecutive candles. A merged
+/// candle keeps the first open, the highest high, the lowest low and the last close.
 /// </summary>
 internal sealed class CandlestickSeriesType : ISeriesType
 {
-    /// <summary>Narrower candles merge with their neighbours.</summary>
-    internal const double MinWidth = 3;
+    /// <summary>Candles narrower than this (their slot, in pixels) merge into longer periods.</summary>
+    internal const double MergeBelow = 5;
+
+    /// <summary>Merged candles get at least this much room each.</summary>
+    internal const double MergedSlot = 12;
+
     private const double MaxWidth = 32;
+    private const double Minute = 60_000, Hour = 60 * Minute, Day = 24 * Hour;
+
+    /// <summary>Periods to merge into on time axes, shortest first (weeks and longer are calendar periods).</summary>
+    private static readonly (double Ms, TimeBucket? Calendar)[] Periods =
+    [
+        (Minute, null), (2 * Minute, null), (5 * Minute, null), (10 * Minute, null), (15 * Minute, null), (30 * Minute, null),
+        (Hour, null), (2 * Hour, null), (3 * Hour, null), (6 * Hour, null), (12 * Hour, null),
+        (Day, null), (7 * Day, TimeBucket.Week), (30.44 * Day, TimeBucket.Month), (91.31 * Day, TimeBucket.Quarter), (365.25 * Day, TimeBucket.Year),
+    ];
 
     public static CandlestickSeriesType Instance { get; } = new();
     public SeriesType Type => SeriesType.Candlestick;
@@ -647,6 +662,12 @@ internal sealed class CandlestickSeriesType : ISeriesType
     public bool IncludesZero => false;
     public bool UsesSlots => true;
 
+    /// <summary>A rising body: a light fill in the rising color with its outline (the wick does not cross it).</summary>
+    internal static Style UpStyle => new() { Fill = ThemeTokens.Positive, FillOpacity = 0.22f, Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f };
+
+    /// <summary>A falling body: solid.</summary>
+    internal static Style DownStyle => new() { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f };
+
     public void Build(SeriesBuildContext c)
     {
         if (c.Data.Candles is not { } candles)
@@ -654,15 +675,18 @@ internal sealed class CandlestickSeriesType : ISeriesType
             return; // no candles (the layout warns)
         }
 
-        var slot = c.SlotWidth / Math.Max(1, c.SlotCount);
-        var merge = slot >= MinWidth || c.Data.Kind == XKind.Category ? 1 : (int)Math.Ceiling(MinWidth / Math.Max(0.01, slot));
-        var span = slot * merge;
+        var count = Math.Max(1, c.SlotCount);
+        var (groups, band) = Groups(c, c.SlotWidth / count, count);
+
+        // Merged candles share their period's width (most of it) with the other candle series.
+        band ??= c.SlotWidth;
+        var span = band.Value / count;
         var width = Math.Clamp(span - (span > 6 ? Math.Max(1.5, span * 0.3) : 0), 1, MaxWidth);
         c.BarWidth = width;
-        c.BarOffset = -c.SlotWidth / 2 + c.SlotIndex * slot + slot / 2;
+        c.BarOffset = -band.Value / 2 + c.SlotIndex * span + span / 2;
 
-        var upBody = c.Styles.Add("candle-up", new Style { Fill = ThemeTokens.Surface, Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f });
-        var downBody = c.Styles.Add("candle-down", new Style { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f });
+        var upBody = c.Styles.Add("candle-up", UpStyle);
+        var downBody = c.Styles.Add("candle-down", DownStyle);
         var upWick = c.Styles.Add("candle-up-wick", new Style { Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f, Fill = "none" });
         var downWick = c.Styles.Add("candle-down-wick", new Style { Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f, Fill = "none" });
 
@@ -674,16 +698,12 @@ internal sealed class CandlestickSeriesType : ISeriesType
         var hy = new List<float>();
         var hi = new List<int>();
         var hs = new List<int>();
-        var groups = new List<(int, int)>();
-        for (var first = 0; first < c.Data.Count; first += merge)
+        var hitGroups = new List<(int, int)>();
+        foreach (var (first, last, center) in groups)
         {
-            // Groups start at multiples of the merge count, so they stay put while panning.
-            var last = Math.Min(c.Data.Count, first + merge) - 1;
-            var candle = merge == 1
+            var candle = first == last
                 ? candles.At(first, c.Data.Y[first])
                 : CandleSummary.Merge(Enumerable.Range(first, last - first + 1).Select(i => candles.At(i, c.Data.Y[i])));
-            var (p0, p1) = (c.PixelX[first], c.PixelX[last]);
-            var center = merge == 1 ? p0 : (p0 + p1) / 2;
             if (!candle.IsComplete || !double.IsFinite(center) || !c.InPlotX(center))
             {
                 continue;
@@ -691,11 +711,24 @@ internal sealed class CandlestickSeriesType : ISeriesType
 
             var x = center + c.BarOffset;
             var rising = candle.Close >= candle.Open;
-            (rising ? up : down).MoveTo(x, c.MapY(candle.High)).LineTo(x, c.MapY(candle.Low));
-            (hasUp, hasDown) = (hasUp || rising, hasDown || !rising);
             var (yo, yc) = (c.MapY(candle.Open), c.MapY(candle.Close));
-            bodies.Add(new RectNode(new RectF((float)(x - width / 2), (float)Math.Min(yo, yc), (float)width, (float)Math.Max(1, Math.Abs(yo - yc))),
-                rising ? upBody : downBody)
+            var (top, bottom) = (Math.Min(yo, yc), Math.Max(yo, yc));
+
+            // The wick above and below the body, not through it (the rising body is see-through).
+            var wick = rising ? up : down;
+            var (yh, yl) = (c.MapY(candle.High), c.MapY(candle.Low));
+            if (yh < top)
+            {
+                wick.MoveTo(x, yh).LineTo(x, top);
+            }
+
+            if (yl > bottom)
+            {
+                wick.MoveTo(x, bottom).LineTo(x, yl);
+            }
+
+            (hasUp, hasDown) = (hasUp || rising, hasDown || !rising);
+            bodies.Add(new RectNode(new RectF((float)(x - width / 2), (float)top, (float)width, (float)Math.Max(1, bottom - top)), rising ? upBody : downBody)
             {
                 Class = rising ? "rio-candle rio-candle-up" : "rio-candle rio-candle-down",
             });
@@ -705,7 +738,7 @@ internal sealed class CandlestickSeriesType : ISeriesType
             hy.Add((float)yc);
             hi.Add(last);
             hs.Add(c.Data.ToSourceIndex(last));
-            groups.Add((first, last));
+            hitGroups.Add((first, last));
         }
 
         if (hasUp)
@@ -719,8 +752,78 @@ internal sealed class CandlestickSeriesType : ISeriesType
         }
 
         c.Output.AddRange(bodies);
-        c.CandleGroups = groups;
+        c.CandleGroups = hitGroups;
         c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
+    }
+
+    /// <summary>
+    /// The candles to draw: each one's first and last point and its center pixel, and when merged
+    /// the width of the band the candle series share per period (null: the usual slot).
+    /// </summary>
+    private static (List<(int First, int Last, double Center)> Groups, double? Band) Groups(SeriesBuildContext c, double slot, int seriesCount)
+    {
+        var data = c.Data;
+        var n = data.Count;
+        var groups = new List<(int, int, double)>(n);
+        var pxPerUnit = n > 1 && data.X[^1] > data.X[0] ? (c.PixelX[n - 1] - c.PixelX[0]) / (data.X[^1] - data.X[0]) : 0;
+        if (slot >= MergeBelow || n < 2 || data.Kind == XKind.Category || !(pxPerUnit > 0))
+        {
+            for (var i = 0; i < n; i++)
+            {
+                groups.Add((i, i, c.PixelX[i]));
+            }
+
+            return (groups, null);
+        }
+
+        // The usual distance between candles.
+        var gaps = new double[n - 1];
+        for (var i = 1; i < n; i++)
+        {
+            gaps[i - 1] = data.X[i] - data.X[i - 1];
+        }
+
+        Array.Sort(gaps);
+        var spacing = Math.Max(gaps[gaps.Length / 2], double.Epsilon);
+
+        Func<double, double> key;
+        double period;
+        if (data.Kind == XKind.Time)
+        {
+            // The shortest calendar period longer than one candle that gives each merged candle room.
+            var (ms, calendar) = Periods.FirstOrDefault(p => p.Ms > spacing * 1.01 && p.Ms * pxPerUnit / seriesCount >= MergedSlot);
+            if (ms == 0)
+            {
+                (ms, calendar) = Periods[^1];
+            }
+
+            period = ms;
+            key = calendar is { } bucket
+                ? t => TimeValue.FromDateTime((DateTime)TimeBuckets.Floor(TimeValue.ToDateTime(t), bucket))
+                : t => Math.Floor(t / ms) * ms;
+        }
+        else
+        {
+            // Numbers: groups of k spacings, at multiples of k from zero (stable while panning).
+            period = Math.Ceiling(MergedSlot * seriesCount / (spacing * pxPerUnit)) * spacing;
+            key = t => Math.Floor(t / period) * period;
+        }
+
+        for (var first = 0; first < n;)
+        {
+            var start = key(data.X[first]);
+            var last = first;
+            while (last + 1 < n && key(data.X[last + 1]) == start)
+            {
+                last++;
+            }
+
+            // Centered on its period (a day's candle at noon), not on the points it happens to have.
+            groups.Add((first, last, c.PixelX[first] + (start + period / 2 - data.X[first]) * pxPerUnit));
+            first = last + 1;
+        }
+
+        return (groups, period * pxPerUnit * 0.8);
     }
 }
 

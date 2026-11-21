@@ -79,8 +79,8 @@ public static partial class ChartLayout
         var w = (SwatchWidth - 3) / 2;
         return new GroupNode(
         [
-            new RectNode(new RectF((float)x, (float)(cy - 5), (float)w, 10), styles.Add("candle-down", new Style { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f })),
-            new RectNode(new RectF((float)(x + w + 3), (float)(cy - 4), (float)w, 8), styles.Add("candle-up", new Style { Fill = ThemeTokens.Surface, Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f })),
+            new RectNode(new RectF((float)x, (float)(cy - 5), (float)w, 10), styles.Add("candle-down", Series.CandlestickSeriesType.DownStyle)),
+            new RectNode(new RectF((float)(x + w + 3), (float)(cy - 4), (float)w, 8), styles.Add("candle-up", Series.CandlestickSeriesType.UpStyle)),
         ])
         {
             Class = "rio-swatch rio-swatch-candle",

@@ -486,7 +486,7 @@ public sealed class BoxPlotSeries<TItem> : SeriesBase<TItem>
 
 /// <summary>
 /// Candlestick: how a value moved within each period: a wick from low to high and a body from open
-/// to close, hollow when it rose and filled when it fell (theme colors <c>--rio-positive</c> and
+/// to close, lightly filled when it rose and solid when it fell (theme colors <c>--rio-positive</c> and
 /// <c>--rio-negative</c>). Give raw readings (<c>XValue</c> and <c>YValue</c>, one item per
 /// reading) with a <see cref="Bucket"/> such as an hour or a day, or candles computed elsewhere
 /// (<see cref="OpenValue"/>, <see cref="HighValue"/>, <see cref="LowValue"/> and <see cref="CloseValue"/>,
