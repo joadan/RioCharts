@@ -54,8 +54,8 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - `riocharts-mcp`: a local MCP server (.NET tool) so agents such as Claude Code, Claude Desktop or
   Copilot render charts to PNG or SVG files from CSV/JSON files or inline data (`RioCharts.Mcp`)
 
-All six milestones of [Design.md](Design.md) are in, plus client-side export and a WASM docs site.
-Later topics there (auto-compact for small charts, AOT) are not done yet.
+All six milestones of [Design.md](Design.md) are in, plus client-side export, auto-compact, native
+AOT support, built-in languages and a WASM docs site.
 
 ## Install
 
