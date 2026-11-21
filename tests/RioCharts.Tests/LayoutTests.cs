@@ -250,7 +250,7 @@ public class LayoutTests
 
         Assert.Contains("Supply: 4 values", result.Scene.Description);
         Assert.Contains("highest 16", result.Scene.Description);
-        Assert.Contains("increasing", result.Scene.Description);
+        Assert.Contains("trend rising", result.Scene.Description);
     }
 
     [Fact]

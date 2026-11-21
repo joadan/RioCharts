@@ -1,0 +1,666 @@
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+
+namespace RioCharts.Core;
+
+/// <summary>
+/// The texts a chart shows or reads out itself: empty states, the legend and axis names for screen
+/// readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own
+/// texts (titles, series names, formats) are not here.
+/// </summary>
+/// <remarks>
+/// <para>
+/// A chart picks its texts from its culture (in Blazor: <c>Culture</c>, else the current UI culture),
+/// trying the full name, then the parent cultures: first languages added with <see cref="Register"/>,
+/// then the built-in ones (<see cref="BuiltIn"/>), then <see cref="English"/>.
+/// </para>
+/// <para>
+/// Change single texts with <c>with</c>: <c>ChartTexts.Swedish with { ResetZoom = "Visa allt" }</c>.
+/// Texts that are not set fall back to English. Load them from resx files or an
+/// <c>IStringLocalizer</c> with <see cref="From"/>; the keys are the property names (<see cref="Keys"/>).
+/// </para>
+/// <para>
+/// Templates use <c>{0}</c>, <c>{1}</c>… placeholders. A text with a count can have two forms,
+/// "one|other": the first is used when the count is 1, e.g. <c>"{0}: {1} value|{0}: {1} values"</c>.
+/// A template that cannot be filled in falls back to the English one.
+/// </para>
+/// </remarks>
+public sealed record ChartTexts
+{
+    private readonly Dictionary<string, string> _texts;
+
+    /// <summary>English texts (all others fall back to them).</summary>
+    public ChartTexts()
+    {
+        _texts = new Dictionary<string, string>(Defaults, StringComparer.Ordinal);
+    }
+
+    private ChartTexts(ChartTexts original)
+    {
+        _texts = new Dictionary<string, string>(original._texts, StringComparer.Ordinal);
+    }
+
+    // ---------- Shown in the chart ----------
+
+    /// <summary>The chart's name when it has no title (screen readers).</summary>
+    public string Chart { get => Get(); init => Set(value); }
+
+    /// <summary>In the plot when there is nothing to draw.</summary>
+    public string NoData { get => Get(); init => Set(value); }
+
+    /// <summary>In the plot when every series is hidden through the legend.</summary>
+    public string AllSeriesHidden { get => Get(); init => Set(value); }
+
+    /// <summary>In a pie or radial bar chart when every slice is hidden through the legend.</summary>
+    public string AllSlicesHidden { get => Get(); init => Set(value); }
+
+    /// <summary>The slice that collects slices too small to show.</summary>
+    public string Other { get => Get(); init => Set(value); }
+
+    /// <summary>Under the total in a donut's center.</summary>
+    public string Total { get => Get(); init => Set(value); }
+
+    /// <summary>The "Reset zoom" button.</summary>
+    public string ResetZoom { get => Get(); init => Set(value); }
+
+    /// <summary>The download menu's name.</summary>
+    public string Download { get => Get(); init => Set(value); }
+
+    /// <summary>The download button when it offers one format. {0}: the format, e.g. PNG.</summary>
+    public string DownloadFormat { get => Get(); init => Set(value); }
+
+    /// <summary>The download button when it opens the menu.</summary>
+    public string DownloadChart { get => Get(); init => Set(value); }
+
+    // ---------- Read by screen readers ----------
+
+    /// <summary>What a keyboard-navigable chart is called (aria-roledescription), lower case.</summary>
+    public string ChartRole { get => Get(); init => Set(value); }
+
+    /// <summary>The legend.</summary>
+    public string Legend { get => Get(); init => Set(value); }
+
+    /// <summary>The x axis.</summary>
+    public string XAxis { get => Get(); init => Set(value); }
+
+    /// <summary>The y axis.</summary>
+    public string YAxis { get => Get(); init => Set(value); }
+
+    /// <summary>An axis with its first and last label. {0}: the axis, {1}: first label, {2}: last label.</summary>
+    public string AxisRange { get => Get(); init => Set(value); }
+
+    /// <summary>A series. {0}: its name, {1}: the number of points (one|other).</summary>
+    public string SeriesPoints { get => Get(); init => Set(value); }
+
+    /// <summary>Description start. {0}: the number of series (one|other).</summary>
+    public string Summary { get => Get(); init => Set(value); }
+
+    /// <summary>Description start with a title. {0}: the number of series (one|other), {1}: the title.</summary>
+    public string SummaryTitled { get => Get(); init => Set(value); }
+
+    /// <summary>Description of a series. {0}: its name, {1}: the number of values (one|other).</summary>
+    public string SeriesValues { get => Get(); init => Set(value); }
+
+    /// <summary>Description of a series' extremes. {0}: lowest value, {1}: its x, {2}: highest value, {3}: its x.</summary>
+    public string LowestHighest { get => Get(); init => Set(value); }
+
+    /// <summary>Description of a series' trend. {0}: <see cref="Rising"/>, <see cref="Falling"/> or <see cref="Stable"/>.</summary>
+    public string Trend { get => Get(); init => Set(value); }
+
+    /// <summary>An upward trend.</summary>
+    public string Rising { get => Get(); init => Set(value); }
+
+    /// <summary>A downward trend.</summary>
+    public string Falling { get => Get(); init => Set(value); }
+
+    /// <summary>No clear trend.</summary>
+    public string Stable { get => Get(); init => Set(value); }
+
+    /// <summary>A compact chart's range. {0}: lowest, {1}: highest.</summary>
+    public string ValueRange { get => Get(); init => Set(value); }
+
+    /// <summary>A compact chart's last value. {0}: the value.</summary>
+    public string LastValue { get => Get(); init => Set(value); }
+
+    /// <summary>A compact chart's description when there is no data.</summary>
+    public string NoDataShort { get => Get(); init => Set(value); }
+
+    /// <summary>A pie chart.</summary>
+    public string PieChart { get => Get(); init => Set(value); }
+
+    /// <summary>A donut chart.</summary>
+    public string DonutChart { get => Get(); init => Set(value); }
+
+    /// <summary>A radial bar chart.</summary>
+    public string RadialBarChart { get => Get(); init => Set(value); }
+
+    /// <summary>Description of a pie or radial bar chart. {0}: the kind of chart, {1}: the number of items (one|other), {2}: the items.</summary>
+    public string PolarItems { get => Get(); init => Set(value); }
+
+    /// <summary>Description of an empty pie or radial bar chart. {0}: the kind of chart.</summary>
+    public string PolarNoData { get => Get(); init => Set(value); }
+
+    /// <summary>After a shortened list. {0}: how many were left out.</summary>
+    public string More { get => Get(); init => Set(value); }
+
+    /// <summary>Keyboard help: one series.</summary>
+    public string KeysPoints { get => Get(); init => Set(value); }
+
+    /// <summary>Keyboard help: several series.</summary>
+    public string KeysPointsAndSeries { get => Get(); init => Set(value); }
+
+    /// <summary>Keyboard help: pie and radial bar charts.</summary>
+    public string KeysSlices { get => Get(); init => Set(value); }
+
+    /// <summary>Keyboard help: zoom keys.</summary>
+    public string KeysZoom { get => Get(); init => Set(value); }
+
+    /// <summary>Keyboard help: when points can be clicked.</summary>
+    public string KeysSelect { get => Get(); init => Set(value); }
+
+    /// <summary>Keyboard help: leaving the chart.</summary>
+    public string KeysLeave { get => Get(); init => Set(value); }
+
+    /// <summary>Read after a point or slice. {0}: its position, {1}: how many there are.</summary>
+    public string Position { get => Get(); init => Set(value); }
+
+    // ---------- Lookup ----------
+
+    /// <summary>The keys of all texts (the property names), e.g. for resx files.</summary>
+    public static IReadOnlyList<string> Keys => KeyList;
+
+    /// <summary>The text for a key (see <see cref="Keys"/>).</summary>
+    /// <exception cref="KeyNotFoundException">Unknown key.</exception>
+    public string this[string key] => _texts[key];
+
+    private static readonly ConcurrentDictionary<string, ChartTexts> Registered = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app.
+    /// Call it at startup. Takes precedence over the built-in languages.
+    /// </summary>
+    public static void Register(string culture, ChartTexts texts)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(culture);
+        ArgumentNullException.ThrowIfNull(texts);
+        Registered[culture] = texts;
+    }
+
+    /// <summary>
+    /// The texts for a culture: registered ones, then built-in ones, trying the culture and its parents
+    /// (sv-FI, then sv); English when none match. Null: the current UI culture.
+    /// </summary>
+    public static ChartTexts For(CultureInfo? culture)
+    {
+        for (var c = culture ?? CultureInfo.CurrentUICulture; !string.IsNullOrEmpty(c.Name); c = c.Parent)
+        {
+            if (Registered.TryGetValue(c.Name, out var texts) || BuiltIn.TryGetValue(c.Name, out texts))
+            {
+                return texts;
+            }
+        }
+
+        return English;
+    }
+
+    /// <summary>
+    /// Texts from a lookup by key (see <see cref="Keys"/>), e.g. resx resources or an IStringLocalizer:
+    /// <c>ChartTexts.From(key => localizer[key] is { ResourceNotFound: false } s ? s.Value : null)</c>.
+    /// Keys it returns null or empty for keep the text from <paramref name="fallback"/> (default English).
+    /// </summary>
+    public static ChartTexts From(Func<string, string?> lookup, ChartTexts? fallback = null)
+    {
+        ArgumentNullException.ThrowIfNull(lookup);
+        var texts = new ChartTexts(fallback ?? English);
+        foreach (var key in Keys)
+        {
+            if (lookup(key) is { Length: > 0 } value)
+            {
+                texts._texts[key] = value;
+            }
+        }
+
+        return texts;
+    }
+
+    /// <summary>
+    /// Fills in a template the way charts do: <c>{0}</c>… placeholders, and with <paramref name="count"/>
+    /// the first form of a "one|other" template when the count is 1. Never throws: a broken template
+    /// falls back to <paramref name="fallback"/>, then to the template itself.
+    /// </summary>
+    public static string Format(string template, IFormatProvider? provider, long? count, string? fallback, params object?[] args)
+    {
+        try
+        {
+            return string.Format(provider, PickForm(template, count), args);
+        }
+        catch (FormatException) when (fallback is not null && fallback != template)
+        {
+            return Format(fallback, provider, count, null, args);
+        }
+        catch (FormatException)
+        {
+            return PickForm(template, count);
+        }
+    }
+
+    /// <summary>Fills in this set's template for <paramref name="key"/>, falling back to the English template.</summary>
+    internal string Fill(string key, IFormatProvider? provider, params object?[] args) =>
+        Format(_texts[key], provider, null, Defaults[key], args);
+
+    /// <summary>Fills in a "one|other" template for <paramref name="key"/>.</summary>
+    internal string FillCount(string key, long count, IFormatProvider? provider, params object?[] args) =>
+        Format(_texts[key], provider, count, Defaults[key], args);
+
+    private static string PickForm(string template, long? count)
+    {
+        var bar = template.IndexOf('|', StringComparison.Ordinal);
+        if (bar < 0)
+        {
+            return template;
+        }
+
+        return count == 1 ? template[..bar] : template[(bar + 1)..];
+    }
+
+    private string Get([CallerMemberName] string key = "") => _texts[key];
+
+    private void Set(string? value, [CallerMemberName] string key = "") =>
+        _texts[key] = string.IsNullOrEmpty(value) ? Defaults[key] : value;
+
+    public bool Equals(ChartTexts? other) =>
+        other is not null && (ReferenceEquals(this, other) || (_texts.Count == other._texts.Count && _texts.All(p => other._texts.TryGetValue(p.Key, out var v) && v == p.Value)));
+
+    public override int GetHashCode()
+    {
+        var hash = 0;
+        foreach (var (key, value) in _texts)
+        {
+            hash ^= HashCode.Combine(key, value);
+        }
+
+        return hash;
+    }
+
+    // ---------- Languages ----------
+
+    private static readonly Dictionary<string, string> Defaults = new(StringComparer.Ordinal)
+    {
+        [nameof(Chart)] = "Chart",
+        [nameof(NoData)] = "No data available",
+        [nameof(AllSeriesHidden)] = "All series are hidden",
+        [nameof(AllSlicesHidden)] = "All slices are hidden",
+        [nameof(Other)] = "Other",
+        [nameof(Total)] = "Total",
+        [nameof(ResetZoom)] = "Reset zoom",
+        [nameof(Download)] = "Download",
+        [nameof(DownloadFormat)] = "Download {0}",
+        [nameof(DownloadChart)] = "Download chart",
+        [nameof(ChartRole)] = "chart",
+        [nameof(Legend)] = "Legend",
+        [nameof(XAxis)] = "X axis",
+        [nameof(YAxis)] = "Y axis",
+        [nameof(AxisRange)] = "{0}, from {1} to {2}",
+        [nameof(SeriesPoints)] = "{0}: {1} data point|{0}: {1} data points",
+        [nameof(Summary)] = "Chart with {0} series.",
+        [nameof(SummaryTitled)] = "Chart \"{1}\" with {0} series.",
+        [nameof(SeriesValues)] = "{0}: {1} value|{0}: {1} values",
+        [nameof(LowestHighest)] = "lowest {0} at {1}, highest {2} at {3}",
+        [nameof(Trend)] = "trend {0}",
+        [nameof(Rising)] = "rising",
+        [nameof(Falling)] = "falling",
+        [nameof(Stable)] = "stable",
+        [nameof(ValueRange)] = "{0} to {1}",
+        [nameof(LastValue)] = "last {0}",
+        [nameof(NoDataShort)] = "No data.",
+        [nameof(PieChart)] = "Pie chart",
+        [nameof(DonutChart)] = "Donut chart",
+        [nameof(RadialBarChart)] = "Radial bar chart",
+        [nameof(PolarItems)] = "{0} with {1} item: {2}|{0} with {1} items: {2}",
+        [nameof(PolarNoData)] = "{0}, no data.",
+        [nameof(More)] = "and {0} more",
+        [nameof(KeysPoints)] = "Use Left and Right to move between points.",
+        [nameof(KeysPointsAndSeries)] = "Use Left and Right to move between points, Up and Down to change series.",
+        [nameof(KeysSlices)] = "Use the arrow keys to move between slices.",
+        [nameof(KeysZoom)] = "Plus and minus zoom, Shift with Left and Right pans, 0 shows all data.",
+        [nameof(KeysSelect)] = "Press Enter to select a point, Escape to leave.",
+        [nameof(KeysLeave)] = "Press Escape to leave.",
+        [nameof(Position)] = "{0} of {1}",
+    };
+
+    // Static fields initialize in order: the defaults come before every language that uses them.
+    private static readonly string[] KeyList = [.. Defaults.Keys];
+
+    /// <summary>English.</summary>
+    public static ChartTexts English { get; } = new();
+
+    /// <summary>Swedish (sv).</summary>
+    public static ChartTexts Swedish { get; } = new()
+    {
+        Chart = "Diagram",
+        NoData = "Inga data",
+        AllSeriesHidden = "Alla serier är dolda",
+        AllSlicesHidden = "Alla delar är dolda",
+        Other = "Övrigt",
+        Total = "Totalt",
+        ResetZoom = "Återställ zoom",
+        Download = "Ladda ner",
+        DownloadFormat = "Ladda ner {0}",
+        DownloadChart = "Ladda ner diagram",
+        ChartRole = "diagram",
+        Legend = "Teckenförklaring",
+        XAxis = "X-axel",
+        YAxis = "Y-axel",
+        AxisRange = "{0}, från {1} till {2}",
+        SeriesPoints = "{0}: {1} datapunkt|{0}: {1} datapunkter",
+        Summary = "Diagram med {0} serie.|Diagram med {0} serier.",
+        SummaryTitled = "Diagram \"{1}\" med {0} serie.|Diagram \"{1}\" med {0} serier.",
+        SeriesValues = "{0}: {1} värde|{0}: {1} värden",
+        LowestHighest = "lägst {0} vid {1}, högst {2} vid {3}",
+        Trend = "{0} trend",
+        Rising = "stigande",
+        Falling = "fallande",
+        Stable = "stabil",
+        ValueRange = "{0} till {1}",
+        LastValue = "senast {0}",
+        NoDataShort = "Inga data.",
+        PieChart = "Cirkeldiagram",
+        DonutChart = "Ringdiagram",
+        RadialBarChart = "Radiellt stapeldiagram",
+        PolarItems = "{0} med {1} post: {2}|{0} med {1} poster: {2}",
+        PolarNoData = "{0}, inga data.",
+        More = "och {0} till",
+        KeysPoints = "Använd vänster- och högerpil för att flytta mellan punkter.",
+        KeysPointsAndSeries = "Använd vänster- och högerpil för att flytta mellan punkter, upp- och nedpil för att byta serie.",
+        KeysSlices = "Använd piltangenterna för att flytta mellan delarna.",
+        KeysZoom = "Plus och minus zoomar, Skift med vänster- och högerpil panorerar, 0 visar all data.",
+        KeysSelect = "Tryck Enter för att välja en punkt, Escape för att lämna.",
+        KeysLeave = "Tryck Escape för att lämna.",
+        Position = "{0} av {1}",
+    };
+
+    /// <summary>Norwegian, Bokmål (no, nb).</summary>
+    public static ChartTexts Norwegian { get; } = new()
+    {
+        Chart = "Diagram",
+        NoData = "Ingen data",
+        AllSeriesHidden = "Alle serier er skjult",
+        AllSlicesHidden = "Alle deler er skjult",
+        Other = "Annet",
+        Total = "Totalt",
+        ResetZoom = "Tilbakestill zoom",
+        Download = "Last ned",
+        DownloadFormat = "Last ned {0}",
+        DownloadChart = "Last ned diagram",
+        ChartRole = "diagram",
+        Legend = "Tegnforklaring",
+        XAxis = "X-akse",
+        YAxis = "Y-akse",
+        AxisRange = "{0}, fra {1} til {2}",
+        SeriesPoints = "{0}: {1} datapunkt|{0}: {1} datapunkter",
+        Summary = "Diagram med {0} serie.|Diagram med {0} serier.",
+        SummaryTitled = "Diagram «{1}» med {0} serie.|Diagram «{1}» med {0} serier.",
+        SeriesValues = "{0}: {1} verdi|{0}: {1} verdier",
+        LowestHighest = "lavest {0} ved {1}, høyest {2} ved {3}",
+        Trend = "{0} trend",
+        Rising = "stigende",
+        Falling = "synkende",
+        Stable = "stabil",
+        ValueRange = "{0} til {1}",
+        LastValue = "sist {0}",
+        NoDataShort = "Ingen data.",
+        PieChart = "Sektordiagram",
+        DonutChart = "Ringdiagram",
+        RadialBarChart = "Radielt stolpediagram",
+        PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
+        PolarNoData = "{0}, ingen data.",
+        More = "og {0} til",
+        KeysPoints = "Bruk venstre- og høyrepil for å flytte mellom punkter.",
+        KeysPointsAndSeries = "Bruk venstre- og høyrepil for å flytte mellom punkter, opp- og nedpil for å bytte serie.",
+        KeysSlices = "Bruk piltastene for å flytte mellom delene.",
+        KeysZoom = "Pluss og minus zoomer, Shift med venstre- og høyrepil panorerer, 0 viser alle data.",
+        KeysSelect = "Trykk Enter for å velge et punkt, Escape for å gå ut.",
+        KeysLeave = "Trykk Escape for å gå ut.",
+        Position = "{0} av {1}",
+    };
+
+    /// <summary>Danish (da).</summary>
+    public static ChartTexts Danish { get; } = new()
+    {
+        Chart = "Diagram",
+        NoData = "Ingen data",
+        AllSeriesHidden = "Alle serier er skjult",
+        AllSlicesHidden = "Alle dele er skjult",
+        Other = "Andet",
+        Total = "I alt",
+        ResetZoom = "Nulstil zoom",
+        Download = "Download",
+        DownloadFormat = "Download {0}",
+        DownloadChart = "Download diagram",
+        ChartRole = "diagram",
+        Legend = "Signaturforklaring",
+        XAxis = "X-akse",
+        YAxis = "Y-akse",
+        AxisRange = "{0}, fra {1} til {2}",
+        SeriesPoints = "{0}: {1} datapunkt|{0}: {1} datapunkter",
+        Summary = "Diagram med {0} serie.|Diagram med {0} serier.",
+        SummaryTitled = "Diagram \"{1}\" med {0} serie.|Diagram \"{1}\" med {0} serier.",
+        SeriesValues = "{0}: {1} værdi|{0}: {1} værdier",
+        LowestHighest = "lavest {0} ved {1}, højest {2} ved {3}",
+        Trend = "{0} tendens",
+        Rising = "stigende",
+        Falling = "faldende",
+        Stable = "stabil",
+        ValueRange = "{0} til {1}",
+        LastValue = "senest {0}",
+        NoDataShort = "Ingen data.",
+        PieChart = "Cirkeldiagram",
+        DonutChart = "Ringdiagram",
+        RadialBarChart = "Radialt søjlediagram",
+        PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
+        PolarNoData = "{0}, ingen data.",
+        More = "og {0} mere",
+        KeysPoints = "Brug venstre- og højrepil til at flytte mellem punkter.",
+        KeysPointsAndSeries = "Brug venstre- og højrepil til at flytte mellem punkter, op- og nedpil til at skifte serie.",
+        KeysSlices = "Brug piletasterne til at flytte mellem delene.",
+        KeysZoom = "Plus og minus zoomer, Shift med venstre- og højrepil panorerer, 0 viser alle data.",
+        KeysSelect = "Tryk Enter for at vælge et punkt, Escape for at forlade diagrammet.",
+        KeysLeave = "Tryk Escape for at forlade diagrammet.",
+        Position = "{0} af {1}",
+    };
+
+    /// <summary>Finnish (fi).</summary>
+    public static ChartTexts Finnish { get; } = new()
+    {
+        Chart = "Kaavio",
+        NoData = "Ei tietoja",
+        AllSeriesHidden = "Kaikki sarjat on piilotettu",
+        AllSlicesHidden = "Kaikki osat on piilotettu",
+        Other = "Muut",
+        Total = "Yhteensä",
+        ResetZoom = "Palauta zoomaus",
+        Download = "Lataa",
+        DownloadFormat = "Lataa {0}",
+        DownloadChart = "Lataa kaavio",
+        ChartRole = "kaavio",
+        Legend = "Selite",
+        XAxis = "X-akseli",
+        YAxis = "Y-akseli",
+        AxisRange = "{0}, {1}–{2}",
+        SeriesPoints = "{0}: {1} arvopiste|{0}: {1} arvopistettä",
+        Summary = "Kaavio, {0} sarja.|Kaavio, {0} sarjaa.",
+        SummaryTitled = "Kaavio ”{1}”, {0} sarja.|Kaavio ”{1}”, {0} sarjaa.",
+        SeriesValues = "{0}: {1} arvo|{0}: {1} arvoa",
+        LowestHighest = "pienin {0} kohdassa {1}, suurin {2} kohdassa {3}",
+        Trend = "trendi {0}",
+        Rising = "nouseva",
+        Falling = "laskeva",
+        Stable = "vakaa",
+        ValueRange = "{0}–{1}",
+        LastValue = "viimeisin {0}",
+        NoDataShort = "Ei tietoja.",
+        PieChart = "Ympyräkaavio",
+        DonutChart = "Rengaskaavio",
+        RadialBarChart = "Säteittäinen pylväskaavio",
+        PolarItems = "{0}, {1} kohde: {2}|{0}, {1} kohdetta: {2}",
+        PolarNoData = "{0}, ei tietoja.",
+        More = "ja {0} muuta",
+        KeysPoints = "Siirry pisteestä toiseen vasemmalla ja oikealla nuolinäppäimellä.",
+        KeysPointsAndSeries = "Siirry pisteestä toiseen vasemmalla ja oikealla nuolinäppäimellä, vaihda sarjaa ylä- ja alanuolella.",
+        KeysSlices = "Siirry osasta toiseen nuolinäppäimillä.",
+        KeysZoom = "Plus ja miinus zoomaavat, vaihtonäppäin ja vasen tai oikea nuoli siirtävät näkymää, 0 näyttää kaikki tiedot.",
+        KeysSelect = "Valitse piste Enterillä, poistu Escillä.",
+        KeysLeave = "Poistu Escillä.",
+        Position = "{0}/{1}",
+    };
+
+    /// <summary>German (de).</summary>
+    public static ChartTexts German { get; } = new()
+    {
+        Chart = "Diagramm",
+        NoData = "Keine Daten vorhanden",
+        AllSeriesHidden = "Alle Reihen sind ausgeblendet",
+        AllSlicesHidden = "Alle Segmente sind ausgeblendet",
+        Other = "Sonstige",
+        Total = "Gesamt",
+        ResetZoom = "Zoom zurücksetzen",
+        Download = "Herunterladen",
+        DownloadFormat = "{0} herunterladen",
+        DownloadChart = "Diagramm herunterladen",
+        ChartRole = "Diagramm",
+        Legend = "Legende",
+        XAxis = "X-Achse",
+        YAxis = "Y-Achse",
+        AxisRange = "{0}, von {1} bis {2}",
+        SeriesPoints = "{0}: {1} Datenpunkt|{0}: {1} Datenpunkte",
+        Summary = "Diagramm mit {0} Reihe.|Diagramm mit {0} Reihen.",
+        SummaryTitled = "Diagramm „{1}“ mit {0} Reihe.|Diagramm „{1}“ mit {0} Reihen.",
+        SeriesValues = "{0}: {1} Wert|{0}: {1} Werte",
+        LowestHighest = "Minimum {0} bei {1}, Maximum {2} bei {3}",
+        Trend = "Trend {0}",
+        Rising = "steigend",
+        Falling = "fallend",
+        Stable = "stabil",
+        ValueRange = "{0} bis {1}",
+        LastValue = "zuletzt {0}",
+        NoDataShort = "Keine Daten.",
+        PieChart = "Kreisdiagramm",
+        DonutChart = "Ringdiagramm",
+        RadialBarChart = "Radiales Balkendiagramm",
+        PolarItems = "{0} mit {1} Eintrag: {2}|{0} mit {1} Einträgen: {2}",
+        PolarNoData = "{0}, keine Daten.",
+        More = "und {0} weitere",
+        KeysPoints = "Mit Links und Rechts zwischen Punkten wechseln.",
+        KeysPointsAndSeries = "Mit Links und Rechts zwischen Punkten wechseln, mit Auf und Ab die Reihe wechseln.",
+        KeysSlices = "Mit den Pfeiltasten zwischen Segmenten wechseln.",
+        KeysZoom = "Plus und Minus zoomen, Umschalt mit Links und Rechts verschiebt, 0 zeigt alle Daten.",
+        KeysSelect = "Enter wählt einen Punkt, Escape verlässt das Diagramm.",
+        KeysLeave = "Escape verlässt das Diagramm.",
+        Position = "{0} von {1}",
+    };
+
+    /// <summary>French (fr).</summary>
+    public static ChartTexts French { get; } = new()
+    {
+        Chart = "Graphique",
+        NoData = "Aucune donnée disponible",
+        AllSeriesHidden = "Toutes les séries sont masquées",
+        AllSlicesHidden = "Toutes les parts sont masquées",
+        Other = "Autres",
+        Total = "Total",
+        ResetZoom = "Réinitialiser le zoom",
+        Download = "Télécharger",
+        DownloadFormat = "Télécharger en {0}",
+        DownloadChart = "Télécharger le graphique",
+        ChartRole = "graphique",
+        Legend = "Légende",
+        XAxis = "Axe X",
+        YAxis = "Axe Y",
+        AxisRange = "{0}, de {1} à {2}",
+        SeriesPoints = "{0} : {1} point de données|{0} : {1} points de données",
+        Summary = "Graphique avec {0} série.|Graphique avec {0} séries.",
+        SummaryTitled = "Graphique « {1} » avec {0} série.|Graphique « {1} » avec {0} séries.",
+        SeriesValues = "{0} : {1} valeur|{0} : {1} valeurs",
+        LowestHighest = "minimum {0} à {1}, maximum {2} à {3}",
+        Trend = "tendance {0}",
+        Rising = "à la hausse",
+        Falling = "à la baisse",
+        Stable = "stable",
+        ValueRange = "{0} à {1}",
+        LastValue = "dernière valeur {0}",
+        NoDataShort = "Aucune donnée.",
+        PieChart = "Graphique en secteurs",
+        DonutChart = "Graphique en anneau",
+        RadialBarChart = "Graphique à barres radiales",
+        PolarItems = "{0} avec {1} élément : {2}|{0} avec {1} éléments : {2}",
+        PolarNoData = "{0}, aucune donnée.",
+        More = "et {0} de plus",
+        KeysPoints = "Utilisez Gauche et Droite pour passer d'un point à l'autre.",
+        KeysPointsAndSeries = "Utilisez Gauche et Droite pour passer d'un point à l'autre, Haut et Bas pour changer de série.",
+        KeysSlices = "Utilisez les flèches pour passer d'une part à l'autre.",
+        KeysZoom = "Plus et moins zooment, Maj avec Gauche et Droite déplace la vue, 0 affiche toutes les données.",
+        KeysSelect = "Appuyez sur Entrée pour sélectionner un point, sur Échap pour quitter.",
+        KeysLeave = "Appuyez sur Échap pour quitter.",
+        Position = "{0} sur {1}",
+    };
+
+    /// <summary>Spanish (es).</summary>
+    public static ChartTexts Spanish { get; } = new()
+    {
+        Chart = "Gráfico",
+        NoData = "No hay datos disponibles",
+        AllSeriesHidden = "Todas las series están ocultas",
+        AllSlicesHidden = "Todos los sectores están ocultos",
+        Other = "Otros",
+        Total = "Total",
+        ResetZoom = "Restablecer zoom",
+        Download = "Descargar",
+        DownloadFormat = "Descargar {0}",
+        DownloadChart = "Descargar gráfico",
+        ChartRole = "gráfico",
+        Legend = "Leyenda",
+        XAxis = "Eje X",
+        YAxis = "Eje Y",
+        AxisRange = "{0}, de {1} a {2}",
+        SeriesPoints = "{0}: {1} punto de datos|{0}: {1} puntos de datos",
+        Summary = "Gráfico con {0} serie.|Gráfico con {0} series.",
+        SummaryTitled = "Gráfico «{1}» con {0} serie.|Gráfico «{1}» con {0} series.",
+        SeriesValues = "{0}: {1} valor|{0}: {1} valores",
+        LowestHighest = "mínimo {0} en {1}, máximo {2} en {3}",
+        Trend = "tendencia {0}",
+        Rising = "al alza",
+        Falling = "a la baja",
+        Stable = "estable",
+        ValueRange = "{0} a {1}",
+        LastValue = "último {0}",
+        NoDataShort = "Sin datos.",
+        PieChart = "Gráfico circular",
+        DonutChart = "Gráfico de anillo",
+        RadialBarChart = "Gráfico de barras radiales",
+        PolarItems = "{0} con {1} elemento: {2}|{0} con {1} elementos: {2}",
+        PolarNoData = "{0}, sin datos.",
+        More = "y {0} más",
+        KeysPoints = "Use Izquierda y Derecha para moverse entre puntos.",
+        KeysPointsAndSeries = "Use Izquierda y Derecha para moverse entre puntos, Arriba y Abajo para cambiar de serie.",
+        KeysSlices = "Use las flechas para moverse entre sectores.",
+        KeysZoom = "Más y menos hacen zoom, Mayús con Izquierda y Derecha desplaza, 0 muestra todos los datos.",
+        KeysSelect = "Pulse Intro para seleccionar un punto, Escape para salir.",
+        KeysLeave = "Pulse Escape para salir.",
+        Position = "{0} de {1}",
+    };
+
+    /// <summary>The built-in languages by culture name (en, sv, no, nb, da, fi, de, fr, es).</summary>
+    public static IReadOnlyDictionary<string, ChartTexts> BuiltIn { get; } = new Dictionary<string, ChartTexts>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["en"] = English,
+        ["sv"] = Swedish,
+        ["no"] = Norwegian,
+        ["nb"] = Norwegian,
+        ["da"] = Danish,
+        ["fi"] = Finnish,
+        ["de"] = German,
+        ["fr"] = French,
+        ["es"] = Spanish,
+    };
+}

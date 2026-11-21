@@ -1019,7 +1019,7 @@ function showKey(state, announce) {
         }
 
         if (announce) {
-            say(state, `${slice.header ? slice.header + ', ' : ''}${slice.label}: ${slice.value}. ${kb.i + 1} of ${m.slices.length}`);
+            say(state, `${slice.header ? slice.header + ', ' : ''}${slice.label}: ${slice.value}. ${position(m, kb.i + 1, m.slices.length)}`);
         }
 
         return;
@@ -1054,7 +1054,7 @@ function showKey(state, announce) {
 
     if (announce) {
         const values = rows.map(r => `${r.s.name} ${r.s.v[r.i]}`).join(', ');
-        say(state, `${s.xl[kb.i]}: ${values}. ${kb.i + 1} of ${s.x.length}`);
+        say(state, `${s.xl[kb.i]}: ${values}. ${position(m, kb.i + 1, s.x.length)}`);
     }
 }
 
@@ -1084,6 +1084,11 @@ function menuKey(e) {
 }
 
 // The live region (Blazor renders it empty): screen readers read what is written here.
+/** "3 of 12", from the chart's texts ({0} of {1}). */
+function position(m, i, n) {
+    return (m.pos || '{0} of {1}').replace('{0}', i).replace('{1}', n);
+}
+
 function say(state, text) {
     const live = state.container.querySelector('.rio-live');
     if (live) {

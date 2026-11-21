@@ -367,3 +367,28 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Not yet:** auto-compact (shedding axis titles, legend and axes when a normal chart gets very
   small).
 
+
+
+## Languages and texts
+
+- **`ChartTexts`** (Core) holds every text the chart writes itself: empty states, "Total", "Other",
+  "Reset zoom", the download button, and the screen reader texts (description, axis and legend
+  names, series labels, keyboard help, the "3 of 12" position the JS module appends). Spec
+  warnings and errors stay English: they are for developers.
+- **Built in:** English, Swedish, Norwegian (Bokmål, under "no" and "nb"; Nynorsk falls back to it
+  through its parent "no"), Danish, Finnish, German, French, Spanish. The non-English texts were
+  written without a native-speaker review.
+- **Lookup:** the Blazor `Texts` parameter, then a cascaded `ChartTexts`, then
+  `ChartTexts.For(Culture ?? CurrentUICulture)`, which walks the culture's parents through
+  registered languages first, then built-in ones, then English. Core and Skia use
+  `options.Texts ?? ChartTexts.For(options.Culture)`. The cascaded value is the per-user hook in
+  Blazor Server (a static resolver would be shared by every circuit).
+- **Storage:** a dictionary behind init properties, so `with` works (a private copy constructor
+  clones the dictionary), `From` reads by key without reflection (trimming-safe), and equality is
+  by value, so `Texts="@(ChartTexts.Swedish with { ... })"` in markup does not lay the chart out
+  on every render. Unset or empty texts fall back to English.
+- **Templates:** composite format strings; "one|other" picks the first form for a count of 1
+  (enough for the built-in languages, not for languages with more plural forms). A template that
+  fails to format falls back to the English one, never throwing.
+- **Description wording:** the full description says "trend rising/falling/stable" (was
+  "increasing/decreasing"), the same words as the compact summary.

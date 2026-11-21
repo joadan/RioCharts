@@ -42,6 +42,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Display time zone (`TimeZone`): plotted on instants, labelled in the zone, DST-safe
 - Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
 - Compact charts and sparklines (`Compact`), highlight dots, and plain SVG without JS (`Interactive="false"`)
+- Built-in texts in eight languages (`ChartTexts`), with your own wording or languages from code, resx or `IStringLocalizer`
 - Download as PNG, SVG or CSV from the browser (`Exportable`, `DownloadPngAsync`, `ExportCsv`, ...)
 - Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
 - JSON chart specs for AI agents: tolerant parsing, JSON schema, validation with actionable errors,

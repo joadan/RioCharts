@@ -29,6 +29,9 @@ public sealed record ExportOptions
 
     public CultureInfo Culture { get; init; } = CultureInfo.CurrentCulture;
 
+    /// <summary>The chart's own texts ("No data available", "Total", "Other", the description). Null: <see cref="ChartTexts.For"/> the culture.</summary>
+    public ChartTexts? Texts { get; init; }
+
     /// <summary>Base font size. Default 12.</summary>
     public double FontSize { get; init; } = 12;
 
@@ -71,6 +74,7 @@ public static class ChartExport
             Height = options.Height,
             Measurer = new SkiaTextMeasurer(FontsFor(options)),
             Culture = options.Culture,
+            Texts = options.Texts,
             FontSize = options.FontSize,
             TitleFontSize = options.FontSize * 1.25,
             HiddenSeries = options.HiddenSeries,

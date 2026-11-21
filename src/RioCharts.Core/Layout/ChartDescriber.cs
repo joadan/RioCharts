@@ -9,23 +9,26 @@ public enum Trend { None, Increasing, Decreasing, Stable }
 /// <summary>Text alternative for a chart: series, ranges and trends.</summary>
 public static class ChartDescriber
 {
-    public static string Describe(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture)
+    public static string Describe(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+        ChartTexts? texts = null)
     {
+        texts ??= ChartTexts.For(culture);
         var sb = new StringBuilder();
         var visible = series.Where(s => s.Visible).ToList();
-        sb.Append(string.IsNullOrWhiteSpace(spec.Title) ? "Chart" : $"Chart \"{spec.Title}\"");
-        sb.Append(visible.Count == 1 ? " with 1 series." : $" with {visible.Count} series.");
+        sb.Append(string.IsNullOrWhiteSpace(spec.Title)
+            ? texts.FillCount(nameof(ChartTexts.Summary), visible.Count, culture, visible.Count)
+            : texts.FillCount(nameof(ChartTexts.SummaryTitled), visible.Count, culture, visible.Count, spec.Title));
 
         if (!visible.Any(s => s.Data.Y.Any(double.IsFinite)))
         {
-            sb.Append(" No data available.");
+            sb.Append(' ').Append(texts.NoData).Append('.');
             return sb.ToString();
         }
 
         foreach (var (s, d, _) in visible)
         {
             var points = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i])).Select(i => (X: d.X[i], Y: d.Y[i])).ToList();
-            sb.Append(' ').Append(s.DisplayName).Append(": ").Append(points.Count.ToString(CultureInfo.InvariantCulture)).Append(" values");
+            sb.Append(' ').Append(texts.FillCount(nameof(ChartTexts.SeriesValues), points.Count, culture, s.DisplayName, points.Count));
             if (points.Count == 0)
             {
                 sb.Append('.');
@@ -34,13 +37,13 @@ public static class ChartDescriber
 
             var min = points.MinBy(p => p.Y);
             var max = points.MaxBy(p => p.Y);
-            sb.Append(", lowest ").Append(min.Y.ToString("G4", culture)).Append(" at ").Append(FormatX(min.X, d, xKind, culture));
-            sb.Append(", highest ").Append(max.Y.ToString("G4", culture)).Append(" at ").Append(FormatX(max.X, d, xKind, culture));
+            sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LowestHighest), culture,
+                min.Y.ToString("G4", culture), FormatX(min.X, d, xKind, culture), max.Y.ToString("G4", culture), FormatX(max.X, d, xKind, culture)));
 
             var trend = xKind == XKind.Category ? Trend.None : ComputeTrend(points);
             if (trend != Trend.None)
             {
-                sb.Append(", trend ").Append(trend.ToString().ToLowerInvariant());
+                sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.Trend), culture, TrendText(trend, texts)));
             }
 
             sb.Append('.');
@@ -54,8 +57,10 @@ public static class ChartDescriber
     /// its range, last value and trend, formatted like the tooltips, e.g.
     /// "Room: 18.2 °C to 20.8 °C, last 19.4 °C, rising."
     /// </summary>
-    public static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture)
+    public static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+        ChartTexts? texts = null)
     {
+        texts ??= ChartTexts.For(culture);
         var sb = new StringBuilder();
         var visible = series.Where(s => s.Visible).ToList();
         if (!string.IsNullOrWhiteSpace(spec.Title))
@@ -65,7 +70,7 @@ public static class ChartDescriber
 
         if (!visible.Any(s => s.Data.Y.Any(double.IsFinite)))
         {
-            sb.Append(sb.Length > 0 ? " No data." : "No data.");
+            sb.Append(sb.Length > 0 ? " " : "").Append(texts.NoDataShort);
             return sb.ToString();
         }
 
@@ -87,14 +92,14 @@ public static class ChartDescriber
             }
 
             sb.Append(s.DisplayName).Append(": ");
-            sb.Append(min == max ? F(min) : $"{F(min)} to {F(max)}");
+            sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
             if (xKind != XKind.Category && points.Count > 1)
             {
-                sb.Append(", last ").Append(F(points[^1].Y));
+                sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, F(points[^1].Y)));
                 var trend = ComputeTrend(points);
-                if (trend is Trend.Increasing or Trend.Decreasing or Trend.Stable)
+                if (trend != Trend.None)
                 {
-                    sb.Append(", ").Append(trend switch { Trend.Increasing => "rising", Trend.Decreasing => "falling", _ => "stable" });
+                    sb.Append(", ").Append(TrendText(trend, texts));
                 }
             }
 
@@ -103,6 +108,9 @@ public static class ChartDescriber
 
         return sb.ToString();
     }
+
+    private static string TrendText(Trend trend, ChartTexts texts) =>
+        trend switch { Trend.Increasing => texts.Rising, Trend.Decreasing => texts.Falling, _ => texts.Stable };
 
     private static string FormatX(double x, SeriesData data, XKind kind, CultureInfo culture) => kind switch
     {

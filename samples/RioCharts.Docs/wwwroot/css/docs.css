@@ -1460,3 +1460,35 @@ table.sparkline-table td.num {
 .table-scroll > table.docs {
     margin: 0;
 }
+
+
+/* ----- Languages page ----- */
+
+.language-picker {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.language-picker select {
+    margin-left: 8px;
+}
+
+.language-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .language-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.language-grid > :first-child {
+    grid-column: 1 / -1;
+}
+
+table.texts-table td:first-child {
+    white-space: nowrap;
+}

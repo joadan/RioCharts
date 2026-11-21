@@ -9,7 +9,7 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.Core/` — no UI dependencies (namespace `RioCharts.Core.*`).
   - `Data/` — `SeriesData` (columnar x/y, NaN = gap), `TimeValue`, `Lttb`.
   - `Scales/` — linear, band, nice ticks, calendar time ticks.
-  - `Formatting/`, `Text/` — label formatting, text measurement.
+  - `Formatting/`, `Text/` — label formatting, text measurement, `ChartTexts` (the chart's own texts per language).
   - `Paths/` — line/area path builders (linear, monotone, step).
   - `Scene/` — render-agnostic nodes, `PathData`, styles, theme tokens.
   - `Series/` — series type contract and line/area/bar types (internal).
@@ -54,3 +54,4 @@ Stop the running demo before rebuilding; it locks the library DLLs.
 - Edge cases (empty, single point, equal values, gaps) must render a clean state, never throw.
 - Keep the JS module tiny: measurement and high-frequency interaction only.
 - Temperatures in examples are in °C.
+- Text a chart writes itself (empty states, buttons, screen reader text) comes from `ChartTexts`, never a string literal; add a key with English and all built-in languages. Warnings and errors for developers stay English.

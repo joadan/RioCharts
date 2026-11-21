@@ -41,7 +41,7 @@ public static partial class ChartLayout
     }
 
     private static GroupNode BuildLegend(List<(LegendEntry Entry, double Width)> items, List<List<(LegendEntry Entry, double Width)>> rows,
-        LegendPosition position, double rightX, RectF plot, double top, double bottomTop, double lineHeight, StyleTable styles)
+        LegendPosition position, double rightX, RectF plot, double top, double bottomTop, double lineHeight, StyleTable styles, string label)
     {
         var nodes = new List<Node>();
         var rowHeight = lineHeight + 4;
@@ -70,7 +70,7 @@ public static partial class ChartLayout
             }
         }
 
-        return new GroupNode(nodes) { Class = "rio-legend", AriaLabel = "Legend" };
+        return new GroupNode(nodes) { Class = "rio-legend", AriaLabel = label };
     }
 
     private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles)

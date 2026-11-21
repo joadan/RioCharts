@@ -12,6 +12,16 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Languages: the chart's own texts ("No data available", "Reset zoom", "Total", "Other", the
+  download button, the chart description, axis and legend names and keyboard help for screen
+  readers) are in `ChartTexts`, built in for English, Swedish, Norwegian, Danish, Finnish, German,
+  French and Spanish and picked from the chart's `Culture` (else the current UI culture, then
+  parent cultures, then English). Change texts with `Texts="ChartTexts.Swedish with { ... }"` or a
+  cascaded `ChartTexts`; add a language with `ChartTexts.Register("pl", ...)`; load from resx or
+  `IStringLocalizer` with `ChartTexts.From(key => ...)`. Templates take `{0}` placeholders and
+  "one|other" forms for counts, and a broken template falls back to English. Also
+  `LayoutOptions.Texts` and `ExportOptions.Texts` (Skia). The full description now says "trend
+  rising/falling" instead of "trend increasing/decreasing".
 - Compact charts (sparklines): `Compact="true"` on `RioChart` (`ChartSpec.Compact`, `"compact"` in
   JSON specs) draws no axes, grid, legend or title; the series fill the box with a small inset, the
   y range fits the data (bars keep zero), heights below 50 px are allowed, annotations keep their

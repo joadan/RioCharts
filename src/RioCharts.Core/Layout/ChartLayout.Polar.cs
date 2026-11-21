@@ -10,7 +10,6 @@ namespace RioCharts.Core.Layout;
 
 public static partial class ChartLayout
 {
-    private const string OtherLabel = "Other";
 
     private sealed record Slice(string Label, int Index, double Value, string Color);
 
@@ -21,6 +20,7 @@ public static partial class ChartLayout
     private static ChartLayoutResult ComputePolar(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
     {
         var culture = options.Culture;
+        var texts = options.Texts ?? ChartTexts.For(culture);
         var measure = options.Measurer;
         var width = Math.Max(50, options.Width);
         var height = Math.Max(50, options.Height);
@@ -106,7 +106,7 @@ public static partial class ChartLayout
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, spec.Legend.Position, width - PadRight - legendRight + 16, plot, y0,
-                plotBottom + 8, lineHeight, styles));
+                plotBottom + 8, lineHeight, styles, texts.Legend));
         }
 
         styles.Add("slice-label", new TextStyleDef { FontSize = (float)Math.Max(9, font - 1), Fill = ThemeTokens.Text });
@@ -120,7 +120,7 @@ public static partial class ChartLayout
         var tooltipSlices = new List<TooltipSlice>();
         var described = new List<(string Label, double Value)>();
         var hasData = type == SeriesType.Pie
-            ? LayoutPies(polar, labelsPerSeries, plot, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, described)
+            ? LayoutPies(polar, labelsPerSeries, plot, ColorOf, Hidden, culture, texts, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, described)
             : LayoutRadialBars(polar[0], labelsPerSeries[polar[0]], plot, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes,
                 tooltipSlices, described);
 
@@ -128,15 +128,17 @@ public static partial class ChartLayout
         if (!hasData)
         {
             var allHidden = categories.Count > 0 && categories.All(Hidden);
-            overlay.Add(new TextNode(allHidden ? "All slices are hidden" : "No data available", new PointF(plot.CenterX, plot.CenterY),
+            overlay.Add(new TextNode(allHidden ? texts.AllSlicesHidden : texts.NoData, new PointF(plot.CenterX, plot.CenterY),
                 new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
         }
 
-        var kind = type == SeriesType.Pie ? (polar.Any(r => (r.Spec.InnerRadius ?? 0) > 0) ? "Donut" : "Pie") : "Radial bar";
-        var description = (string.IsNullOrWhiteSpace(spec.Title) ? "" : spec.Title + ". ") + kind + " chart"
-            + (described.Count == 0 ? ", no data." : $" with {described.Count} items: "
-                + string.Join(", ", described.Take(8).Select(d => $"{d.Label} {ValueFormatter.Format(d.Value, culture)}"))
-                + (described.Count > 8 ? $" and {described.Count - 8} more." : "."));
+        var kind = type == SeriesType.Pie ? (polar.Any(r => (r.Spec.InnerRadius ?? 0) > 0) ? texts.DonutChart : texts.PieChart) : texts.RadialBarChart;
+        var items = string.Join(", ", described.Take(8).Select(d => $"{d.Label} {ValueFormatter.Format(d.Value, culture)}"))
+            + (described.Count > 8 ? " " + texts.Fill(nameof(ChartTexts.More), culture, described.Count - 8) : "");
+        var description = (string.IsNullOrWhiteSpace(spec.Title) ? "" : spec.Title + ". ")
+            + (described.Count == 0
+                ? texts.Fill(nameof(ChartTexts.PolarNoData), culture, kind)
+                : texts.FillCount(nameof(ChartTexts.PolarItems), described.Count, culture, kind, described.Count, items) + ".");
 
         var scene = new Scene.Scene(
             new GroupNode(statics) { Class = "rio-static" },
@@ -221,7 +223,7 @@ public static partial class ChartLayout
     // ---------- Pie and donut ----------
 
     private static bool LayoutPies(List<Resolved> rings, Dictionary<Resolved, string[]> labels, RectF plot, Func<string, string> colorOf,
-        Func<string, bool> hidden, CultureInfo culture, ITextMeasurer measure, double font, StyleTable styles, List<string> warnings,
+        Func<string, bool> hidden, CultureInfo culture, ChartTexts texts, ITextMeasurer measure, double font, StyleTable styles, List<string> warnings,
         List<Node> seriesNodes, List<Node> labelNodes, List<TooltipSlice> tooltip, List<(string, double)> described)
     {
         // Slices per ring: positive values of visible categories, small ones grouped when asked.
@@ -259,7 +261,7 @@ public static partial class ChartLayout
                 var tiny = slices.Where(s => s.Value / total < threshold).ToList();
                 if (tiny.Count > 1)
                 {
-                    slices = slices.Except(tiny).Append(new Slice(OtherLabel, -1, tiny.Sum(s => s.Value), ThemeTokens.Series(ThemeTokens.SeriesColorCount - 1))).ToList();
+                    slices = slices.Except(tiny).Append(new Slice(texts.Other, -1, tiny.Sum(s => s.Value), ThemeTokens.Series(ThemeTokens.SeriesColorCount - 1))).ToList();
                 }
             }
 
@@ -448,7 +450,7 @@ public static partial class ChartLayout
                     {
                         Class = "rio-center-value",
                     });
-                    labelNodes.Add(new TextNode("Total", new PointF(cx, (float)(cy + font * 1.1)), new TextStyle("center-caption"), Anchor.Middle)
+                    labelNodes.Add(new TextNode(texts.Total, new PointF(cx, (float)(cy + font * 1.1)), new TextStyle("center-caption"), Anchor.Middle)
                     {
                         Class = "rio-center-caption",
                     });

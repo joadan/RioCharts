@@ -11,7 +11,8 @@
 @{
     var layout = EnsureLayout();
     var scene = layout.Scene;
-    var label = string.IsNullOrWhiteSpace(Title) ? "Chart" : Title;
+    var texts = CurrentTexts;
+    var label = string.IsNullOrWhiteSpace(Title) ? texts.Chart : Title;
     var keys = KeyboardEnabled(layout);
 }
 
@@ -22,7 +23,7 @@
          height="@SvgWriter.N(scene.Height)"
          viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"
          role="@(keys ? "application" : "img")"
-         aria-roledescription="@(keys ? "chart" : null)"
+         aria-roledescription="@(keys ? texts.ChartRole : null)"
          tabindex="@(keys ? "0" : null)"
          aria-label="@label"
          aria-describedby="@(keys ? $"{_id}-desc {_id}-keys" : _id + "-desc")">
@@ -66,13 +67,13 @@
     @if (Zoomable && layout.Zoomed)
     {
         <button type="button" class="rio-reset-zoom" @onclick="OnResetZoomClick"
-                style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4 + (Exportable && Interactive && ExportFormats != ExportFormats.None ? 32 : 0))}px")">Reset zoom</button>
+                style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4 + (Exportable && Interactive && ExportFormats != ExportFormats.None ? 32 : 0))}px")">@texts.ResetZoom</button>
     }
     @if (Exportable && Interactive && ExportFormats != ExportFormats.None)
     {
         var offered = OfferedFormats();
         var single = offered.Count == 1;
-        var buttonLabel = single ? $"Download {offered[0].Label}" : "Download chart";
+        var buttonLabel = single ? ChartTexts.Format(texts.DownloadFormat, Culture, null, ChartTexts.English.DownloadFormat, offered[0].Label) : texts.DownloadChart;
         <div class="rio-export @(_exportMenuOpen ? "rio-export-open" : null)" @onkeydown="OnExportMenuKey">
             <button type="button" class="rio-export-button" title="@buttonLabel" aria-label="@buttonLabel"
                     aria-haspopup="@(single ? null : "menu")" aria-expanded="@(single ? null : _exportMenuOpen ? "true" : "false")"
@@ -85,7 +86,7 @@
             @if (_exportMenuOpen && !single)
             {
                 <div class="rio-export-backdrop" @onclick="CloseExportMenu"></div>
-                <div class="rio-export-menu" role="menu" id="@(_id + "-export")" aria-label="Download">
+                <div class="rio-export-menu" role="menu" id="@(_id + "-export")" aria-label="@texts.Download">
                     @for (var i = 0; i < offered.Count; i++)
                     {
                         var format = offered[i].Format;

@@ -1,0 +1,58 @@
+@inherits ChartTestBase
+
+@code {
+    private static object? Field(object? model, string name) => model?.GetType().GetProperty(name)?.GetValue(model);
+
+    [Fact]
+    public void Texts_parameter_translates_the_chart_own_texts()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Texts="ChartTexts.Swedish" Exportable="true" ExportFormats="ExportFormats.Csv">
+            <LineSeries Items="Supply" Name="Tilluft" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var svg = cut.Find("svg.rio-chart-svg");
+        Assert.Equal("Diagram", svg.GetAttribute("aria-label")); // no title
+        Assert.Equal("diagram", svg.GetAttribute("aria-roledescription"));
+        Assert.Equal("Använd vänster- och högerpil för att flytta mellan punkter. Tryck Escape för att lämna.", cut.Find(".rio-sr-only").TextContent);
+        Assert.Equal("Ladda ner CSV", cut.Find(".rio-export-button").GetAttribute("aria-label"));
+        Assert.StartsWith("Diagram med 1 serie. Tilluft: 4 värden", cut.Find("desc").TextContent);
+        Assert.Equal("{0} av {1}", Field(Calls("update")[^1].Arguments[1], "pos")); // "3 av 12", read by the JS module
+    }
+
+    [Fact]
+    public void Culture_picks_the_built_in_language()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="@(new System.Globalization.CultureInfo("de-AT"))">
+            <LineSeries Items="Array.Empty<Reading>()" Name="Zuluft" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Contains(cut.FindAll("svg.rio-chart-svg text"), t => t.TextContent == "Keine Daten vorhanden");
+    }
+
+    [Fact]
+    public void A_cascaded_ChartTexts_applies_to_every_chart_below_and_the_parameter_wins()
+    {
+        var app = ChartTexts.English with { Chart = "Graph" };
+        var cut = Render(@<CascadingValue Value="app">
+            <RioChart TItem="Reading" Items="Supply"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+            <RioChart TItem="Reading" Items="Supply" Texts="ChartTexts.Finnish"><LineSeries Name="B" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+        </CascadingValue>);
+
+        var labels = cut.FindAll("svg.rio-chart-svg").Select(s => s.GetAttribute("aria-label")).ToList();
+        Assert.Equal(["Graph", "Kaavio"], labels);
+    }
+
+    [Fact]
+    public void Changing_texts_lays_the_chart_out_again_but_equal_texts_do_not()
+    {
+        var texts = ChartTexts.English;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Texts="texts">
+            <LineSeries Items="Array.Empty<Reading>()" Name="A" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        Assert.Contains(cut.FindAll("svg.rio-chart-svg text"), t => t.TextContent == "No data available");
+
+        cut.Render(p => p.Add(c => c.Texts, ChartTexts.English with { NoData = "Nothing yet" }));
+
+        Assert.Contains(cut.FindAll("svg.rio-chart-svg text"), t => t.TextContent == "Nothing yet");
+    }
+}

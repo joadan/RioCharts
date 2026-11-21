@@ -15,6 +15,9 @@ public sealed record LayoutOptions
     public ITextMeasurer Measurer { get; init; } = ApproximateTextMeasurer.Instance;
     public CultureInfo Culture { get; init; } = CultureInfo.CurrentCulture;
 
+    /// <summary>The chart's own texts (empty states, descriptions, screen reader names). Null: <see cref="ChartTexts.For"/> the culture.</summary>
+    public ChartTexts? Texts { get; init; }
+
     /// <summary>Ids of series hidden through the legend (they keep their color and legend item).</summary>
     public IReadOnlySet<string>? HiddenSeries { get; init; }
 
@@ -111,6 +114,7 @@ public static partial class ChartLayout
         options ??= new LayoutOptions();
         var warnings = new List<string>();
         var culture = options.Culture;
+        var texts = options.Texts ?? ChartTexts.For(culture);
         var measure = options.Measurer;
         var compact = spec.Compact;
         var width = Math.Max(compact ? 8 : 50, options.Width);
@@ -396,11 +400,11 @@ public static partial class ChartLayout
                 {
                     Class = axis.Right ? "rio-axis-y rio-axis-y-right" : "rio-axis-y",
                     Key = "axis:" + axis.Id,
-                    AriaLabel = AxisLabel(visibleAxes.Count > 1 ? $"Y axis {axis.Id}" : "Y axis", axis.Spec.Title, axis.Labels),
+                    AriaLabel = AxisLabel(texts, culture, visibleAxes.Count > 1 ? $"{texts.YAxis} {axis.Id}" : texts.YAxis, axis.Spec.Title, axis.Labels),
                 });
             }
 
-            statics.Add(new GroupNode(xTickNodes) { Class = "rio-axis-x", AriaLabel = "X axis" + (spec.X.Title is { } xt ? ": " + xt : "") });
+            statics.Add(new GroupNode(xTickNodes) { Class = "rio-axis-x", AriaLabel = texts.XAxis + (spec.X.Title is { } xt ? ": " + xt : "") });
         }
 
         if (!compact && !string.IsNullOrWhiteSpace(spec.X.Title))
@@ -424,7 +428,7 @@ public static partial class ChartLayout
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
-                plotBottom + xLabelHeight + xTitleHeight + 8, lineHeight, styles));
+                plotBottom + xLabelHeight + xTitleHeight + 8, lineHeight, styles, texts.Legend));
         }
 
         // ---------- Series ----------
@@ -478,7 +482,7 @@ public static partial class ChartLayout
             {
                 Key = "series:" + r.Spec.Id,
                 Class = "rio-series rio-series-" + r.Spec.Type.ToString().ToLowerInvariant(),
-                AriaLabel = $"{r.Spec.DisplayName}: {r.Data.Y.Count(double.IsFinite)} data points",
+                AriaLabel = texts.FillCount(nameof(ChartTexts.SeriesPoints), r.Data.Y.Count(double.IsFinite), culture, r.Spec.DisplayName, r.Data.Y.Count(double.IsFinite)),
             }));
         }
 
@@ -515,7 +519,7 @@ public static partial class ChartLayout
         var overlay = new List<Node>();
         if (!hasData && !compact)
         {
-            overlay.Add(new TextNode(EmptyMessage(resolved), new PointF(plot.CenterX, plot.CenterY), new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
+            overlay.Add(new TextNode(EmptyMessage(resolved, texts), new PointF(plot.CenterX, plot.CenterY), new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
         }
 
         var scene = new Scene.Scene(new GroupNode(statics) { Class = "rio-static" }, seriesLayer, new GroupNode(overlay) { Class = "rio-overlay" })
@@ -524,8 +528,8 @@ public static partial class ChartLayout
             Height = (float)height,
             Styles = styles,
             Description = compact
-                ? ChartDescriber.DescribeCompact(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture)
-                : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture),
+                ? ChartDescriber.DescribeCompact(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts)
+                : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts),
         };
 
         var bandWidth = xKind == XKind.Category ? xBand!.Step : hasBars ? slotWidth / 0.8 : 0;
@@ -865,9 +869,12 @@ public static partial class ChartLayout
 
     private static RectF Inflate(RectF r, float by) => new(r.X - by, r.Y - by, r.Width + 2 * by, r.Height + 2 * by);
 
-    private static string AxisLabel(string name, string? title, List<string> labels) =>
-        (title is null ? name : $"{name}: {title}") + (labels.Count > 1 ? $", from {labels[0]} to {labels[^1]}" : "");
+    private static string AxisLabel(ChartTexts texts, CultureInfo culture, string name, string? title, List<string> labels)
+    {
+        var axis = title is null ? name : $"{name}: {title}";
+        return labels.Count > 1 ? texts.Fill(nameof(ChartTexts.AxisRange), culture, axis, labels[0], labels[^1]) : axis;
+    }
 
-    private static string EmptyMessage(List<Resolved> series) =>
-        series.Count > 0 && series.All(s => !s.Visible) ? "All series are hidden" : "No data available";
+    private static string EmptyMessage(List<Resolved> series, ChartTexts texts) =>
+        series.Count > 0 && series.All(s => !s.Visible) ? texts.AllSeriesHidden : texts.NoData;
 }

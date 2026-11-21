@@ -105,6 +105,20 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Culture for labels. Default: the current culture.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
+    /// <summary>
+    /// The chart's own texts ("Reset zoom", "No data available", the download menu, screen reader
+    /// texts), e.g. <c>ChartTexts.Swedish with { ResetZoom = "Visa allt" }</c>. Default: a
+    /// <see cref="ChartTexts"/> cascaded by the app, else <see cref="ChartTexts.For"/> the
+    /// <see cref="Culture"/> or, without one, the current UI culture.
+    /// </summary>
+    [Parameter] public ChartTexts? Texts { get; set; }
+
+    /// <summary>Texts for every chart below, e.g. <c>&lt;CascadingValue Value="texts"&gt;</c> around the router.</summary>
+    [CascadingParameter] private ChartTexts? CascadedTexts { get; set; }
+
+    /// <summary>The texts in use.</summary>
+    private ChartTexts CurrentTexts => Texts ?? CascadedTexts ?? ChartTexts.For(Culture ?? CultureInfo.CurrentUICulture);
+
     /// <summary>Ids of hidden series. Two-way bindable with <c>@bind-HiddenSeries</c>.</summary>
     [Parameter] public IReadOnlyCollection<string>? HiddenSeries { get; set; }
 
@@ -334,7 +348,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets,
-            TooltipHeader is not null, TooltipTemplate is not null, Compact);
+            TooltipHeader is not null, TooltipTemplate is not null, Compact, CurrentTexts);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -398,6 +412,7 @@ public partial class RioChart<TItem> : IChartContext
             Height = Height,
             Measurer = _measurer,
             Culture = Culture ?? CultureInfo.CurrentCulture,
+            Texts = CurrentTexts,
             HiddenSeries = _hidden,
             InteractiveAnnotations = OnAnnotationClick.HasDelegate,
             DownsampleThreshold = DownsampleThreshold ?? (UsesCanvas ? Math.Max(2000, (int)((Width ?? _measuredWidth ?? DefaultWidth) * 4)) : null),
@@ -639,6 +654,7 @@ public partial class RioChart<TItem> : IChartContext
                 band = model.BandWidth,
                 click,
                 keys,
+                pos = keys ? CurrentTexts.Position : null,
                 zoom,
                 zoomed = _layout.Zoomed,
                 group = Group,
@@ -689,12 +705,12 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>The instructions screen readers read with the chart (aria-describedby).</summary>
     private string KeyboardHelp(ChartLayoutResult layout)
     {
+        var texts = CurrentTexts;
         var polar = layout.Tooltip.Slices.Count > 0;
         var series = layout.Tooltip.Series.Count(s => s.X.Length > 0);
-        var move = polar ? "Use the arrow keys to move between slices." :
-            series > 1 ? "Use Left and Right to move between points, Up and Down to change series." : "Use Left and Right to move between points.";
-        var zoom = Zoomable && layout.XScale is not null ? " Plus and minus zoom, Shift with Left and Right pans, 0 shows all data." : "";
-        return OnPointClick.HasDelegate ? $"{move}{zoom} Press Enter to select a point, Escape to leave." : $"{move}{zoom} Press Escape to leave.";
+        var move = polar ? texts.KeysSlices : series > 1 ? texts.KeysPointsAndSeries : texts.KeysPoints;
+        var zoom = Zoomable && layout.XScale is not null ? " " + texts.KeysZoom : "";
+        return $"{move}{zoom} {(OnPointClick.HasDelegate ? texts.KeysSelect : texts.KeysLeave)}";
     }
 
     // ---------- Zoom and pan ----------

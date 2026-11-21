@@ -1,0 +1,163 @@
+@page "/languages"
+@using System.Globalization
+
+<PageTitle>Languages and texts · RioCharts</PageTitle>
+
+<h1>Languages and texts</h1>
+<p class="lead">
+    A chart writes a few texts of its own: "No data available", "Reset zoom", "Total" in a donut, the download button, and what screen
+    readers hear (the chart description, axis names, keyboard help). They come in English, Swedish, Norwegian, Danish, Finnish, German,
+    French and Spanish, and you can change any of them or add your own language.
+</p>
+
+<Example Title="From the culture" Code="@CultureCode">
+    <Description>
+        <p>
+            The texts follow the chart's <code>Culture</code>, or the current UI culture when it has none: <code>sv-FI</code> tries
+            <code>sv-FI</code>, then <code>sv</code>, then falls back to English. Pick a language and zoom the line chart (drag in the
+            plot) to see "Reset zoom". The numbers follow the culture too.
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="language-picker">
+            <label>
+                Culture
+                <select @bind="_culture">
+                    @foreach (var (name, label) in Cultures)
+                    {
+                        <option value="@name">@label</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <div class="language-grid">
+            <RioChart Items="Supply" Culture="Current" Height="220" Zoomable="true" Exportable="true">
+                <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" />
+            </RioChart>
+            <RioChart Items="EnergyUse" Culture="Current" Height="300">
+                <PieSeries Name="Energy use" XValue="s => s.Name" YValue="s => s.Value" InnerRadius="0.6" GroupSmallSlices="0.03" Format="0 MWh" DataLabels="false" />
+            </RioChart>
+            <RioChart Items="NoReadings" Culture="Current" Height="300">
+                <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            </RioChart>
+        </div>
+    </ChildContent>
+</Example>
+
+<h2>Changing texts</h2>
+<p>
+    <code>ChartTexts</code> holds the texts. Change the ones you want with <code>with</code>; the rest stay as they are. Give it to one chart
+    with <code>Texts</code>:
+</p>
+<CodeBlock Code="@WithCode" />
+
+<p>
+    Or cascade it to every chart in the app. A cascaded value is per user, so it can follow each user's language. A <code>Texts</code>
+    parameter still wins:
+</p>
+<CodeBlock Code="@CascadeCode" />
+
+<h2>Adding a language</h2>
+<p>
+    Register a language once at startup and every chart with that culture uses it. A registered language takes precedence over a built-in
+    one, so you can also replace the built-in Swedish with your own wording. Texts you leave out fall back to English.
+</p>
+<CodeBlock Language="csharp" Code="@RegisterCode" />
+
+<h2>From resx files or IStringLocalizer</h2>
+<p>
+    If your app already translates with resource files, <code>ChartTexts.From</code> reads the texts by key. The keys are the property names
+    in the table below (also in <code>ChartTexts.Keys</code>). Keys your resources don't have keep the fallback text:
+</p>
+<CodeBlock Code="@LocalizerCode" />
+
+<p>
+    Skia export and the layout engine take texts too: <code>ExportOptions.Texts</code> and <code>LayoutOptions.Texts</code> (default:
+    from <code>Culture</code>).
+</p>
+
+<h2>Templates</h2>
+<p>
+    Some texts are templates: <code>{0}</code>, <code>{1}</code>… are filled in. A text with a count can have two forms separated by
+    <code>|</code>: the first is used when the count is 1, so <code>"{0}: {1} value|{0}: {1} values"</code> reads "Supply: 1 value" or "Supply:
+    48 values". A template that cannot be filled in (a stray brace) falls back to English instead of breaking the chart.
+</p>
+
+<h2>All texts</h2>
+<div class="table-scroll">
+    <table class="docs texts-table">
+        <tr><th>Key</th><th>English</th><th>@CultureLabel</th></tr>
+        @foreach (var key in ChartTexts.Keys)
+        {
+            <tr><td><code>@key</code></td><td>@ChartTexts.English[key]</td><td>@ChartTexts.For(Current)[key]</td></tr>
+        }
+    </table>
+</div>
+
+@code {
+    private static readonly (string Name, string Label)[] Cultures =
+    [
+        ("en-GB", "English"), ("sv-SE", "Svenska"), ("nb-NO", "Norsk"), ("da-DK", "Dansk"), ("fi-FI", "Suomi"),
+        ("de-DE", "Deutsch"), ("fr-FR", "Français"), ("es-ES", "Español"),
+    ];
+
+    private static readonly List<Reading> NoReadings = [];
+
+    private string _culture = "sv-SE";
+
+    private CultureInfo Current => CultureInfo.GetCultureInfo(_culture);
+
+    private string CultureLabel => Cultures.First(c => c.Name == _culture).Label;
+
+    private const string CultureCode = """
+        <RioChart Items="supply" Culture="@(new CultureInfo("sv-SE"))" Zoomable="true" Exportable="true">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>
+        """;
+
+    private const string WithCode = """
+        <RioChart Items="readings" Texts="@(ChartTexts.Swedish with { ResetZoom = "Visa allt", NoData = "Inga mätvärden ännu" })">
+            ...
+        </RioChart>
+        """;
+
+    private const string CascadeCode = """
+        @* MainLayout.razor *@
+        <CascadingValue Value="_chartTexts">
+            @Body
+        </CascadingValue>
+
+        @code {
+            private readonly ChartTexts _chartTexts = ChartTexts.English with { NoData = "Waiting for the first reading" };
+        }
+        """;
+
+    private const string RegisterCode = """
+        // Program.cs
+        ChartTexts.Register("pl", new ChartTexts
+        {
+            Chart = "Wykres",
+            NoData = "Brak danych",
+            ResetZoom = "Resetuj powiększenie",
+            Total = "Razem",
+            Summary = "Wykres z {0} serią.|Wykres z {0} seriami.",
+        });
+        """;
+
+    private const string LocalizerCode = """
+        @* MainLayout.razor: ChartTexts.resx holds keys such as NoData and ResetZoom *@
+        @inject IStringLocalizer<ChartTexts> L
+
+        <CascadingValue Value="_chartTexts">
+            @Body
+        </CascadingValue>
+
+        @code {
+            private ChartTexts _chartTexts = ChartTexts.English;
+
+            protected override void OnInitialized() =>
+                _chartTexts = ChartTexts.From(key => L[key] is { ResourceNotFound: false } s ? s.Value : null,
+                    fallback: ChartTexts.For(CultureInfo.CurrentUICulture));
+        }
+        """;
+}
