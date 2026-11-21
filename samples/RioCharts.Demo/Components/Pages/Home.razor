@@ -23,12 +23,15 @@
 
         <section>
             <h2>Several series, gaps and toggling</h2>
-            <RioChart TItem="Reading" Title="Air handling unit" YAxis="_celsius" @bind-HiddenSeries="_hidden">
+            <RioChart @ref="_ahu" TItem="Reading" Title="Air handling unit" YAxis="_celsius" @bind-HiddenSeries="_hidden" Exportable="true">
                 <LineSeries Items="_supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
                 <LineSeries Items="_extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
                 <LineSeries Items="_outdoor" Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />
             </RioChart>
             <p class="note">Outdoor has a sensor gap. Click legend items to hide series. Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden))</p>
+            <p class="note">
+                <button class="small" @onclick="ExportToServer">Export to .NET</button> @_exported
+            </p>
         </section>
 
         <section>
@@ -261,6 +264,17 @@
     private sealed record EnergyMix(string Month, double District, double HeatPump, double Solar);
     private sealed record Share(string Name, double Value);
     private sealed record Measurement(DateTimeOffset Time, double Value);
+
+    private RioChart<Reading>? _ahu;
+    private string? _exported;
+
+    // Images reach .NET as a stream, so they may exceed Blazor Server's 32 KB message limit.
+    private async Task ExportToServer()
+    {
+        var png = await _ahu!.ExportPngAsync(new ChartImageOptions { Scale = 4 });
+        var svg = await _ahu.ExportSvgAsync();
+        _exported = $"PNG {png.Length / 1024.0:0} KB, SVG {svg.Length / 1024.0:0} KB, CSV {_ahu.ExportCsv().Length / 1024.0:0} KB";
+    }
 
     private string? _zone = "Europe/Stockholm";
     private readonly List<Measurement> _dst = Enumerable.Range(0, 36)
