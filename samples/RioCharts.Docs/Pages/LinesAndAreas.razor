@@ -32,6 +32,26 @@
     </ChildContent>
 </Example>
 
+<Example Title="Irregular time series" Code="@IrregularCode">
+    <Description>
+        <p>
+            Points are placed at their real times, so series do not need a fixed interval or the same timestamps. Here a room sensor logs
+            only when the temperature changes by 0.2 °C (@RoomOnChange.Count readings: many while the room heats up, few at night), and the
+            setpoint is a step line that changes at irregular times.
+        </p>
+        <p>
+            A long silence is not a gap by itself: the sensor was offline 13:10–15:05 and the line simply joins the readings on either
+            side. To break the line, add a reading with a <code>null</code> value where the data stops (see Gaps above).
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="260" YAxis="Celsius">
+            <LineSeries Items="RoomOnChange" Name="Room" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="RoomSetpoint" Name="Setpoint" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Step" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Areas" Code="@AreaCode">
     <Description><p>Areas always include zero, with a light fill under the line.</p></Description>
     <ChildContent>
@@ -83,6 +103,14 @@
     private const string GapsCode = """
         <RioChart Items="outdoor" YAxis="new AxisSpec { Title = "°C" }">
             <LineSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" />  @* Value is double? *@
+        </RioChart>
+        """;
+
+    private const string IrregularCode = """
+        @* Readings logged on change: no fixed interval, different timestamps per series. *@
+        <RioChart TItem="Reading" YAxis="new AxisSpec { Title = "°C" }">
+            <LineSeries Items="roomReadings" Name="Room" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="setpoints" Name="Setpoint" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Step" />
         </RioChart>
         """;
 

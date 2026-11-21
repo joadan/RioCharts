@@ -132,4 +132,30 @@ public class TooltipTests
         Assert.Equal("Fans", context!.Points[0].X);
         Assert.Equal("Fans: 20 kWh", context.Points[0].ValueText);
     }
+
+    [Fact]
+    public void Step_lines_are_marked_so_the_shared_tooltip_uses_the_value_in_effect()
+    {
+        var data = new Dictionary<string, SeriesData>
+        {
+            ["room"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Temp),
+            ["setpoint"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Setpoint),
+            ["bars"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Temp),
+        };
+        var spec = new ChartSpec
+        {
+            Series =
+            [
+                new SeriesSpec { Id = "room" },
+                new SeriesSpec { Id = "setpoint", Curve = CurveType.Step },
+                new SeriesSpec { Id = "bars", Type = SeriesType.Bar, Curve = CurveType.Step },
+            ],
+        };
+
+        var layout = ChartLayout.Compute(spec, data, new LayoutOptions { Width = 600, Height = 300 });
+
+        Assert.False(layout.Tooltip.Series.Single(s => s.Id == "room").Step);
+        Assert.True(layout.Tooltip.Series.Single(s => s.Id == "setpoint").Step);
+        Assert.False(layout.Tooltip.Series.Single(s => s.Id == "bars").Step); // bars have no curve
+    }
 }

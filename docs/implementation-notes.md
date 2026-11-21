@@ -327,3 +327,14 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   formatted range labels).
 - **Not yet:** moving through hidden series' data or annotations with the arrows.
 
+## Irregular time series in the shared tooltip
+
+- Series need no common interval or timestamps; the shared tooltip anchors on the drawn point
+  nearest the pointer and lists each other series' nearest point within its snap distance (half
+  its median spacing). A line series with no point near that x is left out rather than showing a
+  value from another time.
+- Step lines (step-after) have a value everywhere between their first and last point, so they
+  are always listed with the last point at or before the anchor (`TooltipSeries.Step`), drawn at
+  the anchor x. The header is the label of a row with a point at the anchor.
+- Not yet: interpolated values for line series between their points.
+

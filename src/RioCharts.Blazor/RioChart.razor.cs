@@ -615,6 +615,7 @@ public partial class RioChart<TItem> : IChartContext
                     name = s.Name,
                     color = SvgWriter.Color(s.Color),
                     bar = s.Type == SeriesType.Bar,
+                    step = s.Step,
                     snap = s.Snap,
                     barWidth = s.BarWidth,
                     barOffset = s.BarOffset,

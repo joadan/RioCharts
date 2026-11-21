@@ -504,7 +504,9 @@ function nearest(xs, v) {
     return lo > 0 && v - xs[lo - 1] <= xs[lo] - v ? lo - 1 : lo;
 }
 
-// Shared: the x position closest to the pointer, and each series' point at that x.
+// Shared: the x position closest to the pointer, and each series' point at that x. A step line
+// has a value everywhere between its first and last point: the last point at or before the x
+// (drawn at the x itself). rows.anchor is the x.
 function findShared(m, px) {
     let anchor = null;
     for (const s of m.series) {
@@ -520,13 +522,46 @@ function findShared(m, px) {
 
     const rows = [];
     for (const s of m.series) {
+        if (s.step) {
+            const i = atOrBefore(s.x, anchor);
+            if (i >= 0 && anchor <= s.x[s.x.length - 1] + 0.5) {
+                rows.push({ s, i, x: anchor });
+            }
+
+            continue;
+        }
+
         const i = nearest(s.x, anchor);
         if (i >= 0 && Math.abs(s.x[i] - anchor) <= s.snap) {
             rows.push({ s, i });
         }
     }
 
+    rows.anchor = anchor;
     return rows;
+}
+
+// Index of the last value in the ascending array at or before v (half a pixel of slack); -1 when none.
+function atOrBefore(xs, v) {
+    let lo = 0, hi = xs.length - 1, found = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (xs[mid] <= v + 0.5) {
+            found = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+
+    return found;
+}
+
+// The x label for a set of hovered rows: from a row that has a point at the hovered x.
+function headerOf(rows) {
+    const at = rows.anchor === undefined ? null : rows.find(r => Math.abs(r.s.x[r.i] - rows.anchor) < 0.5);
+    const r = at || rows[0];
+    return r.s.xl[r.i];
 }
 
 // Single: the bar under the pointer, else the nearest point within reach.
@@ -693,7 +728,7 @@ function drawHover(state, rows, m) {
     g.replaceChildren();
     const p = m.plot;
     const first = rows[0];
-    const x = first.s.x[first.i];
+    const x = rows.anchor !== undefined ? rows.anchor : first.x !== undefined ? first.x : first.s.x[first.i];
     if (m.band > 0 && (m.shared || first.s.bar)) {
         const w = m.shared ? m.band : first.s.barWidth + 4;
         const cx = m.shared ? x : x + first.s.barOffset;
@@ -706,10 +741,10 @@ function drawHover(state, rows, m) {
         }));
     }
 
-    for (const { s, i } of rows) {
-        if (!s.bar) {
+    for (const r of rows) {
+        if (!r.s.bar) {
             g.appendChild(el('circle', {
-                class: 'rio-hover-point', cx: s.x[i], cy: s.y[i], r: 4, style: `fill:${s.color}`,
+                class: 'rio-hover-point', cx: r.x !== undefined ? r.x : r.s.x[r.i], cy: r.s.y[r.i], r: 4, style: `fill:${r.s.color}`,
             }));
         }
     }
@@ -723,14 +758,14 @@ function drawTooltip(state, rows, pos) {
 
     const first = rows[0];
     if (state.model && state.model.template) {
-        requestTemplate(state, rows.map(({ s, i }) => [s.id, s.index[i]]), pos, first.s.x[first.i], pos.y);
+        requestTemplate(state, rows.map(({ s, i }) => [s.id, s.index[i]]), pos, rows.anchor !== undefined ? rows.anchor : first.s.x[first.i], pos.y);
         return;
     }
 
     tip.replaceChildren();
     const head = document.createElement('div');
     head.className = 'rio-tooltip-head';
-    head.textContent = first.s.xl[first.i];
+    head.textContent = headerOf(rows);
     tip.appendChild(head);
     for (const { s, i } of rows) {
         const row = document.createElement('div');
@@ -748,7 +783,7 @@ function drawTooltip(state, rows, pos) {
         tip.appendChild(row);
     }
 
-    placeTooltip(state, pos, first.s.x[first.i], pos.y);
+    placeTooltip(state, pos, rows.anchor !== undefined ? rows.anchor : first.s.x[first.i], pos.y);
 }
 
 // Beside x (right, or left when there is no room), vertically centered on y (chart units).
@@ -1003,6 +1038,8 @@ function showKey(state, announce) {
     if (!rows.some(r => r.s === s)) {
         rows.unshift({ s, i: kb.i });
     }
+
+    rows.anchor = s.x[kb.i];
 
     // The focused series first, so the tooltip and the announcement start with it.
     rows.sort((a, b) => (a.s === s ? -1 : b.s === s ? 1 : 0));

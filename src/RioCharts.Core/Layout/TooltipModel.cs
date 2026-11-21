@@ -23,7 +23,14 @@ public sealed record TooltipModel(RectF Plot, bool Enabled, bool Shared, float B
 /// <param name="Y">Pixel y per point (the top of the stack segment for stacked series).</param>
 /// <param name="Index">Index into the series' data, per point.</param>
 public sealed record TooltipSeries(string Id, string Name, string Color, SeriesType Type, float Snap, float BarWidth, float BarOffset,
-    float[] X, float[] Y, int[] Index, string[] XLabels, string[] Values);
+    float[] X, float[] Y, int[] Index, string[] XLabels, string[] Values)
+{
+    /// <summary>
+    /// A step line (step-after): its value at any x is that of the last point at or before x, so a
+    /// shared tooltip shows the value in effect at the hovered x, not the nearest point's.
+    /// </summary>
+    public bool Step { get; init; }
+}
 
 /// <summary>
 /// A pie slice or radial bar. Angles are radians clockwise from 12 o'clock; the pointer is over

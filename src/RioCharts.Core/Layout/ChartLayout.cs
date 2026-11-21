@@ -791,7 +791,10 @@ public static partial class ChartLayout
         }
 
         return new TooltipSeries(r.Spec.Id, r.Spec.DisplayName, r.Color, r.Spec.Type, snap, (float)context.BarWidth, (float)context.BarOffset,
-            hits.X, hits.Y, hits.Index, xLabels, values);
+            hits.X, hits.Y, hits.Index, xLabels, values)
+        {
+            Step = r.Spec.Curve == CurveType.Step && !r.Type.UsesSlots && kind != XKind.Category,
+        };
     }
 
     // ---------- Helpers ----------

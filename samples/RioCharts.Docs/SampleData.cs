@@ -43,6 +43,48 @@ public static class SampleData
         new(Start.AddHours(42), 20), new(Start.AddHours(48), 20),
     ];
 
+    /// <summary>A setpoint that changes at irregular times (comfort mode, a meeting, night setback).</summary>
+    public static readonly List<Reading> RoomSetpoint =
+    [
+        new(Start, 18), new(Start.AddHours(6.5), 21), new(Start.AddHours(9.75), 22), new(Start.AddHours(11.2), 21),
+        new(Start.AddHours(17.6), 19.5), new(Start.AddHours(22.4), 18), new(Start.AddHours(24), 18),
+    ];
+
+    /// <summary>
+    /// A room sensor that logs on change: a reading when the temperature has moved 0.2 °C since the
+    /// last one, or after an hour without one. Dense while the room heats up and cools down, sparse at
+    /// night, and nothing for two hours while the sensor is offline.
+    /// </summary>
+    public static readonly List<Reading> RoomOnChange = LogOnChange();
+
+    private static List<Reading> LogOnChange()
+    {
+        // The room follows the setpoint with a lag, plus slow drift.
+        var readings = new List<Reading>();
+        double room = 18.2, logged = double.NaN;
+        var last = DateTime.MinValue;
+        for (var minute = 0; minute <= 24 * 60; minute++)
+        {
+            var t = Start.AddMinutes(minute);
+            var target = RoomSetpoint.Last(r => r.Time <= t).Value!.Value;
+            room += (target - room) / 45 + Drift(minute, 7, 30) * 0.004;
+            var offline = minute is >= 13 * 60 + 10 and < 15 * 60 + 5;
+            if (offline)
+            {
+                continue;
+            }
+
+            if (double.IsNaN(logged) || Math.Abs(room - logged) >= 0.2 || (t - last).TotalMinutes >= 60)
+            {
+                logged = Math.Round(room, 1);
+                last = t;
+                readings.Add(new Reading(t, logged));
+            }
+        }
+
+        return readings;
+    }
+
     public static readonly List<Sales> Quarters =
     [
         new("Q1", 182_000, 214_000), new("Q2", 236_000, 251_000), new("Q3", 198_000, 243_000), new("Q4", 271_000, 305_000),
