@@ -13,7 +13,7 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
 - Client-side export. `Exportable` adds a download button (top-right, shown on hover or focus) with
-  a menu for a PNG image, an SVG image and CSV data; `ExportFileName` names the files (default: the
+  a menu for PNG, SVG and CSV; `ExportFileName` names the files (default: the
   title). From code: `DownloadPngAsync`, `DownloadSvgAsync`, `DownloadCsvAsync`, and `ExportPngAsync`
   (`byte[]`), `ExportSvgAsync` (string) and `ExportCsv()` to get the content in .NET.
   `ChartImageOptions` sets the PNG `Scale` (default 2) and the `Background` (default the surface

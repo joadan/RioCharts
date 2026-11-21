@@ -204,9 +204,9 @@ public partial class RioChart<TItem>
 
     private static readonly (ExportFormats Flag, ExportFormat Format, string Label)[] MenuFormats =
     [
-        (ExportFormats.Png, ExportFormat.Png, "PNG image"),
-        (ExportFormats.Svg, ExportFormat.Svg, "SVG image"),
-        (ExportFormats.Csv, ExportFormat.Csv, "CSV data"),
+        (ExportFormats.Png, ExportFormat.Png, "PNG"),
+        (ExportFormats.Svg, ExportFormat.Svg, "SVG"),
+        (ExportFormats.Csv, ExportFormat.Csv, "CSV"),
     ];
 
     private List<(ExportFormat Format, string Label)> OfferedFormats() =>
