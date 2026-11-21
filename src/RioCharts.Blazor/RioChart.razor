@@ -28,7 +28,7 @@
          aria-describedby="@(keys ? $"{_id}-desc {_id}-keys" : _id + "-desc")">
         <title>@label</title>
         <desc id="@(_id + "-desc")">@scene.Description</desc>
-        <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" OmitSeries="SeriesLayer == SeriesLayer.Canvas" />
+        <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" OmitSeries="UsesCanvas" />
     </svg>
     @if (keys)
     {
@@ -36,21 +36,24 @@
         @* Written by the JS module when a point gets keyboard focus; Blazor renders it empty. *@
         <div class="rio-live rio-sr-only" aria-live="polite" aria-atomic="true"></div>
     }
-    @if (SeriesLayer == SeriesLayer.Canvas)
+    @if (UsesCanvas)
     {
         @* Painted by the JS module; Blazor renders it empty. *@
         <canvas class="rio-canvas" aria-hidden="true" style="@($"height:{SvgWriter.N(scene.Height)}px")"></canvas>
     }
-    @* Filled by the JS module on hover; Blazor renders them empty and never touches their content.
-       With a TooltipTemplate, Blazor fills the tooltip and JS only shows and places it. *@
-    <svg class="rio-hover" aria-hidden="true" width="100%" height="@SvgWriter.N(scene.Height)"
-         viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"></svg>
-    <div class="rio-tooltip" aria-hidden="true">
-        @if (TooltipTemplate is not null)
-        {
-            @TooltipHostFragment
-        }
-    </div>
+    @if (Interactive)
+    {
+        @* Filled by the JS module on hover; Blazor renders them empty and never touches their content.
+           With a TooltipTemplate, Blazor fills the tooltip and JS only shows and places it. *@
+        <svg class="rio-hover" aria-hidden="true" width="100%" height="@SvgWriter.N(scene.Height)"
+             viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"></svg>
+        <div class="rio-tooltip" aria-hidden="true">
+            @if (TooltipTemplate is not null)
+            {
+                @TooltipHostFragment
+            }
+        </div>
+    }
     @if (SpecErrors.Count > 0)
     {
         <ul class="rio-spec-errors" role="alert">
@@ -63,9 +66,9 @@
     @if (Zoomable && layout.Zoomed)
     {
         <button type="button" class="rio-reset-zoom" @onclick="OnResetZoomClick"
-                style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4 + (Exportable && ExportFormats != ExportFormats.None ? 32 : 0))}px")">Reset zoom</button>
+                style="@($"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(scene.Width - layout.Plot.Right + 4 + (Exportable && Interactive && ExportFormats != ExportFormats.None ? 32 : 0))}px")">Reset zoom</button>
     }
-    @if (Exportable && ExportFormats != ExportFormats.None)
+    @if (Exportable && Interactive && ExportFormats != ExportFormats.None)
     {
         var offered = OfferedFormats();
         var single = offered.Count == 1;

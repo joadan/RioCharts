@@ -85,6 +85,16 @@ public static class SampleData
         return readings;
     }
 
+    /// <summary>Supply air of five air handling units over two days (one drifts upward: a heating valve stuck open).</summary>
+    public static readonly List<(string Unit, List<Reading> Readings)> UnitSupply =
+    [
+        ("AHU 1 · Office east", Series((i, t) => Math.Round(19 + 1.2 * Cycle(t) + Drift(i, 11) * 0.6, 2))),
+        ("AHU 2 · Office west", Series((i, t) => Math.Round(19.5 + 0.9 * Cycle(t) + Drift(i, 12) * 0.5, 2))),
+        ("AHU 3 · Conference", Series((i, t) => Math.Round(18.5 + (t.Hour is >= 8 and < 17 ? 1.5 : 0) + Drift(i, 13, 4) * 0.7, 2))),
+        ("AHU 4 · Restaurant", Series((i, t) => Math.Round(19 + 0.04 * i + Drift(i, 14) * 0.5, 2))),
+        ("AHU 5 · Warehouse", Series((i, t) => i is >= 120 and < 140 ? null : Math.Round(16 + 1.5 * Cycle(t) + Drift(i, 15) * 0.8, 2))),
+    ];
+
     public static readonly List<Sales> Quarters =
     [
         new("Q1", 182_000, 214_000), new("Q2", 236_000, 251_000), new("Q3", 198_000, 243_000), new("Q4", 271_000, 305_000),

@@ -46,6 +46,12 @@ public static partial class ChartLayout
 
         /// <summary>Values on the annotation's y axis that the domain should include.</summary>
         public double[] YValues => IsPoint ? [B] : IsX ? [] : (IsBand ? [A, B] : [A]);
+
+        /// <summary>The same annotation without its text (compact charts).</summary>
+        public ResolvedAnnotation WithoutLabel() => new()
+        {
+            Spec = Spec with { Label = null }, Id = Id, Index = Index, IsX = IsX, Type = Type, Axis = Axis, A = A, B = B, ExpandsDomain = ExpandsDomain,
+        };
     }
 
     private static List<ResolvedAnnotation> ResolveAnnotations(ChartSpec spec, List<YAxisLayout> axes, XKind xKind, IReadOnlyList<string> categories,

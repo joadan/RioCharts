@@ -1407,3 +1407,56 @@ table.docs tr:last-child td {
     line-height: 1.5;
     text-align: center;
 }
+
+
+/* ----- Compact charts page ----- */
+
+.compact-demo {
+    display: grid;
+    grid-template-columns: auto minmax(120px, 260px) auto;
+    align-items: center;
+    gap: 14px;
+    font-size: 14px;
+}
+
+.compact-demo > span, .compact-grid span {
+    color: var(--doc-muted);
+}
+
+.compact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    font-size: 13px;
+}
+
+.compact-grid span {
+    display: block;
+    margin-bottom: 4px;
+}
+
+table.sparkline-table td {
+    vertical-align: middle;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+table.sparkline-table td.num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+    .compact-demo {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.table-scroll > table.docs {
+    margin: 0;
+}

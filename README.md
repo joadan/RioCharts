@@ -41,6 +41,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Point markers, callouts and draggable reference lines (`@bind-Value`)
 - Display time zone (`TimeZone`): plotted on instants, labelled in the zone, DST-safe
 - Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
+- Compact charts and sparklines (`Compact`), highlight dots, and plain SVG without JS (`Interactive="false"`)
 - Download as PNG, SVG or CSV from the browser (`Exportable`, `DownloadPngAsync`, `ExportCsv`, ...)
 - Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
 - JSON chart specs for AI agents: tolerant parsing, JSON schema, validation with actionable errors,
@@ -52,7 +53,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
   Copilot render charts to PNG or SVG files from CSV/JSON files or inline data (`RioCharts.Mcp`)
 
 All six milestones of [Design.md](Design.md) are in, plus client-side export and a WASM docs site.
-Later topics there (compact modes, AOT) are not done yet.
+Later topics there (auto-compact for small charts, AOT) are not done yet.
 
 ## Install
 

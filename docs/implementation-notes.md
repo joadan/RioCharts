@@ -338,3 +338,32 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   that point (where the value was set), not on the crosshair. The header is the label of a row with a point at the anchor.
 - Not yet: interpolated values for line series between their points.
 
+## Compact charts
+
+- **No separate component.** Design.md's "compact modes: sparklines" is `Compact` on `RioChart`
+  and in the spec, so the JSON/AI spec and Skia export get it too. The height is not changed
+  automatically; examples set it.
+- **Layout:** the same `ChartLayout.Compute` pass with the chrome left out: no title, legend,
+  axis labels or titles, grid (unless an axis sets `GridLines`), baseline (except a zero line for
+  bars that go negative), data labels, annotation text or "No data" text. The plot is the box
+  minus an inset: half the widest stroke, or a highlight dot plus its outline. The minimum chart
+  size drops from 50 to 8 px.
+- **Y range:** the data extent as is (`TightDomain`): no nice rounding and no ticks. Lines and
+  areas leave zero out; bars keep it. Equal values are padded by 10% so the line sits in the
+  middle. Bands still do not widen the range (`ExpandsDomain` defaults to false for bands).
+- **Highlight dots** (`PointHighlight` flags) are picked from the data within the visible range,
+  not from the downsampled points, so a min or max dropped by LTTB is still marked. They are
+  outlined in the surface color so they stand out on the line. Coinciding picks draw one dot.
+- **Summary:** `ChartDescriber.DescribeCompact` (range, last value, trend in words), formatted
+  with the series' or axis' format like the tooltips.
+- **Keyboard** defaults to off for compact charts (`KeyboardNavigation` became `bool?`), so a
+  table of sparklines is not a long row of tab stops; the summary is read instead.
+- **`Interactive="false"`** skips the JS module entirely (no import, init, measuring or point
+  data) and the hover/tooltip elements; it is read on the first render. Without JS there is no
+  measured width, so the chart lays out at `Width` or a default (640, compact 160) and the SVG
+  scales to its container.
+- **JSON:** `highlight` accepts "last", "last, max" or ["last", "max"] and is normalized to the
+  enum's comma-separated form; unknown values get the list of valid ones.
+- **Not yet:** auto-compact (shedding axis titles, legend and axes when a normal chart gets very
+  small).
+

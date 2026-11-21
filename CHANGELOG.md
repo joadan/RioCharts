@@ -12,6 +12,17 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Compact charts (sparklines): `Compact="true"` on `RioChart` (`ChartSpec.Compact`, `"compact"` in
+  JSON specs) draws no axes, grid, legend or title; the series fill the box with a small inset, the
+  y range fits the data (bars keep zero), heights below 50 px are allowed, annotations keep their
+  shape without text, and empty data draws nothing. Screen readers get a short summary ("Room:
+  18.2 °C to 20.8 °C, last 19.4 °C, rising"), and keyboard navigation is off unless set.
+- `Highlight` on line and area series (`SeriesSpec.Highlight`, `"highlight"` in JSON as a string
+  or list): dots on the last, first, lowest and/or highest value, on any chart.
+- `Interactive="false"` on `RioChart`: plain SVG without the JS module (no tooltip, hover, zoom,
+  keyboard, download button or measuring; canvas series fall back to SVG). For many charts on a
+  page; set `Width` for exact geometry (default layout width 640, compact 160).
+- **Breaking:** `KeyboardNavigation` is now `bool?` (null: on, off for compact charts).
 - Keyboard navigation (`KeyboardNavigation`, on by default): a chart with data is a tab stop
   (`role="application"`, a focus ring, instructions for screen readers). With it focused, arrow
   keys move between points and Up/Down between series (pies: between slices), Home/End and

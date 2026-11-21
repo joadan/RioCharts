@@ -1,0 +1,82 @@
+@inherits ChartTestBase
+
+@code {
+    [Fact]
+    public void Compact_chart_is_an_image_with_a_short_summary()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32" Title="Supply air" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        </RioChart>);
+
+        var svg = cut.Find("svg.rio-chart-svg");
+        Assert.Equal("img", svg.GetAttribute("role"));
+        Assert.Null(svg.GetAttribute("tabindex")); // no tab stop per sparkline
+        Assert.Equal($"0 0 {Width} 32", svg.GetAttribute("viewBox"));
+        Assert.Equal("Supply air. Supply: 19.5 °C to 20.8 °C, last 20.2 °C, rising.", cut.Find("desc").TextContent);
+        Assert.Empty(cut.FindAll("svg.rio-chart-svg text"));
+        Assert.NotEmpty(Calls("update")); // still interactive: the tooltip works
+    }
+
+    [Fact]
+    public void Compact_charts_can_turn_keyboard_navigation_back_on()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32" KeyboardNavigation="true">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal("application", cut.Find("svg.rio-chart-svg").GetAttribute("role"));
+    }
+
+    [Fact]
+    public void A_spec_can_be_compact()
+    {
+        var spec = new ChartSpec
+        {
+            Compact = true,
+            Data = [new Dictionary<string, object?> { ["t"] = 1.0, ["v"] = 2.0 }, new Dictionary<string, object?> { ["t"] = 2.0, ["v"] = 3.0 }],
+            Series = [new SeriesSpec { Id = "s", X = "t", Y = "v" }],
+        };
+
+        var cut = Render<RioChart<object>>(@<RioChart TItem="object" Spec="spec" Height="24" />);
+
+        Assert.Empty(cut.FindAll("svg.rio-chart-svg text"));
+        Assert.Equal($"0 0 {Width} 24", cut.Find("svg.rio-chart-svg").GetAttribute("viewBox"));
+    }
+
+    [Fact]
+    public void Highlight_on_a_series_draws_dots()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.Last | PointHighlight.Max" />
+        </RioChart>);
+
+        Assert.Single(cut.FindAll("path.rio-highlight"));
+    }
+
+    [Fact]
+    public void Not_interactive_draws_plain_svg_without_any_JS()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32" Interactive="false" Exportable="true">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Empty(JSInterop.Invocations); // not even the module import
+        Assert.Empty(cut.FindAll(".rio-hover, .rio-tooltip, .rio-export-button"));
+        Assert.Equal("0 0 160 32", cut.Find("svg.rio-chart-svg").GetAttribute("viewBox")); // the compact default width
+        Assert.NotEmpty(cut.FindAll("path.rio-line"));
+    }
+
+    [Fact]
+    public void Not_interactive_uses_the_given_width_and_keeps_canvas_series_as_svg()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Width="300" Height="120" Interactive="false" SeriesLayer="SeriesLayer.Canvas">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Empty(JSInterop.Invocations);
+        Assert.Equal("0 0 300 120", cut.Find("svg.rio-chart-svg").GetAttribute("viewBox"));
+        Assert.Empty(cut.FindAll("canvas"));
+        Assert.NotEmpty(cut.FindAll("path.rio-line")); // drawn as SVG: a canvas needs the JS module
+        Assert.Equal("img", cut.Find("svg.rio-chart-svg").GetAttribute("role")); // no keyboard without JS
+    }
+}

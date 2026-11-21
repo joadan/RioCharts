@@ -287,6 +287,7 @@ public static class ChartSpecJson
                 Vocabulary(s, "aggregate", Aggregates, $"series[{i}].aggregate", errors);
                 Vocabulary(s, "timeBucket", Buckets, $"series[{i}].timeBucket", errors);
                 Vocabulary(s, "sort", Sorts, $"series[{i}].sort", errors);
+                Highlights(s, $"series[{i}].highlight", errors);
                 if (s["filter"] is JsonObject singleFilter)
                 {
                     s.Remove("filter");
@@ -363,6 +364,40 @@ public static class ChartSpecJson
         {
             errors.Add(new SpecError(path, $"'{text}' is not valid; use one of: {string.Join(", ", words.Values.Distinct())}."));
         }
+    }
+
+    /// <summary>
+    /// highlight: "last", "last, max" or ["last", "max"] (any letter case); written back as the
+    /// comma-separated names the enum reads.
+    /// </summary>
+    private static void Highlights(JsonObject series, string path, List<SpecError> errors)
+    {
+        var node = series["highlight"];
+        IEnumerable<string>? parts = node switch
+        {
+            JsonValue v when v.TryGetValue<string>(out var text) => text.Split([',', '|', ' '], StringSplitOptions.RemoveEmptyEntries),
+            JsonArray list => list.Select(n => n is JsonValue item && item.TryGetValue<string>(out var t) ? t : "?"),
+            _ => null,
+        };
+        if (parts is null)
+        {
+            return;
+        }
+
+        var names = new List<string>();
+        foreach (var part in parts)
+        {
+            var match = Enum.GetNames<PointHighlight>().FirstOrDefault(n => Key(n) == Key(part));
+            if (match is null)
+            {
+                errors.Add(new SpecError(path, $"'{part}' is not valid; use one or more of: last, first, min, max (e.g. \"last, max\")."));
+                return;
+            }
+
+            names.Add(match);
+        }
+
+        series["highlight"] = names.Count == 0 ? "None" : string.Join(", ", names.Distinct());
     }
 
     private static void CheckEnum<TEnum>(JsonNode? parent, string property, string path, List<SpecError> errors)

@@ -49,6 +49,61 @@ public static class ChartDescriber
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Short text for a compact chart (sparkline), read instead of the full description: per series
+    /// its range, last value and trend, formatted like the tooltips, e.g.
+    /// "Room: 18.2 °C to 20.8 °C, last 19.4 °C, rising."
+    /// </summary>
+    public static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture)
+    {
+        var sb = new StringBuilder();
+        var visible = series.Where(s => s.Visible).ToList();
+        if (!string.IsNullOrWhiteSpace(spec.Title))
+        {
+            sb.Append(spec.Title!.Trim().TrimEnd('.')).Append('.');
+        }
+
+        if (!visible.Any(s => s.Data.Y.Any(double.IsFinite)))
+        {
+            sb.Append(sb.Length > 0 ? " No data." : "No data.");
+            return sb.ToString();
+        }
+
+        foreach (var (s, d, _) in visible)
+        {
+            var points = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i])).Select(i => (X: d.X[i], Y: d.Y[i])).ToList();
+            if (points.Count == 0)
+            {
+                continue;
+            }
+
+            var axis = s.YAxisId is { } id ? spec.YAxes.FirstOrDefault(a => a.Id == id) ?? spec.Y : spec.Y;
+            var format = s.Format ?? axis.Format;
+            string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
+            var (min, max) = (points.Min(p => p.Y), points.Max(p => p.Y));
+            if (sb.Length > 0)
+            {
+                sb.Append(' ');
+            }
+
+            sb.Append(s.DisplayName).Append(": ");
+            sb.Append(min == max ? F(min) : $"{F(min)} to {F(max)}");
+            if (xKind != XKind.Category && points.Count > 1)
+            {
+                sb.Append(", last ").Append(F(points[^1].Y));
+                var trend = ComputeTrend(points);
+                if (trend is Trend.Increasing or Trend.Decreasing or Trend.Stable)
+                {
+                    sb.Append(", ").Append(trend switch { Trend.Increasing => "rising", Trend.Decreasing => "falling", _ => "stable" });
+                }
+            }
+
+            sb.Append('.');
+        }
+
+        return sb.ToString();
+    }
+
     private static string FormatX(double x, SeriesData data, XKind kind, CultureInfo culture) => kind switch
     {
         XKind.Time => TimeValue.ToDateTime(x).ToString("g", culture),

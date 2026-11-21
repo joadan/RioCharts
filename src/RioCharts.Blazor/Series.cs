@@ -261,9 +261,12 @@ public sealed class LineSeries<TItem> : SeriesBase<TItem>
     /// <summary>Line width in pixels.</summary>
     [Parameter] public double StrokeWidth { get; set; } = 2;
 
+    /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last | PointHighlight.Max</c>. Default none.</summary>
+    [Parameter] public PointHighlight Highlight { get; set; }
+
     protected override SeriesType Type => SeriesType.Line;
 
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth };
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
 
 /// <summary>Area series, filled down to zero.</summary>
@@ -272,9 +275,12 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     [Parameter] public CurveType Curve { get; set; } = CurveType.Linear;
     [Parameter] public double StrokeWidth { get; set; } = 2;
 
+    /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last</c>. Default none.</summary>
+    [Parameter] public PointHighlight Highlight { get; set; }
+
     protected override SeriesType Type => SeriesType.Area;
 
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth };
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
 
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>

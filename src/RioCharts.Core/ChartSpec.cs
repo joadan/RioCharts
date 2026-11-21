@@ -12,6 +12,9 @@ public sealed record ChartSpec
     [Description("Optional chart title.")]
     public string? Title { get; init; }
 
+    [Description("Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y range fits the data tightly (bars keep zero). For small charts in tables and tiles.")]
+    public bool Compact { get; init; }
+
     [Description("Horizontal axis.")]
     public AxisSpec X { get; init; } = new();
 
@@ -149,6 +152,9 @@ public sealed record SeriesSpec
     [Description("Show values on the chart. Null uses the default: on for pie, donut and radial bar, off otherwise.")]
     public bool? DataLabels { get; init; }
 
+    [Description("Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. \"last, max\").")]
+    public PointHighlight Highlight { get; init; }
+
     [Description("Pie, donut and radial bar: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut).")]
     public double? InnerRadius { get; init; }
 
@@ -244,6 +250,26 @@ public enum SeriesType
 /// <summary>Line shape. Step holds each value until the next point.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<CurveType>))]
 public enum CurveType { Linear, Monotone, Step }
+
+/// <summary>Points of a line or area series to mark with a dot (combine with |).</summary>
+[Flags]
+[JsonConverter(typeof(JsonStringEnumConverter<PointHighlight>))]
+public enum PointHighlight
+{
+    None = 0,
+
+    /// <summary>The last value (the latest, for time series).</summary>
+    Last = 1,
+
+    /// <summary>The first value.</summary>
+    First = 2,
+
+    /// <summary>The lowest value.</summary>
+    Min = 4,
+
+    /// <summary>The highest value.</summary>
+    Max = 8,
+}
 
 [JsonConverter(typeof(JsonStringEnumConverter<ScaleType>))]
 public enum ScaleType { Auto, Linear, Time, Band }

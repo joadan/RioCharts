@@ -19,6 +19,7 @@ namespace RioCharts.Blazor;
 public partial class RioChart<TItem> : IChartContext
 {
     private const double FallbackWidth = 640;
+    private const double CompactFallbackWidth = 160;
 
     private readonly string _id = "rio" + Guid.NewGuid().ToString("N")[..8];
     private readonly List<ISeriesSource> _series = [];
@@ -157,12 +158,27 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public int RefreshInterval { get; set; } = 100;
 
     /// <summary>
-    /// Keyboard navigation (default on): the chart is a tab stop, and with it focused the arrow keys
+    /// Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y
+    /// range fits the data (bars keep zero). Set a small <see cref="Height"/> too, e.g. 32. Keyboard
+    /// navigation is off unless <see cref="KeyboardNavigation"/> is set; the chart has a short text summary.
+    /// </summary>
+    [Parameter] public bool Compact { get; set; }
+
+    /// <summary>
+    /// False draws plain SVG without the JS module: no tooltip, hover, zoom, keyboard navigation,
+    /// download button or width measuring. For many small charts (compact charts in a table) or static
+    /// pages. Set <see cref="Width"/> for exact geometry; otherwise the chart is laid out at a default
+    /// width (640, compact 160) and scaled to fit. Read once, when the chart first renders.
+    /// </summary>
+    [Parameter] public bool Interactive { get; set; } = true;
+
+    /// <summary>
+    /// Keyboard navigation (default on, off for compact charts): the chart is a tab stop, and with it focused the arrow keys
     /// move between points (Up/Down: between series; pies: between slices), showing the tooltip and
     /// announcing the point to screen readers; Enter clicks it, Escape leaves. With <see cref="Zoomable"/>,
     /// + and - zoom around the focused point, Shift+Left/Right pans and 0 resets. Handled in the browser.
     /// </summary>
-    [Parameter] public bool KeyboardNavigation { get; set; } = true;
+    [Parameter] public bool? KeyboardNavigation { get; set; }
 
     /// <summary>Extra CSS class on the container.</summary>
     [Parameter] public string? Class { get; set; }
@@ -190,7 +206,18 @@ public partial class RioChart<TItem> : IChartContext
     private (ChartSpec?, object?) _boundFrom;
 
     /// <summary>The spec being drawn: the bound <see cref="Spec"/>, or the one from parameters and child components.</summary>
-    private ChartSpec CurrentSpec() => Spec is not null && _bound is not null ? _bound.Spec : BuildSpec();
+    private ChartSpec CurrentSpec() => Spec is not null && _bound is not null
+        ? Compact && !_bound.Spec.Compact ? _bound.Spec with { Compact = true } : _bound.Spec
+        : BuildSpec();
+
+    /// <summary>The canvas series layer needs the JS module; without it the series stay SVG.</summary>
+    private bool UsesCanvas => SeriesLayer == SeriesLayer.Canvas && Interactive;
+
+    /// <summary>Compact from the parameter or the spec.</summary>
+    private bool IsCompact => Compact || Spec?.Compact == true;
+
+    /// <summary>The width to lay out at before (or without) measuring the container.</summary>
+    private double DefaultWidth => IsCompact ? CompactFallbackWidth : FallbackWidth;
 
     private string ContainerStyle => string.Create(CultureInfo.InvariantCulture,
         $"height:{Height:0.##}px;{(Width is { } w ? $"width:{w:0.##}px;" : "")}");
@@ -307,7 +334,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets,
-            TooltipHeader is not null, TooltipTemplate is not null);
+            TooltipHeader is not null, TooltipTemplate is not null, Compact);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -321,6 +348,7 @@ public partial class RioChart<TItem> : IChartContext
     private ChartSpec BuildSpec() => new()
     {
         Title = Title,
+        Compact = Compact,
         X = XAxis ?? new AxisSpec(),
         Y = YAxis ?? new AxisSpec(),
         YAxes = YAxes ?? [],
@@ -366,13 +394,13 @@ public partial class RioChart<TItem> : IChartContext
         _layoutData = data;
         _layout = ChartLayout.Compute(CurrentSpec(), data, new LayoutOptions
         {
-            Width = Width ?? _measuredWidth ?? FallbackWidth,
+            Width = Width ?? _measuredWidth ?? DefaultWidth,
             Height = Height,
             Measurer = _measurer,
             Culture = Culture ?? CultureInfo.CurrentCulture,
             HiddenSeries = _hidden,
             InteractiveAnnotations = OnAnnotationClick.HasDelegate,
-            DownsampleThreshold = DownsampleThreshold ?? (SeriesLayer == SeriesLayer.Canvas ? Math.Max(2000, (int)((Width ?? _measuredWidth ?? FallbackWidth) * 4)) : null),
+            DownsampleThreshold = DownsampleThreshold ?? (UsesCanvas ? Math.Max(2000, (int)((Width ?? _measuredWidth ?? DefaultWidth) * 4)) : null),
             XRange = _range,
             ViewerTimeZone = _viewerZone,
         });
@@ -525,6 +553,12 @@ public partial class RioChart<TItem> : IChartContext
         await FocusExportMenuAsync();
         try
         {
+            // Not interactive: plain SVG, the JS module is never loaded.
+            if (_module is null && !Interactive)
+            {
+                return;
+            }
+
             if (firstRender)
             {
                 _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/RioChart.razor.js");
@@ -584,7 +618,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         _sentInteraction = key;
-        if (SeriesLayer == SeriesLayer.Canvas)
+        if (UsesCanvas)
         {
             await _module.InvokeVoidAsync("paint", _container, CanvasSeriesWriter.Build(_layout.Scene));
         }
@@ -650,7 +684,7 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>Whether the chart is a tab stop with arrow-key navigation: on, with points or slices to move between.</summary>
     private bool KeyboardEnabled(ChartLayoutResult layout) =>
-        KeyboardNavigation && layout.HasData && (layout.Tooltip.Series.Any(s => s.X.Length > 0) || layout.Tooltip.Slices.Count > 0);
+        (KeyboardNavigation ?? !IsCompact) && Interactive && layout.HasData && (layout.Tooltip.Series.Any(s => s.X.Length > 0) || layout.Tooltip.Slices.Count > 0);
 
     /// <summary>The instructions screen readers read with the chart (aria-describedby).</summary>
     private string KeyboardHelp(ChartLayoutResult layout)

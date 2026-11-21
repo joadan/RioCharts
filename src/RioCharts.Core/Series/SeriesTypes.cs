@@ -108,8 +108,74 @@ internal sealed class LineSeriesType : ISeriesType
         var style = c.Styles.Add($"series-{c.ColorIndex}-line", new Style { Stroke = c.Color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" });
         c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), style) { Class = "rio-line" });
         AddLonePoints(c, xs, ys);
+        AddHighlights(c);
         c.Hits = Hits(c, xs, ys, indices);
         AddLabels(c, xs, ys, indices);
+    }
+
+    /// <summary>
+    /// Dots on the first, last, lowest and highest value (<see cref="SeriesSpec.Highlight"/>), found
+    /// in the data (not the downsampled points) within the visible range, outlined in the surface color.
+    /// </summary>
+    internal static void AddHighlights(SeriesBuildContext c)
+    {
+        var highlight = c.Spec.Highlight;
+        if (highlight == PointHighlight.None)
+        {
+            return;
+        }
+
+        var data = c.Data;
+        var (start, end) = c.XWindow is { } w && data.Kind != XKind.Category
+            ? Layout.ChartLayout.VisibleIndexes(data.X, w.Min, w.Max, 0)
+            : (0, data.Count);
+        int first = -1, last = -1, min = -1, max = -1;
+        for (var i = start; i < end; i++)
+        {
+            var y = c.Upper[i];
+            if (!double.IsFinite(y) || !double.IsFinite(c.PixelX[i]))
+            {
+                continue;
+            }
+
+            if (first < 0)
+            {
+                first = i;
+            }
+
+            last = i;
+            if (min < 0 || y < c.Upper[min])
+            {
+                min = i;
+            }
+
+            if (max < 0 || y > c.Upper[max])
+            {
+                max = i;
+            }
+        }
+
+        if (first < 0)
+        {
+            return;
+        }
+
+        var picked = new SortedSet<int>();
+        if (highlight.HasFlag(PointHighlight.First)) picked.Add(first);
+        if (highlight.HasFlag(PointHighlight.Last)) picked.Add(last);
+        if (highlight.HasFlag(PointHighlight.Min)) picked.Add(min);
+        if (highlight.HasFlag(PointHighlight.Max)) picked.Add(max);
+
+        var radius = Layout.ChartLayout.HighlightRadius(c.StrokeWidth);
+        var builder = new PathBuilder();
+        foreach (var i in picked)
+        {
+            var (x, y) = (c.PixelX[i], c.MapY(c.Upper[i]));
+            builder.MoveTo(x, y - radius).Arc(x, y, radius, 0, Math.PI * 2).Close();
+        }
+
+        var style = c.Styles.Add($"series-{c.ColorIndex}-highlight", new Style { Fill = c.Color, Stroke = ThemeTokens.Surface, StrokeWidth = 1.5f });
+        c.Output.Add(new PathNode(builder.Build(), style) { Class = "rio-highlight" });
     }
 
     /// <summary>
@@ -238,6 +304,7 @@ internal sealed class AreaSeriesType : ISeriesType
         c.Output.Add(new PathNode(area, fill) { Class = "rio-area" });
         c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), line) { Class = "rio-line" });
         LineSeriesType.AddLonePoints(c, xs, ys);
+        LineSeriesType.AddHighlights(c);
         c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
         LineSeriesType.AddLabels(c, xs, ys, indices);
     }

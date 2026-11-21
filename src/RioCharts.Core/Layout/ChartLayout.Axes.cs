@@ -72,13 +72,14 @@ public static partial class ChartLayout
         return axis;
     }
 
-    private static void YExtent(YAxisLayout axis, IEnumerable<ResolvedAnnotation> annotations, (double Min, double Max)? window)
+    private static void YExtent(YAxisLayout axis, IEnumerable<ResolvedAnnotation> annotations, (double Min, double Max)? window, bool compact = false)
     {
         double min = double.PositiveInfinity, max = double.NegativeInfinity;
         var includeZero = false;
         foreach (var r in axis.Series)
         {
-            includeZero |= r.Type.IncludesZero;
+            // Compact charts fit the data; only bars keep zero (a bar's length is its value).
+            includeZero |= r.Type.IncludesZero && (!compact || r.Type.UsesSlots);
             Include(r.Upper, r.Data.X);
             if (r.Lower is not null)
             {

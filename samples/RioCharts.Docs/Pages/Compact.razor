@@ -1,0 +1,152 @@
+@page "/compact"
+
+<PageTitle>Compact charts · RioCharts</PageTitle>
+
+<h1>Compact charts and sparklines</h1>
+<p class="lead">
+    <code>Compact="true"</code> turns any chart into a sparkline: no axes, grid, legend or title, the series fill the box and the y range fits
+    the data. Give it a small <code>Height</code> and put it in a table, a card or a sentence.
+</p>
+
+<Example Title="Sparkline" Code="@SparkCode">
+    <Description>
+        <p>
+            The y range fits the data tightly, so small changes show (bars keep zero). <code>Highlight</code> marks the last, first, lowest or
+            highest value with a dot; it works on normal charts too. The tooltip still works, and screen readers get a short summary such as
+            "Supply: 17.3 °C to 20.7 °C, last 17.9 °C, stable" instead of a tab stop.
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="compact-demo">
+            <span>Supply air, last 48 h</span>
+            <RioChart Items="Supply" Compact="true" Height="40">
+                <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone"
+                            Highlight="PointHighlight.Last | PointHighlight.Min | PointHighlight.Max" />
+            </RioChart>
+            <b>@($"{Supply[^1].Value:0.0} °C")</b>
+        </div>
+    </ChildContent>
+</Example>
+
+<Example Title="In a table" Code="@TableCode">
+    <Description>
+        <p>
+            Every interactive chart loads the JS module, measures its container and sends its points to the browser. With dozens of charts on a
+            page, <code>Interactive="false"</code> draws plain SVG instead: no JS, no tooltip, no round trips. Give it a <code>Width</code> so it
+            is drawn at its real size (without one it is laid out 160 px wide and scaled to fit).
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="table-scroll">
+        <table class="docs sparkline-table">
+            <tr><th>Unit</th><th>Supply air, 48 h</th><th>Now</th></tr>
+            @foreach (var (unit, readings) in UnitSupply)
+            {
+                <tr>
+                    <td>@unit</td>
+                    <td>
+                        <RioChart Items="readings" Compact="true" Interactive="false" Width="140" Height="28" Title="@unit">
+                            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Highlight="PointHighlight.Last" />
+                        </RioChart>
+                    </td>
+                    <td class="num">@($"{readings.Last(r => r.Value is not null).Value:0.0} °C")</td>
+                </tr>
+            }
+        </table>
+        </div>
+    </ChildContent>
+</Example>
+
+<Example Title="Areas and bars" Code="@KindsCode">
+    <Description>
+        <p>Area and bar series work the same way. Areas fill down to the bottom of the box; bars start at zero, so their lengths compare.</p>
+    </Description>
+    <ChildContent>
+        <div class="compact-grid">
+            <div>
+                <span>Heating, kWh per 15 min</span>
+                <RioChart Items="Heating" Compact="true" Height="48">
+                    <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 kWh" Curve="CurveType.Monotone" />
+                </RioChart>
+            </div>
+            <div>
+                <span>Energy, kWh per day</span>
+                <RioChart Items="Daily" Compact="true" Height="48">
+                    <BarSeries Name="Energy" XValue="r => r.Time" YValue="r => r.Value" Format="0 kWh" />
+                </RioChart>
+            </div>
+        </div>
+    </ChildContent>
+</Example>
+
+<Example Title="Normal range" Code="@BandCode">
+    <Description>
+        <p>
+            Annotations still draw, without their text: a <code>ReferenceBand</code> shows the normal range at a glance. Bands do not widen the
+            y range, so the line keeps its detail.
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="compact-demo">
+            <span>Extract air vs 21.5–22.5 °C</span>
+            <RioChart Items="Extract" Compact="true" Height="40">
+                <LineSeries Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Curve="CurveType.Monotone" Highlight="PointHighlight.Last" />
+                <ReferenceBand From="21.5" To="22.5" />
+            </RioChart>
+        </div>
+    </ChildContent>
+</Example>
+
+<h2>Options</h2>
+<div class="table-scroll">
+<table class="docs">
+    <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+    <tr><td><code>Compact</code></td><td>false</td><td>No axes, grid, legend or title; a tight y range. Also <code>"compact": true</code> in JSON specs.</td></tr>
+    <tr><td><code>Height</code></td><td>300</td><td>Set it small, e.g. 24–48 px.</td></tr>
+    <tr><td><code>Highlight</code> (line, area)</td><td>none</td><td><code>PointHighlight.Last</code>, <code>First</code>, <code>Min</code>, <code>Max</code>, combined with <code>|</code>.</td></tr>
+    <tr><td><code>Interactive</code></td><td>true</td><td>False: plain SVG without JS (no tooltip). For many charts on a page.</td></tr>
+    <tr><td><code>Width</code></td><td>the container</td><td>Needed for exact geometry when <code>Interactive="false"</code>.</td></tr>
+    <tr><td><code>KeyboardNavigation</code></td><td>off when compact</td><td>Set true to make a compact chart a tab stop with arrow-key navigation.</td></tr>
+</table>
+</div>
+
+@code {
+    private const string SparkCode = """
+        <RioChart Items="supply" Compact="true" Height="40">
+            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C"
+                        Highlight="PointHighlight.Last | PointHighlight.Min | PointHighlight.Max" />
+        </RioChart>
+        """;
+
+    private const string TableCode = """
+        @foreach (var unit in units)
+        {
+            <tr>
+                <td>@unit.Name</td>
+                <td>
+                    <RioChart Items="unit.Readings" Compact="true" Interactive="false" Width="140" Height="28" Title="@unit.Name">
+                        <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" Highlight="PointHighlight.Last" />
+                    </RioChart>
+                </td>
+                <td>@unit.Now °C</td>
+            </tr>
+        }
+        """;
+
+    private const string KindsCode = """
+        <RioChart Items="heating" Compact="true" Height="48">
+            <AreaSeries Name="Heating" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </RioChart>
+
+        <RioChart Items="daily" Compact="true" Height="48">
+            <BarSeries Name="Energy" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+        """;
+
+    private const string BandCode = """
+        <RioChart Items="extract" Compact="true" Height="40">
+            <LineSeries Name="Extract" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.Last" />
+            <ReferenceBand From="21.5" To="22.5" />
+        </RioChart>
+        """;
+}

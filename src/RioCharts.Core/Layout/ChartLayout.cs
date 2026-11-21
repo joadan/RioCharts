@@ -112,8 +112,9 @@ public static partial class ChartLayout
         var warnings = new List<string>();
         var culture = options.Culture;
         var measure = options.Measurer;
-        var width = Math.Max(50, options.Width);
-        var height = Math.Max(50, options.Height);
+        var compact = spec.Compact;
+        var width = Math.Max(compact ? 8 : 50, options.Width);
+        var height = Math.Max(compact ? 8 : 50, options.Height);
         var font = options.FontSize;
         var lineHeight = font * 1.3;
         var styles = CreateStyles(options);
@@ -202,13 +203,13 @@ public static partial class ChartLayout
 
         foreach (var axis in axes)
         {
-            YExtent(axis, annotations.Where(a => a.ExpandsDomain && a.Axis == axis), window);
+            YExtent(axis, annotations.Where(a => a.ExpandsDomain && a.Axis == axis), window, compact);
         }
 
         // ---------- Title and legend ----------
         var y0 = PadTop;
         var titleNodes = new List<Node>();
-        if (!string.IsNullOrWhiteSpace(spec.Title))
+        if (!compact && !string.IsNullOrWhiteSpace(spec.Title))
         {
             var titleHeight = options.TitleFontSize * 1.3;
             titleNodes.Add(new TextNode(spec.Title!, new PointF((float)PadLeft, (float)(y0 + titleHeight / 2)), new TextStyle("title"), Anchor.Start)
@@ -221,7 +222,7 @@ public static partial class ChartLayout
         var legendEntries = resolved
             .Select(r => new LegendEntry(r.Spec.Id, r.Spec.DisplayName, r.Color, r.Spec.Type, r.Visible, r.Empty))
             .ToList();
-        var showLegend = spec.Legend.Mode switch
+        var showLegend = !compact && spec.Legend.Mode switch
         {
             LegendMode.Show => legendEntries.Count > 0,
             LegendMode.Hide => false,
@@ -255,33 +256,47 @@ public static partial class ChartLayout
 
         // ---------- Vertical layout ----------
         var visibleAxes = axes.Where(a => a.Visible).ToList();
-        var xLabelHeight = lineHeight + 6;
-        var xTitleHeight = string.IsNullOrWhiteSpace(spec.X.Title) ? 0 : lineHeight + 4;
+        var xLabelHeight = compact ? 0 : lineHeight + 6;
+        var xTitleHeight = compact || string.IsNullOrWhiteSpace(spec.X.Title) ? 0 : lineHeight + 4;
 
         // Y titles sit above the axis labels, horizontally (easier to read than rotated text).
-        var yTitleHeight = visibleAxes.Any(a => !string.IsNullOrWhiteSpace(a.Spec.Title)) || (!hasData && !string.IsNullOrWhiteSpace(primary.Spec.Title))
+        var yTitleHeight = !compact && (visibleAxes.Any(a => !string.IsNullOrWhiteSpace(a.Spec.Title)) || (!hasData && !string.IsNullOrWhiteSpace(primary.Spec.Title)))
             ? lineHeight + 2
             : 0;
-        var plotTop = y0 + legendTop + yTitleHeight + font / 2; // room for the top label, centered on its grid line
-        var plotBottom = height - PadBottom - legendBottom - xTitleHeight - xLabelHeight;
-        var plotHeight = Math.Max(10, plotBottom - plotTop);
+
+        // Compact: the series fill the box, inset just enough for strokes and highlight dots.
+        var inset = CompactInset(drawable);
+        var plotTop = compact ? inset : y0 + legendTop + yTitleHeight + font / 2; // room for the top label, centered on its grid line
+        var plotBottom = compact ? height - inset : height - PadBottom - legendBottom - xTitleHeight - xLabelHeight;
+        var plotHeight = Math.Max(compact ? 2 : 10, plotBottom - plotTop);
         plotBottom = plotTop + plotHeight;
 
         // ---------- Y ticks (they decide the side margins) ----------
         var yTarget = Math.Clamp((int)(plotHeight / 42), 2, 10);
         // The first visible axis owns the grid and the zero line; the others align to its ticks.
         var gridAxis = visibleAxes.FirstOrDefault() ?? primary;
-        ComputeYTicks(gridAxis, yTarget, culture, measure, font);
-        foreach (var axis in axes.Where(a => a != gridAxis))
+        if (compact)
         {
-            ComputeYTicks(axis, yTarget, culture, measure, font, axis.Visible ? gridAxis : null);
+            foreach (var axis in axes)
+            {
+                TightDomain(axis);
+            }
+        }
+        else
+        {
+            ComputeYTicks(gridAxis, yTarget, culture, measure, font);
+            foreach (var axis in axes.Where(a => a != gridAxis))
+            {
+                ComputeYTicks(axis, yTarget, culture, measure, font, axis.Visible ? gridAxis : null);
+            }
         }
 
-        var left = visibleAxes.Where(a => !a.Right).ToList();
-        var right = visibleAxes.Where(a => a.Right).ToList();
-        var plotLeft = PadLeft + (left.Count > 0 ? LabelGap + left.Sum(a => a.LabelWidth) + (left.Count - 1) * AxisGap : 0);
-        var plotRight = width - PadRight - legendRight - (right.Count > 0 ? LabelGap + right.Sum(a => a.LabelWidth) + (right.Count - 1) * AxisGap : 0);
-        var plotWidth = Math.Max(10, plotRight - plotLeft);
+        var left = compact ? [] : visibleAxes.Where(a => !a.Right).ToList();
+        var right = compact ? [] : visibleAxes.Where(a => a.Right).ToList();
+        var plotLeft = compact ? inset : PadLeft + (left.Count > 0 ? LabelGap + left.Sum(a => a.LabelWidth) + (left.Count - 1) * AxisGap : 0);
+        var plotRight = compact ? width - inset
+            : width - PadRight - legendRight - (right.Count > 0 ? LabelGap + right.Sum(a => a.LabelWidth) + (right.Count - 1) * AxisGap : 0);
+        var plotWidth = Math.Max(compact ? 2 : 10, plotRight - plotLeft);
         plotRight = plotLeft + plotWidth;
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)plotWidth, (float)plotHeight);
 
@@ -302,7 +317,7 @@ public static partial class ChartLayout
         {
             // Bars get padded bands; lines on categories use points half a step from the edges.
             xBand = new BandScale(categories, plotLeft, plotLeft + plotWidth, hasBars ? 0.2 : 0, hasBars ? 0.1 : 0);
-            if (hasData)
+            if (hasData && !compact)
             {
                 AddCategoryLabels(xBand, measure, font, plotBottom, xTickNodes);
             }
@@ -310,7 +325,7 @@ public static partial class ChartLayout
         else
         {
             xScale = new LinearScale(xMin, xMax, plotLeft, plotLeft + plotWidth);
-            if (hasData)
+            if (hasData && !compact)
             {
                 xGrid = AddContinuousXLabels(xScale, xKind, spec.X, culture, measure, font, plotBottom, width, xTickNodes, time);
             }
@@ -323,7 +338,7 @@ public static partial class ChartLayout
         var grid = new List<Node>();
         var gridScale = gridAxis.Scale;
         var zeroInDomain = gridAxis.DomainMin < 0 && gridAxis.DomainMax > 0;
-        if (gridAxis.Spec.GridLines ?? true)
+        if (gridAxis.Spec.GridLines ?? !compact)
         {
             foreach (var t in gridAxis.Ticks)
             {
@@ -356,13 +371,17 @@ public static partial class ChartLayout
 
         statics.Add(new GroupNode(grid) { Class = "rio-grid" });
 
+        // Compact charts have no baseline, except a zero line for bars that go negative.
         var baselineY = zeroInDomain ? gridScale.Map(0) : plotBottom;
-        statics.Add(new PathNode(new PathBuilder().MoveTo(plotLeft, baselineY).LineTo(plotRight, baselineY).Build(), new StyleRef("axis"))
+        if (!compact || (hasBars && zeroInDomain))
         {
-            Class = "rio-baseline",
-        });
+            statics.Add(new PathNode(new PathBuilder().MoveTo(plotLeft, baselineY).LineTo(plotRight, baselineY).Build(), new StyleRef("axis"))
+            {
+                Class = "rio-baseline",
+            });
+        }
 
-        if (hasData)
+        if (hasData && !compact)
         {
             foreach (var axis in visibleAxes)
             {
@@ -384,14 +403,14 @@ public static partial class ChartLayout
             statics.Add(new GroupNode(xTickNodes) { Class = "rio-axis-x", AriaLabel = "X axis" + (spec.X.Title is { } xt ? ": " + xt : "") });
         }
 
-        if (!string.IsNullOrWhiteSpace(spec.X.Title))
+        if (!compact && !string.IsNullOrWhiteSpace(spec.X.Title))
         {
             statics.Add(new TextNode(spec.X.Title!, new PointF((float)(plotLeft + plotWidth / 2), (float)(plotBottom + xLabelHeight + xTitleHeight / 2)),
                 new TextStyle("axis-title"), Anchor.Middle) { Class = "rio-axis-title" });
         }
 
         var titleY = (float)(plotTop - font / 2 - yTitleHeight / 2 - 2);
-        foreach (var axis in hasData ? visibleAxes : [primary])
+        foreach (var axis in compact ? [] : hasData ? visibleAxes : [primary])
         {
             if (!string.IsNullOrWhiteSpace(axis.Spec.Title))
             {
@@ -471,9 +490,13 @@ public static partial class ChartLayout
         var labelNodes = new List<Node>();
         if (hasData)
         {
-            BuildAnnotations(annotations, plot, xKind, xScale, xBand, culture, measure, font, styles, options.InteractiveAnnotations,
-                below, above, placedLabels, dragHandles, spec.X.Format, time);
-            labelNodes.AddRange(BuildDataLabels(labelAnchors, plot, culture, measure, font, styles, placedLabels, warnings));
+            // Compact: annotations without their text (a band or line still shows the normal range).
+            BuildAnnotations(compact ? annotations.Select(a => a.WithoutLabel()).ToList() : annotations, plot, xKind, xScale, xBand, culture, measure, font, styles,
+                options.InteractiveAnnotations, below, above, placedLabels, dragHandles, spec.X.Format, time);
+            if (!compact)
+            {
+                labelNodes.AddRange(BuildDataLabels(labelAnchors, plot, culture, measure, font, styles, placedLabels, warnings));
+            }
         }
 
         var plotNodes = new List<Node>(below);
@@ -490,7 +513,7 @@ public static partial class ChartLayout
 
         // ---------- Overlay ----------
         var overlay = new List<Node>();
-        if (!hasData)
+        if (!hasData && !compact)
         {
             overlay.Add(new TextNode(EmptyMessage(resolved), new PointF(plot.CenterX, plot.CenterY), new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
         }
@@ -500,7 +523,9 @@ public static partial class ChartLayout
             Width = (float)width,
             Height = (float)height,
             Styles = styles,
-            Description = ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture),
+            Description = compact
+                ? ChartDescriber.DescribeCompact(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture)
+                : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture),
         };
 
         var bandWidth = xKind == XKind.Category ? xBand!.Step : hasBars ? slotWidth / 0.8 : 0;
@@ -795,6 +820,45 @@ public static partial class ChartLayout
         {
             Step = r.Spec.Curve == CurveType.Step && !r.Type.UsesSlots && kind != XKind.Category,
         };
+    }
+
+    // ---------- Compact ----------
+
+    /// <summary>Room around a compact plot: half the widest stroke, or a highlight dot with its outline.</summary>
+    private static double CompactInset(IEnumerable<Resolved> series)
+    {
+        var inset = 1.5;
+        foreach (var r in series)
+        {
+            var stroke = r.Spec.StrokeWidth ?? 2;
+            inset = Math.Max(inset, r.Spec.Highlight != PointHighlight.None && !r.Type.UsesSlots ? HighlightRadius(stroke) + 1.5 : stroke / 2 + 0.5);
+        }
+
+        return inset;
+    }
+
+    /// <summary>Radius of a highlight dot for a line of the given width.</summary>
+    internal static double HighlightRadius(double strokeWidth) => Math.Max(2.5, strokeWidth * 1.25);
+
+    /// <summary>Compact y domain: the data range as is (no nice rounding, no ticks); equal values sit in the middle.</summary>
+    private static void TightDomain(YAxisLayout axis)
+    {
+        var (min, max) = axis.ExtentMin <= axis.ExtentMax ? (axis.ExtentMin, axis.ExtentMax) : (axis.ExtentMax, axis.ExtentMin);
+        if (max == min)
+        {
+            var pad = min == 0 ? 1 : Math.Abs(min) * 0.1;
+            (min, max) = (axis.Spec.Min ?? min - pad, axis.Spec.Max ?? max + pad);
+            if (max <= min)
+            {
+                max = min + 1;
+            }
+        }
+
+        axis.DomainMin = min;
+        axis.DomainMax = max;
+        axis.Ticks = [];
+        axis.Labels = [];
+        axis.LabelWidth = 0;
     }
 
     // ---------- Helpers ----------

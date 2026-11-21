@@ -46,6 +46,11 @@ public static class ChartRazor
             sb.Append($" TimeZone=\"{Attr(zone)}\"");
         }
 
+        if (spec.Compact)
+        {
+            sb.Append(" Compact=\"true\" Height=\"32\"");
+        }
+
         sb.AppendLine(">");
         foreach (var a in spec.Annotations)
         {
@@ -130,6 +135,13 @@ public static class ChartRazor
             if (s.DataLabels is { } labels)
             {
                 sb.Append($" DataLabels=\"{(labels ? "true" : "false")}\"");
+            }
+
+            if (s.Highlight != PointHighlight.None && s.Type is SeriesType.Line or SeriesType.Area)
+            {
+                // Flags: "Last, Max" becomes PointHighlight.Last | PointHighlight.Max.
+                var flags = s.Highlight.ToString().Split(", ").Select(f => $"PointHighlight.{f}");
+                sb.Append($" Highlight=\"{string.Join(" | ", flags)}\"");
             }
 
             if (s.Type == SeriesType.Pie && s.InnerRadius is { } inner && inner is not 0 and not 0.6)
