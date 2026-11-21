@@ -21,6 +21,7 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.Mcp/` — `riocharts-mcp`, a local stdio MCP server packed as a .NET tool: `ServerOptions` (arguments), `LocalServer` (tools: render_chart, list_datasets, get_chart_schema).
 - `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
 - `tests/RioCharts.Tests/` — xUnit tests (Core, AI, MCP, Skia).
+- `tests/RioCharts.Tests/Snapshots/` — visual snapshots (SVG) of reference charts from `SnapshotTests.cs`. A layout change that alters them fails with `name.received.svg` next to the snapshot: look at both, then accept with `RIOCHARTS_ACCEPT_SNAPSHOTS=1 dotnet test` and review the diff. New chart types get a reference chart there.
 - `tests/RioCharts.AotSmoke/` — console app published with native AOT (`.github/workflows/aot.yml`); exits 0 when its checks pass. Locally without a C++ linker: `dotnet publish tests/RioCharts.AotSmoke -c Release -r win-x64 --self-contained -p:PublishAot=false -p:PublishTrimmed=true`.
 - `tests/RioCharts.Blazor.Tests/` — bUnit component tests for `<RioChart>`; `ChartTestBase` fakes the JS module in strict mode, so add a setup when the component calls a new JS function.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).

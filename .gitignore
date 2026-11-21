@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Snapshot test output for review (tests/RioCharts.Tests/Snapshots)
+*.received.svg

@@ -12,6 +12,9 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Visual snapshot tests: 18 reference charts (all series types, axes, annotations, time zones,
+  compact, auto-compact, languages, edge cases) are compared as SVG with
+  `tests/RioCharts.Tests/Snapshots`; a Test workflow runs all tests on Linux for every push.
 - Auto-compact (`AutoCompact`, default on; `"autoCompact"` in JSON specs): as a normal chart
   gets small it leaves out the x axis title (below 180 px high), then the legend and y axis title
   (160 and 150 px high, or under 200 px wide), the title (120 px high) and the axis labels (x below

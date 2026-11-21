@@ -440,3 +440,18 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Polar charts** shed the legend and title by the same rules; they have no compact layout.
 - **Deterministic thresholds, no hysteresis:** a chart resized across a threshold switches at
   the same size both ways.
+
+
+## Visual snapshots
+
+- **What:** `SnapshotTests` lays out 18 reference charts with the approximate text measurer and
+  writes them with `SvgExporter` (light theme, sans-serif), compared as text with
+  `tests/RioCharts.Tests/Snapshots/*.svg`.
+- **Deterministic by design:** no Skia measuring or rasterizing (fonts differ per OS), invariant
+  or fixed cultures, a fixed viewer time zone, and numbers rounded by `SvgWriter.N`. The Test
+  workflow runs them on Linux; development is on Windows.
+- **No library:** a 30-line comparer instead of Verify, so there is no diff tool launching and no
+  extra dependency. A mismatch writes `name.received.svg` (git-ignored) and fails;
+  `RIOCHARTS_ACCEPT_SNAPSHOTS=1` accepts. A new case writes its snapshot and fails once, so every
+  baseline gets looked at.
+- **Not covered:** the Blazor SVG renderer's own markup (covered by bUnit tests) and PNG output.

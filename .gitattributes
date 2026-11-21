@@ -61,3 +61,5 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+# Snapshots are compared as text with normalized line endings; keep them LF in the repository.
+tests/RioCharts.Tests/Snapshots/*.svg text eol=lf
