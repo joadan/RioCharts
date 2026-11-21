@@ -62,7 +62,56 @@ public static partial class ChartLayout
         string ColorOf(string category) => ThemeTokens.Series(categories.IndexOf(category));
         bool Hidden(string category) => options.HiddenSeries?.Contains(category) == true;
 
-        var legendEntries = categories.Select(c => new LegendEntry(c, c, ColorOf(c), type, !Hidden(c), false)).ToList();
+        // Pies: categories grouped into "Other" in every ring they appear in get one "Other" legend item.
+        var pieRings = type == SeriesType.Pie
+            ? polar.Select(r => (Ring: r, Pie: PieSlices(r, labelsPerSeries[r], Hidden, ColorOf, texts, out _))).ToList()
+            : [];
+        var shown = pieRings.SelectMany(p => p.Pie.Slices).Where(s => s.Index >= 0).Select(s => s.Label).ToHashSet(StringComparer.Ordinal);
+        var grouped = pieRings.SelectMany(p => p.Pie.Grouped).Select(s => s.Label).Where(l => !shown.Contains(l)).ToHashSet(StringComparer.Ordinal);
+        var hasOther = pieRings.Any(p => p.Pie.Grouped.Count > 0);
+
+        string SliceTip(string category)
+        {
+            var parts = new List<string>();
+            foreach (var r in polar)
+            {
+                var i = Array.IndexOf(labelsPerSeries[r], category);
+                if (i < 0 || !double.IsFinite(r.Data.Y[i]))
+                {
+                    continue;
+                }
+
+                var v = r.Data.Y[i];
+                var value = ValueFormatter.Format(v, culture, r.Spec.Format ?? "");
+                var total = pieRings.FirstOrDefault(p => p.Ring == r).Pie.Total;
+                var text = total > 0 && v > 0 ? $"{value} ({Percent(v / total, culture)})" : value;
+                parts.Add(polar.Count > 1 ? $"{r.Spec.DisplayName} {text}" : text);
+            }
+
+            return $"{category}: {(parts.Count > 0 ? string.Join(", ", parts) : texts.NoData)}";
+        }
+
+        string OtherTip()
+        {
+            var lines = new List<string>();
+            foreach (var (r, pie) in pieRings.Where(p => p.Pie.Grouped.Count > 0))
+            {
+                var sum = pie.Grouped.Sum(s => s.Value);
+                var name = polar.Count > 1 ? $"{texts.Other} ({r.Spec.DisplayName})" : texts.Other;
+                lines.Add($"{name}: {ValueFormatter.Format(sum, culture, r.Spec.Format ?? "")} ({Percent(sum / pie.Total, culture)})");
+                lines.AddRange(pie.Grouped.Select(s => $"{s.Label} {ValueFormatter.Format(s.Value, culture, r.Spec.Format ?? "")} ({Percent(s.Value / pie.Total, culture)})"));
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        var legendEntries = categories.Where(c => !grouped.Contains(c))
+            .Select(c => new LegendEntry(c, c, ColorOf(c), type, !Hidden(c), false, SliceTip(c)))
+            .ToList();
+        if (hasOther || Hidden(OtherSliceKey))
+        {
+            legendEntries.Add(new LegendEntry(OtherSliceKey, texts.Other, OtherColor, type, !Hidden(OtherSliceKey), false, hasOther ? OtherTip() : null));
+        }
         var showLegend = spec.Legend.Mode switch
         {
             LegendMode.Show => legendEntries.Count > 0,
@@ -232,6 +281,61 @@ public static partial class ChartLayout
 
     // ---------- Pie and donut ----------
 
+    /// <summary>The legend key of the "Other" slice (hide it with this id in HiddenSeries).</summary>
+    public const string OtherSliceKey = "rio:other";
+
+    private static readonly string OtherColor = ThemeTokens.Series(ThemeTokens.SeriesColorCount - 1);
+
+    /// <summary>
+    /// A ring's slices: positive values of visible categories, slices under GroupSmallSlices grouped
+    /// into one "Other" slice (index -1) unless it is hidden. Total: the visible slices' sum.
+    /// </summary>
+    private static (List<Slice> Slices, double Total, List<Slice> Grouped) PieSlices(Resolved r, string[] labels, Func<string, bool> hidden,
+        Func<string, string> colorOf, ChartTexts texts, out bool skippedNegative)
+    {
+        var slices = new List<Slice>();
+        skippedNegative = false;
+        for (var i = 0; i < r.Data.Count; i++)
+        {
+            var v = r.Data.Y[i];
+            var label = labels[i];
+            if (!double.IsFinite(v) || hidden(label))
+            {
+                continue;
+            }
+
+            if (v <= 0)
+            {
+                skippedNegative |= v < 0;
+                continue;
+            }
+
+            slices.Add(new Slice(label, i, v, colorOf(label)));
+        }
+
+        var total = slices.Sum(s => s.Value);
+        List<Slice> grouped = [];
+        if (r.Spec.GroupSmallSlices is > 0 and var threshold && total > 0)
+        {
+            var tiny = slices.Where(s => s.Value / total < threshold).ToList();
+            if (tiny.Count > 1)
+            {
+                grouped = tiny;
+                slices = slices.Except(tiny).ToList();
+                if (hidden(OtherSliceKey))
+                {
+                    total -= tiny.Sum(s => s.Value);
+                }
+                else
+                {
+                    slices.Add(new Slice(texts.Other, -1, tiny.Sum(s => s.Value), OtherColor));
+                }
+            }
+        }
+
+        return (slices, total, grouped);
+    }
+
     private static bool LayoutPies(List<Resolved> rings, Dictionary<Resolved, string[]> labels, RectF plot, Func<string, string> colorOf,
         Func<string, bool> hidden, CultureInfo culture, ChartTexts texts, ITextMeasurer measure, double font, StyleTable styles, List<string> warnings,
         List<Node> seriesNodes, List<Node> labelNodes, List<TooltipSlice> tooltip, List<(string, double)> described)
@@ -240,39 +344,10 @@ public static partial class ChartLayout
         var slicesPerRing = new List<(Resolved Ring, List<Slice> Slices, double Total)>();
         foreach (var r in rings)
         {
-            var slices = new List<Slice>();
-            var skipped = false;
-            for (var i = 0; i < r.Data.Count; i++)
-            {
-                var v = r.Data.Y[i];
-                var label = labels[r][i];
-                if (!double.IsFinite(v) || hidden(label))
-                {
-                    continue;
-                }
-
-                if (v <= 0)
-                {
-                    skipped |= v < 0;
-                    continue;
-                }
-
-                slices.Add(new Slice(label, i, v, colorOf(label)));
-            }
-
+            var (slices, total, _) = PieSlices(r, labels[r], hidden, colorOf, texts, out var skipped);
             if (skipped)
             {
                 warnings.Add($"series '{r.Spec.Id}': negative values cannot be shown in a pie and are left out.");
-            }
-
-            var total = slices.Sum(s => s.Value);
-            if (r.Spec.GroupSmallSlices is > 0 and var threshold && total > 0)
-            {
-                var tiny = slices.Where(s => s.Value / total < threshold).ToList();
-                if (tiny.Count > 1)
-                {
-                    slices = slices.Except(tiny).Append(new Slice(texts.Other, -1, tiny.Sum(s => s.Value), ThemeTokens.Series(ThemeTokens.SeriesColorCount - 1))).ToList();
-                }
             }
 
             if (slices.Count > 0)

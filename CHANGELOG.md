@@ -12,6 +12,13 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Legend tooltips: hovering or focusing a legend item shows a summary: a series' range, last
+  value and trend (`ChartDescriber.DescribeSeries`), a slice's value and share, and for "Other"
+  every slice it holds. Interactive charts show it in a card like the chart tooltip; exports and
+  static pages get an SVG `<title>`. `LegendEntry.Tooltip` has the text.
+- Pies: slices grouped by `GroupSmallSlices` are one "Other" legend item (in the slice's color)
+  instead of listing each grouped slice; "Other" can be hidden from the legend like any slice
+  (`ChartLayout.OtherSliceKey` in `HiddenSeries`).
 - Visual snapshot tests: 18 reference charts (all series types, axes, annotations, time zones,
   compact, auto-compact, languages, edge cases) are compared as SVG with
   `tests/RioCharts.Tests/Snapshots`; a Test workflow runs all tests on Linux for every push.

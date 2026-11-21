@@ -31,7 +31,9 @@ export function init(container, dotnet) {
         model: null,
         svg: container.querySelector('svg.rio-chart-svg'),
         hover: container.querySelector('svg.rio-hover'),
-        tip: container.querySelector('.rio-tooltip'),
+        tip: container.querySelector('.rio-tooltip:not(.rio-legend-tip)'),
+        legendTip: container.querySelector('.rio-legend-tip'),
+        legendItem: null,
         drag: null,
         wheel: null,
         group: null,
@@ -88,6 +90,8 @@ export function init(container, dotnet) {
     state.onKey = e => keyDown(state, e);
     state.onBlur = () => blurKeys(state);
     state.onMenuKey = e => menuKey(e);
+    state.onTipOver = e => showLegendTip(state, e.target);
+    state.onTipOut = e => hideLegendTip(state, e.relatedTarget);
     container.addEventListener('keydown', state.onMenuKey);
     state.onWheel = e => wheel(state, e);
     state.onDblClick = e => {
@@ -110,6 +114,10 @@ export function init(container, dotnet) {
         svg.addEventListener('wheel', state.onWheel, { passive: false });
         svg.addEventListener('keydown', state.onKey);
         svg.addEventListener('blur', state.onBlur);
+        svg.addEventListener('pointerover', state.onTipOver);
+        svg.addEventListener('pointerout', state.onTipOut);
+        svg.addEventListener('focusin', state.onTipOver);
+        svg.addEventListener('focusout', state.onTipOut);
     }
 
     states.set(container, state);
@@ -192,6 +200,10 @@ export function dispose(container) {
             svg.removeEventListener('wheel', state.onWheel);
             svg.removeEventListener('keydown', state.onKey);
             svg.removeEventListener('blur', state.onBlur);
+            svg.removeEventListener('pointerover', state.onTipOver);
+            svg.removeEventListener('pointerout', state.onTipOut);
+            svg.removeEventListener('focusin', state.onTipOver);
+            svg.removeEventListener('focusout', state.onTipOut);
         }
 
         states.delete(container);
@@ -841,6 +853,44 @@ function showTemplate(state) {
     const a = state.tipAnchor, tip = state.tip;
     if (a && tip && state.model && state.model.template && (tip.firstElementChild || tip.textContent.trim())) {
         placeTooltip(state, a.pos, a.x, a.y);
+    }
+}
+
+// ---------- Legend tooltips ----------
+
+/** Shows a legend item's summary (data-tip) under it, or above when there is no room. */
+function showLegendTip(state, target) {
+    const tip = state.legendTip;
+    const item = tip && target && target.closest ? target.closest('[data-tip]') : null;
+    if (!item || !state.svg.contains(item) || item === state.legendItem) {
+        return;
+    }
+
+    state.legendItem = item;
+    tip.textContent = item.getAttribute('data-tip');
+    tip.classList.add('rio-tooltip-visible');
+    const c = state.container.getBoundingClientRect();
+    const r = item.getBoundingClientRect();
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    const cw = state.container.clientWidth, ch = state.container.clientHeight;
+    const left = Math.max(0, Math.min(r.left - c.left, cw - w));
+    let top = r.bottom - c.top + 6;
+    if (top + h > ch) {
+        top = r.top - c.top - 6 - h;
+    }
+
+    tip.style.transform = `translate(${Math.round(left)}px, ${Math.round(Math.max(0, top))}px)`;
+}
+
+function hideLegendTip(state, related) {
+    const item = related && related.closest ? related.closest('[data-tip]') : null;
+    if (item && item === state.legendItem) {
+        return; // moving within the same item
+    }
+
+    state.legendItem = null;
+    if (state.legendTip) {
+        state.legendTip.classList.remove('rio-tooltip-visible');
     }
 }
 

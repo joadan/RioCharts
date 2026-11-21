@@ -455,3 +455,22 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `RIOCHARTS_ACCEPT_SNAPSHOTS=1` accepts. A new case writes its snapshot and fails once, so every
   baseline gets looked at.
 - **Not covered:** the Blazor SVG renderer's own markup (covered by bUnit tests) and PNG output.
+
+
+## Legend tooltips and the pie's "Other"
+
+- **Grouping before the legend:** `PieSlices` decides per ring which slices fall under
+  `GroupSmallSlices`; `ComputePolar` runs it before building the legend. A category grouped in
+  every ring it appears in is left out of the legend, and one "Other" item (key
+  `ChartLayout.OtherSliceKey`, color of the last series token like the slice) takes its place.
+  Hiding "Other" leaves its slices out and the shares are of the visible slices. Colors of the other
+  categories keep their index, so they do not shift.
+- **Tooltip text** is built in Core (`LegendEntry.Tooltip`, lines separated by 
+): a series uses
+  `ChartDescriber.DescribeSeries`, the same text as the compact summary; a slice gets its value and
+  share per ring; "Other" lists each grouped slice.
+- **Rendering:** the scene puts it in the legend group's `Title`. The Skia exporter and static or
+  prerendered Blazor charts write an SVG `<title>` (a native tooltip). Interactive charts render
+  `data-tip` and `aria-description` instead (`SvgSceneRenderer.LegendTips`), and the JS module shows
+  it in a `.rio-legend-tip` card under the item on pointerover and focusin, so there is no second,
+  native tooltip.

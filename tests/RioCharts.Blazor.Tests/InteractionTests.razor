@@ -99,4 +99,19 @@
 
         Assert.False(raised);
     }
+
+    [Fact]
+    public void Legend_items_carry_their_summary_for_the_styled_tooltip()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var item = cut.Find(".rio-legend-item");
+        Assert.StartsWith("Supply: ", item.GetAttribute("data-tip"));
+        Assert.Equal(item.GetAttribute("data-tip"), item.GetAttribute("aria-description"));
+        Assert.Empty(item.QuerySelectorAll("title")); // no second, native tooltip
+        Assert.Single(cut.FindAll(".rio-legend-tip"));
+    }
 }

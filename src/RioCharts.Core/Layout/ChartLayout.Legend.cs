@@ -93,6 +93,7 @@ public static partial class ChartLayout
             Class = "rio-legend-item" + (entry.Visible ? "" : " rio-legend-off") + (entry.IsEmpty ? " rio-legend-empty" : ""),
             Interaction = new NodeInteraction("legend", entry.SeriesId) { Pressed = entry.Visible },
             AriaLabel = entry.Label + state,
+            Title = entry.Tooltip,
         };
     }
 }

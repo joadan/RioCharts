@@ -25,14 +25,22 @@ public sealed class SvgSceneRenderer : ComponentBase
     /// <summary>Leave out the series groups (they are drawn on a canvas instead).</summary>
     [Parameter] public bool OmitSeries { get; set; }
 
-    private bool _renderedOmit;
+    /// <summary>
+    /// Legend items carry their summary as data-tip (shown as a styled tooltip by the JS module)
+    /// instead of an SVG title, which would show a second, native tooltip.
+    /// </summary>
+    [Parameter] public bool LegendTips { get; set; }
 
-    protected override bool ShouldRender() => !ReferenceEquals(Scene, _rendered) || OmitSeries != _renderedOmit;
+    private bool _renderedOmit;
+    private bool _renderedTips;
+
+    protected override bool ShouldRender() => !ReferenceEquals(Scene, _rendered) || OmitSeries != _renderedOmit || LegendTips != _renderedTips;
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         _rendered = Scene;
         _renderedOmit = OmitSeries;
+        _renderedTips = LegendTips;
         _clipCounter = 0;
         if (Scene is null)
         {
@@ -145,7 +153,12 @@ public sealed class SvgSceneRenderer : ComponentBase
             b.AddAttribute(61, "data-key", g.Key);
         }
 
-        if (g.Title is not null)
+        if (g.Title is not null && LegendTips && g.Interaction?.Kind == "legend")
+        {
+            b.AddAttribute(62, "data-tip", g.Title);
+            b.AddAttribute(63, "aria-description", g.Title);
+        }
+        else if (g.Title is not null)
         {
             b.OpenElement(66, "title");
             b.AddContent(67, g.Title);

@@ -29,7 +29,7 @@
          aria-describedby="@(keys ? $"{_id}-desc {_id}-keys" : _id + "-desc")">
         <title>@label</title>
         <desc id="@(_id + "-desc")">@scene.Description</desc>
-        <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" OmitSeries="UsesCanvas" />
+        <SvgSceneRenderer Scene="scene" IdPrefix="@_id" OnInteraction="HandleInteraction" OmitSeries="UsesCanvas" LegendTips="Live" />
     </svg>
     @if (keys)
     {
@@ -48,6 +48,8 @@
            With a TooltipTemplate, Blazor fills the tooltip and JS only shows and places it. *@
         <svg class="rio-hover" aria-hidden="true" width="100%" height="@SvgWriter.N(scene.Height)"
              viewBox="0 0 @SvgWriter.N(scene.Width) @SvgWriter.N(scene.Height)"></svg>
+        @* The legend items' summaries, shown by the JS module on hover and focus. *@
+        <div class="rio-tooltip rio-legend-tip" aria-hidden="true"></div>
         <div class="rio-tooltip" aria-hidden="true">
             @if (TooltipTemplate is not null)
             {

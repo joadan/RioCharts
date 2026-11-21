@@ -87,6 +87,29 @@ public class StaticRenderingTests
     }
 
     [Fact]
+    public async Task Static_legend_items_have_a_native_title()
+    {
+        RenderFragment two = builder =>
+        {
+            Series(builder);
+            builder.OpenComponent<LineSeries<Reading>>(10);
+            builder.AddAttribute(11, nameof(LineSeries<Reading>.Name), "Extract");
+            builder.AddAttribute(12, nameof(LineSeries<Reading>.XValue), (Func<Reading, object?>)(r => r.Time));
+            builder.AddAttribute(13, nameof(LineSeries<Reading>.YValue), (Func<Reading, double?>)(r => r.Value + 3));
+            builder.CloseComponent();
+        };
+
+        var (html, _) = await RenderAsync(new()
+        {
+            [nameof(RioChart<Reading>.Items)] = Supply,
+            [nameof(RioChart<Reading>.ChildContent)] = two,
+        });
+
+        Assert.Contains("<title>Supply: ", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-tip", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_compact_non_interactive_chart_renders_statically_at_its_width()
     {
         var (html, js) = await RenderAsync(new()

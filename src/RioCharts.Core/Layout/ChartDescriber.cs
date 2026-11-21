@@ -76,34 +76,44 @@ public static class ChartDescriber
 
         foreach (var (s, d, _) in visible)
         {
-            var points = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i])).Select(i => (X: d.X[i], Y: d.Y[i])).ToList();
-            if (points.Count == 0)
+            if (DescribeSeries(spec, s, d, xKind, culture, texts) is { } text)
             {
-                continue;
+                sb.Append(sb.Length > 0 ? " " : "").Append(text).Append('.');
             }
+        }
 
-            var axis = s.YAxisId is { } id ? spec.YAxes.FirstOrDefault(a => a.Id == id) ?? spec.Y : spec.Y;
-            var format = s.Format ?? axis.Format;
-            string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
-            var (min, max) = (points.Min(p => p.Y), points.Max(p => p.Y));
-            if (sb.Length > 0)
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// One series: its range, last value and trend, formatted like the tooltips, e.g. "Room: 18.2 °C
+    /// to 20.8 °C, last 19.4 °C, rising" (no last value or trend on category axes). Null without data.
+    /// Used by compact charts and the legend's tooltips.
+    /// </summary>
+    public static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts? texts = null)
+    {
+        texts ??= ChartTexts.For(culture);
+        var points = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i])).Select(i => (X: d.X[i], Y: d.Y[i])).ToList();
+        if (points.Count == 0)
+        {
+            return null;
+        }
+
+        var axis = s.YAxisId is { } id ? spec.YAxes.FirstOrDefault(a => a.Id == id) ?? spec.Y : spec.Y;
+        var format = s.Format ?? axis.Format;
+        string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
+        var (min, max) = (points.Min(p => p.Y), points.Max(p => p.Y));
+        var sb = new StringBuilder();
+        sb.Append(s.DisplayName).Append(": ");
+        sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
+        if (xKind != XKind.Category && points.Count > 1)
+        {
+            sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, F(points[^1].Y)));
+            var trend = ComputeTrend(points);
+            if (trend != Trend.None)
             {
-                sb.Append(' ');
+                sb.Append(", ").Append(TrendText(trend, texts));
             }
-
-            sb.Append(s.DisplayName).Append(": ");
-            sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
-            if (xKind != XKind.Category && points.Count > 1)
-            {
-                sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, F(points[^1].Y)));
-                var trend = ComputeTrend(points);
-                if (trend != Trend.None)
-                {
-                    sb.Append(", ").Append(TrendText(trend, texts));
-                }
-            }
-
-            sb.Append('.');
         }
 
         return sb.ToString();

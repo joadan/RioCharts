@@ -40,7 +40,8 @@ public sealed record LayoutOptions
     public string? ViewerTimeZone { get; init; }
 }
 
-public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty);
+/// <summary>A legend item. <paramref name="Tooltip"/>: a summary shown on hover (lines separated by \n).</summary>
+public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty, string? Tooltip = null);
 
 public sealed class ChartLayoutResult
 {
@@ -225,7 +226,8 @@ public static partial class ChartLayout
         }
 
         var legendEntries = resolved
-            .Select(r => new LegendEntry(r.Spec.Id, r.Spec.DisplayName, r.Color, r.Spec.Type, r.Visible, r.Empty))
+            .Select(r => new LegendEntry(r.Spec.Id, r.Spec.DisplayName, r.Color, r.Spec.Type, r.Visible, r.Empty,
+                ChartDescriber.DescribeSeries(spec, r.Spec, r.Data, xKind, culture, texts) ?? $"{r.Spec.DisplayName}: {texts.NoData}"))
             .ToList();
         var showLegend = !compact && spec.Legend.Mode switch
         {

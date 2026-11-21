@@ -10,7 +10,7 @@
 
 <Example Title="Tooltip, legend and point clicks" Code="@ClickCode">
     <Description>
-        <p>One tooltip per x lists every series. Click a legend item to hide a series (<code>@@bind-HiddenSeries</code> keeps it in your page); click a point to get its item.</p>
+        <p>One tooltip per x lists every series. Hover or focus a legend item for a summary of its series (range, last value, trend; for slices the value and share). Click it to hide the series (<code>@@bind-HiddenSeries</code> keeps it in your page); click a point to get its item.</p>
     </Description>
     <ChildContent>
         <RioChart TItem="Reading" YAxis="Celsius" @bind-HiddenSeries="_hidden" OnPointClick="e => _point = e">
