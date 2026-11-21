@@ -606,7 +606,7 @@ Design.md "Box plot" (milestone 7).
   whisker); with `q1` and `q3` each row is a box, otherwise boxes come from y per x. Raw values
   never trigger the "x repeats, using sum" aggregate.
 - **Drawing:** a band slot per series like grouped bars (never stacked, also with `Stack`), boxes
-  at most 56 px wide, fill 0.22 with a 1.5 px outline, a 2.5 px median line, 1.25 px whiskers
+  at most 56 px wide, fill 0.22 with a 1 px outline, a 1.75 px median line, 1 px whiskers
   without caps, outliers as hollow dots (r 2.5) in the surface color. The y domain covers the
   extremes, outliers included, and does not force zero.
 - **Tooltip:** the median as the row's value, then Max, Upper quartile, Median, Lower quartile,
@@ -634,7 +634,7 @@ Design.md "Candlestick" (milestone 7).
   floor it and keeps the caller's selector; a `DataSettings` hook in `SeriesBase` rebuilds the
   data when `Bucket` changes (before, only new `Items`, aggregates or `DataVersion` did).
 - **Drawing:** a band slot per series like bars (never stacked), bodies at most 32 px. Rising
-  (close ≥ open) is a light fill (0.22) with a `--rio-positive` outline, falling is solid
+  (close ≥ open) is a light fill (0.22) with a 1 px `--rio-positive` outline (wicks 1 px too), falling is solid
   `--rio-negative`, so the direction does not depend on color alone. The wick is drawn above and
   below the body, not through it. (Hollow bodies were tried first: when narrow they read as
   double lines.) New theme tokens with light and dark defaults in

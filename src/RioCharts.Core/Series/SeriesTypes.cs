@@ -546,10 +546,10 @@ internal sealed class BoxPlotSeriesType : ISeriesType
         c.BarWidth = width;
         c.BarOffset = -c.SlotWidth / 2 + c.SlotIndex * slot + slot / 2;
 
-        var boxStyle = c.Styles.Add($"series-{c.ColorIndex}-box", new Style { Fill = c.Color, FillOpacity = 0.22f, Stroke = c.Color, StrokeWidth = 1.5f });
-        var whiskerStyle = c.Styles.Add($"series-{c.ColorIndex}-whisker", new Style { Stroke = c.Color, StrokeWidth = 1.25f, Fill = "none" });
-        var medianStyle = c.Styles.Add($"series-{c.ColorIndex}-median", new Style { Stroke = c.Color, StrokeWidth = 2.5f, Fill = "none" });
-        var outlierStyle = c.Styles.Add($"series-{c.ColorIndex}-outlier", new Style { Fill = ThemeTokens.Surface, Stroke = c.Color, StrokeWidth = 1.25f });
+        var boxStyle = c.Styles.Add($"series-{c.ColorIndex}-box", new Style { Fill = c.Color, FillOpacity = 0.22f, Stroke = c.Color, StrokeWidth = 1f });
+        var whiskerStyle = c.Styles.Add($"series-{c.ColorIndex}-whisker", new Style { Stroke = c.Color, StrokeWidth = 1f, Fill = "none" });
+        var medianStyle = c.Styles.Add($"series-{c.ColorIndex}-median", new Style { Stroke = c.Color, StrokeWidth = 1.75f, Fill = "none" });
+        var outlierStyle = c.Styles.Add($"series-{c.ColorIndex}-outlier", new Style { Fill = ThemeTokens.Surface, Stroke = c.Color, StrokeWidth = 1f });
 
         var boxes = new List<Node>();
         var whiskers = new PathBuilder();
@@ -663,10 +663,10 @@ internal sealed class CandlestickSeriesType : ISeriesType
     public bool UsesSlots => true;
 
     /// <summary>A rising body: a light fill in the rising color with its outline (the wick does not cross it).</summary>
-    internal static Style UpStyle => new() { Fill = ThemeTokens.Positive, FillOpacity = 0.22f, Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f };
+    internal static Style UpStyle => new() { Fill = ThemeTokens.Positive, FillOpacity = 0.22f, Stroke = ThemeTokens.Positive, StrokeWidth = 1f };
 
     /// <summary>A falling body: solid.</summary>
-    internal static Style DownStyle => new() { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f };
+    internal static Style DownStyle => new() { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1f };
 
     public void Build(SeriesBuildContext c)
     {
@@ -687,8 +687,8 @@ internal sealed class CandlestickSeriesType : ISeriesType
 
         var upBody = c.Styles.Add("candle-up", UpStyle);
         var downBody = c.Styles.Add("candle-down", DownStyle);
-        var upWick = c.Styles.Add("candle-up-wick", new Style { Stroke = ThemeTokens.Positive, StrokeWidth = 1.25f, Fill = "none" });
-        var downWick = c.Styles.Add("candle-down-wick", new Style { Stroke = ThemeTokens.Negative, StrokeWidth = 1.25f, Fill = "none" });
+        var upWick = c.Styles.Add("candle-up-wick", new Style { Stroke = ThemeTokens.Positive, StrokeWidth = 1f, Fill = "none" });
+        var downWick = c.Styles.Add("candle-down-wick", new Style { Stroke = ThemeTokens.Negative, StrokeWidth = 1f, Fill = "none" });
 
         var up = new PathBuilder();
         var down = new PathBuilder();
