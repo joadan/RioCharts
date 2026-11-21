@@ -104,6 +104,19 @@ public static class ChartDescriber
         string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
         var (min, max) = (points.Min(p => p.Y), points.Max(p => p.Y));
         var sb = new StringBuilder();
+        if (s.Type == SeriesType.Scatter)
+        {
+            // Points in no order: their number, the y range and whether y rises with x.
+            sb.Append(texts.FillCount(nameof(ChartTexts.SeriesPoints), points.Count, culture, s.DisplayName, points.Count)).Append(", ");
+            sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
+            if (xKind != XKind.Category && ComputeTrend(points) is var t && t != Trend.None)
+            {
+                sb.Append(", ").Append(TrendText(t, texts));
+            }
+
+            return sb.ToString();
+        }
+
         sb.Append(s.DisplayName).Append(": ");
         sb.Append(min == max ? F(min) : texts.Fill(nameof(ChartTexts.ValueRange), culture, F(min), F(max)));
         if (xKind != XKind.Category && points.Count > 1)

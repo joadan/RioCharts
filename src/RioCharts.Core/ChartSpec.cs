@@ -155,6 +155,12 @@ public sealed record SeriesSpec
     [Description("Show values on the chart. Null uses the default: on for pie, donut and radial bar, off otherwise.")]
     public bool? DataLabels { get; init; }
 
+    [Description("Scatter: marker diameter in pixels. Default 7.")]
+    public double? MarkerSize { get; init; }
+
+    [Description("Scatter: draw a dashed least-squares trend line through the points.")]
+    public bool TrendLine { get; init; }
+
     [Description("Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. \"last, max\").")]
     public PointHighlight Highlight { get; init; }
 
@@ -245,6 +251,9 @@ public enum SeriesType
     Bar,
     Pie,
     RadialBar,
+
+    /// <summary>A marker per point, for how two measures relate (e.g. supply against outdoor temperature).</summary>
+    Scatter,
 
     /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

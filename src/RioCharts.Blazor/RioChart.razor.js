@@ -541,6 +541,10 @@ function findShared(m, px) {
 
     const rows = [];
     for (const s of m.series) {
+        if (s.dots) {
+            continue; // scatter points are found in 2D (charts with them are not shared)
+        }
+
         if (s.step) {
             const i = atOrBefore(s.x, anchor);
             if (i >= 0 && anchor <= s.x[s.x.length - 1] + 0.5) {
@@ -587,6 +591,18 @@ function headerOf(rows) {
 function findSingle(m, px, py) {
     let best = null;
     for (const s of m.series) {
+        if (s.dots) {
+            // Scatter: every point within reach in x (x is ascending), the nearest in 2D.
+            for (let j = atOrBefore(s.x, px - 40) + 1; j < s.x.length && s.x[j] <= px + 40; j++) {
+                const d = Math.hypot(s.x[j] - px, s.y[j] - py);
+                if (d <= 40 && (best === null || d < best.d)) {
+                    best = { s, i: j, d };
+                }
+            }
+
+            continue;
+        }
+
         const i = nearest(s.x, s.bar ? px - s.barOffset : px);
         if (i < 0) {
             continue;
@@ -748,7 +764,9 @@ function drawHover(state, rows, m) {
     const p = m.plot;
     const first = rows[0];
     const x = rows.anchor !== undefined ? rows.anchor : first.x !== undefined ? first.x : first.s.x[first.i];
-    if (m.band > 0 && (m.shared || first.s.bar)) {
+    if (first.s.dots) {
+        // Scatter: no crosshair, the point is marked below.
+    } else if (m.band > 0 && (m.shared || first.s.bar)) {
         const w = m.shared ? m.band : first.s.barWidth + 4;
         const cx = m.shared ? x : x + first.s.barOffset;
         g.appendChild(el('rect', {

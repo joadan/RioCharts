@@ -175,6 +175,23 @@ public class SnapshotTests
             Series = [new SeriesSpec { Id = "s", Name = "Supply" }, new SeriesSpec { Id = "e", Name = "Extract" }],
         }, new() { ["s"] = Hourly(48, Supply), ["e"] = Hourly(48, Extract) }, Width: 360, Height: 130),
 
+        ["scatter-trend"] = new(new ChartSpec
+        {
+            X = new AxisSpec { Title = "Outdoor °C" },
+            Y = new AxisSpec { Title = "Supply °C" },
+            Series =
+            [
+                new SeriesSpec { Id = "s", Name = "AHU 1", Type = SeriesType.Scatter, TrendLine = true },
+                new SeriesSpec { Id = "t", Name = "AHU 2", Type = SeriesType.Scatter, MarkerSize = 5 },
+            ],
+        }, new()
+        {
+            ["s"] = SeriesData.From(Enumerable.Range(0, 40).Select(i => -10 + i * 0.8 + Math.Sin(i * 2.3) * 2).ToArray(),
+                Enumerable.Range(0, 40).Select(i => 24 - 0.22 * (-10 + i * 0.8) + Math.Cos(i * 1.7) * 0.8).ToArray()),
+            ["t"] = SeriesData.From(Enumerable.Range(0, 30).Select(i => -8 + i * 0.9 + Math.Cos(i * 1.9) * 2).ToArray(),
+                Enumerable.Range(0, 30).Select(i => 21 - 0.1 * (-8 + i * 0.9) + Math.Sin(i * 2.1) * 0.6).ToArray()),
+        }),
+
         ["empty-swedish"] = new(new ChartSpec { Title = "Tilluft", Series = [new SeriesSpec { Id = "s", Name = "Tilluft" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 

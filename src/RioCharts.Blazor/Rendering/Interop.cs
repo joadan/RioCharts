@@ -35,7 +35,7 @@ internal sealed record ScaleModel(double D0, double D1, double R0, double R1);
 
 internal sealed record SeriesModel(
     string Id, string Name, string Color, bool Bar, bool Step, float Snap, float BarWidth, float BarOffset,
-    float[] X, float[] Y, int[] Index, string[] Xl, string[] V);
+    float[] X, float[] Y, int[] Index, string[] Xl, string[] V, bool Dots = false);
 
 internal sealed record SliceModel(
     string Id, int Index, string Header, string Label, string Value, string Color,

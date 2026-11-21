@@ -199,6 +199,13 @@ public static partial class ChartLayout
         var (xMin, xMax, barSpacing) = xKind == XKind.Category
             ? (0, 0, 0)
             : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.ExpandsDomain));
+        var scatter = drawable.Where(r => r.Spec.Type == SeriesType.Scatter).ToList();
+        if (scatter.Count > 0 && xKind == XKind.Numeric && options.XRange is null)
+        {
+            // Scatter: a nice x range too, so points at the extremes are not on the plot edge.
+            var nice = NiceTicks.NiceDomain(xMin, xMax, 10);
+            (xMin, xMax) = (spec.X.Min ?? nice.Min, spec.X.Max ?? nice.Max);
+        }
         (double Min, double Max)? fullX = xKind == XKind.Category ? null : (xMin, xMax);
         (double Min, double Max)? window = null;
         if (fullX is not null && options.XRange is { } range && range.Max > range.Min && double.IsFinite(range.Min) && double.IsFinite(range.Max))
@@ -477,7 +484,7 @@ public static partial class ChartLayout
             if (context.Hits is { } hits)
             {
                 hitTest.Add(hits);
-                tooltipSeries.Add(TooltipFor(r, hitTest.Series[^1], context, formatX, culture, xKind, xBand, plotWidth));
+                tooltipSeries.Add(TooltipFor(r, hitTest.Series[^1], context, formatX, culture, xKind, xBand, plotWidth, spec.X.Title));
             }
 
             if (context.Labels.Count > 0)
@@ -516,7 +523,7 @@ public static partial class ChartLayout
         plotNodes.AddRange(above);
         var seriesLayer = new GroupNode(
         [
-            new GroupNode(plotNodes, Clip: Inflate(plot, 2)) { Class = "rio-plot" },
+            new GroupNode(plotNodes, Clip: Inflate(plot, (float)Math.Max(2, scatter.Count > 0 ? scatter.Max(r => ScatterSeriesType.Radius(r.Spec)) + 1 : 0))) { Class = "rio-plot" },
             new GroupNode(labelNodes) { Class = "rio-labels" },
         ])
         {
@@ -546,7 +553,8 @@ public static partial class ChartLayout
             Scene = scene,
             Plot = plot,
             HitTest = hitTest,
-            Tooltip = new TooltipModel(plot, spec.Tooltip.Enabled && hasData, spec.Tooltip.Shared, (float)bandWidth, tooltipSeries),
+            // Scatter points are found in 2D (nearest point), not by x, so a chart with them is not shared.
+            Tooltip = new TooltipModel(plot, spec.Tooltip.Enabled && hasData, spec.Tooltip.Shared && scatter.Count == 0, (float)bandWidth, tooltipSeries),
             Legend = legendEntries,
             Warnings = warnings,
             XKind = xKind,
@@ -786,12 +794,13 @@ public static partial class ChartLayout
     }
 
     private static TooltipSeries TooltipFor(Resolved r, HitTestIndex.SeriesHits hits, SeriesBuildContext context, Func<double, string> formatX,
-        CultureInfo culture, XKind kind, BandScale? band, double plotWidth)
+        CultureInfo culture, XKind kind, BandScale? band, double plotWidth, string? xAxisTitle = null)
     {
         var n = hits.X.Length;
         var xLabels = new string[n];
         var values = new string[n];
         var format = r.Spec.Format ?? r.Axis.Spec.Format;
+        var xTitle = r.Spec.Type == SeriesType.Scatter && !string.IsNullOrWhiteSpace(xAxisTitle) ? xAxisTitle : null;
         for (var i = 0; i < n; i++)
         {
             var j = hits.Index[i];
@@ -799,6 +808,10 @@ public static partial class ChartLayout
             xLabels[i] = kind == XKind.Category
                 ? ((int)x is var c && c >= 0 && c < r.Data.Categories.Count ? r.Data.Categories[c] : "")
                 : formatX(x);
+            if (xTitle is not null)
+            {
+                xLabels[i] = $"{xTitle}: {xLabels[i]}"; // scatter: say what the x value is
+            }
             values[i] = ValueFormatter.Format(r.Data.Y[j], culture, format);
         }
 

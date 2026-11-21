@@ -1,0 +1,74 @@
+@page "/scatter"
+
+<PageTitle>Scatter · RioCharts</PageTitle>
+
+<h1>Scatter</h1>
+<p class="lead">
+    A marker per point shows how two measures relate: supply air against outdoor temperature, heating power against the weather, fan
+    power against airflow. The order of the points does not matter.
+</p>
+
+<Example Title="Outdoor compensation" Code="@CompensationCode">
+    <Description>
+        <p>
+            Each unit should raise its supply temperature when it is cold outside. <code>TrendLine</code> draws the least-squares line
+            through the points: AHU 1 follows its curve, AHU 2's line is flat, so it does not compensate. Hover a point: the tooltip shows the
+            nearest point, not everything at that x.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="Hourly" Title="Supply air against outdoor temperature" XAxis="_outdoorAxis" YAxis="_supplyAxis">
+            <ScatterSeries Name="AHU 1" XValue="w => w.Outdoor" YValue="w => w.Supply" Format="0.0 °C" TrendLine="true" />
+            <ScatterSeries Name="AHU 2" XValue="w => w.Outdoor" YValue="w => w.Supply2" Format="0.0 °C" TrendLine="true" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Energy signature" Code="@SignatureCode">
+    <Description>
+        <p>
+            Heating power against outdoor temperature: it falls as it gets warmer and stops around 16 °C. Smaller markers keep 336 hourly
+            points readable; the markers are translucent, so dense areas look darker.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="Hourly" XAxis="_outdoorAxis" YAxis="_heatingAxis" Height="280">
+            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="5" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>Options</h2>
+<div class="table-scroll">
+    <table class="docs">
+        <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+        <tr><td><code>MarkerSize</code></td><td>7</td><td>Marker diameter in pixels.</td></tr>
+        <tr><td><code>TrendLine</code></td><td>false</td><td>A dashed least-squares line from the first to the last point.</td></tr>
+        <tr><td><code>XValue</code></td><td></td><td>Numbers or times. Numeric axes get nice ranges with room at the edges.</td></tr>
+        <tr><td>JSON</td><td></td><td><code>"type": "scatter"</code> (also <code>"points"</code>), with <code>"markerSize"</code> and <code>"trendLine"</code>.</td></tr>
+    </table>
+</div>
+<p>
+    A chart with scatter series finds the nearest point in both directions, so its tooltip is not shared. Scatter series work with line
+    series in the same chart (e.g. a design curve), zoom, keyboard navigation, export and the canvas layer.
+</p>
+
+@code {
+    private readonly AxisSpec _outdoorAxis = new() { Title = "Outdoor °C" };
+    private readonly AxisSpec _supplyAxis = new() { Title = "Supply °C" };
+    private readonly AxisSpec _heatingAxis = new() { Title = "kW" };
+
+    private const string CompensationCode = """
+        <RioChart Items="hourly" Title="Supply air against outdoor temperature"
+                  XAxis="@(new AxisSpec { Title = "Outdoor °C" })" YAxis="@(new AxisSpec { Title = "Supply °C" })">
+            <ScatterSeries Name="AHU 1" XValue="w => w.Outdoor" YValue="w => w.Supply" Format="0.0 °C" TrendLine="true" />
+            <ScatterSeries Name="AHU 2" XValue="w => w.Outdoor" YValue="w => w.Supply2" Format="0.0 °C" TrendLine="true" />
+        </RioChart>
+        """;
+
+    private const string SignatureCode = """
+        <RioChart Items="hourly" XAxis="@(new AxisSpec { Title = "Outdoor °C" })" YAxis="@(new AxisSpec { Title = "kW" })">
+            <ScatterSeries Name="Heating" XValue="w => w.Outdoor" YValue="w => w.Heating" Format="0.0 kW" MarkerSize="5" />
+        </RioChart>
+        """;
+}

@@ -490,3 +490,20 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Guard:** a bUnit test renders a chart that uses every JS call and fails if any argument is not
   a primitive, `byte[]`, `ElementReference` or `DotNetObjectReference`. A published (trimmed) docs
   build was checked in the browser before and after.
+
+
+## Scatter
+
+- **Type:** `ScatterSeriesType` draws one path of circles (translucent fill, no outline), every
+  visible point: no downsampling, since each point is data. Default layer 3, above lines.
+- **Trend line:** least squares over the drawn points in data units, drawn from the first to the
+  last point's x (dashed, series color). No equation or r²: the legend tooltip says rising/falling.
+- **Axes:** numeric x gets `NiceDomain(min, max, 10)` (steps of 5 for a typical outdoor range),
+  unless zoomed or `X.Min/Max` are set; y has no forced zero. The plot clip grows by the marker
+  radius so edge points are not cut.
+- **Tooltip:** scatter points are hit-tested in 2D (all points within 40 px in x, nearest by
+  distance; x is sorted so the scan is short). A chart with any scatter series is not shared, since
+  "everything at this x" means little for unordered points. No crosshair; the hovered point gets a
+  ring. The tooltip header is "x axis title: x" for scatter.
+- **Not yet:** bubble (a third, size field: `SeriesData` has no column for it), per-point colors,
+  and log axes.

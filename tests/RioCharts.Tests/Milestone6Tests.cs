@@ -65,7 +65,7 @@ public class Milestone6Tests
     }
 
     [Theory]
-    [InlineData("""{ "series": [{ "type": "scatter", "x": "a", "y": "b" }] }""", "series[0].type", "valid: line, area, bar")]
+    [InlineData("""{ "series": [{ "type": "sankey", "x": "a", "y": "b" }] }""", "series[0].type", "valid: line, area, bar, scatter")]
     [InlineData("""{ "series": [{ "x": "a", "y": "b", "timeBucket": "fortnight" }] }""", "series[0].timeBucket", "hour")]
     [InlineData("""{ "legend": { "mode": "sometimes" } }""", "legend.mode", "auto, show, hide")]
     [InlineData("""[1, 2]""", "$", "a spec is a JSON object")]

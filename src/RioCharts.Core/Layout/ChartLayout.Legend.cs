@@ -79,6 +79,9 @@ public static partial class ChartLayout
         var swatchStyle = styles.Add("swatch-" + entry.SeriesId, new Style { Fill = entry.Color, Stroke = entry.Color, StrokeWidth = 2 });
         Node swatch = entry.Type == SeriesType.Line
             ? new PathNode(new PathBuilder().MoveTo(x, cy).LineTo(x + SwatchWidth, cy).Build(), swatchStyle) { Class = "rio-swatch rio-swatch-line" }
+            : entry.Type == SeriesType.Scatter
+            ? new PathNode(new PathBuilder().MoveTo(x + SwatchWidth / 2, cy - 4.5).Arc(x + SwatchWidth / 2, cy, 4.5, 0, Math.PI * 2).Close().Build(),
+                styles.Add("swatch-dot-" + entry.SeriesId, new Style { Fill = entry.Color })) { Class = "rio-swatch rio-swatch-dot" }
             : new RectNode(new RectF((float)x, (float)(cy - 5), (float)SwatchWidth, 10), swatchStyle) { CornerRadius = 2, Class = "rio-swatch" };
 
         var state = !entry.Visible ? ", hidden" : entry.IsEmpty ? ", no data" : "";

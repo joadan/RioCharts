@@ -114,4 +114,18 @@
         Assert.Empty(item.QuerySelectorAll("title")); // no second, native tooltip
         Assert.Single(cut.FindAll(".rio-legend-tip"));
     }
+
+    [Fact]
+    public void Scatter_series_draw_markers_and_ask_for_2D_hover()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <ScatterSeries Items="Supply" Name="Supply" XValue="r => r.Value" YValue="r => r.Value + 2" TrendLine="true" />
+        </RioChart>);
+
+        Assert.NotEmpty(cut.FindAll("path.rio-marker"));
+        Assert.NotEmpty(cut.FindAll("path.rio-trend"));
+        var model = Payload(Calls("update")[^1]);
+        Assert.False(model.GetProperty("shared").GetBoolean());
+        Assert.True(model.GetProperty("series")[0].GetProperty("dots").GetBoolean());
+    }
 }

@@ -31,6 +31,7 @@ internal interface ISeriesType
     {
         SeriesType.Area => AreaSeriesType.Instance,
         SeriesType.Bar => BarSeriesType.Instance,
+        SeriesType.Scatter => ScatterSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar => new PolarSeriesType(type),
         _ => LineSeriesType.Instance,
     };
@@ -281,6 +282,100 @@ internal sealed class LineSeriesType : ISeriesType
                 c.Labels.Add(new LabelAnchor(c.Data.Y[indices[i]], xs[i], ys[i], double.NaN, 0, c.Stacked));
             }
         }
+    }
+}
+
+/// <summary>
+/// A marker per point, slightly translucent so overlapping points show density, and optionally a
+/// least-squares trend line. Every visible point is drawn (no downsampling: each point matters).
+/// </summary>
+internal sealed class ScatterSeriesType : ISeriesType
+{
+    public static ScatterSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.Scatter;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 3;
+    public bool IncludesZero => false;
+    public bool UsesSlots => false;
+
+    /// <summary>Marker radius from <see cref="SeriesSpec.MarkerSize"/> (a diameter, default 7 px).</summary>
+    internal static double Radius(SeriesSpec spec) => Math.Clamp((spec.MarkerSize is > 0 and var size ? size : 7) / 2, 1, 30);
+
+    public void Build(SeriesBuildContext c)
+    {
+        var data = c.Data;
+        var (start, end) = c.XWindow is { } w && data.Kind != XKind.Category
+            ? Layout.ChartLayout.VisibleIndexes(data.X, w.Min, w.Max, 0)
+            : (0, data.Count);
+        var r = Radius(c.Spec);
+        var xs = new List<double>();
+        var ys = new List<double>();
+        var indices = new List<int>();
+        var builder = new PathBuilder();
+        for (var i = start; i < end; i++)
+        {
+            var (px, y) = (c.PixelX[i], c.Upper[i]);
+            if (!double.IsFinite(px) || !double.IsFinite(y))
+            {
+                continue;
+            }
+
+            var py = c.MapY(y);
+            builder.MoveTo(px, py - r).Arc(px, py, r, 0, Math.PI * 2).Close();
+            xs.Add(px);
+            ys.Add(py);
+            indices.Add(i);
+        }
+
+        if (c.Spec.TrendLine && data.Kind != XKind.Category)
+        {
+            AddTrendLine(c, indices);
+        }
+
+        var style = c.Styles.Add($"series-{c.ColorIndex}-marker", new Style { Fill = c.Color, FillOpacity = 0.75f });
+        c.Output.Add(new PathNode(builder.Build(), style) { Class = "rio-marker" });
+        c.Hits = LineSeriesType.Hits(c, [.. xs], [.. ys], [.. indices]);
+        LineSeriesType.AddLabels(c, [.. xs], [.. ys], [.. indices]);
+    }
+
+    /// <summary>Least squares over the drawn points, from the first to the last point's x.</summary>
+    private static void AddTrendLine(SeriesBuildContext c, List<int> indices)
+    {
+        if (indices.Count < 2)
+        {
+            return;
+        }
+
+        double mx = 0, my = 0;
+        foreach (var i in indices)
+        {
+            mx += c.Data.X[i];
+            my += c.Upper[i];
+        }
+
+        mx /= indices.Count;
+        my /= indices.Count;
+        double sxy = 0, sxx = 0;
+        foreach (var i in indices)
+        {
+            sxy += (c.Data.X[i] - mx) * (c.Upper[i] - my);
+            sxx += (c.Data.X[i] - mx) * (c.Data.X[i] - mx);
+        }
+
+        if (sxx <= 0)
+        {
+            return;
+        }
+
+        var slope = sxy / sxx;
+        var (first, last) = (indices[0], indices[^1]); // x ascending
+        double Y(int i) => c.MapY(my + slope * (c.Data.X[i] - mx));
+        var style = c.Styles.Add($"series-{c.ColorIndex}-trend",
+            new Style { Stroke = c.Color, StrokeWidth = 1.5f, Fill = "none", DashArray = "6 4", Opacity = 0.85f });
+        c.Output.Add(new PathNode(new PathBuilder().MoveTo(c.PixelX[first], Y(first)).LineTo(c.PixelX[last], Y(last)).Build(), style)
+        {
+            Class = "rio-trend",
+        });
     }
 }
 

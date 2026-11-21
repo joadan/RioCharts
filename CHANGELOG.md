@@ -12,6 +12,13 @@ Restructured to the new design ([Design.md](Design.md)), milestones 1 to 6.
 - **Breaking:** the `<Chart>` component is renamed to `<RioChart>` (`RioChart<TItem>`), so it does
   not clash with an app's own `Chart` types or other libraries. Series and annotation components
   keep their names. `ChartRazor` now generates `<RioChart>`.
+- Scatter series (`<ScatterSeries>`, `SeriesType.Scatter`, `"scatter"` or `"points"` in JSON): a
+  translucent marker per point (`MarkerSize`, default 7 px) and an optional dashed least-squares
+  `TrendLine`. Numeric x axes get a nice range so points are not on the edge; the tooltip shows the
+  nearest point in 2D with the x axis title ("Outdoor °C: -2.2"), so charts with scatter series are
+  not shared. Legend swatch is a dot; the legend tooltip and compact summary give the number of
+  points, the y range and whether y rises with x. Works with zoom, keyboard, canvas, export, Skia
+  and spec-to-Razor. Docs: a Scatter page (outdoor compensation, energy signature).
 - Fixed: interactive charts failed in published (trimmed) Blazor WebAssembly apps, including the
   docs site, with "ConstructorContainsNullParameterNames": the JS interop payloads were anonymous
   types serialized by reflection. They are now source-generated UTF-8 JSON (`Rendering/Interop.cs`),

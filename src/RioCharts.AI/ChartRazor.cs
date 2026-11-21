@@ -109,6 +109,7 @@ public static class ChartRazor
                 SeriesType.Pie when s.InnerRadius is > 0 => "DonutSeries",
                 SeriesType.Pie => "PieSeries",
                 SeriesType.RadialBar => "RadialBarSeries",
+                SeriesType.Scatter => "ScatterSeries",
                 _ => "LineSeries",
             };
 
@@ -131,6 +132,19 @@ public static class ChartRazor
             if (s.Curve != CurveType.Linear)
             {
                 sb.Append($" Curve=\"CurveType.{s.Curve}\"");
+            }
+
+            if (s.Type == SeriesType.Scatter)
+            {
+                if (s.MarkerSize is { } size && size != 7)
+                {
+                    sb.Append(" MarkerSize=\"").Append(size.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('"');
+                }
+
+                if (s.TrendLine)
+                {
+                    sb.Append(" TrendLine=\"true\"");
+                }
             }
 
             Optional(sb, "Stack", s.Stack);

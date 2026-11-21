@@ -677,7 +677,7 @@ public partial class RioChart<TItem> : IChartContext
                 Group: Group,
                 Xscale: scale is null ? null : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
                 Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type == SeriesType.Bar, s.Step, s.Snap,
-                    s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values))],
+                    s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd))]))
             : null;

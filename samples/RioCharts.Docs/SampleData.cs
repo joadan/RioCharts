@@ -9,6 +9,9 @@ public static class SampleData
 
     public sealed record Share(string Name, double Value);
 
+    /// <summary>An hourly reading of outdoor temperature, two units' supply air and heating power.</summary>
+    public sealed record Weather(DateTime Time, double Outdoor, double Supply, double Supply2, double Heating);
+
     public sealed record Monthly(string Month, double Heating, double Ventilation, double Cooling);
 
     public sealed record Alarm(string Unit, string Text, double Minutes);
@@ -19,6 +22,20 @@ public static class SampleData
 
     private static List<Reading> Series(Func<int, DateTime, double?> value, int count = 2 * 96, int minutes = 15) =>
         Enumerable.Range(0, count).Select(i => Start.AddMinutes(minutes * i)).Select((t, i) => new Reading(t, value(i, t))).ToList();
+
+    /// <summary>
+    /// Two weeks, hourly. AHU 1 follows its outdoor compensation curve (warmer supply when it is cold
+    /// outside); AHU 2's curve is flat (it does not compensate). Heating power falls to zero above 16 °C.
+    /// </summary>
+    public static readonly List<Weather> Hourly = Enumerable.Range(0, 24 * 14).Select(i =>
+    {
+        var t = Start.AddHours(i);
+        var outdoor = Math.Round(4 + 6 * Cycle(t) + Drift(i, 21, 24) * 6, 1);
+        return new Weather(t, outdoor,
+            Math.Round(Math.Clamp(22.5 - 0.3 * outdoor + Drift(i, 22, 3) * 0.6, 17, 27), 1),
+            Math.Round(19.5 + Drift(i, 24, 3) * 0.7, 1),
+            Math.Round(Math.Max(0, 2.6 * (16 - outdoor) + Drift(i, 23, 4) * 4), 1));
+    }).ToList();
 
     public static readonly List<Reading> Supply = Series((i, t) => Math.Round(19 + 1.5 * Cycle(t) + Drift(i, 1) * 0.8, 2));
 

@@ -283,6 +283,23 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
 
+/// <summary>
+/// Scatter series: a marker per point, for how two measures relate, e.g. supply temperature
+/// against outdoor temperature. The tooltip shows the point nearest the pointer.
+/// </summary>
+public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>Marker diameter in pixels. Default 7.</summary>
+    [Parameter] public double MarkerSize { get; set; } = 7;
+
+    /// <summary>Draw a dashed least-squares trend line through the points.</summary>
+    [Parameter] public bool TrendLine { get; set; }
+
+    protected override SeriesType Type => SeriesType.Scatter;
+
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { MarkerSize = MarkerSize, TrendLine = TrendLine };
+}
+
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>
 public sealed class BarSeries<TItem> : SeriesBase<TItem>
 {
