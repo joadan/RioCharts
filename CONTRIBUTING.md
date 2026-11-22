@@ -10,6 +10,11 @@ and the design still move, and agreeing first saves work on both sides.
 [Design.md](Design.md) is the design: read it before adding or changing features. Where the code differs from it, that is recorded in
 [docs/implementation-notes.md](docs/implementation-notes.md).
 
+RioCharts is human-led and AI-built: the design is decided by people, and most code is written by
+AI coding agents working from [AGENTS.md](AGENTS.md). Contributions written with an agent are
+welcome on the same terms as any other: an agreed issue, passing tests and accepted snapshots, and
+a person who has read the change and stands behind it.
+
 ## Building and testing
 
 You need the .NET 10 and .NET 11 SDKs: the libraries and tests target both, and `dotnet test` runs
