@@ -8,6 +8,10 @@ changes are called out under **Breaking**.
 - RioCharts is presented as charts for .NET, not only Blazor: one chart model, interactive in
   Blazor, PNG and SVG on the server, and created by AI agents. The docs start page shows the three
   outputs side by side; the title, link preview card, READMEs and llms.txt follow.
+- README rewritten as a short front page: a picture of four charts drawn by RioCharts.Skia (light
+  and dark, made by `tools/ReadmeImage.cs`), one example each for Blazor, server images and AI
+  agents, and the packages. Building, tests, the project layout and releasing moved to
+  CONTRIBUTING.md.
 - Docs: Getting started notes that RioCharts.Blazor works in .NET MAUI Blazor Hybrid apps
   (tested on Windows; Android and iOS not yet). The guide for coding agents (llms.txt, llms-full.txt,
   get_usage) says the same.

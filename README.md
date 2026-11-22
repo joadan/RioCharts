@@ -1,175 +1,90 @@
-<img src="assets/icon.svg" alt="" width="64" height="64" align="left" />
-
-# RioCharts
-
-<br clear="left" />
+<h1><img src="assets/icon.svg" alt="" width="40" height="40" align="top" /> RioCharts</h1>
 
 [![NuGet](https://img.shields.io/nuget/vpre/RioCharts.Blazor?label=NuGet)](https://www.nuget.org/packages/RioCharts.Blazor)
+[![Tests](https://github.com/joadan/RioCharts/actions/workflows/test.yml/badge.svg)](https://github.com/joadan/RioCharts/actions/workflows/test.yml)
+[![.NET 10 | 11](https://img.shields.io/badge/.NET-10%20%7C%2011-512bd4)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-riocharts.com-4269d0)](https://riocharts.com/)
 
-Charts for .NET. One chart model, drawn everywhere: interactive in Blazor, PNG and SVG on the
-server, and created by AI agents from JSON. C# does the math and layout; in Blazor, Razor renders
-SVG and a tiny JS module only measures the container and follows the pointer.
+**Charts for .NET.** One chart model, drawn everywhere: interactive in Blazor, PNG and SVG on the
+server, and created by AI agents. C# does the math and layout; in Blazor, Razor renders SVG and a
+tiny JS module only measures text and follows the pointer.
 
-**Docs and live examples:** https://riocharts.com/ (Blazor WebAssembly, runs in your browser).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme-charts-dark.png" />
+  <img src="assets/readme-charts-light.png" alt="Four charts made with RioCharts: sessions per day as an area and a line against a goal, orders per quarter as stacked bars, revenue by channel as a donut, and sessions per hour and weekday as a heatmap." />
+</picture>
 
-> **Status: early preview.** APIs will change without notice before 1.0. It is built for our
-> own teams' needs; issues are welcome, but there is no roadmap promise.
+<sub>Drawn by RioCharts.Skia itself (<a href="tools/ReadmeImage.cs">tools/ReadmeImage.cs</a>).
+**[See them live, with tooltips and zoom →](https://riocharts.com/)**</sub>
 
-Named after Rio, and *río* means river: fitting for flowing lines and time series.
+> **Status: early preview.** APIs will change without notice before 1.0. It is built for our own
+> teams' needs; issues are welcome, but there is no roadmap promise.
 
-## What works today (milestones 1–7)
-
-- Line, area and bar series (grouped bars), with linear, monotone and step lines
-- Linear, time and category axes, picked automatically from the data
-- Nice ticks; time ticks that switch between minutes, hours, days, weeks, months and years
-- Compact, culture-aware labels (1.2k, 3.4M); dates adapt to the visible range
-- Gaps for missing values; clean states for empty data, a single point and flat data
-- Legend (shown when there is more than one series); click to hide and show series
-- Responsive width with real font measurement; fixed height (300 px by default)
-- Light and dark themes through CSS variables; colorblind-aware palette
-- LTTB downsampling for large series, and a columnar fast path for big data
-- Screen-reader description of every chart (series, extremes, trend)
-- Tooltip and crosshair (shared across series by default), handled in the browser
-- Stacked bars, areas and lines; mixed series; multiple Y axes
-- Data labels with collision avoidance
-- Reference lines and bands (targets, limits, incident periods)
-- Point and annotation click events
-- Pie, donut (also half donut and nested rings) and radial bar, with inside and outside labels,
-  leader lines and "Other" grouping
-- Zoom and pan on the x axis (drag, Shift+drag, Ctrl+wheel, pinch), `@bind-VisibleRange`, linked charts
-  sharing crosshair and zoom (`Group`)
-- Live data from a `SeriesBuffer` (append from any thread, time window, capped redraw rate)
-- Point markers, callouts and draggable reference lines (`@bind-Value`)
-- Display time zone (`TimeZone`): plotted on instants, labelled in the zone, DST-safe
-- Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
-- Compact charts and sparklines (`Compact`), auto-compact for small charts, highlight dots, and plain SVG without JS (`Interactive="false"`)
-- Works with static server rendering, prerendering, trimming and native AOT
-- Scatter charts with trend lines, heatmaps, range areas, box plots, candlesticks, radar charts, treemaps and horizontal bars
-- Colors per item from your data (`ColorValue`), e.g. bars under target in red
-- Built-in texts in eight languages (`ChartTexts`), with your own wording or languages from code, resx or `IStringLocalizer`
-- Download as PNG, SVG or CSV from the browser (`Exportable`, `DownloadPngAsync`, `ExportCsv`, ...)
-- Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
-- JSON chart specs for AI agents: tolerant parsing, JSON schema, validation with actionable errors,
-  dataset fields with filter, time buckets, aggregation, groupBy, sort and limit, `"type": "auto"`
-- `create_chart` and `render_chart` (the image as PNG or SVG for the agent itself) as Microsoft.Extensions.AI
-  `AIFunction`s and as MCP server tools (`RioCharts.AI`),
-  spec → Razor export, `<RioChart Spec="...">`
-- `riocharts-mcp`: a local MCP server (.NET tool) so agents such as Claude Code, Claude Desktop or
-  Copilot render charts to PNG or SVG files from CSV/JSON files or inline data (`RioCharts.Mcp`)
-
-All six milestones of [Design.md](Design.md) are in, plus client-side export, auto-compact, native
-AOT support, built-in languages and a WASM docs site.
-
-## Coming from Blazor-ApexCharts?
-
-The concepts map closely: items with `XValue`/`YValue` selectors, `YAggregate`, series as child
-components (one component per type instead of `SeriesType`), typed parameters instead of an options
-object, and no `UpdateSeriesAsync`: change `Items` and the chart draws again. See
-[Coming from Blazor-ApexCharts](https://riocharts.com/from-apexcharts) for the full
-mapping.
-
-## Install
-
-The packages are on [NuGet](https://www.nuget.org/packages?q=RioCharts) (prerelease):
+## Blazor
 
 ```
 dotnet add package RioCharts.Blazor --prerelease
 ```
 
-| Package | For |
-| --- | --- |
-| [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | Chart model, scales and layout, no UI dependencies |
-| [RioCharts.Blazor](https://www.nuget.org/packages/RioCharts.Blazor) | The `<RioChart>` component and series (includes Core) |
-| [RioCharts.Skia](https://www.nuget.org/packages/RioCharts.Skia) | Server-side export to SVG and PNG |
-| [RioCharts.AI](https://www.nuget.org/packages/RioCharts.AI) | `create_chart` and `render_chart` tools for AI agents |
-| [RioCharts.Mcp](https://www.nuget.org/packages/RioCharts.Mcp) | `riocharts-mcp`, a local MCP server (`dotnet tool install -g RioCharts.Mcp --prerelease`) |
-
-## Usage
-
-Reference `RioCharts.Blazor` and add `@using RioCharts.Blazor` and `@using RioCharts.Core`
-to `_Imports.razor`. Styles come with `{YourApp}.styles.css` automatically.
+Add `@using RioCharts.Blazor` and `@using RioCharts.Core` to `_Imports.razor`. That is all: no
+services to register, and the styles come with your app's `{App}.styles.css` bundle.
 
 ```razor
-<RioChart Items="traffic">
-    <LineSeries XValue="r => r.Timestamp" YValue="r => r.Sessions" />
+<RioChart Items="orders" Title="Orders per day">
+    <ReferenceLine Value="1000" Label="Goal" />
+    <LineSeries Name="Web" XValue="o => o.Day" YValue="o => o.Web" />
+    <BarSeries Name="App" XValue="o => o.Day" YValue="o => o.App" />
 </RioChart>
+
+@code {
+    record DailyOrders(DateTime Day, double Web, double App);
+    List<DailyOrders> orders = ...;
+}
 ```
 
-Several series, options and two-way bound legend state:
+The axes, ticks, number and date formats, legend and colors come from the data; options are typed
+parameters. Change `Items` and the chart draws again. It works on Server, WebAssembly and Auto, with
+static rendering and prerendering, trimmed and native AOT, and in .NET MAUI Blazor Hybrid apps.
 
-```razor
-<RioChart TItem="Reading" Title="Online store" YAxis="@(new AxisSpec { Title = "Sessions" })" @bind-HiddenSeries="hidden">
-    <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
-    <AreaSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" />
-    <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
-</RioChart>
+**Series:** line, area, range area, bar (grouped, stacked, horizontal), scatter with trend lines,
+heatmap, box plot, candlestick, pie, donut, radial bar, radar and treemap.
+
+**Also in the box:** tooltips and crosshair, zoom and pan, linked charts, annotations, data labels,
+click events, live data, large data (LTTB and a canvas layer), time zones, light and dark themes
+through CSS variables, PNG/SVG/CSV download, keyboard navigation, screen reader descriptions and
+built-in texts in eight languages.
+
+Coming from Blazor-ApexCharts? The concepts map closely: see
+[the mapping](https://riocharts.com/from-apexcharts).
+
+## Images on the server
+
+`RioCharts.Skia` draws the same charts as PNG or SVG without a browser, for reports, emails and
+bots, with real font metrics and light or dark themes:
+
+```csharp
+var spec = new ChartSpec { Title = "Sessions", Series = [new SeriesSpec { Id = "web", Name = "Web" }] };
+var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(times, values) };
+byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320 });
 ```
 
-- `XValue` may return a number, `DateTime`, `DateTimeOffset`, `DateOnly` or `string` (category).
-- `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` values to `double`.
-- Data is processed when `Items` is a new reference or `DataVersion` changes, not on every render.
+## AI agents
 
-Stacking, a second axis, data labels and annotations:
-
-```razor
-<RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "ms" })" YAxes="@([new AxisSpec { Id = "orders", Title = "Orders" }])"
-       OnPointClick="e => selected = e.Item">
-    <ReferenceBand From="0" To="200" Label="Fast" />
-    <ReferenceLine Value="300" Label="Limit" />
-    <ReferenceBand Axis="AnnotationAxis.X" From="incidentStart" To="incidentEnd" Label="Payment incident" />
-    <BarSeries Items="webOrders" Name="Web" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Stack="orders" />
-    <BarSeries Items="appOrders" Name="App" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Stack="orders" DataLabels="true" />
-    <LineSeries Items="checkout" Name="Checkout" XValue="r => r.Time" YValue="r => r.Value" Format="0 ms" />
-</RioChart>
-```
-
-Pie, donut and radial bar (the x value names each slice; the legend lists slices):
-
-```razor
-<RioChart Items="categories">
-    <DonutSeries Name="Revenue" XValue="c => c.Category" YValue="c => c.Revenue" GroupSmallSlices="0.03" />
-</RioChart>
-
-<RioChart Items="targets">
-    <RadialBarSeries XValue="t => t.Category" YValue="t => t.Percent" Max="100" Format="0'%'" />
-</RioChart>
-```
-
-Treemap (a path per item, or a name with `ParentValue`; the legend lists the top-level groups):
-
-```razor
-<RioChart Items="countries">
-    <TreemapSeries Name="Population" XValue="@(c => $"{c.Continent}/{c.Name}")" YValue="c => c.Millions" Format="0 M" />
-</RioChart>
-```
-
-Radar (a spoke per measure, a shape per series; the legend lists series):
-
-```razor
-<RioChart Items="scores" YAxis="new AxisSpec { Max = 100 }">
-    <RadarSeries Name="New laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
-    <RadarSeries Name="Class average" XValue="s => s.Measure" YValue="s => s.Average" />
-</RioChart>
-```
-
-AI chart creation, with `RioCharts.AI`: agents write a small JSON spec against your datasets; the
-tool validates it (errors name the path and the valid options), renders it and describes it:
+**In your app.** `RioCharts.AI` gives your agent `create_chart` and `render_chart` tools, as
+Microsoft.Extensions.AI functions or MCP server tools. The agent writes a small JSON spec against
+your datasets; the tool validates it (errors name the path and the valid options), renders it and
+describes it:
 
 ```csharp
 var tool = new ChartTool(new InMemoryDataSource([ChartDataset.FromItems("shop", rows, "Online store traffic per channel, hourly")]));
-var chat = new ChatOptions { Tools = tool.AsAIFunctions() };          // Microsoft.Extensions.AI
-builder.Services.AddMcpServer().WithHttpTransport().WithRioChartsTools(tool); // or as an MCP server
-tool.ChartCreated += result => Show(result.Png); // every chart made, by either tool (result.Tool)
+var chat = new ChatOptions { Tools = tool.AsAIFunctions() };
+tool.ChartCreated += result => Show(result.Png);
 ```
 
-When the agent needs the image itself (for a report, an email, a document), it calls `render_chart`
-with the same spec plus `format` (png or svg), `width`, `height` and `theme`; the image comes back
-as content (and is saved to `ChartToolOptions.OutputDirectory` when set).
-
-For local agents (Claude Code, Claude Desktop, GitHub Copilot in VS Code) there is a ready-made
-MCP server. Install it and register it with the agent; CSV and JSON files in `--data` become
-datasets, and charts are saved to `--out` (default `./charts`). It runs on Windows (x64, arm64,
-x86), macOS and Linux (x64 and arm64, glibc and musl):
+**On your machine.** `riocharts-mcp` is a local MCP server for Claude Code, Claude Desktop, GitHub
+Copilot and other agents. It renders charts from CSV and JSON files to PNG or SVG, and turns a
+chart into `<RioChart>` markup for your app:
 
 ```
 dotnet tool install -g RioCharts.Mcp --prerelease
@@ -179,15 +94,11 @@ dotnet tool install -g RioCharts.Mcp --prerelease
 { "mcpServers": { "riocharts": { "command": "riocharts-mcp", "args": ["--data", "data", "--out", "charts"] } } }
 ```
 
-To try it, open [samples/RioCharts.Mcp.Sample](samples/RioCharts.Mcp.Sample) in Claude Code or VS Code: it has
-sample data, the agent configuration and example prompts.
+Try it in [samples/RioCharts.Mcp.Sample](samples/RioCharts.Mcp.Sample): sample data, agent
+configuration and example prompts.
 
-**Coding agents** that add charts to your app: point them at
-[llms-full.txt](https://riocharts.com/llms-full.txt), one Markdown file with setup, rules,
-examples (compiled by the tests) and every component parameter, generated from the code. `riocharts-mcp`
-serves the same guide (`get_usage`) and turns a spec into `<RioChart>` markup with a record for the rows
-(`get_razor`), so an agent can design a chart with `render_chart`, look at it, then put it in the app.
-Paste this into your repository's `AGENTS.md` (or `CLAUDE.md`, `.github/copilot-instructions.md`):
+**Coding agents.** Models do not know RioCharts yet. Paste this into your repository's
+`AGENTS.md` (or `CLAUDE.md`, `.github/copilot-instructions.md`):
 
 ```markdown
 ## Charts
@@ -201,65 +112,27 @@ https://riocharts.com/llms-full.txt, or call get_usage if the riocharts MCP serv
 - Tooltips, zoom and clicks need an interactive render mode on the page.
 ```
 
-The same specs work in Blazor: `<RioChart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
-`{"dataset":"shop","series":[{"type":"line","x":"timestamp","y":"sessions","groupBy":"channel"}]}`.
+## Packages
 
-Server-side export (no browser), with `RioCharts.Skia`: the same spec and data, as PNG or SVG:
+All target .NET 10 (LTS) and .NET 11, and are previews: add `--prerelease`.
 
-```csharp
-var spec = new ChartSpec { Title = "Sessions", Series = [new SeriesSpec { Id = "web", Name = "Web" }] };
-var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(times, values) };
-byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320, Theme = ExportTheme.Dark });
-string svg = ChartExport.ToSvg(spec, data);
-```
+| Package | For |
+| --- | --- |
+| [RioCharts.Blazor](https://www.nuget.org/packages/RioCharts.Blazor) | The `<RioChart>` component and its series (includes Core) |
+| [RioCharts.Skia](https://www.nuget.org/packages/RioCharts.Skia) | PNG and SVG on the server |
+| [RioCharts.AI](https://www.nuget.org/packages/RioCharts.AI) | `create_chart` and `render_chart` tools for AI agents |
+| [RioCharts.Mcp](https://www.nuget.org/packages/RioCharts.Mcp) | `riocharts-mcp`, a local MCP server (a .NET tool) |
+| [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | The chart engine alone: scales, layout and a render-agnostic scene, no UI dependencies |
 
-Large data, as plain arrays (no per-item cost):
+## Learn more
 
-```razor
-<RioChart TItem="double">
-    <LineSeries Name="Response time" Data="SeriesData.From(timestamps, values)" />
-</RioChart>
-```
+- [Docs and live examples](https://riocharts.com/): every chart type and feature, running in your browser
+- [JSON specs](https://riocharts.com/specs): the chart model as JSON, with a playground
+- [CHANGELOG.md](CHANGELOG.md): what changed, and breaking changes
+- [CONTRIBUTING.md](CONTRIBUTING.md): building, testing and the project layout
+- [Design.md](Design.md): the design behind it
 
-Theming: set any of `--rio-text`, `--rio-text-muted`, `--rio-grid`, `--rio-axis`,
-`--rio-surface` (tooltip), `--rio-annotation`, `--rio-data-label-inverse`, `--rio-positive` and
-`--rio-negative` (rising and falling candlesticks) and
-`--rio-series-1` … `--rio-series-10` anywhere above the chart. Dark mode follows
-`prefers-color-scheme`, or an ancestor with `data-theme="dark"` or class `dark`.
-
-Times are shown exactly as given by default. Set `TimeZone` ("UTC", "local" or an IANA id) to
-plot on instants and label in that zone.
-
-## Projects
-
-| Path | What |
-|------|------|
-| `src/RioCharts.Core` | Scales, ticks, layout, path builders, scene, hit-testing, chart spec. No UI dependencies. |
-| `src/RioCharts.Blazor` | `<RioChart>` and series components, SVG scene renderer, JS module. |
-| `src/RioCharts.Skia` | Server-side export to SVG and PNG with SkiaSharp (`ChartExport`). |
-| `src/RioCharts.AI` | `create_chart` and `render_chart` tools for agents (Microsoft.Extensions.AI and MCP), schema, spec → Razor. |
-| `src/RioCharts.Mcp` | `riocharts-mcp`: local MCP server (stdio, .NET tool) that renders charts to PNG/SVG files. |
-| `tests/RioCharts.Tests` | xUnit tests for Core and the SVG writer. |
-| `tests/RioCharts.Blazor.Tests` | bUnit component tests for `<RioChart>` (parameters, events, markup). |
-| `samples/RioCharts.Demo` | Blazor Server demo of everything above. |
-| `samples/RioCharts.Mcp.Sample` | Sample data and agent config (`.mcp.json`, `.vscode/mcp.json`) for trying `riocharts-mcp`. |
-| `samples/RioCharts.Docs` | Docs site with live examples (Blazor WebAssembly, published to GitHub Pages). |
-
-```powershell
-dotnet test
-dotnet run --project samples/RioCharts.Demo --launch-profile http
-dotnet run --project samples/RioCharts.Docs --launch-profile http   # docs site, http://localhost:5031
-```
-
-See [CHANGELOG.md](CHANGELOG.md) for changes.
-
-## Releasing
-
-Run **Create Release** ([create-release.yml](.github/workflows/create-release.yml)) by hand from
-the Actions tab on `master`: it tests, packs and publishes all packages to nuget.org, then tags the
-commit and creates a GitHub release. The version comes from [version.json](version.json) and the git
-height (Nerdbank.GitVersioning): `0.1-preview` gives `0.1.<height>-preview`. The package README is
-[assets/nuget-readme.md](assets/nuget-readme.md).
+Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
 ## License
 
