@@ -18,6 +18,8 @@ changes are called out under **Breaking**.
 - README, NuGet README and CONTRIBUTING.md say how RioCharts is made: human-led, AI-built (the
   design is decided by people; most code is written by AI coding agents, then tested and
   snapshot-checked).
+- Fix: on iPhone and iPad, holding a finger on a chart to read the tooltip no longer selects an
+  axis label after a moment (Safari needs `-webkit-user-select`), and no callout menu opens.
 
 ## 0.2.1-preview (2026-11-22)
 

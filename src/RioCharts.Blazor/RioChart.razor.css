@@ -108,7 +108,10 @@
     display: block;
     overflow: visible;
     font-family: inherit;
+    /* Safari (iOS) still needs the prefix: without it a long press for the tooltip selects an axis label. */
+    -webkit-user-select: none;
     user-select: none;
+    -webkit-touch-callout: none;
 }
 
 /* Keyboard focus on the chart (Tab); pointer clicks show no ring. */
