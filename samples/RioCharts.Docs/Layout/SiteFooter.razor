@@ -6,6 +6,15 @@
     <p>
         Open source (MIT) and an early preview: APIs change before 1.0. Every chart here is rendered live in your browser
         with Blazor WebAssembly.
+        @if (LibraryVersion.Version.Length > 0)
+        {
+            <span class="footer-version">
+                Version @LibraryVersion.Version@if (LibraryVersion.Commit is { } commit)
+                {
+                    <text> (commit <a href="https://github.com/joadan/RioCharts/commit/@commit">@commit</a>)</text>
+                }.
+            </span>
+        }
     </p>
     <div class="footer-links">
         <a href="getting-started">Getting started</a>

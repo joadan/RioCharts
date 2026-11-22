@@ -15,7 +15,8 @@
             <RioLogo Size="30" />
             <span>Rio<b>Charts</b></span>
         </a>
-        <span class="badge">preview</span>
+        <a class="badge" href="https://github.com/joadan/RioCharts/blob/master/CHANGELOG.md" target="_blank" rel="noopener"
+           title="@(LibraryVersion.Commit is { } commit ? $"RioCharts {LibraryVersion.Version}, commit {commit}. What's new" : "What's new")">@(LibraryVersion.Version is { Length: > 0 } version ? $"v{version}" : "preview")</a>
         <span class="spacer"></span>
         <nav class="header-nav">
             <a href="getting-started">Docs</a>

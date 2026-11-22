@@ -5,6 +5,8 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Docs site: the header badge shows the RioCharts version the site runs (e.g. `v0.1.73-preview`)
+  and links to this changelog; the footer adds the commit it was built from.
 - Pies: the "Other" slice's tooltip lists the slices it holds, and in both that tooltip and the
   "Other" legend tooltip the total and its parts look different: the total is a normal row, the
   parts are smaller, muted and indented under a thin line. Before, the legend tooltip was lines of
