@@ -17,8 +17,9 @@
             smallest countries of each continent into "Other". Hover a rectangle for its share of the continent and of the world.
         </p>
         <p>
-            Click a continent (its header or frame) to drill into it: it fills the chart, its countries get their own colors, and the path
-            bar above (<em>All › Asia</em>) leads back up.
+            Click anywhere in a continent, even tiny Oceania, to drill into it: it fills the chart, its countries get their own colors,
+            and the path bar above (<em>All › Asia</em>) leads back up. (When items take clicks themselves, with <code>OnPointClick</code>
+            or <code>Selection="SelectionMode.Points"</code>, a group's header or frame drills instead.)
         </p>
     </Description>
     <ChildContent>
@@ -36,10 +37,15 @@
             an organisation, a bill of materials. Names must then be unique. Only items with a value get a rectangle; a folder's own size is
             the sum of what is in it.
         </p>
+        <p>
+            Deep trees get cramped, so <code>VisibleLevels="2"</code> draws two levels at a time: the top folders and what is in them.
+            <em>Photos</em> shows as one cell with its total; open <em>Home</em> and its years appear. The data keeps every level.
+        </p>
     </Description>
     <ChildContent>
         <RioChart TItem="Folder" Items="Folders" Height="360">
-            <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB" />
+            <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB"
+                           VisibleLevels="2" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -75,7 +81,8 @@
 
     private const string ParentCode = """
         <RioChart TItem="Folder" Items="folders">
-            <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB" />
+            <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB"
+                           VisibleLevels="2" />
         </RioChart>
 
         @code {

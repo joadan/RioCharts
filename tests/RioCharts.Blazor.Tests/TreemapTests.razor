@@ -35,7 +35,8 @@
             <TreemapSeries Id="d" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" />
         </RioChart>);
 
-        cut.Find(".rio-treemap-drill[aria-label='Show Work']").Click();
+        // No point clicks or selection here, so the whole group (items included) is the button.
+        cut.Find(".rio-treemap-drill[data-key='series:Work']").Click();
 
         Assert.Equal("Work", cut.Instance.GetTreemapPath());
         Assert.Equal(2, cut.FindAll(".rio-treemap-cell").Count);

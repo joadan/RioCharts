@@ -29,6 +29,12 @@ public static partial class ChartLayout
         public RectF Rect { get; set; }
         public bool HasHeader { get; set; }
 
+        /// <summary>A group at the last visible level (VisibleLevels): drawn as one cell with its total.</summary>
+        public bool Collapsed { get; set; }
+
+        /// <summary>Drawn as a cell: an item, or a collapsed group.</summary>
+        public bool IsCell => Children.Count == 0 || Collapsed;
+
         public IEnumerable<TreeNode> Ancestors()
         {
             for (var n = Parent; n?.Parent is not null; n = n.Parent)
@@ -181,7 +187,7 @@ public static partial class ChartLayout
         var headerHeight = small * 1.25 + 6;
         if (hasData)
         {
-            Place(focus, plot, headerHeight, focus);
+            Place(focus, plot, headerHeight, focus, 0, series.Spec.VisibleLevels is > 0 and var levels ? levels : int.MaxValue);
         }
 
         var showLabels = series.Spec.DataLabels ?? true;
@@ -194,7 +200,7 @@ public static partial class ChartLayout
         var groupTexts = focus.Children.ToDictionary(g => g.Group, _ => new List<Node>());
         var leaves = new List<TreeNode>();
         var parents = new List<TreeNode>();
-        foreach (var node in hasData ? Walk(focus).Skip(1) : [])
+        foreach (var node in hasData ? WalkShown(focus).Skip(1) : [])
         {
             var r = node.Rect;
             if (r.Width < 0.5 || r.Height < 0.5)
@@ -203,7 +209,7 @@ public static partial class ChartLayout
             }
 
             var color = ColorOf(node.Group);
-            if (node.Children.Count > 0)
+            if (!node.IsCell)
             {
                 parents.Add(node);
                 Node tint = new RectNode(r, styles.Add("treemap-group-" + color, new Style { Fill = color, FillOpacity = 0.16f }))
@@ -211,9 +217,10 @@ public static partial class ChartLayout
                     CornerRadius = 3,
                     Class = "rio-treemap-group",
                 };
-                if (options.InteractiveTreemap)
+                if (options.InteractiveTreemap && !options.TreemapDrillOnItems)
                 {
-                    // Click the group (its header or frame) to drill into it.
+                    // Click the group (its header or frame) to drill into it. (When items drill, the
+                    // whole top group is the button instead, below.)
                     tint = new GroupNode([tint])
                     {
                         Class = "rio-treemap-drill",
@@ -250,11 +257,29 @@ public static partial class ChartLayout
             var style = node.IsOther
                 ? styles.Add("treemap-other-" + color, new Style { Fill = color, FillOpacity = 0.55f })
                 : styles.Add("treemap-" + color, new Style { Fill = color });
-            shapes[node.Group].Add(new RectNode(inset, style) { CornerRadius = 2, Class = node.IsOther ? "rio-treemap-cell rio-treemap-other" : "rio-treemap-cell" });
+            Node cell = new RectNode(inset, style)
+            {
+                CornerRadius = 2,
+                Class = node.IsOther ? "rio-treemap-cell rio-treemap-other" : node.Collapsed ? "rio-treemap-cell rio-treemap-collapsed" : "rio-treemap-cell",
+            };
+            if (node.Collapsed && options.InteractiveTreemap && !options.TreemapDrillOnItems)
+            {
+                // A collapsed group drills into itself (when items drill, its top group is the button).
+                cell = new GroupNode([cell])
+                {
+                    Class = "rio-treemap-drill",
+                    Interaction = new NodeInteraction("treemap", node.PathText(separator)),
+                    AriaLabel = texts.Fill(nameof(ChartTexts.TreemapShow), culture, node.PathText(" \u203a ")),
+                };
+            }
+
+            shapes[node.Group].Add(cell);
             if (showLabels && inset.Width >= 28 && inset.Height >= small * 1.25 + 6)
             {
-                var name = Shorten(node.Name, inset.Width - 12, measure, small);
-                if (Readable(name, node.Name))
+                // A collapsed group: "Photos ›", a hint that it opens.
+                var full = node.Collapsed ? node.Name + " ›" : node.Name;
+                var name = Shorten(full, inset.Width - 12, measure, small);
+                if (Readable(name, full))
                 {
                     var top = inset.Y + 4 + small * 0.65;
                     groupTexts[node.Group].Add(new TextNode(name, new PointF(inset.X + 6, (float)top), new TextStyle("data-label-inverse"), Anchor.Start));
@@ -283,11 +308,19 @@ public static partial class ChartLayout
         // HighlightSeriesAsync with a group name fade the others.
         var seriesNodes = new List<Node>
         {
-            new GroupNode([.. focus.Children.Select(g => new GroupNode(shapes[g.Group])
+            new GroupNode([.. focus.Children.Select(g =>
             {
-                Key = "series:" + g.Name,
-                Class = "rio-series rio-treemap-branch",
-                AriaLabel = $"{g.Name} {Format(g.Value)} ({Percent(g.Value / Math.Max(total, double.Epsilon), culture)})",
+                var summary = $"{g.Name} {Format(g.Value)} ({Percent(g.Value / Math.Max(total, double.Epsilon), culture)})";
+                // Items do not click (no point clicks or selection): anywhere in a group drills one
+                // level into it, so a group too small for a header can still be opened.
+                var drill = options.InteractiveTreemap && options.TreemapDrillOnItems && g.Children.Count > 0;
+                return new GroupNode(shapes[g.Group])
+                {
+                    Key = "series:" + g.Name,
+                    Class = drill ? "rio-series rio-treemap-branch rio-treemap-drill" : "rio-series rio-treemap-branch",
+                    Interaction = drill ? new NodeInteraction("treemap", g.PathText(separator)) : null,
+                    AriaLabel = drill ? texts.Fill(nameof(ChartTexts.TreemapShow), culture, summary) : summary,
+                };
             })])
             {
                 Class = "rio-series-treemap",
@@ -528,6 +561,24 @@ public static partial class ChartLayout
         return root;
     }
 
+    /// <summary>The nodes drawn: like <see cref="Walk"/>, but not inside collapsed groups.</summary>
+    private static IEnumerable<TreeNode> WalkShown(TreeNode node)
+    {
+        yield return node;
+        if (node.Collapsed)
+        {
+            yield break;
+        }
+
+        foreach (var child in node.Children)
+        {
+            foreach (var n in WalkShown(child))
+            {
+                yield return n;
+            }
+        }
+    }
+
     private static IEnumerable<TreeNode> Walk(TreeNode node)
     {
         yield return node;
@@ -591,10 +642,13 @@ public static partial class ChartLayout
     /// Gives each node its rectangle: children share their group's rectangle (minus a header with
     /// the group's name when there is room) with the squarified layout.
     /// </summary>
-    private static void Place(TreeNode node, RectF rect, double headerHeight, TreeNode top)
+    /// <param name="depth">Levels below <paramref name="top"/> (its children are level 1).</param>
+    /// <param name="levels">How many levels to draw below <paramref name="top"/>; groups at the last one are collapsed into cells.</param>
+    private static void Place(TreeNode node, RectF rect, double headerHeight, TreeNode top, int depth, int levels)
     {
         node.Rect = rect;
-        if (node.Children.Count == 0)
+        node.Collapsed = node != top && node.Children.Count > 0 && depth >= levels;
+        if (node.Children.Count == 0 || node.Collapsed)
         {
             return;
         }
@@ -611,7 +665,7 @@ public static partial class ChartLayout
         var rects = Squarify([.. node.Children.Select(c => c.Value)], inner);
         for (var i = 0; i < node.Children.Count; i++)
         {
-            Place(node.Children[i], rects[i], headerHeight, top);
+            Place(node.Children[i], rects[i], headerHeight, top, depth + 1, levels);
         }
     }
 

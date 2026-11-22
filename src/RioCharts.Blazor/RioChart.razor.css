@@ -289,11 +289,11 @@
     outline: none;
 }
 
-.rio-chart ::deep .rio-treemap-drill:hover > rect {
+.rio-chart ::deep .rio-treemap-drill:hover > rect.rio-treemap-group {
     fill-opacity: 0.26;
 }
 
-.rio-chart ::deep .rio-treemap-drill:focus-visible > rect,
+.rio-chart ::deep .rio-treemap-drill:focus-visible > rect.rio-treemap-group,
 .rio-chart ::deep .rio-treemap-crumb:focus-visible .rio-legend-hit {
     stroke: var(--rio-focus, var(--_rio-focus));
     stroke-width: 1.5;

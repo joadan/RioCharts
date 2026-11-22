@@ -77,6 +77,13 @@ public sealed record LayoutOptions
 
     /// <summary>Treemaps: make groups and the path bar clickable (scene interactions of kind "treemap", with the group's path).</summary>
     public bool InteractiveTreemap { get; init; }
+
+    /// <summary>
+    /// Treemaps with <see cref="InteractiveTreemap"/>: items do not take clicks themselves (no point
+    /// clicks or selection), so a click anywhere in a group, items included, drills one level into
+    /// it. Off: only a group's header and frame drill (items keep their clicks).
+    /// </summary>
+    public bool TreemapDrillOnItems { get; init; }
 }
 
 /// <summary>The space between the chart's edges and its plot, in pixels.</summary>

@@ -719,12 +719,20 @@ Design.md "Treemap" (milestone 7).
   on the separator; hidden, missing or item paths show the whole tree). The group fills the plot
   without a header; its children are recolored from the palette and the legend is hidden (its
   colors no longer apply); a path bar above the plot names the steps. With
-  `InteractiveTreemap` (the component passes `Live`), each group's tint rectangle and each path
-  step but the last are scene buttons (interaction kind "treemap", id = the path, "" for all),
+  `InteractiveTreemap` (the component passes `Live`), each path step but the last is a scene
+  button, and so are the groups: with `TreemapDrillOnItems` (no `OnPointClick`, no point
+  selection) each top group as a whole, items included, so a group too small for a header still
+  opens; otherwise each group's tint rectangle (header and frame), so items keep their clicks.
+  Buttons (interaction kind "treemap", id = the path, "" for all),
   so clicks and Enter/Space work without the JS module; the labels layer ignores the pointer so
   headers do not block them. Shares in the tooltip stay shares of the whole tree. The component
   keeps the path: `TreemapPath` is a two-way bindable parameter (like `VisibleRange`),
   `DrillDownAsync` and `GetTreemapPath()` work from code, and `OnDrillDown` follows every change.
+- **Visible levels:** `SeriesSpec.VisibleLevels` limits how many levels are laid out below the
+  group shown; a group at the last level is collapsed into a cell (its total, index -1, class
+  `rio-treemap-collapsed`) that drills into itself, or with its top group when items drill. Only
+  what is drawn changes: the tree, totals and shares are those of the whole data. Named after
+  `VisibleRange` (Design.md does not name it); "MaxDepth" read as if it cut the data.
 - **Not yet:** color by a separate value on a sequential scale, and listing an "Other" item's parts
   in its tooltip.
 

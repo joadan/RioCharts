@@ -76,9 +76,12 @@ changes are called out under **Breaking**.
   `SeriesType.Treemap`, `SeriesSpec.Path` and `PathSeparator`, `TooltipSeries.CellHeights` and
   `PointColors`; new `ChartTexts` keys `Treemap`, `ShareOfGroup`, `ShareOfTotal` and
   `TreemapLeftOut`.
-- Treemap drill-down: click a group (its header or frame) to show only it, with its children in their
+- Treemap drill-down: click a group to show only it (anywhere in it, unless items take clicks
+  with `OnPointClick` or point selection: then its header or frame), with its children in their
   own colors and a path bar ("All › Asia") to go back up. From code: `@bind-TreemapPath`
-  (e.g. to keep it in the URL), `DrillDownAsync(path)`, `GetTreemapPath()` and `OnDrillDown`. Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
+  (e.g. to keep it in the URL), `DrillDownAsync(path)`, `GetTreemapPath()` and `OnDrillDown`.
+  `VisibleLevels` (e.g. 2) draws that many levels at a time below the group shown: deeper groups
+  show as one cell with their total and open with a click (JSON: `"visibleLevels"`). Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
   `ChartLayoutResult.TreemapPath`, scene interactions of kind "treemap"; new `ChartTexts` keys
   `TreemapAll`, `TreemapShow` and `TreemapPathLabel`.
 - Radar: the scale values sit above the shapes on a light backing, so a shape crossing the first

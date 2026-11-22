@@ -145,6 +145,11 @@ public static class ChartRazor
             {
                 sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\"");
             }
+
+            if (s.Type == SeriesType.Treemap && s.VisibleLevels is { } levels)
+            {
+                sb.Append($" VisibleLevels=\"{levels}\"");
+            }
             if (s.Type == SeriesType.RangeArea && s.Low is { } lowField)
             {
                 sb.Append($" LowValue=\"r => r.{Property(lowField)}\"");

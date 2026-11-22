@@ -211,6 +211,55 @@ public class TreemapTests
     }
 
     [Fact]
+    public void When_items_do_not_click_the_whole_group_drills()
+    {
+        var result = ChartLayout.Compute(Spec(), Data(), Options with { InteractiveTreemap = true, TreemapDrillOnItems = true });
+
+        var drill = All<GroupNode>(result.Scene.Series).Where(g => g.Interaction?.Kind == "treemap").ToList();
+        Assert.Equal(3, drill.Count);
+        var asia = drill.Single(g => g.Interaction!.Id == "Asia");
+        Assert.Equal("series:Asia", asia.Key); // the branch itself: its tint and all its items
+        Assert.Equal(3, asia.Children.OfType<RectNode>().Count(r => r.Class == "rio-treemap-cell"));
+        Assert.StartsWith("Show Asia", asia.AriaLabel, StringComparison.Ordinal);
+        Assert.DoesNotContain(All<GroupNode>(asia).Skip(1), g => g.Interaction is not null); // no nested buttons
+    }
+
+    [Fact]
+    public void VisibleLevels_draws_deeper_groups_as_one_cell()
+    {
+        string[] paths = ["Home/Photos/2024", "Home/Photos/2025", "Home/Music", "Work/Projects/Web", "Work/Projects/App", "Work/Mail"];
+        double[] sizes = [96, 132, 48, 40, 34, 18];
+        var spec = Spec(Tree() with { VisibleLevels = 2 });
+
+        var top = ChartLayout.Compute(spec, Data(paths, sizes), Options with { InteractiveTreemap = true });
+        var drilled = ChartLayout.Compute(spec, Data(paths, sizes), Options with { TreemapPath = "Home", InteractiveTreemap = true });
+        var all = ChartLayout.Compute(Spec(), Data(paths, sizes), Options);
+
+        // Two levels: Home and Work, then Photos and Projects as cells (with their totals), Music and Mail as items.
+        Assert.Equal(4, Cells(top).Count);
+        var collapsed = Cells(top).Where(c => c.Class!.Contains("rio-treemap-collapsed", StringComparison.Ordinal)).ToList();
+        Assert.Equal(2, collapsed.Count);
+        var tip = top.Tooltip.Series[0];
+        var photos = Array.IndexOf(tip.XLabels, "Home › Photos");
+        Assert.Equal(("228 M", -1), (tip.Values[photos], tip.Index[photos])); // a group: not an item to click
+        Assert.DoesNotContain("Home › Photos › 2025", tip.XLabels);
+        // With items clickable (no DrillOnItems) the collapsed cell drills into itself.
+        Assert.Contains(All<GroupNode>(top.Scene.Series), g => g.Interaction?.Id == "Home/Photos");
+        // Drilled into Home, two levels go one deeper: Photos is a group again, its years items.
+        Assert.Contains("Home › Photos › 2025", drilled.Tooltip.Series[0].XLabels);
+        Assert.Equal(6, Cells(all).Count); // no limit: every item
+    }
+
+    [Fact]
+    public void A_json_treemap_takes_visibleLevels()
+    {
+        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "treemap", "x": "path", "y": "size", "visibleLevels": 1 } ] }""");
+
+        Assert.Equal(1, parsed.Spec!.Series[0].VisibleLevels);
+        Assert.Contains("VisibleLevels=\"1\"", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Nested_groups_and_unknown_paths()
     {
         string[] paths = ["Home/Photos/2024", "Home/Photos/2025", "Home/Music", "Work/Projects"];

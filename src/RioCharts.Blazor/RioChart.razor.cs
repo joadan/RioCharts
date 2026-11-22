@@ -482,6 +482,7 @@ public partial class RioChart<TItem> : IChartContext
             SelectedPoints = selectedPoints,
             TreemapPath = _treemapPath,
             InteractiveTreemap = Live,
+            TreemapDrillOnItems = !OnPointClick.HasDelegate && Selection != SelectionMode.Points,
         });
         _dirty = false;
         return _layout;

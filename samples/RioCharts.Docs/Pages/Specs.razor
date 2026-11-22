@@ -9,6 +9,11 @@
     with <code>&lt;RioChart Spec="spec" Datasets="datasets" /&gt;</code>, on the server, or through the <a href="ai">create_chart tool</a>.
     Edit the spec below; it is parsed, validated and drawn in your browser.
 </p>
+<p>
+    The spec holds no data itself: it refers to a <strong>dataset</strong> by name and to its <strong>fields</strong> (columns) by name.
+    Your app passes the datasets in (see <a href="specs#datasets">where the data comes from</a>), or a small spec carries its own rows in
+    <code>"data"</code>. The panel above the editor shows the datasets this page has.
+</p>
 
 <section class="example">
 <div class="example-card playground">
@@ -19,13 +24,64 @@
         }
     </div>
 
+    @{ var shown = ShownDataset(); }
+    <div class="spec-data">
+        <div class="spec-data-tabs" role="tablist" aria-label="Datasets">
+            <span class="spec-data-label">Data</span>
+            @foreach (var ds in Datasets())
+            {
+                var active = ds.Name == shown.Name;
+                <button role="tab" aria-selected="@(active ? "true" : "false")" class="@(active ? "active" : null)" @onclick="() => _picked = ds.Name">
+                    <code>@ds.Name</code>@if (ds.Name == UsedDataset()) {<span class="spec-data-used">used by the spec</span>}
+                </button>
+            }
+        </div>
+        <p class="spec-data-about">
+            @if (shown.Name == "inline")
+            {
+                <text>Rows written in the spec itself (<code>"data": [ ... ]</code>), for a few values an agent already has.</text>
+            }
+            else
+            {
+                <text>@shown.Description. Passed in from C# with <code>Datasets="datasets"</code>.</text>
+            }
+            <span class="spec-data-count">@shown.RowCount rows, @shown.Fields.Count fields</span>
+        </p>
+        <div class="spec-data-table">
+            <table>
+                <thead>
+                    <tr>
+                        @foreach (var field in shown.Fields)
+                        {
+                            <th><code>@field.Name</code> <span class="spec-data-type">@field.Type.ToString().ToLowerInvariant()</span></th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in SampleRows(shown))
+                    {
+                        <tr>
+                            @foreach (var field in shown.Fields)
+                            {
+                                <td>@Cell(field.Values[row])</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (shown.RowCount > SampleRows(shown).Count)
+        {
+            <p class="spec-data-more">@SampleRows(shown).Count of @shown.RowCount rows, spread over the dataset.</p>
+        }
+    </div>
+
     @* A transparent textarea over a highlighted copy of its text. Both wrap the same way and the
        highlighted copy sets the height, so they stay aligned without scroll syncing. *@
     <div class="spec-editor">
         <pre aria-hidden="true"><code>@((MarkupString)_highlighted)</code></pre>
         <textarea spellcheck="false" aria-label="Chart spec (JSON)" @bind="_json" @bind:event="oninput" @bind:after="Render"></textarea>
     </div>
-    <p class="note">Datasets: @string.Join("; ", SpecDatasets.ByName.Values.Select(d => $"{d.Name} ({string.Join(", ", d.Fields.Select(f => $"{f.Name}: {f.Type.ToString().ToLowerInvariant()}"))})"))</p>
 
     <div class="example-live">
         @if (_spec is not null)
@@ -59,8 +115,10 @@
 <h2>What a spec can say</h2>
 <table class="docs">
     <tr><th>Series option</th><th>Meaning</th></tr>
-    <tr><td><code>type</code></td><td>line, area, bar, pie, radialBar, or <code>auto</code> (time → line, categories → bar, shares of 100 % → donut). Synonyms such as column, doughnut and spline are accepted.</td></tr>
-    <tr><td><code>x</code>, <code>y</code></td><td>Field names in the dataset; <code>dataset</code> on the chart or the series, or inline <code>data</code> rows.</td></tr>
+    <tr><td><code>type</code></td><td>line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, pie, radialBar, radar, treemap, or <code>auto</code> (time → line, categories → bar, shares of 100 % → donut). Synonyms such as column, doughnut, spline and spider are accepted.</td></tr>
+    <tr><td><code>dataset</code></td><td>Which dataset to read, on the chart or per series; leave it out when the spec has inline <code>data</code> rows.</td></tr>
+    <tr><td><code>x</code>, <code>y</code></td><td>Field names in that dataset: x is the time, category or number along the axis, y the value.</td></tr>
+    <tr><td><code>low</code>, <code>high</code>, <code>q1</code>, <code>q3</code>, <code>open</code>, <code>path</code></td><td>Extra fields some types read: a range area's low values; a box plot's precomputed quartiles and whiskers; a candlestick's open, high and low; a treemap's group fields (<code>"path": ["region", "country"]</code>).</td></tr>
     <tr><td><code>filter</code></td><td><code>[{ "field": "channel", "op": "eq", "value": "App" }]</code>, ops eq, ne, gt, gte, lt, lte, contains.</td></tr>
     <tr><td><code>timeBucket</code>, <code>aggregate</code></td><td>hour, day, week, month, quarter, year; sum, average, min, max, count, last.</td></tr>
     <tr><td><code>groupBy</code></td><td>One series per value of a field.</td></tr>
@@ -71,6 +129,15 @@
     e.g. <code>series[0].y: field 'visits' not found in 'shop'; available: timestamp (time), channel (text), ...</code>, so an agent can fix the spec and try again.
     <code>ChartSpecJson.Schema()</code> returns the JSON schema with a description of every option.
 </p>
+
+<h2 id="datasets">Where the data comes from</h2>
+<p>
+    A dataset is a named table: one value per row for each field. Field types (time, number, text) are read from the values, and an
+    optional description tells an agent what the data means. Build them from your own rows, from CSV, or let an
+    <code>IChartDataSource</code> load them when a spec asks (e.g. <code>FolderDataSource</code> for a folder of CSV and JSON files).
+</p>
+<CodeBlock Language="csharp" Code="@DatasetsCode" />
+<CodeBlock Language="razor" Code="@ChartCode" />
 
 <h3>The spec as read</h3>
 @if (_normalized is not null)
@@ -138,6 +205,69 @@
             """),
     ];
 
+    private const string DatasetsCode = """
+        // One dictionary per row: field name -> value.
+        var rows = traffic.Select(t => new Dictionary<string, object?>
+        {
+            ["timestamp"] = t.Hour,
+            ["channel"] = t.Channel,
+            ["orders"] = t.Orders,
+        });
+
+        var datasets = new Dictionary<string, ChartDataset>
+        {
+            ["shop"] = ChartDataset.FromRows("shop", rows,
+                "Online store traffic per sales channel, hourly"),
+            ["sales"] = ChartDataset.FromCsv("sales", File.ReadAllText("sales.csv"),
+                "Revenue per category and month, k€"),
+        };
+        """;
+
+    private const string ChartCode = """
+        <RioChart Spec="spec" Datasets="datasets" />
+        """;
+
+    private string? _picked;
+
+    /// <summary>The playground's datasets, plus the spec's inline rows when it has some.</summary>
+    private IEnumerable<ChartDataset> Datasets()
+    {
+        foreach (var ds in SpecDatasets.ByName.Values)
+        {
+            yield return ds;
+        }
+
+        if (_spec?.Data is { Count: > 0 } rows)
+        {
+            yield return ChartDataset.FromRows("inline", rows);
+        }
+    }
+
+    /// <summary>The dataset the spec reads (its own, its first series', or its inline rows).</summary>
+    private string? UsedDataset() =>
+        _spec?.Data is { Count: > 0 } ? "inline" : _spec?.Dataset ?? _spec?.Series.Select(s => s.Dataset).FirstOrDefault(d => d is not null);
+
+    private ChartDataset ShownDataset()
+    {
+        var all = Datasets().ToList();
+        return all.FirstOrDefault(d => string.Equals(d.Name, _picked, StringComparison.OrdinalIgnoreCase))
+            ?? all.FirstOrDefault(d => string.Equals(d.Name, UsedDataset(), StringComparison.OrdinalIgnoreCase))
+            ?? all[0];
+    }
+
+    /// <summary>Up to five rows spread over the dataset (the playground's are sorted by channel or month).</summary>
+    private static List<int> SampleRows(ChartDataset ds) =>
+        ds.RowCount <= 5 ? [.. Enumerable.Range(0, ds.RowCount)] : [.. Enumerable.Range(0, 5).Select(i => i * ds.RowCount / 5)];
+
+    private static string Cell(object? value) => value switch
+    {
+        null => "",
+        DateTime t => t.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture),
+        DateTimeOffset t => t.ToString("yyyy-MM-dd HH:mm zzz", System.Globalization.CultureInfo.InvariantCulture),
+        double d => d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+        _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "",
+    };
+
     private string _json = "";
     private string _highlighted = "";
     private ChartSpec? _spec;
@@ -149,6 +279,7 @@
 
     private void Load(string json)
     {
+        _picked = null; // show the dataset the new example uses
         _json = json;
         Render();
     }

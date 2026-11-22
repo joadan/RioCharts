@@ -262,6 +262,10 @@ public sealed record SeriesSpec
     [Description("Treemap: the fields that name the groups, from the outermost to the item, e.g. [\"region\", \"country\", \"city\"]; used instead of x. Without it, x is the item's path, e.g. \"Europe/Sweden/Stockholm\".")]
     public IReadOnlyList<string>? Path { get; init; }
 
+    /// <summary>Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.</summary>
+    [Description("Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.")]
+    public int? VisibleLevels { get; init; }
+
     /// <summary>Treemap: what separates the groups in an x path. Default "/".</summary>
     [Description("Treemap: what separates the groups in an x path. Default \"/\".")]
     public string? PathSeparator { get; init; }

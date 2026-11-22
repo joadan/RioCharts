@@ -1208,6 +1208,111 @@ table.docs tr:last-child td {
     margin-bottom: 12px;
 }
 
+/* The datasets the playground's specs can read: a tab per dataset, what it is, a few rows. */
+.spec-data {
+    margin-bottom: 14px;
+    border: 1px solid var(--doc-border);
+    border-radius: 12px;
+    background: var(--doc-surface);
+    overflow: hidden;
+}
+
+.spec-data-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--doc-border);
+    background: var(--doc-surface-2);
+}
+
+.spec-data-label {
+    margin-right: 4px;
+    color: var(--doc-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.spec-data-tabs button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--doc-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.spec-data-tabs button.active {
+    border-color: var(--doc-border-strong);
+    background: var(--doc-surface);
+    color: var(--doc-text);
+}
+
+.spec-data-used {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--doc-accent-soft);
+    color: var(--doc-accent);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.spec-data-about {
+    margin: 0;
+    padding: 10px 14px 6px;
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+
+.spec-data-count {
+    margin-left: 6px;
+    color: var(--doc-muted);
+    white-space: nowrap;
+}
+
+.spec-data-table {
+    overflow-x: auto;
+}
+
+.spec-data-table table {
+    width: 100%;
+    border-spacing: 0;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.spec-data-table th, .spec-data-table td {
+    padding: 6px 10px;
+    border-top: 1px solid var(--doc-border);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.spec-data-table th {
+    font-weight: 400;
+}
+
+.spec-data-type {
+    margin-left: 4px;
+    color: var(--doc-muted);
+    font-size: 11px;
+}
+
+.spec-data-more {
+    margin: 0;
+    padding: 6px 14px 8px;
+    border-top: 1px solid var(--doc-border);
+    color: var(--doc-muted);
+    font-size: 12px;
+}
+
 .spec-messages {
     margin: 10px 0 0;
     padding-left: 20px;

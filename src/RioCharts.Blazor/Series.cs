@@ -658,6 +658,13 @@ public sealed class TreemapSeries<TItem> : SeriesBase<TItem>
     /// <summary>Group items smaller than this share of their group (e.g. 0.03) into one "Other" item per group.</summary>
     [Parameter] public double? GroupSmallItems { get; set; }
 
+    /// <summary>
+    /// How many levels to draw at once below the group shown, e.g. 2 for continents and their
+    /// countries; deeper groups show as one cell with their total and open on a click (drill-down).
+    /// Null: all levels. The data keeps every level either way.
+    /// </summary>
+    [Parameter] public int? VisibleLevels { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Treemap;
 
@@ -668,6 +675,7 @@ public sealed class TreemapSeries<TItem> : SeriesBase<TItem>
     {
         PathSeparator = PathSeparator,
         GroupSmallSlices = GroupSmallItems,
+        VisibleLevels = VisibleLevels,
     };
 
     private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
