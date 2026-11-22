@@ -6,7 +6,7 @@
 <p class="lead">Add the package, two usings, and a chart. Zero configuration gives a finished chart.</p>
 
 <h2>Install</h2>
-<p>RioCharts is on <a href="https://www.nuget.org/packages?q=RioCharts" target="_blank" rel="noopener">NuGet</a>. For Blazor (Server, WebAssembly or Auto), add one package:</p>
+<p>RioCharts is on <a href="https://www.nuget.org/packages?q=RioCharts" target="_blank" rel="noopener">NuGet</a>. For Blazor (Server, WebAssembly, Auto or <a href="getting-started#render-modes">MAUI Blazor Hybrid</a>), add one package:</p>
 <CodeBlock Language="shell" Code="dotnet add package RioCharts.Blazor --prerelease" />
 <p>Then in <code>_Imports.razor</code>:</p>
 <CodeBlock Code="@ImportsCode" />
@@ -83,7 +83,7 @@
     <li>The chart fills its container's width and is 300 px high by default (<code>Height</code>).</li>
 </ul>
 
-<h2>Render modes, trimming and native AOT</h2>
+<h2 id="render-modes">Render modes, trimming and native AOT</h2>
 <ul>
     <li>
         <strong>Interactive pages</strong> (Server, WebAssembly or Auto) get everything: tooltips, zoom, keyboard navigation and downloads.
@@ -92,6 +92,11 @@
         <strong>Static server rendering and prerendering</strong> draw the chart as plain SVG, with no JS. It is laid out at <code>Width</code>
         (or 640 px) and scales to its container. Tooltips, the download button and keyboard navigation appear once the page is interactive.
         Canvas series are drawn as SVG until then, so the prerendered chart is never blank.
+    </li>
+    <li>
+        <strong>.NET MAUI Blazor Hybrid</strong> (<code>dotnet new maui-blazor</code>): the same package and usings, nothing else. The
+        chart runs in the app's WebView and is always interactive. Tooltips, zoom, clicks and the PNG download work on Windows;
+        Android and iOS have not been tested yet.
     </li>
     <li>
         <strong>Trimming and native AOT:</strong> the libraries are marked AOT-compatible and publish without trimming warnings. JSON specs use

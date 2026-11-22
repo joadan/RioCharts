@@ -8,6 +8,8 @@ changes are called out under **Breaking**.
 - RioCharts is presented as charts for .NET, not only Blazor: one chart model, interactive in
   Blazor, PNG and SVG on the server, and created by AI agents. The docs start page shows the three
   outputs side by side; the title, link preview card, READMEs and llms.txt follow.
+- Docs: Getting started notes that RioCharts.Blazor works in .NET MAUI Blazor Hybrid apps
+  (tested on Windows; Android and iOS not yet).
 
 ## 0.2.1-preview (2026-11-22)
 
