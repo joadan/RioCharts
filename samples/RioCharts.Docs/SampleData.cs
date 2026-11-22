@@ -343,6 +343,13 @@ public static class SampleData
         new("Jul", 4), new("Aug", -11), new("Sep", 15), new("Oct", 24), new("Nov", 37), new("Dec", 52),
     ];
 
+    /// <summary>Visits per page of a web shop in a month: a few pages get most of them.</summary>
+    public static readonly List<Share> PageVisits =
+    [
+        new("Start", 1_240_000), new("Search", 386_000), new("Running shoes", 92_400), new("Rain jacket", 18_700),
+        new("Size guide", 6_150), new("Blog post", 1_830), new("Careers", 412), new("Old campaign", 37),
+    ];
+
     /// <summary>One step of a load test: concurrent users and the response times measured at that load.</summary>
     public sealed record LoadStep(double Users, double MedianMs, double P95Ms);
 

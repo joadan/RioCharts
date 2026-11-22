@@ -17,6 +17,9 @@ public static partial class ChartLayout
         public required bool Right { get; init; }
         public List<Resolved> Series { get; } = [];
 
+        /// <summary>A logarithmic axis (<see cref="ScaleType.Log"/>).</summary>
+        public bool Log => Spec.Scale == ScaleType.Log;
+
         /// <summary>True when at least one drawable series uses the axis.</summary>
         public bool Visible { get; set; }
 
@@ -84,10 +87,11 @@ public static partial class ChartLayout
         double min = double.PositiveInfinity, max = double.NegativeInfinity;
         double labelMin = double.PositiveInfinity, labelMax = double.NegativeInfinity;
         var includeZero = false;
+        var log = axis.Log; // only positive values count; zero is not on the axis
         foreach (var r in axis.Series)
         {
             // Compact charts fit the data; only bars keep zero (a bar's length is its value).
-            includeZero |= r.Type.IncludesZero && (!compact || r.Type.UsesSlots);
+            includeZero |= r.Type.IncludesZero && (!compact || r.Type.UsesSlots) && !log;
             Include(r.Upper, r.Data.X);
             if (!compact && r.Spec.DataLabels == true && r.Spec.Type == SeriesType.Bar && r.Lower is null)
             {
@@ -131,6 +135,11 @@ public static partial class ChartLayout
             {
                 foreach (var v in a.YValues)
                 {
+                    if (log && !(v > 0))
+                    {
+                        continue;
+                    }
+
                     min = Math.Min(min, v);
                     max = Math.Max(max, v);
                 }
@@ -139,7 +148,7 @@ public static partial class ChartLayout
 
         if (!double.IsFinite(min))
         {
-            (min, max) = (0, 1);
+            (min, max) = log ? (1, 10) : (0, 1);
         }
 
         if (includeZero)
@@ -148,8 +157,9 @@ public static partial class ChartLayout
             max = Math.Max(max, 0);
         }
 
-        axis.ExtentMin = axis.Spec.Min ?? min;
-        axis.ExtentMax = axis.Spec.Max ?? max;
+        // A log axis ignores a Min or Max of zero or below (they are not on it).
+        axis.ExtentMin = log && !(axis.Spec.Min > 0) ? min : axis.Spec.Min ?? min;
+        axis.ExtentMax = log && !(axis.Spec.Max > 0) ? max : axis.Spec.Max ?? max;
         axis.LabelMin = double.IsFinite(labelMin) ? labelMin : double.NaN;
         axis.LabelMax = double.IsFinite(labelMax) ? labelMax : double.NaN;
 
@@ -161,7 +171,7 @@ public static partial class ChartLayout
             {
                 // Plain comparisons on finite values: faster than Math.Min/Max, which handle NaN and -0.
                 var y = values[i];
-                if (!double.IsFinite(y))
+                if (!double.IsFinite(y) || (log && y <= 0))
                 {
                     continue;
                 }
@@ -212,6 +222,12 @@ public static partial class ChartLayout
     private static void ComputeYTicks(YAxisLayout axis, int target, CultureInfo culture, ITextMeasurer measure, double font, double plotHeight,
         YAxisLayout? align = null)
     {
+        if (axis.Log)
+        {
+            ComputeLogTicks(axis, culture, measure, font, plotHeight);
+            return;
+        }
+
         var (min, max) = (axis.ExtentMin, axis.ExtentMax);
         if (max < min)
         {
@@ -269,7 +285,7 @@ public static partial class ChartLayout
         }
 
         // Secondary axes put their ticks on the grid axis' lines when they can.
-        if (align is { Ticks.Count: > 1 } grid && axis.Spec.Min is null && axis.Spec.Max is null
+        if (align is { Ticks.Count: > 1, Log: false } grid && axis.Spec.Min is null && axis.Spec.Max is null
             && grid.Ticks[0] == grid.DomainMin && grid.Ticks[^1] == grid.DomainMax
             && NiceTicks.AlignedDomain(min, max, grid.Ticks.Count - 1) is { } aligned)
         {
@@ -280,6 +296,40 @@ public static partial class ChartLayout
         axis.DomainMax = axis.Spec.Max ?? niceMax;
         axis.Ticks = NiceTicks.Ticks(axis.DomainMin, axis.DomainMax, step);
         var format = NumberFormatter.ForTicks(axis.Ticks, step, culture, axis.Spec.Format);
+        axis.Labels = axis.Ticks.Select(format).ToList();
+        axis.LabelWidth = axis.Visible ? axis.Labels.Select(l => measure.Measure(l, font)).DefaultIfEmpty(0).Max() : 0;
+    }
+
+    /// <summary>
+    /// Ticks of a log axis: the extent rounded out to powers of ten, unless Min or Max is set (and positive). Secondary
+    /// log axes do not align to the grid axis' lines; a log grid has no even steps to share.
+    /// </summary>
+    private static void ComputeLogTicks(YAxisLayout axis, CultureInfo culture, ITextMeasurer measure, double font, double plotHeight)
+    {
+        // Every power of ten is worth a label, and they read well closer together than linear ticks (28 px, not 42).
+        var target = Math.Clamp((int)(plotHeight / 28), 2, 12);
+        var (min, max) = (Math.Min(axis.ExtentMin, axis.ExtentMax), Math.Max(axis.ExtentMin, axis.ExtentMax));
+        var (niceMin, niceMax) = NiceTicks.LogDomain(min, max);
+        var fixedMin = axis.Spec.Min is > 0 and var lo ? lo : (double?)null;
+        var fixedMax = axis.Spec.Max is > 0 and var hi ? hi : (double?)null;
+
+        // The highest bar's data label needs room above it (see ComputeYTicks): one more decade when it has none.
+        var room = DataLabelHeight(font) + DataLabelGap - DataLabelOverhang;
+        if (fixedMax is null && axis.LabelMax is > 0 and var top && plotHeight > room * 3
+            && Math.Log10(niceMax / top) * plotHeight / Math.Log10(niceMax / (fixedMin ?? niceMin)) < room)
+        {
+            niceMax *= 10;
+        }
+
+        axis.DomainMin = fixedMin ?? niceMin;
+        axis.DomainMax = fixedMax ?? niceMax;
+        if (!(axis.DomainMax > axis.DomainMin))
+        {
+            axis.DomainMax = axis.DomainMin * 10;
+        }
+
+        axis.Ticks = NiceTicks.LogTicks(axis.DomainMin, axis.DomainMax, target);
+        var format = NumberFormatter.ForLogTicks(culture, axis.Spec.Format);
         axis.Labels = axis.Ticks.Select(format).ToList();
         axis.LabelWidth = axis.Visible ? axis.Labels.Select(l => measure.Measure(l, font)).DefaultIfEmpty(0).Max() : 0;
     }

@@ -459,6 +459,13 @@ public enum ScaleType
 
     /// <summary>Evenly spaced categories.</summary>
     Band,
+
+    /// <summary>
+    /// A logarithmic numeric axis (y axes only): equal ratios get equal distances, for data that spans several powers
+    /// of ten. Ticks are powers of ten (with 2 and 5 between them for short ranges). Values of zero or below have no
+    /// place on it: they are left out (gaps in lines) with a warning.
+    /// </summary>
+    Log,
 }
 
 /// <summary>Side of a vertical axis.</summary>

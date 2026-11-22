@@ -53,6 +53,33 @@ public sealed class NumberFormatter
         return formatter.Format;
     }
 
+    /// <summary>
+    /// Tick labels for a logarithmic axis. Its ticks span several powers of ten, so each is formatted on its own:
+    /// compact from 1000 (1k, 20k, 5M) and with the decimals a small value needs (0.01, 0.5).
+    /// </summary>
+    public static Func<double, string> ForLogTicks(CultureInfo culture, string? customFormat = null)
+    {
+        if (!string.IsNullOrEmpty(customFormat))
+        {
+            return v => SafeFormat(v, customFormat, culture);
+        }
+
+        return v =>
+        {
+            var (divisor, suffix) = (1d, "");
+            foreach (var scale in Scales)
+            {
+                if (Math.Abs(v) >= scale.Divisor)
+                {
+                    (divisor, suffix) = scale;
+                    break;
+                }
+            }
+
+            return new NumberFormatter(divisor, suffix, Decimals(Math.Abs(v) / divisor), culture).Format(v);
+        };
+    }
+
     /// <summary>Formats a tick value with this axis's compact suffix and decimals.</summary>
     public string Format(double value)
     {

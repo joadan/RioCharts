@@ -5,6 +5,15 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Logarithmic y axes: `AxisSpec.Scale = ScaleType.Log` (`"scale": "log"` in JSON specs) for data
+  that spans several powers of ten. Ticks are powers of ten (with 2 and 5 between them for short
+  ranges), labelled 0.01, 1, 1k, 5M. Bars and areas start at the bottom of the axis; values of zero
+  or below are left out (gaps) with a warning. Draggable reference lines drag in log units. Not for
+  x axes yet (a warning; the axis stays linear). Docs: a "Logarithmic axis" example on Axes and
+  time, with a switch to linear. `LinearScale.Log`, `LinearScale.IsLog`, `NiceTicks.LogDomain`,
+  `NiceTicks.LogTicks` and `NumberFormatter.ForLogTicks` are new in Core; `DragHandle` has a new
+  `Log` parameter (optional, last).
+
 - RioCharts is presented as charts for .NET, not only Blazor: one chart model, interactive in
   Blazor, PNG and SVG on the server, and created by AI agents. The docs start page shows the three
   outputs side by side; the title, link preview card, READMEs and llms.txt follow.

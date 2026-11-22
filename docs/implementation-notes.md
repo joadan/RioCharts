@@ -68,6 +68,16 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   several). The first axis with visible series owns the grid and the zero line; the others choose
   a domain with the same number of nice steps, so their labels sit on its grid lines. An axis whose
   series are all hidden is not shown. Zeros of different axes are not aligned.
+- **Log axes.** `ScaleType.Log` on a y axis. `LinearScale.Log` maps log10 of the value (still a
+  `LinearScale`, flagged `IsLog`, so `ChartLayoutResult.YScale` and every caller keep their type);
+  zero and below map to the bottom of the range, so bars and areas start there. The domain is the
+  data rounded out to powers of ten (a positive `Min`/`Max` is kept; zero or below is ignored).
+  Ticks are 1, 2 and 5 per decade for short ranges, else every (k-th) power of ten, one per 28 px
+  (linear axes: 42 px); labels are formatted one by one (`NumberFormatter.ForLogTicks`: 0.01, 1k,
+  5M). Series values of zero or below become gaps on copies of the data, and annotation lines and
+  points there are not drawn, each with a warning. A linear second axis does not align to a log
+  grid. Draggable lines drag in log10 units (`DragHandle.Log`; .NET takes 10^value). Not for x
+  axes (a warning; the axis stays linear), horizontal bars, radar or polar charts.
 - **Data labels** are off by default (`DataLabels` per series). Bars: above the bar (below when
   negative), or inside it in the inverse color when there is no room above; stacked segments only
   inside, when the label fits. Points: above, else below. A label overlapping an earlier label or
@@ -555,7 +565,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   "everything at this x" means little for unordered points. No crosshair; the hovered point gets a
   ring. The tooltip header is "x axis title: x" for scatter.
 - **Not yet:** bubble (a third, size field: `SeriesData` has no column for it), per-point colors,
-  and log axes.
+  and a log x axis (log y axes work, see Log axes).
 
 
 ## Heatmap

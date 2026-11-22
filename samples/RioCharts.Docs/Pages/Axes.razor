@@ -40,6 +40,26 @@
     </ChildContent>
 </Example>
 
+<Example Title="Logarithmic axis" Code="@LogCode">
+    <Description>
+        <p>
+            For values that span several powers of ten, <code>Scale = ScaleType.Log</code> on a y axis gives equal ratios equal
+            distances: 10 to 100 is as tall as 100k to 1M. Here the visits per page in a month: on a linear axis the start page
+            flattens everything else, on a log axis every page can be read. Ticks are powers of ten (with 2 and 5 between them when
+            the range is short); bars start at the bottom of the axis. Zero and negative values have no place on a log axis: they
+            are left out, with a warning. In JSON specs: <code>"y": { "scale": "log" }</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="PageVisits" YAxis="@(_log ? VisitsLog : Visits)" Height="260">
+            <BarSeries Name="Visits" XValue="p => p.Name" YValue="p => p.Value" Format="#,0" DataLabels="true" />
+        </RioChart>
+        <p class="note">
+            <label><input type="checkbox" @bind="_log" /> Logarithmic</label>
+        </p>
+    </ChildContent>
+</Example>
+
 <Example Title="Display time zone" Code="@ZoneCode">
     <Description>
         <p>
@@ -71,6 +91,15 @@
     private static readonly AxisSpec _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
     private static readonly System.Globalization.CultureInfo _german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
     private string? _zone = "Europe/Stockholm";
+    private bool _log = true;
+    private static readonly AxisSpec Visits = new() { Title = "Visits per month" };
+    private static readonly AxisSpec VisitsLog = Visits with { Scale = ScaleType.Log };
+
+    private const string LogCode = """
+        <RioChart Items="pageVisits" YAxis="@(new AxisSpec { Title = "Visits per month", Scale = ScaleType.Log })">
+            <BarSeries Name="Visits" XValue="p => p.Name" YValue="p => p.Value" Format="#,0" DataLabels="true" />
+        </RioChart>
+        """;
 
     // Web sessions per hour (four 15-minute readings each), and the orders they bring.
     private static readonly List<Reading> _hourlySessions = WebSessions.Chunk(4)

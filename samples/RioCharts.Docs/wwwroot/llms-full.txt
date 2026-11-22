@@ -33,6 +33,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - `Items` goes on the chart (shared by all series) or on each series. `TItem` is inferred from `Items`; set `TItem` on `<RioChart>` when only the series have `Items` or when the chart has event handlers (`OnPointClick`, ...).
 - `XValue` returns the x value: `DateTime`/`DateTimeOffset` give a time axis, numbers a linear axis, strings a category axis (categories keep the order of the items).
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
+- Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisSpec { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON specs). Values of zero or below are left out.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
 - Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
 - Size: the chart fills its container's width; `Height` is 300 px by default.
@@ -943,6 +944,7 @@ The scale of an axis.
 - `Linear` — A continuous numeric axis.
 - `Time` — A continuous time axis with calendar ticks.
 - `Band` — Evenly spaced categories.
+- `Log` — A logarithmic numeric axis (y axes only): equal ratios get equal distances, for data that spans several powers of ten. Ticks are powers of ten (with 2 and 5 between them for short ranges). Values of zero or below have no place on it: they are left out (gaps in lines) with a warning.
 
 #### `AxisPosition` (enum, RioCharts.Core)
 

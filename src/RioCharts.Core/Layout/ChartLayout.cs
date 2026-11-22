@@ -288,6 +288,10 @@ public static partial class ChartLayout
         }
 
         var xKind = ResolveXKind(spec.X.Scale, resolved);
+        if (spec.X.Scale == ScaleType.Log)
+        {
+            warnings.Add("x.scale: a log scale is for y axes only; the x axis is linear.");
+        }
 
         // Counts, extremes and trend per series for the screen reader texts, computed once: the
         // legend, the series' labels and the chart description all use them.
@@ -324,6 +328,7 @@ public static partial class ChartLayout
         ApplyStacking(drawable, xKind, categoryIndex);
 
         var annotations = ResolveAnnotations(spec, axes, xKind, categories, warnings, time);
+        LeaveOutNonPositive(drawable, annotations, warnings);
         var hasBars = drawable.Any(r => r.Type.UsesSlots);
         var (xMin, xMax, barSpacing) = xKind == XKind.Category
             ? (0, 0, 0)
@@ -459,7 +464,9 @@ public static partial class ChartLayout
         PlaceAxisColumns(right, plotRight + LabelGap, 1);
         foreach (var axis in axes)
         {
-            axis.Scale = new LinearScale(axis.DomainMin, axis.DomainMax, plotBottom, plotTop);
+            axis.Scale = axis.Log
+                ? LinearScale.Log(axis.DomainMin, axis.DomainMax, plotBottom, plotTop)
+                : new LinearScale(axis.DomainMin, axis.DomainMax, plotBottom, plotTop);
         }
 
 
@@ -840,6 +847,52 @@ public static partial class ChartLayout
     }
 
     // ---------- Series helpers ----------
+
+    /// <summary>
+    /// Zero and negative values have no place on a log axis: series values become gaps (on copies; the data stays as
+    /// it is) and lines and points of annotations are not drawn, each with one warning.
+    /// </summary>
+    private static void LeaveOutNonPositive(List<Resolved> drawable, List<ResolvedAnnotation> annotations, List<string> warnings)
+    {
+        foreach (var r in drawable.Where(r => r.Axis.Log))
+        {
+            var count = 0;
+            r.Upper = Gaps(r.Upper);
+            if (r.Spec.Type == SeriesType.RangeArea && r.Lower is not null)
+            {
+                r.Lower = Gaps(r.Lower); // the low values; stack bases (zero for the first series) stay
+            }
+
+            if (count > 0)
+            {
+                warnings.Add($"series '{r.Spec.Id}': {count} value(s) of zero or below are left out; a log axis has no place for them.");
+            }
+
+            double[] Gaps(double[] values)
+            {
+                double[]? copy = null;
+                for (var i = 0; i < values.Length; i++)
+                {
+                    if (values[i] <= 0)
+                    {
+                        copy ??= (double[])values.Clone();
+                        copy[i] = double.NaN;
+                        count++;
+                    }
+                }
+
+                return copy ?? values;
+            }
+        }
+
+        foreach (var a in annotations.Where(a => !a.IsX && a.Axis is { Log: true }))
+        {
+            if ((a.IsPoint && !(a.B > 0)) || (!a.IsPoint && !a.IsBand && !(a.A > 0)))
+            {
+                warnings.Add($"annotation '{a.Id}': a value of zero or below has no place on a log axis; it is not drawn.");
+            }
+        }
+    }
 
     private static XKind ResolveXKind(ScaleType scale, List<Resolved> series) => scale switch
     {

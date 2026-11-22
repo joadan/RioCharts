@@ -526,6 +526,11 @@ public partial class RioChart<TItem> : IChartContext
             }
         }
 
+        if (_layout?.DragHandles.FirstOrDefault(h => h.Id == id) is { Log: true })
+        {
+            value = Math.Pow(10, value); // JS dragged in log10 units
+        }
+
         if (index < 0 || !double.IsFinite(value))
         {
             return;

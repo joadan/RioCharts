@@ -24,10 +24,42 @@ public interface IScale
 
 /// <summary>
 /// Linear mapping. Also used for time axes, whose domain is in milliseconds
-/// (see <see cref="Data.TimeValue"/>); only tick generation and formatting differ.
+/// (see <see cref="Data.TimeValue"/>); only tick generation and formatting differ. A scale made with
+/// <see cref="Log"/> maps the logarithm of the value instead (<see cref="IsLog"/>).
 /// </summary>
 public sealed class LinearScale : IScale
 {
+    private readonly double _logMin;
+    private readonly double _logSpan;
+
+    /// <summary>
+    /// A logarithmic scale: equal ratios get equal distances (1 to 10 is as long as 10 to 100). The domain must be
+    /// positive; an invalid one is widened to a decade. Zero and below have no logarithm: they map to
+    /// <paramref name="rangeStart"/>, the low end, so bars and areas that start at zero start at the axis' bottom.
+    /// </summary>
+    public static LinearScale Log(double domainMin, double domainMax, double rangeStart, double rangeEnd)
+    {
+        if (!(domainMin > 0) || !double.IsFinite(domainMin))
+        {
+            domainMin = domainMax > 0 && double.IsFinite(domainMax) ? domainMax / 10 : 1;
+        }
+
+        if (!(domainMax > domainMin) || !double.IsFinite(domainMax))
+        {
+            domainMax = domainMin * 10;
+        }
+
+        return new LinearScale(domainMin, domainMax, rangeStart, rangeEnd, log: true);
+    }
+
+    private LinearScale(double domainMin, double domainMax, double rangeStart, double rangeEnd, bool log)
+        : this(domainMin, domainMax, rangeStart, rangeEnd)
+    {
+        IsLog = log;
+        _logMin = Math.Log10(DomainMin);
+        _logSpan = Math.Log10(DomainMax) - _logMin;
+    }
+
     /// <summary>
     /// Creates a scale from a domain in data units to a pixel range. The range may be reversed
     /// (e.g. y axes, bottom to top). An empty or invalid domain is widened to ±0.5 around
@@ -61,11 +93,20 @@ public sealed class LinearScale : IScale
     /// <inheritdoc/>
     public double RangeEnd { get; }
 
-    /// <inheritdoc/>
-    public double Map(double value) => RangeStart + (value - DomainMin) / (DomainMax - DomainMin) * (RangeEnd - RangeStart);
+    /// <summary>True for a logarithmic scale (made with <see cref="Log"/>).</summary>
+    public bool IsLog { get; }
 
     /// <inheritdoc/>
-    public double Invert(double pixel) => DomainMin + (pixel - RangeStart) / (RangeEnd - RangeStart) * (DomainMax - DomainMin);
+    public double Map(double value) => !IsLog
+        ? RangeStart + (value - DomainMin) / (DomainMax - DomainMin) * (RangeEnd - RangeStart)
+        : value > 0
+            ? RangeStart + (Math.Log10(value) - _logMin) / _logSpan * (RangeEnd - RangeStart)
+            : value <= 0 ? RangeStart : double.NaN; // no logarithm: the low end; NaN stays NaN
+
+    /// <inheritdoc/>
+    public double Invert(double pixel) => IsLog
+        ? Math.Pow(10, _logMin + (pixel - RangeStart) / (RangeEnd - RangeStart) * _logSpan)
+        : DomainMin + (pixel - RangeStart) / (RangeEnd - RangeStart) * (DomainMax - DomainMin);
 }
 
 /// <summary>Evenly spaced bands for categories (bar charts).</summary>

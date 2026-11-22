@@ -13,7 +13,11 @@ namespace RioCharts.Core.Layout;
 /// into a value (data units; milliseconds on time axes).
 /// </summary>
 /// <param name="IsX">True for a vertical line (x axis).</param>
-public sealed record DragHandle(string Id, bool IsX, float Pixel, double DomainMin, double DomainMax, double RangeStart, double RangeEnd);
+/// <param name="Log">
+/// A line on a log axis: the domain is in log10 units, so the pixel maps linearly to log10(value); the value is 10 to
+/// the power of the result.
+/// </param>
+public sealed record DragHandle(string Id, bool IsX, float Pixel, double DomainMin, double DomainMax, double RangeStart, double RangeEnd, bool Log = false);
 
 public static partial class ChartLayout
 {
@@ -143,6 +147,11 @@ public static partial class ChartLayout
                 continue; // its axis has no visible series
             }
 
+            if (!a.IsX && a.Axis is { Log: true } && ((a.IsPoint && !(a.B > 0)) || (!a.IsPoint && !a.IsBand && !(a.A > 0))))
+            {
+                continue; // zero or below is not on a log axis (warned in LeaveOutNonPositive)
+            }
+
             var color = a.Spec.Color;
             var lineStyle = color is null ? new StyleRef("annotation-line")
                 : styles.Add($"annotation-{a.Index}-line", new Style { Stroke = color, StrokeWidth = 1.25f, DashArray = "4 3" });
@@ -204,7 +213,9 @@ public static partial class ChartLayout
                             : new PathBuilder().MoveTo(plot.X, y1).LineTo(plot.Right, y1).Build();
                         nodes.Add(new PathNode(hit, new StyleRef("annotation-grip")) { Class = "rio-annotation-grip" });
                         var s = a.IsX ? xScale! : a.Axis!.Scale;
-                        handles.Add(new DragHandle(a.Id, a.IsX, (float)(a.IsX ? x1 : y1), s.DomainMin, s.DomainMax, s.RangeStart, s.RangeEnd));
+                        handles.Add(s.IsLog
+                            ? new DragHandle(a.Id, a.IsX, (float)y1, Math.Log10(s.DomainMin), Math.Log10(s.DomainMax), s.RangeStart, s.RangeEnd, Log: true)
+                            : new DragHandle(a.Id, a.IsX, (float)(a.IsX ? x1 : y1), s.DomainMin, s.DomainMax, s.RangeStart, s.RangeEnd));
                     }
                 }
 

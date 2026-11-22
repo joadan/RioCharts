@@ -314,6 +314,20 @@ public class SnapshotTests
             ["b"] = Categories(["Trail shoe · Ridge 2", "Rain jacket · Storm", "Headlamp · Beam 400", "Merino base layer, long sleeve", "Tent · Dome 2p"], 128, 92, 71, 58, 22),
         }, Height: 340),
 
+        ["line-log"] = new(new ChartSpec
+        {
+            Title = "Downloads per day",
+            Y = new AxisSpec { Scale = ScaleType.Log, Title = "Downloads" },
+            Series = [new SeriesSpec { Id = "d", Name = "Downloads", Format = "#,0" }, new SeriesSpec { Id = "e", Name = "Errors", Format = "#,0" }],
+            Annotations = [new AnnotationSpec { Value = 1000, Label = "1k" }],
+        }, new()
+        {
+            ["d"] = SeriesData.From(Enumerable.Range(0, 60).Select(i => Start.AddDays(i)).ToArray(),
+                Enumerable.Range(0, 60).Select(i => Math.Round(20 * Math.Pow(1.17, i) * (1 + 0.15 * Math.Sin(i * 0.9)))).ToArray()),
+            ["e"] = SeriesData.From(Enumerable.Range(0, 60).Select(i => Start.AddDays(i)).ToArray(),
+                Enumerable.Range(0, 60).Select(i => i % 9 == 4 ? 0 : Math.Round(2 + 0.4 * Math.Pow(1.15, i))).ToArray()),
+        }),
+
         ["empty-swedish"] = new(new ChartSpec { Title = "Utetemperatur", Series = [new SeriesSpec { Id = "s", Name = "Utetemperatur" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 
