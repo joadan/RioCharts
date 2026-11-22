@@ -44,6 +44,10 @@ jobs:
         run: |
           # The site is at the root of https://riocharts.com (custom domain in the repo's Pages
           # settings), so <base href="/"> stays as it is.
+          # Link previews (Teams, Slack...) cache the image by its URL: add the card's hash, so a new
+          # card gets a new URL and shows at once.
+          card=$(sha256sum publish/wwwroot/social-card.png | cut -c1-8)
+          sed -i "s|social-card.png\"|social-card.png?v=$card\"|g" publish/wwwroot/index.html
           # Every page gets its own copy of index.html (/pies is served from pies.html), so direct
           # links and search engines get status 200, not 404. The routes are the docs' @page
           # directives, so a new page is included without changing this.
