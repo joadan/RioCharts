@@ -10,7 +10,7 @@ Setup: `dotnet add package RioCharts.Blazor --prerelease`, then `@using RioChart
 </RioChart>
 ```
 
-Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioChart>` when it has event handlers.
+Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioChart>` when it has event handlers. .NET MAUI Blazor Hybrid apps work the same way, with no render mode (tested on Windows; Android and iOS not yet).
 
 ## Guide for coding agents
 
@@ -18,7 +18,7 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 
 ## Docs
 
-- [Getting started](https://riocharts.com/getting-started): install, first chart, how updates work, render modes
+- [Getting started](https://riocharts.com/getting-started): install, first chart, how updates work, render modes, MAUI Blazor Hybrid
 - [Coming from Blazor-ApexCharts](https://riocharts.com/from-apexcharts): how the concepts map
 - [Lines and areas](https://riocharts.com/lines-and-areas)
 - [Bars and stacking](https://riocharts.com/bars)
