@@ -20,6 +20,8 @@ changes are called out under **Breaking**.
   snapshot-checked).
 - Fix: on iPhone and iPad, holding a finger on a chart to read the tooltip no longer selects an
   axis label after a moment (Safari needs `-webkit-user-select`), and no callout menu opens.
+- Docs: Lines and areas has a "Numbers on the x axis" example (response time against concurrent
+  users in a load test, with an x reference line), so line charts are not shown only over time.
 
 ## 0.2.1-preview (2026-11-22)
 

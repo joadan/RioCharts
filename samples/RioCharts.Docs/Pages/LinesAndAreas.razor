@@ -3,7 +3,7 @@
 <PageTitle>Lines and areas · RioCharts</PageTitle>
 
 <h1>Lines and areas</h1>
-<p class="lead">Time series are the common case: lines with three curve shapes, gaps for missing values, and areas that start at zero.</p>
+<p class="lead">Time series are the common case: lines with three curve shapes, gaps for missing values, and areas that start at zero. The x axis can also be plain numbers.</p>
 
 <Example Title="Curves" Code="@CurvesCode">
     <Description>
@@ -50,6 +50,26 @@
         <RioChart TItem="Reading" Height="260" YAxis="StockAxis">
             <LineSeries Items="StockOnChange" Name="Stock" XValue="r => r.Time" YValue="r => r.Value" Format="0 'in stock'" />
             <LineSeries Items="ReorderLevel" Name="Reorder level" XValue="r => r.Time" YValue="r => r.Value" Format="0" Curve="CurveType.Step" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Numbers on the x axis" Code="@NumericCode">
+    <Description>
+        <p>
+            The x values do not have to be times: when <code>XValue</code> returns a number, the x axis is a linear number axis with nice
+            ticks, and everything else works the same (curves, gaps, zoom, the tooltip, reference lines). Here a load test: the response
+            time at each step from 10 to 500 concurrent users. The 95th percentile stays under the 120 ms limit up to about 350 users, then
+            climbs steeply as the servers saturate. <code>XAxis</code> takes a title and a <code>Format</code> for the tick labels, and the
+            vertical <code>ReferenceLine</code> with <code>Axis="AnnotationAxis.X"</code> marks the expected peak load.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="LoadTest" Height="260" XAxis="UsersAxis" YAxis="Milliseconds">
+            <LineSeries Name="Median" XValue="s => s.Users" YValue="s => s.MedianMs" Format="0 ms" Curve="CurveType.Monotone" />
+            <LineSeries Name="95th percentile" XValue="s => s.Users" YValue="s => s.P95Ms" Format="0 ms" Curve="CurveType.Monotone" />
+            <ReferenceLine Value="120" Label="Limit" />
+            <ReferenceLine Axis="AnnotationAxis.X" Value="300" Label="Expected peak" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -160,6 +180,19 @@
         <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Items" })">
             <LineSeries Items="stock" Name="Stock" XValue="r => r.Time" YValue="r => r.Value" Format="0 'in stock'" />
             <LineSeries Items="reorderLevel" Name="Reorder level" XValue="r => r.Time" YValue="r => r.Value" Format="0" Curve="CurveType.Step" />
+        </RioChart>
+        """;
+
+    private static readonly AxisSpec UsersAxis = new() { Title = "Concurrent users", Format = "0" };
+
+    private const string NumericCode = """
+        @* public record LoadStep(double Users, double MedianMs, double P95Ms); *@
+        <RioChart Items="loadTest" XAxis="@(new AxisSpec { Title = "Concurrent users", Format = "0" })"
+                  YAxis="@(new AxisSpec { Title = "Response time, ms" })">
+            <LineSeries Name="Median" XValue="s => s.Users" YValue="s => s.MedianMs" Format="0 ms" Curve="CurveType.Monotone" />
+            <LineSeries Name="95th percentile" XValue="s => s.Users" YValue="s => s.P95Ms" Format="0 ms" Curve="CurveType.Monotone" />
+            <ReferenceLine Value="120" Label="Limit" />
+            <ReferenceLine Axis="AnnotationAxis.X" Value="300" Label="Expected peak" />
         </RioChart>
         """;
 

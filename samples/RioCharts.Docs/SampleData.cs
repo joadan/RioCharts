@@ -324,6 +324,18 @@ public static class SampleData
         return new Delivery(km, Math.Round(Math.Max(4, 18 + km * 0.09 + Noise(i, 42) * 14), 1));
     }).ToList();
 
+    /// <summary>One step of a load test: concurrent users and the response times measured at that load.</summary>
+    public sealed record LoadStep(double Users, double MedianMs, double P95Ms);
+
+    /// <summary>A load test from 10 to 500 concurrent users: flat at first, then a knee as the servers saturate.</summary>
+    public static readonly List<LoadStep> LoadTest = Enumerable.Range(0, 50).Select(i =>
+    {
+        var users = 10.0 * (i + 1);
+        var median = 38 * (1 + 0.9 * Math.Pow(users / 420, 4)) + Noise(i, 51) * 3;
+        var p95 = 65 * (1 + 1.2 * Math.Pow(users / 380, 4)) + Noise(i, 52) * 6;
+        return new LoadStep(users, Math.Round(median, 1), Math.Round(p95, 1));
+    }).ToList();
+
     /// <summary>Server response times in ms, a random walk as plain arrays (the columnar fast path).</summary>
     /// <summary>Orders: minutes on the site before buying, and the order value in €. Most orders are quick and small.</summary>
     public static (double[] Minutes, double[] Values) Orders(int count)
