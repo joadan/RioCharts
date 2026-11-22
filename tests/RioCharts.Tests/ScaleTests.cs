@@ -43,7 +43,7 @@ public class ScaleTests
     [Fact]
     public void Linear_scale_maps_and_inverts()
     {
-        var scale = new LinearScale(0, 100, 50, 250);
+        var scale = new ContinuousScale(0, 100, 50, 250);
 
         Assert.Equal(150, scale.Map(50));
         Assert.Equal(50, scale.Invert(150), 9);
@@ -52,7 +52,7 @@ public class ScaleTests
     [Fact]
     public void Degenerate_domain_does_not_divide_by_zero()
     {
-        var scale = new LinearScale(5, 5, 0, 100);
+        var scale = new ContinuousScale(5, 5, 0, 100);
 
         Assert.Equal(50, scale.Map(5), 9);
     }

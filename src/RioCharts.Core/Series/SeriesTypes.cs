@@ -55,10 +55,10 @@ internal readonly record struct LabelAnchor(double Value, double X, double Y, do
 internal sealed class PixelPositions
 {
     private readonly SeriesData _data;
-    private readonly LinearScale? _scale;
+    private readonly ContinuousScale? _scale;
     private readonly double[]? _categories;
 
-    public PixelPositions(SeriesData data, XKind kind, LinearScale? scale, BandScale? band, IReadOnlyDictionary<string, int> categoryIndex)
+    public PixelPositions(SeriesData data, XKind kind, ContinuousScale? scale, BandScale? band, IReadOnlyDictionary<string, int> categoryIndex)
     {
         _data = data;
         _scale = scale;

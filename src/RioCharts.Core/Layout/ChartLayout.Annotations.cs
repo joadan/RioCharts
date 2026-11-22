@@ -134,7 +134,7 @@ public static partial class ChartLayout
     /// plot and labels stay inside it; label rectangles go into <paramref name="placed"/> so data
     /// labels avoid them. Draggable lines are reported in <paramref name="handles"/>.
     /// </summary>
-    private static void BuildAnnotations(List<ResolvedAnnotation> annotations, RectF plot, XKind xKind, LinearScale? xScale, BandScale? xBand,
+    private static void BuildAnnotations(List<ResolvedAnnotation> annotations, RectF plot, XKind xKind, ContinuousScale? xScale, BandScale? xBand,
         CultureInfo culture, ITextMeasurer measure, double font, StyleTable styles, bool interactive,
         List<Node> below, List<Node> above, List<RectF> placed, List<DragHandle> handles, string? xFormat, TimeConversion? time)
     {

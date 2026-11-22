@@ -190,7 +190,7 @@ public static partial class ChartLayout
         var target = Math.Clamp((int)(radius / 22), 3, 6);
         var (niceMin, niceMax, step) = NiceTicks.NiceDomain(lo, hi, target);
         var (domainMin, domainMax) = (spec.Y.Min ?? niceMin, spec.Y.Max ?? niceMax);
-        var scale = new LinearScale(domainMin, domainMax, cy, cy - radius);
+        var scale = new ContinuousScale(domainMin, domainMax, cy, cy - radius);
         double R(double v) => Math.Clamp((v - domainMin) / (domainMax - domainMin), 0, 1) * radius;
 
         // ---------- Grid, spokes and labels ----------
@@ -457,7 +457,7 @@ public static partial class ChartLayout
             Warnings = warnings,
             XKind = XKind.Category,
             YScale = scale,
-            YScales = new Dictionary<string, LinearScale>(StringComparer.Ordinal) { [spec.Y.Id ?? "y"] = scale },
+            YScales = new Dictionary<string, ContinuousScale>(StringComparer.Ordinal) { [spec.Y.Id ?? "y"] = scale },
             HasData = hasData,
         };
     }

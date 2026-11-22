@@ -41,7 +41,7 @@ public static partial class ChartLayout
         /// <summary>X of the label column's edge next to the plot.</summary>
         public double LabelX { get; set; }
 
-        public LinearScale Scale { get; set; } = new(0, 1, 1, 0);
+        public ContinuousScale Scale { get; set; } = new(0, 1, 1, 0);
     }
 
     private static List<YAxisLayout> ResolveAxes(ChartSpec spec, List<string> warnings)
@@ -347,7 +347,7 @@ public static partial class ChartLayout
     // ---------- X labels ----------
 
     /// <summary>Adds numeric or time tick labels, choosing the densest ticks whose labels do not overlap.</summary>
-    private static List<double> AddContinuousXLabels(LinearScale scale, XKind kind, AxisSpec axis, CultureInfo culture,
+    private static List<double> AddContinuousXLabels(ContinuousScale scale, XKind kind, AxisSpec axis, CultureInfo culture,
         ITextMeasurer measure, double font, double plotBottom, double chartWidth, List<Node> output, TimeConversion? time = null)
     {
         var plotWidth = scale.RangeEnd - scale.RangeStart;
@@ -415,7 +415,7 @@ public static partial class ChartLayout
     /// Positions labels under their ticks. Labels at the plot edges align to their tick instead
     /// of centering, so they stay clear of the Y labels and inside the chart.
     /// </summary>
-    private static List<PlacedLabel> PlaceLabels(List<double> ticks, List<string> labels, LinearScale scale, ITextMeasurer measure,
+    private static List<PlacedLabel> PlaceLabels(List<double> ticks, List<string> labels, ContinuousScale scale, ITextMeasurer measure,
         double font, double chartWidth)
     {
         var placed = new List<PlacedLabel>(ticks.Count);
@@ -441,7 +441,7 @@ public static partial class ChartLayout
         return placed;
     }
 
-    private static bool Fits(List<double> ticks, List<string> labels, LinearScale scale, ITextMeasurer measure, double font, double chartWidth)
+    private static bool Fits(List<double> ticks, List<string> labels, ContinuousScale scale, ITextMeasurer measure, double font, double chartWidth)
     {
         var placed = PlaceLabels(ticks, labels, scale, measure, font, chartWidth).Where(p => !p.Skip).ToList();
         for (var i = 1; i < placed.Count; i++)

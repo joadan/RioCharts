@@ -243,7 +243,7 @@ public static partial class ChartLayout
             Description = description,
         };
 
-        var unit = new LinearScale(0, 1, plot.Bottom, plot.Y);
+        var unit = new ContinuousScale(0, 1, plot.Bottom, plot.Y);
         return new ChartLayoutResult
         {
             Scene = scene,
@@ -254,7 +254,7 @@ public static partial class ChartLayout
             Warnings = warnings,
             XKind = XKind.Category,
             YScale = unit,
-            YScales = new Dictionary<string, LinearScale>(StringComparer.Ordinal) { [spec.Y.Id ?? "y"] = unit },
+            YScales = new Dictionary<string, ContinuousScale>(StringComparer.Ordinal) { [spec.Y.Id ?? "y"] = unit },
             HasData = hasData,
         };
     }

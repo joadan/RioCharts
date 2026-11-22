@@ -68,8 +68,8 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   several). The first axis with visible series owns the grid and the zero line; the others choose
   a domain with the same number of nice steps, so their labels sit on its grid lines. An axis whose
   series are all hidden is not shown. Zeros of different axes are not aligned.
-- **Log axes.** `ScaleType.Log` on a y axis. `LinearScale.Log` maps log10 of the value (still a
-  `LinearScale`, flagged `IsLog`, so `ChartLayoutResult.YScale` and every caller keep their type);
+- **Log axes.** `ScaleType.Log` on a y axis. `ContinuousScale.Log` maps log10 of the value (the same
+  class as linear and time axes, flagged `IsLog`, so `ChartLayoutResult.YScale` keeps its type);
   zero and below map to the bottom of the range, so bars and areas start there. The domain is the
   data rounded out to powers of ten (a positive `Min`/`Max` is kept; zero or below is ignored).
   Ticks are 1, 2 and 5 per decade for short ranges, else every (k-th) power of ten, one per 28 px

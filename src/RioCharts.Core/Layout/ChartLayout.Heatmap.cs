@@ -91,7 +91,7 @@ public static partial class ChartLayout
 
         // ---------- Columns (x) ----------
         BandScale? band = null;
-        LinearScale? xScale = null;
+        ContinuousScale? xScale = null;
         double cellWidth;
         var categoryIndex = new Dictionary<string, int>(StringComparer.Ordinal);
         if (xKind == XKind.Category)
@@ -133,7 +133,7 @@ public static partial class ChartLayout
             }
 
             // Half a cell on each side: the x value is the cell's center.
-            xScale = new LinearScale(spec.X.Min ?? min - spacing / 2, spec.X.Max ?? max + spacing / 2, plot.X, plot.Right);
+            xScale = new ContinuousScale(spec.X.Min ?? min - spacing / 2, spec.X.Max ?? max + spacing / 2, plot.X, plot.Right);
             cellWidth = Math.Abs(xScale.Map(xScale.DomainMin + spacing) - xScale.Map(xScale.DomainMin));
         }
 
@@ -254,7 +254,7 @@ public static partial class ChartLayout
             Description = DescribeHeatmap(spec, rows.Where(Usable).ToList(), XLabel, F, texts, culture, rows.Count),
         };
 
-        var yScale = new LinearScale(rows.Count, 0, plot.Bottom, plot.Y);
+        var yScale = new ContinuousScale(rows.Count, 0, plot.Bottom, plot.Y);
         return new ChartLayoutResult
         {
             Scene = scene,
@@ -266,7 +266,7 @@ public static partial class ChartLayout
             XKind = xKind,
             XBand = band,
             YScale = yScale,
-            YScales = new Dictionary<string, LinearScale> { ["y"] = yScale },
+            YScales = new Dictionary<string, ContinuousScale> { ["y"] = yScale },
             HasData = hasData,
         };
     }

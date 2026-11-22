@@ -23,11 +23,11 @@ public interface IScale
 }
 
 /// <summary>
-/// Linear mapping. Also used for time axes, whose domain is in milliseconds
-/// (see <see cref="Data.TimeValue"/>); only tick generation and formatting differ. A scale made with
-/// <see cref="Log"/> maps the logarithm of the value instead (<see cref="IsLog"/>).
+/// Maps a continuous domain to pixels: linear (the constructor) or logarithmic (<see cref="Log"/>,
+/// <see cref="IsLog"/>). Numeric and time axes use it; a time axis' domain is in milliseconds
+/// (see <see cref="Data.TimeValue"/>), only its ticks and formatting differ. Categories use <see cref="BandScale"/>.
 /// </summary>
-public sealed class LinearScale : IScale
+public sealed class ContinuousScale : IScale
 {
     private readonly double _logMin;
     private readonly double _logSpan;
@@ -37,7 +37,7 @@ public sealed class LinearScale : IScale
     /// positive; an invalid one is widened to a decade. Zero and below have no logarithm: they map to
     /// <paramref name="rangeStart"/>, the low end, so bars and areas that start at zero start at the axis' bottom.
     /// </summary>
-    public static LinearScale Log(double domainMin, double domainMax, double rangeStart, double rangeEnd)
+    public static ContinuousScale Log(double domainMin, double domainMax, double rangeStart, double rangeEnd)
     {
         if (!(domainMin > 0) || !double.IsFinite(domainMin))
         {
@@ -49,10 +49,10 @@ public sealed class LinearScale : IScale
             domainMax = domainMin * 10;
         }
 
-        return new LinearScale(domainMin, domainMax, rangeStart, rangeEnd, log: true);
+        return new ContinuousScale(domainMin, domainMax, rangeStart, rangeEnd, log: true);
     }
 
-    private LinearScale(double domainMin, double domainMax, double rangeStart, double rangeEnd, bool log)
+    private ContinuousScale(double domainMin, double domainMax, double rangeStart, double rangeEnd, bool log)
         : this(domainMin, domainMax, rangeStart, rangeEnd)
     {
         IsLog = log;
@@ -65,7 +65,7 @@ public sealed class LinearScale : IScale
     /// (e.g. y axes, bottom to top). An empty or invalid domain is widened to ±0.5 around
     /// <paramref name="domainMin"/> (or 0) so mapping stays defined.
     /// </summary>
-    public LinearScale(double domainMin, double domainMax, double rangeStart, double rangeEnd)
+    public ContinuousScale(double domainMin, double domainMax, double rangeStart, double rangeEnd)
     {
         if (!(domainMax > domainMin))
         {

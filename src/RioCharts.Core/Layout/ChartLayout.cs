@@ -119,7 +119,7 @@ public sealed class ChartLayoutResult
     public required XKind XKind { get; init; }
 
     /// <summary>X scale for numeric and time axes (time in milliseconds); null for category axes.</summary>
-    public LinearScale? XScale { get; init; }
+    public ContinuousScale? XScale { get; init; }
 
     /// <summary>X scale for category axes.</summary>
     public BandScale? XBand { get; init; }
@@ -134,10 +134,10 @@ public sealed class ChartLayoutResult
     public TimeConversion? Time { get; init; }
 
     /// <summary>Scale of the primary vertical axis (the one with the grid lines).</summary>
-    public required LinearScale YScale { get; init; }
+    public required ContinuousScale YScale { get; init; }
 
     /// <summary>Scales of all vertical axes by axis id, including hidden ones.</summary>
-    public required IReadOnlyDictionary<string, LinearScale> YScales { get; init; }
+    public required IReadOnlyDictionary<string, ContinuousScale> YScales { get; init; }
 
     /// <summary>True when there was something to draw; false when the chart shows its empty state.</summary>
     public required bool HasData { get; init; }
@@ -465,13 +465,13 @@ public static partial class ChartLayout
         foreach (var axis in axes)
         {
             axis.Scale = axis.Log
-                ? LinearScale.Log(axis.DomainMin, axis.DomainMax, plotBottom, plotTop)
-                : new LinearScale(axis.DomainMin, axis.DomainMax, plotBottom, plotTop);
+                ? ContinuousScale.Log(axis.DomainMin, axis.DomainMax, plotBottom, plotTop)
+                : new ContinuousScale(axis.DomainMin, axis.DomainMax, plotBottom, plotTop);
         }
 
 
         // ---------- X scale and ticks ----------
-        LinearScale? xScale = null;
+        ContinuousScale? xScale = null;
         BandScale? xBand = null;
         var xTickNodes = new List<Node>();
         var xGrid = new List<double>();
@@ -486,7 +486,7 @@ public static partial class ChartLayout
         }
         else
         {
-            xScale = new LinearScale(xMin, xMax, plotLeft, plotLeft + plotWidth);
+            xScale = new ContinuousScale(xMin, xMax, plotLeft, plotLeft + plotWidth);
             if (hasData && !compact)
             {
                 xGrid = AddContinuousXLabels(xScale, xKind, spec.X, culture, measure, font, plotBottom, width, xTickNodes, time);
@@ -741,7 +741,7 @@ public static partial class ChartLayout
     // ---------- Selection ----------
 
     /// <summary>The selected x range: a light band in the first series color with edge lines, like the zoom drag.</summary>
-    private static GroupNode? SelectionBand((double Min, double Max) range, LinearScale x, RectF plot, StyleTable styles)
+    private static GroupNode? SelectionBand((double Min, double Max) range, ContinuousScale x, RectF plot, StyleTable styles)
     {
         if (!double.IsFinite(range.Min) || !double.IsFinite(range.Max))
         {

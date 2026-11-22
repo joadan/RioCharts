@@ -43,7 +43,7 @@ public class LogScaleTests
     [Fact]
     public void Log_scale_gives_equal_ratios_equal_distances()
     {
-        var scale = LinearScale.Log(1, 1000, 300, 0);
+        var scale = ContinuousScale.Log(1, 1000, 300, 0);
 
         Assert.True(scale.IsLog);
         Assert.Equal(300, scale.Map(1), 6);
@@ -56,7 +56,7 @@ public class LogScaleTests
     [Fact]
     public void Log_scale_puts_zero_and_below_at_the_low_end()
     {
-        var scale = LinearScale.Log(1, 1000, 300, 0);
+        var scale = ContinuousScale.Log(1, 1000, 300, 0);
 
         Assert.Equal(300, scale.Map(0));
         Assert.Equal(300, scale.Map(-5));
@@ -70,7 +70,7 @@ public class LogScaleTests
     [InlineData(double.NaN, double.NaN)]
     public void Log_scale_widens_an_invalid_domain(double min, double max)
     {
-        var scale = LinearScale.Log(min, max, 300, 0);
+        var scale = ContinuousScale.Log(min, max, 300, 0);
 
         Assert.True(scale.DomainMin > 0);
         Assert.True(scale.DomainMax > scale.DomainMin);

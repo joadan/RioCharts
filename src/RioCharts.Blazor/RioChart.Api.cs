@@ -231,7 +231,7 @@ public partial class RioChart<TItem>
     private ChartLayoutResult? CartesianLayout() =>
         _layout is { } layout && layout.Tooltip.Slices.Count == 0 && !CurrentSpec().Horizontal ? layout : null;
 
-    private static LinearScale? YScaleOf(ChartLayoutResult layout, string? axis) =>
+    private static ContinuousScale? YScaleOf(ChartLayoutResult layout, string? axis) =>
         axis is null ? layout.YScale : layout.YScales.TryGetValue(axis, out var scale) ? scale : null;
 
     // ---------- Batching ----------

@@ -174,7 +174,7 @@ public static partial class ChartLayout
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)Math.Max(2, plotRight - plotLeft), (float)Math.Max(2, plotBottom - plotTop));
 
         var (niceMin, niceMax, step) = NiceTicks.NiceDomain(vMin, vMax, Math.Clamp((int)(plot.Width / 90), 2, 10));
-        var valueScale = new LinearScale(spec.Y.Min ?? niceMin, spec.Y.Max ?? niceMax, plot.X, plot.Right);
+        var valueScale = new ContinuousScale(spec.Y.Min ?? niceMin, spec.Y.Max ?? niceMax, plot.X, plot.Right);
         var ticks = NiceTicks.Ticks(valueScale.DomainMin, valueScale.DomainMax, step);
         var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, spec.Y.Format);
         var band = new BandScale(rows, plot.Y, plot.Bottom, 0.25, 0.1);
@@ -379,7 +379,7 @@ public static partial class ChartLayout
             Warnings = warnings,
             XKind = xKind,
             YScale = valueScale,
-            YScales = new Dictionary<string, LinearScale> { ["y"] = valueScale },
+            YScales = new Dictionary<string, ContinuousScale> { ["y"] = valueScale },
             HasData = hasData,
         };
     }

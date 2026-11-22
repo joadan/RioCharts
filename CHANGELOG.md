@@ -5,12 +5,15 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- **Breaking:** `LinearScale` (RioCharts.Core.Scales) is renamed `ContinuousScale`: it now also
+  does log axes, so the old name no longer fit. Only the name changes (`ChartLayoutResult.XScale`,
+  `YScale` and `YScales` have the new type); code that names the type needs the new name.
 - Logarithmic y axes: `AxisSpec.Scale = ScaleType.Log` (`"scale": "log"` in JSON specs) for data
   that spans several powers of ten. Ticks are powers of ten (with 2 and 5 between them for short
   ranges), labelled 0.01, 1, 1k, 5M. Bars and areas start at the bottom of the axis; values of zero
   or below are left out (gaps) with a warning. Draggable reference lines drag in log units. Not for
   x axes yet (a warning; the axis stays linear). Docs: a "Logarithmic axis" example on Axes and
-  time, with a switch to linear. `LinearScale.Log`, `LinearScale.IsLog`, `NiceTicks.LogDomain`,
+  time, with a switch to linear. `ContinuousScale.Log`, `ContinuousScale.IsLog`, `NiceTicks.LogDomain`,
   `NiceTicks.LogTicks` and `NumberFormatter.ForLogTicks` are new in Core; `DragHandle` has a new
   `Log` parameter (optional, last).
 
