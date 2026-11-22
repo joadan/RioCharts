@@ -16,7 +16,7 @@ changes are called out under **Breaking**.
   (tested on Windows; Android and iOS not yet). The guide for coding agents (llms.txt, llms-full.txt,
   get_usage) says the same.
 - README, NuGet README and CONTRIBUTING.md say how RioCharts is made: human-led, AI-built (the
-  design is decided by people; most code is written by AI coding agents, then reviewed, tested and
+  design is decided by people; most code is written by AI coding agents, then tested and
   snapshot-checked).
 
 ## 0.2.1-preview (2026-11-22)

@@ -19,7 +19,7 @@ tiny JS module only measures text and follows the pointer.
 > **Status: early preview.** APIs will change without notice before 1.0. It is built for our own
 > teams' needs; issues are welcome, but there is no roadmap promise.
 > Human-led, AI-built: the design is ours ([Design.md](Design.md)); most code is written by AI
-> coding agents and reviewed, tested and snapshot-checked before it ships.
+> coding agents and tested and snapshot-checked before it ships.
 
 ## Blazor
 

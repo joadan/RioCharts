@@ -10,7 +10,7 @@ Drawn by RioCharts.Skia itself. **[See them live, with tooltips and zoom](https:
 
 > **Status: early preview.** APIs will change without notice before 1.0.
 > Human-led, AI-built: the design is ours ([Design.md](https://github.com/joadan/RioCharts/blob/master/Design.md));
-> most code is written by AI coding agents and reviewed, tested and snapshot-checked before it ships.
+> most code is written by AI coding agents and tested and snapshot-checked before it ships.
 
 ## Blazor
 
