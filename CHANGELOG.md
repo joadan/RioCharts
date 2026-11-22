@@ -3,8 +3,14 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
-## Unreleased
+## 0.2.1-preview (2026-11-22)
 
+The packages now target .NET 10 (LTS) and .NET 11. New chart types (radar, treemap with
+drill-down, box plots, candlesticks), colors per item and by value, selection and more control
+from code, a guide and MCP tools for coding agents, and the docs at https://riocharts.com.
+
+- **Breaking (behavior):** `DownloadPngAsync`, `DownloadSvgAsync` and `DownloadCsvAsync` no longer
+  throw `JSDisconnectedException` when the browser has disconnected; they do nothing (see below).
 - Docs site: link previews (Teams, Slack, LinkedIn, X) show a card with the logo and a chart
   drawn by RioCharts.Skia (Open Graph tags; the image is made by `tools/SocialCard.cs`).
 - Docs site: every page answers with status 200 at its own address (it was served by 404.html),
