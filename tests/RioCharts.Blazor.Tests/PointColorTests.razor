@@ -26,6 +26,22 @@
     }
 
     [Fact]
+    public void ColorBands_reach_the_canvas_with_their_clip_and_inline_lists_do_not_relayout()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" SeriesLayer="SeriesLayer.Canvas">
+            <LineSeries Id="o" XValue="o => o.Day" YValue="o => o.Amount" Aggregate="Aggregate.Sum"
+                        ColorBands="@([new ColorBand { Above = 100, Color = "--rio-negative" }])" />
+        </RioChart>);
+
+        var ops = Payload(Calls("paint")[^1]).GetProperty("ops");
+        Assert.Equal(2, ops.EnumerateArray().Count(o => o.TryGetProperty("cl", out _))); // the line, once per band, clipped
+
+        var layout = cut.Instance.Layout;
+        cut.Render(); // the parent renders again: a new (equal) list of bands
+        Assert.Same(layout, cut.Instance.Layout);
+    }
+
+    [Fact]
     public void Without_ColorValue_nothing_changes()
     {
         var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders">

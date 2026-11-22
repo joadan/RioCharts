@@ -33,6 +33,10 @@ public static class SampleData
         Enumerable.Range(0, count).Select(i => Start.AddMinutes(minutes * i)).Select((t, i) => new Reading(t, value(i, t))).ToList();
 
     /// <summary>Sessions per 15 minutes on the website, two days.</summary>
+    /// <summary>Checkout response time in ms every 15 minutes: slower when busy, with a few spikes.</summary>
+    public static readonly List<Reading> ResponseMs = Series((i, t) =>
+        Math.Round(72 + 58 * Math.Max(0, Cycle(t)) + Drift(i, 31) * 14 + (Noise(i, 32) > 0.485 ? 45 : 0) + Noise(i, 33) * 6));
+
     public static readonly List<Reading> WebSessions = Series((i, t) => Math.Round(Math.Max(5, 140 + 110 * Cycle(t) + Drift(i, 1) * 40)));
 
     /// <summary>Sessions per 15 minutes in the app, two days.</summary>

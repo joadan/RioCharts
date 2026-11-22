@@ -101,6 +101,7 @@ public static class ChartSpecJson
         [typeof(SeriesSpec)] = () => new SeriesSpec(),
         [typeof(AnnotationSpec)] = () => new AnnotationSpec(),
         [typeof(FilterSpec)] = () => new FilterSpec(),
+        [typeof(ColorBand)] = () => new ColorBand(),
     };
 
     /// <summary>The spec types with defaults (for a test that every object type in a spec is listed).</summary>

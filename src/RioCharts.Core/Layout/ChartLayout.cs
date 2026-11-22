@@ -1149,7 +1149,9 @@ public static partial class ChartLayout
             PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : null,
             PartValues = boxParts ?? candleParts,
             // Points with their own color show it in the tooltip too.
-            PointColors = r.Data.Colors is null ? null : [.. hits.Index.Select(j => r.Data.ColorAt(j, r.Color))],
+            PointColors = r.Data.Colors is null && r.Spec.ColorBands is null
+                ? null
+                : [.. hits.Index.Select(j => r.Data.Colors?[j] ?? ColorBands.ColorOf(r.Spec.ColorBands, r.Data.Y[j]) ?? r.Color)],
         };
     }
 

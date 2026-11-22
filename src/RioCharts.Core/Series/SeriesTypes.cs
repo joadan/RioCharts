@@ -130,6 +130,41 @@ internal sealed class SeriesBuildContext
 
     public double StrokeWidth => Spec.StrokeWidth ?? 2;
 
+    /// <summary>A point's own color: from the data (<see cref="SeriesData.Colors"/>), else its value's color band; null keeps the series color.</summary>
+    public string? PointColor(int i) => Data.Colors?[i] ?? ColorBands.ColorOf(Spec.ColorBands, Data.Y[i]);
+
+    /// <summary>
+    /// Adds a line or area path once per color band, each clipped to its value range, so the color
+    /// changes exactly where it crosses a band edge. Without bands: once, in the series color.
+    /// </summary>
+    public void AddBanded(PathData path, string name, Func<string, Style> style, string cssClass)
+    {
+        if (Spec.ColorBands is not { Count: > 0 } bands)
+        {
+            Output.Add(new PathNode(path, Styles.Add($"series-{ColorIndex}-{name}", style(Color))) { Class = cssClass });
+            return;
+        }
+
+        const float margin = 8; // room for the stroke at the plot edges (the plot clip still applies)
+        foreach (var (from, to, color) in ColorBands.Ranges(bands, Color))
+        {
+            var y0 = double.IsPositiveInfinity(to) ? Plot.Y - margin : MapY(to);
+            var y1 = double.IsNegativeInfinity(from) ? Plot.Bottom + margin : MapY(from);
+            var (top, bottom) = (Math.Max(Plot.Y - margin, Math.Min(y0, y1)), Math.Min(Plot.Bottom + margin, Math.Max(y0, y1)));
+            if (bottom - top < 0.01)
+            {
+                continue; // a range outside the axis
+            }
+
+            var styleRef = color == Color ? Styles.Add($"series-{ColorIndex}-{name}", style(color)) : Styles.Add($"{name}-{color}", style(color));
+            Output.Add(new GroupNode([new PathNode(path, styleRef) { Class = cssClass }],
+                Clip: new RectF(Plot.X - margin, (float)top, Plot.Width + 2 * margin, (float)(bottom - top)))
+            {
+                Class = "rio-color-band",
+            });
+        }
+    }
+
     /// <summary>
     /// Candlesticks: the points each hit stands for (first to last data index), more than one when
     /// narrow candles were merged; null for other series.
@@ -149,8 +184,7 @@ internal sealed class LineSeriesType : ISeriesType
     public void Build(SeriesBuildContext c)
     {
         var (xs, ys, _, indices) = DrawnPoints(c);
-        var style = c.Styles.Add($"series-{c.ColorIndex}-line", new Style { Stroke = c.Color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" });
-        c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), style) { Class = "rio-line" });
+        c.AddBanded(LineGenerator.Line(xs, ys, c.Spec.Curve), "line", color => new Style { Stroke = color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" }, "rio-line");
         AddLonePoints(c, xs, ys);
         AddHighlights(c);
         AddColoredPoints(c, xs, ys, indices);
@@ -390,7 +424,7 @@ internal sealed class ScatterSeriesType : ISeriesType
         var ys = new List<double>();
         var indices = new List<int>();
         var builder = new PathBuilder();
-        var colored = c.Data.Colors is null ? null : new Dictionary<string, PathBuilder>(StringComparer.Ordinal);
+        var colored = c.Data.Colors is null && c.Spec.ColorBands is null ? null : new Dictionary<string, PathBuilder>(StringComparer.Ordinal);
 
         // Many points: at most MarkersPerCell markers in each square one radius wide. Three markers at
         // 0.75 opacity already cover about 98%, so the picture is the same while dense clouds draw far
@@ -417,7 +451,7 @@ internal sealed class ScatterSeriesType : ISeriesType
             }
 
             // A point with its own color goes in a path of that color.
-            var target = colored is not null && c.Data.Colors![i] is { } own
+            var target = colored is not null && c.PointColor(i) is { } own
                 ? System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(colored, own, out _) ??= new PathBuilder()
                 : builder;
             target.MoveTo(px, py - r).Arc(px, py, r, 0, Math.PI * 2).Close();
@@ -507,11 +541,10 @@ internal sealed class AreaSeriesType : ISeriesType
         var (xs, ys, y0, indices) = LineSeriesType.DrawnPoints(c);
 
         // Stacked areas do not overlap, so they can be more opaque.
-        var fill = c.Styles.Add($"series-{c.ColorIndex}-area", new Style { Fill = c.Color, FillOpacity = c.Stacked ? 0.32f : 0.18f });
-        var line = c.Styles.Add($"series-{c.ColorIndex}-line", new Style { Stroke = c.Color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" });
+        var opacity = c.Stacked ? 0.32f : 0.18f;
         var area = y0 is null ? LineGenerator.Area(xs, ys, c.ZeroY, c.Spec.Curve) : LineGenerator.AreaBetween(xs, ys, y0, c.Spec.Curve);
-        c.Output.Add(new PathNode(area, fill) { Class = "rio-area" });
-        c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), line) { Class = "rio-line" });
+        c.AddBanded(area, "area", color => new Style { Fill = color, FillOpacity = opacity }, "rio-area");
+        c.AddBanded(LineGenerator.Line(xs, ys, c.Spec.Curve), "line", color => new Style { Stroke = color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" }, "rio-line");
         LineSeriesType.AddLonePoints(c, xs, ys);
         LineSeriesType.AddHighlights(c);
         LineSeriesType.AddColoredPoints(c, xs, ys, indices);
@@ -920,7 +953,7 @@ internal sealed class BarSeriesType : ISeriesType
                 }
             }
 
-            var own = c.Data.Colors?[i] is { } color ? c.Styles.Add($"bar-{color}", new Style { Fill = color }) : style;
+            var own = c.PointColor(i) is { } color ? c.Styles.Add($"bar-{color}", new Style { Fill = color }) : style;
             c.Output.Add(new RectNode(new RectF((float)left, (float)top, (float)width, (float)height), own)
             {
                 CornerRadius = radius,

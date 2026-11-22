@@ -1762,6 +1762,14 @@ function paintCanvas(state, dx, scale = 1) {
         }
 
         const alpha = op.op == null ? 1 : op.op;
+        if (op.cl) {
+            // Clipped to its group (a line's color band).
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(op.cl[0], op.cl[1], op.cl[2], op.cl[3]);
+            ctx.clip();
+        }
+
         if (op.fill && op.fill !== 'none' && op.fill !== 'transparent') {
             ctx.globalAlpha = alpha * (op.fo == null ? 1 : op.fo);
             ctx.fillStyle = resolve(op.fill);
@@ -1776,6 +1784,10 @@ function paintCanvas(state, dx, scale = 1) {
             ctx.lineCap = 'round';
             ctx.setLineDash(op.dash ? op.dash.split(/[ ,]+/).map(Number) : []);
             ctx.stroke(path);
+        }
+
+        if (op.cl) {
+            ctx.restore();
         }
     }
 

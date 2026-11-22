@@ -73,6 +73,28 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
     private bool _hadColorValue;
 
+    /// <summary>
+    /// Colors by value, e.g. <c>[new() { Above = 120, Color = "--rio-negative" }]</c>: a line or
+    /// area changes color where it crosses into a band, a bar or scatter point takes the color of
+    /// the band its value is in. Later bands win where they overlap; <see cref="ColorValue"/> wins
+    /// over bands.
+    /// </summary>
+    [Parameter] public IReadOnlyList<ColorBand>? ColorBands { get; set; }
+
+    private IReadOnlyList<ColorBand>? _bands;
+
+    // The same bands as last time keep their list, so a list written inline (new each render) does
+    // not change the spec and lay the chart out again. A few small records, not data.
+    private IReadOnlyList<ColorBand>? StableBands()
+    {
+        if (ColorBands is null || _bands is null || !ColorBands.SequenceEqual(_bands))
+        {
+            _bands = ColorBands is null ? null : [.. ColorBands];
+        }
+
+        return _bands;
+    }
+
     /// <summary>Draw order override (default: areas, then bars, then lines).</summary>
     [Parameter] public int? ZIndex { get; set; }
 
@@ -128,6 +150,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         Stack = Stack,
         DataLabels = DataLabels,
         Format = Format,
+        ColorBands = StableBands(),
     };
 
     object? ISeriesSource.ItemAt(int inputIndex) =>

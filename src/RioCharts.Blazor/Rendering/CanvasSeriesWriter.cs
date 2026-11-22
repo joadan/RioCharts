@@ -18,7 +18,7 @@ internal static class CanvasSeriesWriter
         {
             foreach (var group in plot.Children.OfType<GroupNode>().Where(IsSeries))
             {
-                Add(group, scene.Styles, ops);
+                Add(group, scene.Styles, ops, null);
             }
         }
 
@@ -35,22 +35,24 @@ internal static class CanvasSeriesWriter
         _ => null,
     };
 
-    private static void Add(Node node, StyleTable styles, List<CanvasOp> ops)
+    // clip: the nearest enclosing group's clip (e.g. a line's color band), drawn with each shape.
+    private static void Add(Node node, StyleTable styles, List<CanvasOp> ops, float[]? clip)
     {
         switch (node)
         {
             case GroupNode g:
+                var inner = g.Clip is { } c ? new[] { c.X, c.Y, c.Width, c.Height } : clip;
                 foreach (var child in g.Children)
                 {
-                    Add(child, styles, ops);
+                    Add(child, styles, ops, inner);
                 }
 
                 break;
             case PathNode p:
-                ops.Add(Paint(new CanvasShape("p", D: SvgWriter.PathD(p.Path)), styles.Get(p.Style)));
+                ops.Add(Paint(new CanvasShape("p", D: SvgWriter.PathD(p.Path)), styles.Get(p.Style)) with { Cl = clip });
                 break;
             case RectNode r:
-                ops.Add(Paint(new CanvasShape("r", X: r.Bounds.X, Y: r.Bounds.Y, W: r.Bounds.Width, H: r.Bounds.Height, Rx: r.CornerRadius), styles.Get(r.Style)));
+                ops.Add(Paint(new CanvasShape("r", X: r.Bounds.X, Y: r.Bounds.Y, W: r.Bounds.Width, H: r.Bounds.Height, Rx: r.CornerRadius), styles.Get(r.Style)) with { Cl = clip });
                 break;
         }
     }

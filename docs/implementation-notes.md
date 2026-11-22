@@ -751,8 +751,15 @@ Not in Design.md; added on request ("a way to set a colour on a value").
   pies and radial bars use it as the category's color (the first one given in any ring), so the
   legend swatch, slice and tooltip agree; treemap items use it, groups keep their group color.
   Tooltip rows show the point's color (`TooltipSeries.PointColors`).
-- **Not yet:** heatmap, box plot, candlestick and radar (they have their own coloring), colored
-  line segments (above or below a limit), and rule-based colors in JSON (`colorRules`).
+- **Bands:** `SeriesSpec.ColorBands` (`ColorBand` with `Above`, `Below`, `Color`; a JSON spec
+  record, so it has a `Factories` entry). Lines and areas are drawn once per value range of one
+  color (`ColorBands.Ranges`), each copy in a group clipped to that range's pixels, so the color
+  changes exactly at the edge, between points too; without bands one path as before (snapshots
+  unchanged). The canvas layer gets each shape's enclosing clip (`CanvasOp.Cl`). Bars and scatter
+  use `PointColor` (own color, else band, else series). The component keeps an equal list of
+  bands as the same instance, so an inline list does not change the spec each render.
+- **Not yet:** heatmap, box plot, candlestick and radar (they have their own coloring), and
+  rule-based colors from a field in JSON beyond bands.
 
 ## Horizontal bars
 

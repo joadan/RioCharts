@@ -146,6 +146,18 @@ public static class ChartRazor
                 sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\"");
             }
 
+            if (s.ColorBands is { Count: > 0 } bands)
+            {
+                static string Number(double v) => v.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var items = bands.Select(b => "new() { " + string.Join(", ", new[]
+                {
+                    b.Above is { } above ? $"Above = {Number(above)}" : null,
+                    b.Below is { } below ? $"Below = {Number(below)}" : null,
+                    $"Color = \"{Attr(b.Color)}\"",
+                }.OfType<string>()) + " }");
+                sb.Append($" ColorBands=\"@(new ColorBand[] {{ {string.Join(", ", items)} }})\"");
+            }
+
             if (s.ColorField is { } colorField)
             {
                 sb.Append($" ColorValue=\"r => r.{Property(colorField)}\"");

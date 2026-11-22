@@ -59,7 +59,7 @@ internal sealed record SliceModel(
 /// <summary>The canvas layer's draw operations for <c>paint</c>.</summary>
 internal sealed record CanvasModel(float[]? Clip, IReadOnlyList<CanvasOp> Ops);
 
-internal sealed record CanvasOp(CanvasShape Shape, string? Fill, double? Fo, string? Stroke, double Sw, string? Dash, double? Op);
+internal sealed record CanvasOp(CanvasShape Shape, string? Fill, double? Fo, string? Stroke, double Sw, string? Dash, double? Op, float[]? Cl = null);
 
 /// <summary>A path (t = "p", d) or a rectangle (t = "r", x, y, w, h, rx).</summary>
 internal sealed record CanvasShape(string T, string? D = null, float? X = null, float? Y = null, float? W = null, float? H = null, float? Rx = null);

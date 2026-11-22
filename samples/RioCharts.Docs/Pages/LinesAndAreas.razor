@@ -63,6 +63,24 @@
     </ChildContent>
 </Example>
 
+<Example Title="Colors by value" Code="@BandsCode">
+    <Description>
+        <p>
+            <code>ColorBands</code> colors a line by its value: here response times turn red above 120 ms, exactly where the line crosses
+            the limit, also between two readings. Bands take <code>Above</code>, <code>Below</code> or both; later bands win where they
+            overlap. On areas the fill follows, on bars and scatter points each one takes the color of its band, and the tooltip dot
+            matches. In JSON specs: <code>"colorBands": [{ "above": 120, "color": "--rio-negative" }]</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="ResponseMs" Height="220" YAxis="Milliseconds">
+            <LineSeries Name="Checkout" XValue="r => r.Time" YValue="r => r.Value" Format="0 ms"
+                        ColorBands="@([new ColorBand { Above = 120, Color = "--rio-negative" }])" />
+            <ReferenceLine Value="120" Label="Limit" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Stacked areas" Code="@StackedCode">
     <Description><p>Series with the same <code>Stack</code> name are stacked: sessions by channel add up to the total. Hide one in the legend and the stack closes up.</p></Description>
     <ChildContent>
@@ -109,6 +127,15 @@
 
 @code {
     private static readonly AxisSpec Percent = new() { Title = "%" };
+    private static readonly AxisSpec Milliseconds = new() { Title = "Response time, ms" };
+
+    private const string BandsCode = """
+        <RioChart Items="responseTimes">
+            <LineSeries Name="Checkout" XValue="r => r.Time" YValue="r => r.Value" Format="0 ms"
+                        ColorBands="@([new ColorBand { Above = 120, Color = "--rio-negative" }])" />
+            <ReferenceLine Value="120" Label="Limit" />
+        </RioChart>
+        """;
     private static readonly AxisSpec StockAxis = new() { Title = "Items" };
     private static readonly AxisSpec Euros = new() { Title = "€ per 15 min" };
     private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };

@@ -84,6 +84,11 @@ changes are called out under **Breaking**.
   show as one cell with their total and open with a click (JSON: `"visibleLevels"`). Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
   `ChartLayoutResult.TreemapPath`, scene interactions of kind "treemap"; new `ChartTexts` keys
   `TreemapAll`, `TreemapShow` and `TreemapPathLabel`.
+- Colors by value: `ColorBands` (e.g. `[new ColorBand { Above = 120, Color = "--rio-negative" }]`)
+  colors a line or area where it runs in a band, changing exactly where it crosses the edge (also
+  between points); bars and scatter points take the color of the band their value is in, and the
+  tooltip dot follows. `Above`, `Below` or both; later bands win; `ColorValue` wins over bands.
+  JSON specs: `"colorBands"`. The canvas layer clips shapes to their group (`CanvasOp.Cl`).
 - Colors per item: `ColorValue` on every series gives an item its own color, e.g.
   `o => o.Late ? "--rio-negative" : null` (a CSS color or theme token; null keeps the series
   color). Bars (also horizontal and stacked), scatter markers, pie slices (and their legend

@@ -266,6 +266,10 @@ public sealed record SeriesSpec
     [Description("Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.")]
     public int? VisibleLevels { get; init; }
 
+    /// <summary>Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.</summary>
+    [Description("Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.")]
+    public IReadOnlyList<ColorBand>? ColorBands { get; init; }
+
     /// <summary>The field with each row's own color (a CSS color such as "#d6485a", or a theme token such as "--rio-negative"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.</summary>
     [Description("The field with each row's own color (a CSS color such as \"#d6485a\", or a theme token such as \"--rio-negative\"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.")]
     public string? ColorField { get; init; }
@@ -550,6 +554,25 @@ public enum AnnotationLayer
 
     /// <summary>On top of the series.</summary>
     Above,
+}
+
+/// <summary>
+/// A color for values in a range, e.g. { "above": 120, "color": "--rio-negative" }: a line or
+/// area takes it where it runs in the range, a bar or scatter point when its value is in it.
+/// </summary>
+public sealed record ColorBand
+{
+    /// <summary>Values above this take the color. Null: no lower bound.</summary>
+    [Description("Values above this take the color. Null: no lower bound.")]
+    public double? Above { get; init; }
+
+    /// <summary>Values below this take the color. Null: no upper bound.</summary>
+    [Description("Values below this take the color. Null: no upper bound.")]
+    public double? Below { get; init; }
+
+    /// <summary>A CSS color or a theme token such as "--rio-negative".</summary>
+    [Description("A CSS color or a theme token such as \"--rio-negative\".")]
+    public string Color { get; init; } = "";
 }
 
 /// <summary>A condition on a field, e.g. { "field": "channel", "op": "eq", "value": "Web" }.</summary>
