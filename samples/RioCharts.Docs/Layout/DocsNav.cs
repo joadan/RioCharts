@@ -9,7 +9,7 @@ public static class DocsNav
 
     public static readonly Group[] Groups =
     [
-        new("Start", [new("", "Overview"), new("getting-started", "Getting started")]),
+        new("Start", [new("", "Overview"), new("getting-started", "Getting started"), new("from-apexcharts", "Coming from ApexCharts")]),
         new("Charts", [new("lines-and-areas", "Lines and areas"), new("bars", "Bars and stacking"), new("scatter", "Scatter"), new("heatmap", "Heatmap"), new("box-plots", "Box plots"), new("candlesticks", "Candlesticks"), new("radar", "Radar"), new("treemap", "Treemap"), new("pies", "Pie, donut and radial"), new("compact", "Compact charts")]),
         new("Features",
         [

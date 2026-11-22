@@ -1,0 +1,73 @@
+@page "/from-apexcharts"
+
+<PageTitle>Coming from Blazor-ApexCharts · RioCharts</PageTitle>
+
+<h1>Coming from Blazor-ApexCharts</h1>
+<p class="lead">
+    If you know Blazor-ApexCharts, most of RioCharts will feel familiar: items with <code>XValue</code> and <code>YValue</code>
+    selectors, <code>YAggregate</code>, series as child components. This page maps the main concepts.
+</p>
+
+<h2>The main difference</h2>
+<p>
+    Blazor-ApexCharts wraps the ApexCharts JavaScript library: your options go to JavaScript, which lays out and draws the chart.
+    RioCharts lays out the chart in .NET and renders SVG through Blazor; a small JS module only measures text and handles the pointer.
+    So there is no options object to send: the chart is configured with typed parameters, a change to a parameter or to
+    <code>Items</code> draws the chart again, and the same layout renders on the server (PNG/SVG export) and from JSON specs.
+</p>
+
+<h2>Side by side</h2>
+<p>Order value per country, summed, as bars.</p>
+<CodeBlock Language="razor" Code="@ApexCode" />
+<CodeBlock Language="razor" Code="@RioCode" />
+
+<h2>Concepts</h2>
+<table class="docs">
+    <tr><th>Blazor-ApexCharts</th><th>RioCharts</th></tr>
+    <tr><td><code>&lt;ApexChart TItem Title Height&gt;</code></td><td><code>&lt;RioChart TItem Title Height&gt;</code>; the width follows the container.</td></tr>
+    <tr><td><code>&lt;ApexPointSeries SeriesType="SeriesType.Bar"&gt;</code></td><td>One component per type: <code>LineSeries</code>, <code>AreaSeries</code>, <code>BarSeries</code>, <code>ScatterSeries</code>, <code>PieSeries</code>, <code>DonutSeries</code>, <code>RadialBarSeries</code>, <code>RadarSeries</code>, <code>HeatmapSeries</code>, <code>TreemapSeries</code>.</td></tr>
+    <tr><td><code>XValue</code>, <code>YValue</code>, <code>YAggregate</code></td><td>The same names. Common aggregates also as <code>Aggregate="Aggregate.Sum"</code> (Average, Min, Max, Count, Last).</td></tr>
+    <tr><td><code>OrderBy</code>, <code>OrderByDescending</code></td><td>Sort <code>Items</code> with LINQ; categories keep the order of the items.</td></tr>
+    <tr><td><code>PointColor</code></td><td><code>ColorValue</code>, plus <code>ColorBands</code> to color by value (a line turns red above a limit).</td></tr>
+    <tr><td>Data labels in the options</td><td><code>DataLabels="true"</code> on the series.</td></tr>
+    <tr><td>Range, candle and box plot series</td><td><code>RangeAreaSeries</code> (<code>LowValue</code> and <code>YValue</code>), <code>CandlestickSeries</code> (<code>OpenValue</code>, <code>HighValue</code>, <code>LowValue</code>, <code>CloseValue</code>, or raw readings with <code>Bucket</code>), <code>BoxPlotSeries</code> (raw values, or <code>Q1Value</code>, <code>MedianValue</code>, ...).</td></tr>
+    <tr><td>X and y axis options, several y axes</td><td><code>XAxis</code>, <code>YAxis</code> and <code>YAxes</code> (<code>AxisSpec</code>), and <code>YAxisId</code> on the series.</td></tr>
+    <tr><td>Annotations in the options</td><td>Child components: <code>ReferenceLine</code>, <code>ReferenceBand</code>, <code>PointAnnotation</code>, <code>Callout</code>; a reference line can be dragged (<code>@@bind-Value</code>).</td></tr>
+    <tr><td>Curve in the stroke options</td><td><code>Curve="CurveType.Monotone"</code> (or <code>Step</code>) on the series.</td></tr>
+    <tr><td>Stacking in the chart options</td><td><code>Stack="name"</code> on each series to stack.</td></tr>
+    <tr><td>Tooltip options, custom tooltip</td><td><code>Tooltip</code> (<code>TooltipSpec</code>), <code>TooltipValue</code> per series, or a <code>TooltipTemplate</code> with your own Razor.</td></tr>
+    <tr><td>Chart group (synced charts)</td><td><code>Group="name"</code>: shared crosshair and zoom, and the plots line up.</td></tr>
+    <tr><td>Zoom and the toolbar</td><td><code>Zoomable="true"</code> (drag, pinch, Ctrl+wheel, keyboard), <code>Exportable="true"</code> for PNG, SVG and CSV downloads.</td></tr>
+    <tr><td>Colors and theme mode</td><td>CSS variables (<code>--rio-series-1</code> ... , <code>--rio-text</code>, ...); light and dark follow the page. See <a href="theming">Theming</a>.</td></tr>
+    <tr><td>Data point selection event</td><td><code>OnPointClick</code>, or <code>Selection="SelectionMode.Points"</code> with <code>@@bind-SelectedItems</code> (and <code>SelectionMode.Range</code>).</td></tr>
+    <tr><td>Legend click event</td><td><code>OnLegendClick</code>, and <code>OnLegendClicking</code> to cancel.</td></tr>
+    <tr><td>Zoomed event</td><td><code>@@bind-VisibleRange</code> or <code>OnZoomChanging</code>.</td></tr>
+    <tr><td>Updating series, rendering again</td><td>Not needed: pass a new <code>Items</code> list, or change <code>DataVersion</code> after changing a list in place. For live data, append to a <code>SeriesBuffer</code>.</td></tr>
+    <tr><td>Zooming, showing and hiding series from code</td><td><code>ZoomToAsync</code>, <code>ResetZoomAsync</code>, <code>ShowSeriesAsync</code>, <code>HideSeriesAsync</code>, <code>ToggleSeriesAsync</code>, <code>HighlightSeriesAsync</code>.</td></tr>
+</table>
+
+<h2>What else is different</h2>
+<ul>
+    <li>Series render nothing themselves; the chart lays them out together. Selectors run once per data change, not per render.</li>
+    <li>Large data is downsampled (LTTB) and can draw on a canvas layer (<code>SeriesLayer="SeriesLayer.Canvas"</code>); see <a href="large-data">Large data</a>.</li>
+    <li>The same chart renders without a browser: <a href="server-export">server-side export</a> to SVG and PNG, and static SSR as plain SVG.</li>
+    <li>Charts can be written as <a href="specs">JSON specs</a>, which is how AI agents create them.</li>
+    <li>The chart's own texts (empty states, screen reader texts) come in eight languages; see <a href="languages">Languages and texts</a>.</li>
+</ul>
+
+@code {
+    private const string ApexCode = """
+        @* Blazor-ApexCharts *@
+        <ApexChart TItem="Order" Title="Order value">
+            <ApexPointSeries TItem="Order" Items="orders" Name="Value" SeriesType="SeriesType.Bar"
+                             XValue="o => o.Country" YAggregate="g => g.Sum(o => o.Value)" />
+        </ApexChart>
+        """;
+
+    private const string RioCode = """
+        @* RioCharts *@
+        <RioChart TItem="Order" Items="orders" Title="Order value">
+            <BarSeries Name="Value" XValue="o => o.Country" YAggregate="g => g.Sum(o => o.Value)" />
+        </RioChart>
+        """;
+}

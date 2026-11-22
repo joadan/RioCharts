@@ -16,7 +16,7 @@ Razor renders SVG, and a tiny JS module only measures the container and the font
 
 Named after Rio, and *río* means river: fitting for flowing lines and time series.
 
-## What works today (milestones 1–6)
+## What works today (milestones 1–7)
 
 - Line, area and bar series (grouped bars), with linear, monotone and step lines
 - Linear, time and category axes, picked automatically from the data
@@ -58,6 +58,14 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 
 All six milestones of [Design.md](Design.md) are in, plus client-side export, auto-compact, native
 AOT support, built-in languages and a WASM docs site.
+
+## Coming from Blazor-ApexCharts?
+
+The concepts map closely: items with `XValue`/`YValue` selectors, `YAggregate`, series as child
+components (one component per type instead of `SeriesType`), typed parameters instead of an options
+object, and no `UpdateSeriesAsync`: change `Items` and the chart draws again. See
+[Coming from Blazor-ApexCharts](https://joadan.github.io/RioCharts/from-apexcharts) for the full
+mapping.
 
 ## Install
 
