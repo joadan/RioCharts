@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for Blazor in pure .NET: line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick and treemap. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10.
+> Charts for Blazor in pure .NET: line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick and treemap. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://joadan.github.io/RioCharts/
 

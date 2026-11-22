@@ -1,8 +1,9 @@
 @* A live example: a title, a short explanation, the chart itself, and the code that makes it. *@
+@inject NavigationManager Nav
 <section class="example" id="@Anchor">
     @if (Title is not null)
     {
-        <h2><a href="@($"#{Anchor}")" class="anchor">@Title<span class="anchor-mark" aria-hidden="true">#</span></a></h2>
+        <h2><a href="@Href" class="anchor">@Title<span class="anchor-mark" aria-hidden="true">#</span></a></h2>
     }
 
     @if (Description is not null)
@@ -38,6 +39,10 @@
     [Parameter] public string Language { get; set; } = "razor";
 
     [Parameter] public bool CodeOpen { get; set; } = true;
+
+    // The page's own path plus the fragment: a bare "#curves" resolves against <base href>,
+    // i.e. the start page.
+    private string Href => Nav.ToBaseRelativePath(Nav.Uri).Split('#')[0].Split('?')[0] + "#" + Anchor;
 
     private string Anchor => Title is null ? "" : new string(Title.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Trim('-');
 }

@@ -3,6 +3,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+    <!-- The packages target the current LTS and the latest .NET; apps and samples stay on the LTS. -->
+    <LibraryTargetFrameworks>net10.0;net11.0</LibraryTargetFrameworks>
 
     <!-- Versions come from version.json and the git height (Nerdbank.GitVersioning).
          Pre-1.0: APIs change freely; packages are published as previews. -->

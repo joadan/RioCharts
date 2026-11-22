@@ -3,9 +3,11 @@
   <!-- Component tests for RioCharts.Blazor with bUnit: parameters, events, binding and markup.
        The JS module does not run here; JS calls are checked through bUnit's JS interop. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- BL0016 (.NET 11: guard JS interop with try/catch) is for app code; the tests call fakes on purpose. -->
+    <NoWarn>$(NoWarn);BL0016</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

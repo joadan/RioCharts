@@ -1,6 +1,6 @@
 name: Test
 
-# Runs every test on Linux for each push to master, so the visual snapshots
+# Runs every test on Linux, on .NET 10 and .NET 11 (the test projects target both), for each push to master, so the visual snapshots
 # (tests/RioCharts.Tests/Snapshots) are checked on the same OS as the release workflow.
 # On a snapshot failure, the received SVGs are uploaded as an artifact to compare.
 on:
@@ -21,7 +21,10 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          # The packages target .NET 10 (LTS) and .NET 11: restoring them needs both SDKs.
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       # The bUnit tests fake the JS module, so a syntax error in it would pass them: check it here.
       - name: Check the JS module's syntax

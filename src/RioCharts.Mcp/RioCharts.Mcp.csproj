@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackAsTool>true</PackAsTool>
+    <!-- Built for .NET 10, runs on .NET 11 too when only that is installed. -->
+    <RollForward>Major</RollForward>
     <ToolCommandName>riocharts-mcp</ToolCommandName>
     <PackageId>RioCharts.Mcp</PackageId>
     <Description>A local MCP server (stdio) that lets AI agents such as Claude Code, Claude Desktop or GitHub Copilot render charts as PNG or SVG files from a JSON spec, with data from CSV and JSON files or inline rows, and turn specs into Blazor code (get_razor, get_usage). Install with dotnet tool install -g RioCharts.Mcp and run riocharts-mcp.</Description>

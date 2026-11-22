@@ -22,7 +22,7 @@ before adding or changing features. Record where the code differs from it in
 - `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
 - `tests/RioCharts.Tests/` — xUnit tests (Core, AI, MCP, Skia).
 - `tests/RioCharts.Tests/Snapshots/` — visual snapshots (SVG) of reference charts from `SnapshotTests.cs`. A layout change that alters them fails with `name.received.svg` next to the snapshot: look at both, then accept with `RIOCHARTS_ACCEPT_SNAPSHOTS=1 dotnet test` and review the diff. New chart types get a reference chart there.
-- `tests/RioCharts.AotSmoke/` — console app published with native AOT (`.github/workflows/aot.yml`); exits 0 when its checks pass. Locally without a C++ linker: `dotnet publish tests/RioCharts.AotSmoke -c Release -r win-x64 --self-contained -p:PublishAot=false -p:PublishTrimmed=true`.
+- `tests/RioCharts.AotSmoke/` — console app published with native AOT (`.github/workflows/aot.yml`); exits 0 when its checks pass. Locally without a C++ linker: `dotnet publish tests/RioCharts.AotSmoke -c Release -f net10.0 -r win-x64 --self-contained -p:PublishAot=false -p:PublishTrimmed=true` (and `-f net11.0`).
 - `docs/llms/guide.md` — the guide for coding agents. `AgentGuideTests` (Blazor tests) builds `samples/RioCharts.Docs/wwwroot/llms-full.txt` from it, the example components in `tests/RioCharts.Blazor.Tests/Guide/` (compiled and rendered there) and the XML docs of every component parameter; RioCharts.AI embeds that file (`RioChartsUsage`, get_usage). A changed parameter or doc comment fails the test: accept with `RIOCHARTS_ACCEPT_SNAPSHOTS=1 dotnet test`. `llms.txt` next to it is written by hand.
 - `tests/RioCharts.Blazor.Tests/` — bUnit component tests for `<RioChart>`; `ChartTestBase` fakes the JS module in strict mode, so add a setup when the component calls a new JS function.
 - `benchmarks/RioCharts.Benchmarks/` — BenchmarkDotNet: layout (line, zoomed, bars, pie), items to columns, LTTB, SVG/PNG export, JSON spec parse/CSV/bind. Run in Release: `dotnet run -c Release --project benchmarks/RioCharts.Benchmarks -- --filter *Layout*` (`--job short` for a quick look). Compare before and after a change to a hot path; the baseline is in `benchmarks/README.md`.
@@ -41,6 +41,13 @@ dotnet run --project samples/RioCharts.Docs --launch-profile http
 ```
 
 Stop the running demo before rebuilding; it locks the library DLLs.
+
+The libraries and test projects target .NET 10 (LTS) and .NET 11 (`LibraryTargetFrameworks` in
+`Directory.Build.props`), so building needs both SDKs and `dotnet test` runs every test on both.
+The docs site runs on .NET 11, so the .NET 11 build of the library runs in a real browser; the
+demo (Blazor Server), riocharts-mcp and the benchmarks stay on .NET 10 (the tool rolls forward
+to .NET 11). Behavior must be the same on both: a test that differs is a bug to fix,
+not a reason to branch on the framework.
 
 ## Git
 

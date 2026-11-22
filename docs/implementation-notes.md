@@ -736,6 +736,27 @@ Design.md "Treemap" (milestone 7).
 - **Not yet:** color by a separate value on a sequential scale, and listing an "Other" item's parts
   in its tooltip.
 
+## Target frameworks
+
+Design.md: "current LTS plus the latest .NET". The libraries (Core, Blazor, Skia, AI) target
+`net10.0;net11.0` through `LibraryTargetFrameworks` in Directory.Build.props; RioCharts.Blazor
+references Microsoft.AspNetCore.Components.Web 10.0.x or 11.0.x per framework. The test projects
+and the AOT smoke test target both too, and CI installs both SDKs. riocharts-mcp is a tool, not
+a library: one build for .NET 10 with `RollForward=Major`, so it runs where only .NET 11 is
+installed. The apps pick one each, so both library builds run in a real browser: the docs site
+(Blazor WebAssembly, on GitHub Pages) is on .NET 11, the demo (Blazor Server) and the
+benchmarks on .NET 10.
+
+What .NET 11 changed:
+- `DateTime.TryParse` reads "2026-03-01T24:00" as the next midnight (ISO 8601 end of day); .NET 10
+  rejects it. CSV/JSON time detection fell back to TryParse for what its own ISO reader
+  rejected, so the same file read differently. The fallback is gone: the ISO pattern without an
+  offset is read in full by the fast path, and what it rejects stays text on both.
+- Analyzer BL0016 (JS interop not in a try/catch). The download methods now catch
+  `JSDisconnectedException` (no browser left to save to); `SyncInteractionAsync` runs inside
+  OnAfterRenderAsync's try/catch and `ExportPngAsync`/`ExportSvgAsync` pass errors to the caller
+  on purpose, so those suppress it with the reason. The bUnit tests turn it off (fakes).
+
 ## Guide for coding agents
 
 Design.md has no section on this; it extends "Low priority: a short README note for

@@ -5,6 +5,16 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Docs site: the `#` links on example headings stay on their page (they went to the start page).
+- .NET 11: the packages target .NET 10 (LTS) and .NET 11; RioCharts.Blazor builds against
+  ASP.NET Core 11 on .NET 11. riocharts-mcp runs on .NET 10 or, when only that is installed, .NET 11
+  (`RollForward=Major`). Tests, the native AOT check and CI run on both. The docs site runs on
+  .NET 11 (WebAssembly), the demo on .NET 10. Building from source
+  needs both SDKs.
+- `DownloadPngAsync`, `DownloadSvgAsync` and `DownloadCsvAsync` do nothing once the browser has
+  disconnected, instead of throwing `JSDisconnectedException`.
+- CSV and JSON data: a time like "2026-03-01T24:00" stays text on every framework (.NET 11's
+  `DateTime.TryParse` accepts it as the next midnight, so it was read as a time there).
 - Guide for coding agents: `llms.txt` and `llms-full.txt` on the docs site. llms-full.txt has setup,
   rules, which series to use, common mistakes, compiled examples and every component parameter
   and the types they use, generated from the code and XML docs by the Blazor tests (they fail

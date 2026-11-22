@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for Blazor in pure .NET: line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick and treemap. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10.
+> Charts for Blazor in pure .NET: line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick and treemap. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://joadan.github.io/RioCharts/
 
@@ -334,9 +334,9 @@ A chart. Series are added as child components: `<RioChart Items="readings"><Line
 - `Task<string> ExportSvgAsync(ChartImageOptions? options = null)` — The chart as a standalone SVG document, as currently drawn (size, zoom, hidden series and theme colors resolved). Needs an interactive render mode.
 - `Task<byte[]> ExportPngAsync(ChartImageOptions? options = null)` — The chart as a PNG image, as currently drawn. Needs an interactive render mode.
 - `string ExportCsv(CsvOptions? options = null)` — The data of every series (hidden ones too) as CSV: an x column and one column per series. Works without a browser. See `ChartCsv`.
-- `Task DownloadSvgAsync(string? fileName = null, ChartImageOptions? options = null)` — Saves the chart as an SVG file in the browser (file name without extension; default `RioChart.ExportFileName`).
-- `Task DownloadPngAsync(string? fileName = null, ChartImageOptions? options = null)` — Saves the chart as a PNG file in the browser.
-- `Task DownloadCsvAsync(string? fileName = null, CsvOptions? options = null)` — Saves the data as a CSV file in the browser.
+- `Task DownloadSvgAsync(string? fileName = null, ChartImageOptions? options = null)` — Saves the chart as an SVG file in the browser (file name without extension; default `RioChart.ExportFileName`). Does nothing once the browser has disconnected.
+- `Task DownloadPngAsync(string? fileName = null, ChartImageOptions? options = null)` — Saves the chart as a PNG file in the browser. Does nothing once the browser has disconnected.
+- `Task DownloadCsvAsync(string? fileName = null, CsvOptions? options = null)` — Saves the data as a CSV file in the browser. Does nothing once the browser has disconnected.
 - `ChartSpec GetSpec()` — The chart model: the `RioChart.Spec` parameter, or one built from the parameters and child components (for saving, or as a starting point for edits).
 - `void Refresh()` — Lays out again, e.g. after changing data in place without a new reference or DataVersion.
 - `ChartRange? GetVisibleRange()` — The visible x range, or null when all data is shown.

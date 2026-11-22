@@ -185,12 +185,10 @@ public sealed partial class ChartDataset
             return o;
         }
 
-        if (TryParseIsoLocal(s, out var local))
-        {
-            return local;
-        }
-
-        return DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
+        // Without an offset the pattern has fixed positions, which TryParseIsoLocal reads in full;
+        // what it rejects (Feb 30, hour 24) stays text. No DateTime.TryParse fallback: .NET 11
+        // reads "T24:00" as the next midnight, .NET 10 does not, and a CSV must read the same on both.
+        return TryParseIsoLocal(s, out var local) ? local : null;
     }
 
     /// <summary>

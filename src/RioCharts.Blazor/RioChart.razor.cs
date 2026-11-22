@@ -682,8 +682,10 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>
     /// Sends the drawn points (pixel positions and formatted values) to JS once per layout, so
-    /// pointer moves are handled in the browser without a round trip.
+    /// pointer moves are handled in the browser without a round trip. Called only from
+    /// OnAfterRenderAsync, inside its try/catch for disconnects and JS errors (hence BL0016 off).
     /// </summary>
+#pragma warning disable BL0016
     private async Task SyncInteractionAsync()
     {
         if (_module is null || _layout is null)
@@ -753,6 +755,7 @@ public partial class RioChart<TItem> : IChartContext
         await SendTooltipAsync(); // a tooltip shown from code moves with the new layout
         await SendHighlightAsync(); // set before the module was loaded
     }
+#pragma warning restore BL0016
 
     // ---------- Keyboard ----------
 

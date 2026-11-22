@@ -22,13 +22,17 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          # The packages target .NET 10 (LTS) and .NET 11: restoring them needs both SDKs.
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Native toolchain
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
-      - name: Publish with native AOT
-        run: dotnet publish tests/RioCharts.AotSmoke/RioCharts.AotSmoke.csproj -c Release -r linux-x64 -o aot
-
-      - name: Run
-        run: ./aot/RioCharts.AotSmoke
+      - name: Publish with native AOT and run, on .NET 10 and .NET 11
+        run: |
+          for f in net10.0 net11.0; do
+            dotnet publish tests/RioCharts.AotSmoke/RioCharts.AotSmoke.csproj -c Release -f $f -r linux-x64 -o aot-$f
+            ./aot-$f/RioCharts.AotSmoke
+          done

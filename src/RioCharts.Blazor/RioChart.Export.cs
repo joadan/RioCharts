@@ -147,23 +147,59 @@ public partial class RioChart<TItem>
         return ChartCsv.Write(series, options ?? new CsvOptions { XHeader = CurrentSpec().X.Title ?? "x" });
     }
 
-    /// <summary>Saves the chart as an SVG file in the browser (file name without extension; default <see cref="ExportFileName"/>).</summary>
-    public Task DownloadSvgAsync(string? fileName = null, ChartImageOptions? options = null) =>
-        Module().InvokeVoidAsync("download", _container, "svg", FileName(fileName, "svg"), ImageOptions(options)).AsTask();
+    /// <summary>
+    /// Saves the chart as an SVG file in the browser (file name without extension; default
+    /// <see cref="ExportFileName"/>). Does nothing once the browser has disconnected.
+    /// </summary>
+    public async Task DownloadSvgAsync(string? fileName = null, ChartImageOptions? options = null)
+    {
+        var module = Module();
+        try
+        {
+            await module.InvokeVoidAsync("download", _container, "svg", FileName(fileName, "svg"), ImageOptions(options));
+        }
+        catch (JSDisconnectedException)
+        {
+            // The browser is gone: there is nothing to save the file to.
+        }
+    }
 
-    /// <summary>Saves the chart as a PNG file in the browser.</summary>
-    public Task DownloadPngAsync(string? fileName = null, ChartImageOptions? options = null) =>
-        Module().InvokeVoidAsync("download", _container, "png", FileName(fileName, "png"), ImageOptions(options)).AsTask();
+    /// <summary>Saves the chart as a PNG file in the browser. Does nothing once the browser has disconnected.</summary>
+    public async Task DownloadPngAsync(string? fileName = null, ChartImageOptions? options = null)
+    {
+        var module = Module();
+        try
+        {
+            await module.InvokeVoidAsync("download", _container, "png", FileName(fileName, "png"), ImageOptions(options));
+        }
+        catch (JSDisconnectedException)
+        {
+            // The browser is gone: there is nothing to save the file to.
+        }
+    }
 
-    /// <summary>Saves the data as a CSV file in the browser.</summary>
-    public Task DownloadCsvAsync(string? fileName = null, CsvOptions? options = null) =>
-        Module().InvokeVoidAsync("downloadText", FileName(fileName, "csv"), ExportCsv(options), "text/csv").AsTask();
+    /// <summary>Saves the data as a CSV file in the browser. Does nothing once the browser has disconnected.</summary>
+    public async Task DownloadCsvAsync(string? fileName = null, CsvOptions? options = null)
+    {
+        var module = Module();
+        try
+        {
+            await module.InvokeVoidAsync("downloadText", FileName(fileName, "csv"), ExportCsv(options), "text/csv");
+        }
+        catch (JSDisconnectedException)
+        {
+            // The browser is gone: there is nothing to save the file to.
+        }
+    }
 
     private async Task<byte[]> ExportBytesAsync(string function, ChartImageOptions? options)
     {
         // A stream, not a byte[] result: on Blazor Server results from JS are limited to the
         // hub's MaximumReceiveMessageSize (32 KB by default).
+        // The caller asked for the image: JS errors and disconnects are theirs to see (BL0016).
+#pragma warning disable BL0016
         await using var reference = await Module().InvokeAsync<IJSStreamReference>(function, _container, ImageOptions(options));
+#pragma warning restore BL0016
         await using var stream = await reference.OpenReadStreamAsync(MaxExportBytes);
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer);

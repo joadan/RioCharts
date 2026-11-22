@@ -191,7 +191,7 @@ Paste this into your repository's `AGENTS.md` (or `CLAUDE.md`, `.github/copilot-
 ```markdown
 ## Charts
 
-Charts use RioCharts.Blazor (preview, .NET 10). Before writing chart code, read
+Charts use RioCharts.Blazor (preview, .NET 10 and 11). Before writing chart code, read
 https://joadan.github.io/RioCharts/llms-full.txt, or call get_usage if the riocharts MCP server is set up.
 
 - Setup: the RioCharts.Blazor package, and `@using RioCharts.Blazor` and `@using RioCharts.Core` in `_Imports.razor`. Nothing to register.
