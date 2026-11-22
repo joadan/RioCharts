@@ -48,15 +48,15 @@ public abstract class ChartTestBase : BunitContext
 
     protected sealed record Reading(DateTime Time, double? Value);
 
-    protected sealed record Alarm(string Unit, double Minutes);
+    protected sealed record Alarm(string Store, double Minutes);
 
     protected static readonly DateTime Start = new(2026, 11, 16);
 
-    protected static readonly Reading[] Supply =
+    protected static readonly Reading[] London =
         [new(Start, 19.5), new(Start.AddHours(1), 20.1), new(Start.AddHours(2), 20.8), new(Start.AddHours(3), 20.2)];
 
-    protected static readonly Reading[] Extract =
+    protected static readonly Reading[] Toronto =
         [new(Start, 21.9), new(Start.AddHours(1), 22.3), new(Start.AddHours(2), 22.6), new(Start.AddHours(3), 22.1)];
 
-    protected static readonly Alarm[] Alarms = [new("AHU 1", 10), new("AHU 2", 30), new("AHU 1", 5)];
+    protected static readonly Alarm[] Alarms = [new("Store 1", 10), new("Store 2", 30), new("Store 1", 5)];
 }

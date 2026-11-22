@@ -9,18 +9,18 @@ namespace RioCharts.Tests;
 
 public class ChartToolTests
 {
-    private static readonly ChartDataset Ahu = ChartDataset.FromRows("ahu",
+    private static readonly ChartDataset Weather = ChartDataset.FromRows("weather",
         Enumerable.Range(0, 72).Select(h => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>
         {
             ["timestamp"] = new DateTime(2026, 11, 16).AddHours(h),
-            ["unit"] = h % 2 == 0 ? "AHU 1" : "AHU 2",
-            ["supplyTemp"] = 19 + Math.Sin(h / 6.0),
-            ["energy"] = 10.0 + h % 7,
+            ["station"] = h % 2 == 0 ? "Station 1" : "Station 2",
+            ["airTemp"] = 19 + Math.Sin(h / 6.0),
+            ["rain"] = 10.0 + h % 7,
         }),
-        "Air handling units, hourly",
-        new Dictionary<string, string> { ["supplyTemp"] = "supply air temperature in °C" });
+        "Weather stations, hourly",
+        new Dictionary<string, string> { ["airTemp"] = "air temperature in °C" });
 
-    private static ChartTool Tool() => new(new InMemoryDataSource([Ahu]));
+    private static ChartTool Tool() => new(new InMemoryDataSource([Weather]));
 
     [Fact]
     public async Task Create_chart_renders_and_describes_a_valid_spec()
@@ -29,11 +29,11 @@ public class ChartToolTests
         var tool = Tool();
         tool.ChartCreated += r => created = r;
 
-        var result = await tool.CreateChartAsync("""{"dataset":"ahu","title":"Supply","series":[{"type":"spline","x":"timestamp","y":"supplyTemp","groupBy":"unit"}]}""");
+        var result = await tool.CreateChartAsync("""{"dataset":"weather","title":"Air temperature","series":[{"type":"spline","x":"timestamp","y":"airTemp","groupBy":"station"}]}""");
 
         Assert.True(result.Success, string.Join("; ", result.Errors));
         Assert.NotNull(result.Png);
-        Assert.Contains("Supply", result.Summary);
+        Assert.Contains("Air temperature", result.Summary);
         Assert.Contains(result.Warnings, w => w.Contains("spline", StringComparison.Ordinal));
         Assert.Equal(2, result.BoundSpec!.Series.Count);
         Assert.Same(result, created);
@@ -45,7 +45,7 @@ public class ChartToolTests
     [Fact]
     public async Task Create_chart_returns_errors_the_model_can_act_on()
     {
-        var result = await Tool().CreateChartAsync("""{"dataset":"ahu","series":[{"type":"line","x":"time","y":"supplyTemp"}]}""");
+        var result = await Tool().CreateChartAsync("""{"dataset":"weather","series":[{"type":"line","x":"time","y":"airTemp"}]}""");
 
         Assert.False(result.Success);
         Assert.Contains(result.Errors, e => e.StartsWith("series[0].x: field 'time' not found", StringComparison.Ordinal) && e.Contains("timestamp (time)", StringComparison.Ordinal));
@@ -58,8 +58,8 @@ public class ChartToolTests
     {
         var description = Tool().Description;
 
-        Assert.Contains("- ahu: Air handling units, hourly (72 rows)", description);
-        Assert.Contains("supplyTemp (number, supply air temperature in °C)", description);
+        Assert.Contains("- weather: Weather stations, hourly (72 rows)", description);
+        Assert.Contains("airTemp (number, air temperature in °C)", description);
         Assert.Contains("\"timeBucket\"", description);
     }
 
@@ -68,7 +68,7 @@ public class ChartToolTests
     {
         var functions = Tool().AsAIFunctions();
         var create = (AIFunction)functions.Single(f => f.Name == "create_chart");
-        var spec = JsonDocument.Parse("""{"dataset":"ahu","series":[{"type":"bar","x":"timestamp","y":"energy","timeBucket":"day","aggregate":"sum"}]}""").RootElement;
+        var spec = JsonDocument.Parse("""{"dataset":"weather","series":[{"type":"bar","x":"timestamp","y":"rain","timeBucket":"day","aggregate":"sum"}]}""").RootElement;
 
         var fromObject = await create.InvokeAsync(new AIFunctionArguments { ["spec"] = spec });
         var fromString = await create.InvokeAsync(new AIFunctionArguments { ["spec"] = spec.GetRawText() });
@@ -83,13 +83,13 @@ public class ChartToolTests
     public async Task Mcp_tool_returns_the_image_and_flags_errors()
     {
         var tools = new RioChartsMcpTools(Tool());
-        var ok = await tools.CreateChart(JsonDocument.Parse("""{"dataset":"ahu","series":[{"x":"timestamp","y":"supplyTemp"}]}""").RootElement, default);
+        var ok = await tools.CreateChart(JsonDocument.Parse("""{"dataset":"weather","series":[{"x":"timestamp","y":"airTemp"}]}""").RootElement, default);
         var bad = await tools.CreateChart(JsonDocument.Parse("""{"dataset":"nope","series":[{"x":"a","y":"b"}]}""").RootElement, default);
 
         Assert.False(ok.IsError);
         Assert.Contains(ok.Content, c => c is ImageContentBlock { MimeType: "image/png" });
         Assert.True(bad.IsError);
-        Assert.Contains("available: ahu", ((TextContentBlock)bad.Content[0]).Text);
+        Assert.Contains("available: weather", ((TextContentBlock)bad.Content[0]).Text);
         Assert.Contains("\"title\"", tools.GetChartSchema());
     }
 
@@ -99,7 +99,7 @@ public class ChartToolTests
         var created = new List<ChartToolResult>();
         var tool = Tool();
         tool.ChartCreated += created.Add;
-        const string spec = """{"dataset":"ahu","series":[{"x":"timestamp","y":"supplyTemp"}]}""";
+        const string spec = """{"dataset":"weather","series":[{"x":"timestamp","y":"airTemp"}]}""";
 
         var png = await tool.RenderChartAsync(spec, new ChartImageRequest { Width = 400, Height = 200 });
         var svg = await tool.RenderChartAsync(spec, new ChartImageRequest { Format = ChartImageFormat.Svg, Theme = "dark" });
@@ -125,7 +125,7 @@ public class ChartToolTests
         var created = 0;
         tool.ChartCreated += _ => created++;
 
-        var bad = await tool.RenderChartAsync("""{"dataset":"ahu","series":[{"x":"timestamp","y":"supplyTemp"}]}""",
+        var bad = await tool.RenderChartAsync("""{"dataset":"weather","series":[{"x":"timestamp","y":"airTemp"}]}""",
             new ChartImageRequest { Width = 20000, Theme = "neon" });
         var badSpec = await tool.RenderChartAsync("""{"dataset":"nope","series":[{"x":"a","y":"b"}]}""");
 
@@ -142,15 +142,15 @@ public class ChartToolTests
         var directory = Path.Combine(Path.GetTempPath(), "riocharts-tests-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var tool = new ChartTool(new InMemoryDataSource([Ahu]), new ChartToolOptions { OutputDirectory = directory });
+            var tool = new ChartTool(new InMemoryDataSource([Weather]), new ChartToolOptions { OutputDirectory = directory });
             string? createdFile = null;
             tool.ChartCreated += r => createdFile ??= r.File;
-            const string spec = """{"dataset":"ahu","title":"Supply air / AHU 1","series":[{"x":"timestamp","y":"supplyTemp"}]}""";
+            const string spec = """{"dataset":"weather","title":"Air temp / Station 1","series":[{"x":"timestamp","y":"airTemp"}]}""";
 
             var fromTitle = await tool.RenderChartAsync(spec);
             var named = await tool.RenderChartAsync(spec, new ChartImageRequest { Format = ChartImageFormat.Svg, FileName = "../../evil.png" });
 
-            Assert.Equal(Path.Combine(directory, "supply-air---ahu-1.png"), fromTitle.File);
+            Assert.Equal(Path.Combine(directory, "air-temp---station-1.png"), fromTitle.File);
             Assert.Equal(fromTitle.File, createdFile); // raised after the file is written
             Assert.Equal(Path.Combine(directory, "evil.svg"), named.File);
             Assert.Equal(fromTitle.Png, await File.ReadAllBytesAsync(fromTitle.File!));
@@ -171,7 +171,7 @@ public class ChartToolTests
     {
         var tool = Tool();
         var render = (AIFunction)tool.AsAIFunctions().Single(f => f.Name == "render_chart");
-        var spec = JsonDocument.Parse("""{"data":[{"system":"Heating","share":45},{"system":"Fans","share":55}],"series":[{"type":"auto","x":"system","y":"share"}]}""").RootElement;
+        var spec = JsonDocument.Parse("""{"data":[{"category":"Shoes","share":45},{"category":"Jackets","share":55}],"series":[{"type":"auto","x":"category","y":"share"}]}""").RootElement;
 
         var aiResult = await render.InvokeAsync(new AIFunctionArguments { ["spec"] = spec, ["format"] = "svg" });
         var mcp = new RioChartsMcpTools(tool);
@@ -191,19 +191,19 @@ public class ChartToolTests
     public void Specs_export_to_razor_markup()
     {
         var spec = ChartSpecJson.Parse("""
-            { "title": "Supply \"air\"", "y": { "title": "°C" },
-              "series": [ { "type": "line", "x": "timestamp", "y": "supply_temp", "name": "Supply", "curve": "smooth", "groupBy": "unit" },
-                          { "type": "doughnut", "x": "system", "y": "share" } ],
-              "annotations": [ { "value": 21, "label": "Setpoint" }, { "type": "band", "axis": "x", "from": "2026-11-16T06:00", "to": "2026-11-16T09:00" } ] }
+            { "title": "Weather \"now\"", "y": { "title": "°C" },
+              "series": [ { "type": "line", "x": "timestamp", "y": "air_temp", "name": "Temperature", "curve": "smooth", "groupBy": "station" },
+                          { "type": "doughnut", "x": "category", "y": "share" } ],
+              "annotations": [ { "value": 21, "label": "Average" }, { "type": "band", "axis": "x", "from": "2026-11-16T06:00", "to": "2026-11-16T09:00" } ] }
             """).Spec!;
 
         var razor = ChartRazor.FromSpec(spec, "Reading", "readings");
 
-        Assert.StartsWith("<RioChart TItem=\"Reading\" Items=\"readings\" Title=\"Supply &quot;air&quot;\"", razor);
-        Assert.Contains("<LineSeries Name=\"Supply\" XValue=\"r => r.Timestamp\" YValue=\"r => r.SupplyTemp\" Curve=\"CurveType.Monotone\" />", razor);
-        Assert.Contains("<DonutSeries XValue=\"r => r.System\" YValue=\"r => r.Share\" />", razor);
-        Assert.Contains("<ReferenceLine Value=\"21\" Label=\"Setpoint\" />", razor);
-        Assert.Contains("@* one series per unit", razor);
+        Assert.StartsWith("<RioChart TItem=\"Reading\" Items=\"readings\" Title=\"Weather &quot;now&quot;\"", razor);
+        Assert.Contains("<LineSeries Name=\"Temperature\" XValue=\"r => r.Timestamp\" YValue=\"r => r.AirTemp\" Curve=\"CurveType.Monotone\" />", razor);
+        Assert.Contains("<DonutSeries XValue=\"r => r.Category\" YValue=\"r => r.Share\" />", razor);
+        Assert.Contains("<ReferenceLine Value=\"21\" Label=\"Average\" />", razor);
+        Assert.Contains("@* one series per station", razor);
         Assert.Contains("DateTime.Parse(\"2026-11-16T06:00\")", razor);
     }
 }

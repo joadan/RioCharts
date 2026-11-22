@@ -55,7 +55,7 @@ public class CategoryLayoutBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        var names = Enumerable.Range(1, 30).Select(i => $"AHU {i}").ToArray();
+        var names = Enumerable.Range(1, 30).Select(i => $"Store {i}").ToArray();
         SeriesData Values(int seed) => SeriesData.FromCategories(names, names.Select((_, i) => 50 + (i * 37 + seed * 11) % 400.0).ToArray());
 
         _bars = new ChartSpec
@@ -66,7 +66,7 @@ public class CategoryLayoutBenchmarks
         _stacked = _bars with { Series = _bars.Series.Select(s => s with { Stack = "all" }).ToList() };
         _barData = new() { ["a"] = Values(1), ["b"] = Values(2), ["c"] = Values(3) };
 
-        var slices = new[] { "Heating", "Cooling", "Fans", "Pumps", "Lighting", "Other" };
+        var slices = new[] { "Industry", "Homes", "Transport", "Offices", "Shops", "Other" };
         _pie = new ChartSpec { Series = [new() { Id = "p", Name = "Energy", Type = SeriesType.Pie, DataLabels = true }] };
         _pieData = new() { ["p"] = SeriesData.FromCategories(slices, [420, 310, 180, 95, 60, 12]) };
     }

@@ -9,17 +9,17 @@ namespace RioCharts.Tests;
 
 public class Milestone6Tests
 {
-    private static readonly ChartDataset Ahu = ChartDataset.FromRows("ahu",
+    private static readonly ChartDataset Weather = ChartDataset.FromRows("weather",
         Enumerable.Range(0, 48).Select(h => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>
         {
             ["timestamp"] = new DateTime(2026, 11, 16).AddHours(h),
-            ["unit"] = h % 2 == 0 ? "AHU 1" : "AHU 2",
-            ["supplyTemp"] = 19 + h % 5,
-            ["energy"] = 10.0 + h,
+            ["station"] = h % 2 == 0 ? "Station 1" : "Station 2",
+            ["airTemp"] = 19 + h % 5,
+            ["rain"] = 10.0 + h,
         }),
-        "Air handling units, hourly");
+        "Weather stations, hourly");
 
-    private static readonly Dictionary<string, ChartDataset> Datasets = new() { ["ahu"] = Ahu };
+    private static readonly Dictionary<string, ChartDataset> Datasets = new() { ["weather"] = Weather };
 
     private static SpecBindResult Bind(string json)
     {
@@ -33,11 +33,11 @@ public class Milestone6Tests
     [Fact]
     public void The_minimal_spec_from_the_design_renders_a_finished_chart()
     {
-        var result = Bind("""{ "dataset": "ahu", "series": [{ "type": "line", "x": "timestamp", "y": "supplyTemp" }] }""");
+        var result = Bind("""{ "dataset": "weather", "series": [{ "type": "line", "x": "timestamp", "y": "airTemp" }] }""");
 
         Assert.True(result.Success);
         var series = Assert.Single(result.Spec.Series);
-        Assert.Equal("Supply temp", series.Name);
+        Assert.Equal("Air temp", series.Name);
         Assert.Equal(48, result.Data[series.Id].Count);
         var layout = ChartLayout.Compute(result.Spec, result.Data, new LayoutOptions { Culture = CultureInfo.InvariantCulture });
         Assert.True(layout.HasData);
@@ -49,8 +49,8 @@ public class Milestone6Tests
     {
         var parsed = ChartSpecJson.Parse("""
             {
-              "Dataset": "ahu", "comment": "ignored", // comments too
-              "series": { "TYPE": "Doughnut", "x": "unit", "y": "energy", "aggregate": "total" },
+              "Dataset": "weather", "comment": "ignored", // comments too
+              "series": { "TYPE": "Doughnut", "x": "station", "y": "rain", "aggregate": "total" },
               "legend": { "position": "RIGHT" },
             }
             """);
@@ -95,9 +95,9 @@ public class Milestone6Tests
     {
         var spec = new ChartSpec
         {
-            Title = "Energy",
-            Dataset = "ahu",
-            Series = [new SeriesSpec { Type = SeriesType.Bar, X = "timestamp", Y = "energy", TimeBucket = TimeBucket.Day, Aggregate = Aggregate.Sum }],
+            Title = "Rain",
+            Dataset = "weather",
+            Series = [new SeriesSpec { Type = SeriesType.Bar, X = "timestamp", Y = "rain", TimeBucket = TimeBucket.Day, Aggregate = Aggregate.Sum }],
         };
 
         var json = ChartSpecJson.Serialize(spec);
@@ -131,40 +131,40 @@ public class Milestone6Tests
     [Fact]
     public void Unknown_fields_and_datasets_list_what_is_available()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "ahu", "series": [{ "x": "timestamp", "y": "supplyTemps" }, { "dataset": "nope", "x": "a", "y": "b" }] }""");
+        var parsed = ChartSpecJson.Parse("""{ "dataset": "weather", "series": [{ "x": "timestamp", "y": "airTemps" }, { "dataset": "nope", "x": "a", "y": "b" }] }""");
         var result = ChartSpecBinder.Bind(parsed.Spec!, Datasets);
 
         Assert.False(result.Success);
         var field = result.Errors.Single(e => e.Path == "series[0].y");
-        Assert.Contains("did you mean 'supplyTemp'", field.Message);
+        Assert.Contains("did you mean 'airTemp'", field.Message);
         Assert.Contains("timestamp (time)", field.Message);
-        Assert.Contains(result.Errors, e => e.Path == "series[1].dataset" && e.Message.Contains("available: ahu", StringComparison.Ordinal));
+        Assert.Contains(result.Errors, e => e.Path == "series[1].dataset" && e.Message.Contains("available: weather", StringComparison.Ordinal));
     }
 
     [Fact]
     public void Y_must_be_numeric()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "ahu", "series": [{ "x": "timestamp", "y": "unit" }] }""");
+        var parsed = ChartSpecJson.Parse("""{ "dataset": "weather", "series": [{ "x": "timestamp", "y": "station" }] }""");
 
         var error = Assert.Single(ChartSpecBinder.Bind(parsed.Spec!, Datasets).Errors);
 
         Assert.Equal("series[0].y", error.Path);
-        Assert.Contains("number fields: supplyTemp, energy", error.Message);
+        Assert.Contains("number fields: airTemp, rain", error.Message);
     }
 
     [Fact]
     public void Group_by_filter_bucket_and_aggregate_build_one_series_per_value()
     {
         var result = Bind("""
-            { "dataset": "ahu", "series": [{ "type": "bar", "x": "timestamp", "y": "energy", "groupBy": "unit",
-              "timeBucket": "day", "aggregate": "sum", "filter": [{ "field": "energy", "op": ">=", "value": 20 }] }] }
+            { "dataset": "weather", "series": [{ "type": "bar", "x": "timestamp", "y": "rain", "groupBy": "station",
+              "timeBucket": "day", "aggregate": "sum", "filter": [{ "field": "rain", "op": ">=", "value": 20 }] }] }
             """);
 
         Assert.True(result.Success, string.Join("; ", result.Errors));
-        Assert.Equal(["AHU 1", "AHU 2"], result.Spec.Series.Select(s => s.Name));
+        Assert.Equal(["Station 1", "Station 2"], result.Spec.Series.Select(s => s.Name));
         var first = result.Data[result.Spec.Series[0].Id];
         Assert.Equal(2, first.Count); // two days
-        // AHU 1 has even hours; energy >= 20 keeps hours 10..46 → day 1: 10+12+...+22, day 2: 24+26+...+46 (+10 each)
+        // Station 1 has even hours; rain >= 20 keeps hours 10..46 → day 1: 10+12+...+22, day 2: 24+26+...+46 (+10 each)
         Assert.Equal(Enumerable.Range(10, 14).Where(h => h % 2 == 0).Sum(h => 10.0 + h), first.Y[0]);
     }
 
@@ -172,7 +172,7 @@ public class Milestone6Tests
     public void Inline_data_and_inferred_fields_work_without_a_data_source()
     {
         var result = Bind("""
-            { "data": [ { "system": "Heating", "share": 45 }, { "system": "Ventilation", "share": 30 }, { "system": "Lighting", "share": 25 } ],
+            { "data": [ { "category": "Shoes", "share": 45 }, { "category": "Jackets", "share": 30 }, { "category": "Hats", "share": 25 } ],
               "series": [{ "type": "auto" }] }
             """);
 
@@ -186,21 +186,21 @@ public class Milestone6Tests
     [Fact]
     public void Auto_picks_line_for_time_and_bar_for_categories_and_sort_limit_rank_them()
     {
-        var line = Bind("""{ "dataset": "ahu", "series": [{ "type": "auto", "x": "timestamp", "y": "supplyTemp" }] }""");
-        var ranked = Bind("""{ "dataset": "ahu", "series": [{ "type": "auto", "x": "unit", "y": "energy", "aggregate": "max", "sort": "desc", "limit": 1 }] }""");
+        var line = Bind("""{ "dataset": "weather", "series": [{ "type": "auto", "x": "timestamp", "y": "airTemp" }] }""");
+        var ranked = Bind("""{ "dataset": "weather", "series": [{ "type": "auto", "x": "station", "y": "rain", "aggregate": "max", "sort": "desc", "limit": 1 }] }""");
 
         Assert.Equal(SeriesType.Line, line.Spec.Series[0].Type);
         Assert.Equal(SeriesType.Bar, ranked.Spec.Series[0].Type);
         var data = ranked.Data[ranked.Spec.Series[0].Id];
-        Assert.Equal(["AHU 2"], data.Categories);
+        Assert.Equal(["Station 2"], data.Categories);
         Assert.Equal(57, data.Y[0]);
     }
 
     [Fact]
     public async Task Binding_loads_datasets_from_a_data_source()
     {
-        var source = new InMemoryDataSource([Ahu]);
-        var spec = ChartSpecJson.Parse("""{ "dataset": "AHU", "series": [{ "x": "timestamp", "y": "energy", "aggregate": "count", "timeBucket": "day" }] }""").Spec!;
+        var source = new InMemoryDataSource([Weather]);
+        var spec = ChartSpecJson.Parse("""{ "dataset": "WEATHER", "series": [{ "x": "timestamp", "y": "rain", "aggregate": "count", "timeBucket": "day" }] }""").Spec!;
 
         var result = await ChartSpecBinder.BindAsync(spec, source);
 

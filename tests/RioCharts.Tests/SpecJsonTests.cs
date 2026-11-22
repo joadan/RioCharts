@@ -59,7 +59,7 @@ public class SpecJsonTests
     {
         var spec = new ChartSpec
         {
-            Data = [new Dictionary<string, object?> { ["t"] = new DateTime(2026, 11, 16), ["v"] = 20.5, ["unit"] = "AHU 1", ["on"] = true, ["n"] = 3 }],
+            Data = [new Dictionary<string, object?> { ["t"] = new DateTime(2026, 11, 16), ["v"] = 20.5, ["station"] = "Station 1", ["on"] = true, ["n"] = 3 }],
             Series = [new SeriesSpec { Id = "s", X = "t", Y = "v" }],
             Annotations = [new AnnotationSpec { Type = AnnotationType.Point, X = new DateTime(2026, 11, 16), Y = 20.5m }],
         };
@@ -67,7 +67,7 @@ public class SpecJsonTests
         var json = ChartSpecJson.Serialize(spec);
 
         Assert.Contains("\"2026-11-16T00:00:00\"", json, StringComparison.Ordinal);
-        Assert.Contains("\"unit\": \"AHU 1\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"station\": \"Station 1\"", json, StringComparison.Ordinal);
         Assert.Contains("\"type\": \"point\"", json, StringComparison.Ordinal);
         Assert.Equal(20.5, ChartSpecJson.Parse(json).Spec!.Data![0]["v"] switch { System.Text.Json.JsonElement e => e.GetDouble(), var o => Convert.ToDouble(o) });
     }

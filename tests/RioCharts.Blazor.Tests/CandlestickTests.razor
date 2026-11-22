@@ -5,14 +5,14 @@
 
     private sealed record Day(DateTime Date, double First, double Max, double Min, double Last);
 
-    // Supply air temperature in °C every 15 minutes for two hours.
+    // Outdoor temperature in °C every 15 minutes for two hours.
     private static readonly Temp[] Temps = Enumerable.Range(0, 8).Select(i => new Temp(Start.AddMinutes(15 * i), 20 + i % 4 * 0.5)).ToArray();
 
     [Fact]
     public void Readings_become_one_candle_per_bucket()
     {
         var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Culture="System.Globalization.CultureInfo.InvariantCulture">
-            <CandlestickSeries Id="t" Name="Supply" XValue="t => t.Time" YValue="t => t.Value" Bucket="TimeBucket.Hour" Format="0.0" />
+            <CandlestickSeries Id="t" Name="London" XValue="t => t.Time" YValue="t => t.Value" Bucket="TimeBucket.Hour" Format="0.0" />
         </RioChart>);
 
         Assert.Equal(2, cut.FindAll(".rio-candle").Count);

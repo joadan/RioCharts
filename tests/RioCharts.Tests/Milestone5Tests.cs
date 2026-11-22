@@ -25,21 +25,21 @@ public class Milestone5Tests
     {
         var start = new DateTime(2026, 11, 16);
         var times = Enumerable.Range(0, 96).Select(i => start.AddMinutes(30 * i)).ToArray();
-        var supply = times.Select((t, i) => 19 + 1.5 * Math.Sin(i / 48.0 * 2 * Math.PI)).ToArray();
-        var energy = times.Select((t, i) => 14 - 9 * Math.Sin(i / 48.0 * 2 * Math.PI)).ToArray();
+        var london = times.Select((t, i) => 19 + 1.5 * Math.Sin(i / 48.0 * 2 * Math.PI)).ToArray();
+        var rain = times.Select((t, i) => 14 - 9 * Math.Sin(i / 48.0 * 2 * Math.PI)).ToArray();
         var spec = new ChartSpec
         {
-            Title = "Air handling unit",
+            Title = "Weather station",
             Y = new AxisSpec { Title = "°C" },
-            YAxes = [new AxisSpec { Id = "kwh", Title = "kWh" }],
+            YAxes = [new AxisSpec { Id = "mm", Title = "mm" }],
             Series =
             [
-                new SeriesSpec { Id = "energy", Name = "Energy", Type = SeriesType.Area, YAxisId = "kwh" },
-                new SeriesSpec { Id = "supply", Name = "Supply", Curve = CurveType.Monotone },
+                new SeriesSpec { Id = "rain", Name = "Rain", Type = SeriesType.Area, YAxisId = "mm" },
+                new SeriesSpec { Id = "london", Name = "London", Curve = CurveType.Monotone },
             ],
-            Annotations = [new AnnotationSpec { Value = 19, Label = "Setpoint" }],
+            Annotations = [new AnnotationSpec { Value = 19, Label = "Average" }],
         };
-        return (spec, new() { ["supply"] = SeriesData.From(times, supply), ["energy"] = SeriesData.From(times, energy) });
+        return (spec, new() { ["london"] = SeriesData.From(times, london), ["rain"] = SeriesData.From(times, rain) });
     }
 
     [Fact]
@@ -81,16 +81,16 @@ public class Milestone5Tests
     public void Svg_is_a_standalone_document_with_escaped_text()
     {
         var (spec, data) = TemperatureChart();
-        spec = spec with { Title = "Supply <AHU 1> & extract" };
+        spec = spec with { Title = "London <Station 1> & Toronto" };
 
         var svg = ChartExport.ToSvg(spec, data, Options);
         Save("temperature.svg", System.Text.Encoding.UTF8.GetBytes(svg));
         var doc = System.Xml.Linq.XDocument.Parse(svg); // well-formed XML
 
         Assert.Equal("svg", doc.Root!.Name.LocalName);
-        Assert.Contains("Supply &lt;AHU 1&gt; &amp; extract", svg);
+        Assert.Contains("London &lt;Station 1&gt; &amp; Toronto", svg);
         Assert.Contains("<clipPath", svg);
-        Assert.Contains("stroke-dasharray=\"4 3\"", svg); // the setpoint line
+        Assert.Contains("stroke-dasharray=\"4 3\"", svg); // the reference line
     }
 
     [Fact]
@@ -99,13 +99,13 @@ public class Milestone5Tests
         var (temperature, temperatureData) = TemperatureChart();
         Save("temperature.png", ChartExport.ToPng(temperature, temperatureData, Options));
 
-        var shares = SeriesData.FromCategories(["Heating", "Ventilation", "Cooling", "Lighting", "Pumps"], [412.0, 236, 148, 97, 31]);
+        var shares = SeriesData.FromCategories(["Industry", "Homes", "Transport", "Offices", "Shops"], [412.0, 236, 148, 97, 31]);
         var donut = new ChartSpec { Title = "Energy use", Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }] };
         var donutPng = ChartExport.ToPng(donut, new Dictionary<string, SeriesData> { ["p"] = shares }, Options);
         Save("donut.png", donutPng);
 
         var radial = new ChartSpec { Series = [new SeriesSpec { Id = "r", Type = SeriesType.RadialBar, Max = 100 }] };
-        var radialPng = ChartExport.ToPng(radial, new Dictionary<string, SeriesData> { ["r"] = SeriesData.FromCategories(["Fan", "Filter", "Pump"], [87.0, 41, 66]) }, Options);
+        var radialPng = ChartExport.ToPng(radial, new Dictionary<string, SeriesData> { ["r"] = SeriesData.FromCategories(["North", "South", "East"], [87.0, 41, 66]) }, Options);
         Save("radial.png", radialPng);
 
         var empty = ChartExport.ToPng(new ChartSpec { Series = [new SeriesSpec { Id = "e" }] }, new Dictionary<string, SeriesData>(), Options);
@@ -118,7 +118,7 @@ public class Milestone5Tests
     public void Inside_slice_labels_stay_within_a_thin_donut_ring()
     {
         static IEnumerable<Node> All(Node node) => node is GroupNode g ? g.Children.SelectMany(All).Prepend(g) : [node];
-        var shares = SeriesData.FromCategories(["Heating", "Ventilation", "Cooling", "Lighting", "Pumps", "Elevators", "Controls"], [412.0, 236, 148, 97, 31, 9, 6]);
+        var shares = SeriesData.FromCategories(["Industry", "Homes", "Transport", "Offices", "Shops", "Farms", "Rail"], [412.0, 236, 148, 97, 31, 9, 6]);
         var donut = new ChartSpec { Legend = new LegendSpec { Mode = LegendMode.Hide }, Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }] };
         var measurer = new SkiaTextMeasurer(new SkiaFonts("Segoe UI, Arial, sans-serif"));
         var inside = 0;
@@ -156,7 +156,7 @@ public class Milestone5Tests
         }
 
         // Small slices at the end of the sweep share the top of the left side; their labels stack downward.
-        var shares = SeriesData.FromCategories(["Heating", "Ventilation", "Cooling", "Lighting", "Pumps", "Elevators", "Controls"], [412.0, 236, 148, 97, 31, 9, 6]);
+        var shares = SeriesData.FromCategories(["Industry", "Homes", "Transport", "Offices", "Shops", "Farms", "Rail"], [412.0, 236, 148, 97, 31, 9, 6]);
         foreach (var (inner, height) in new[] { 0, 0.6 }.SelectMany(inner => new[] { 150, 170, 220, 300 }.Select(h => (inner, h))))
         {
             var donut = new ChartSpec { Legend = new LegendSpec { Mode = LegendMode.Hide }, Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = inner }] };
@@ -195,8 +195,8 @@ public class Milestone5Tests
         Assert.True(wide > narrow * 2);
         // Width scales with font size. Not exactly 2x: on machines without these fonts (Linux CI)
         // Skia falls back to a hinted font whose advances round differently at 12 and 24 px.
-        var large = measurer.Measure("Supply", 24);
-        var small = measurer.Measure("Supply", 12);
+        var large = measurer.Measure("London", 24);
+        var small = measurer.Measure("London", 12);
         Assert.InRange(large / (small * 2), 0.9, 1.1);
     }
 

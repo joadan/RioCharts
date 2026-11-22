@@ -230,18 +230,21 @@ function hoverLegend(state, target) {
 }
 
 // Fades the other series' groups and data labels; nothing when the series is not drawn (hidden,
-// a pie slice, the canvas layer).
+// the canvas layer). Keyed groups can nest (a pie ring holds its slices, keyed by category, as do
+// radial bars and treemap groups): a group that holds the highlighted one, or sits inside it,
+// stays.
 function applyHighlight(state) {
     if (!state.svg) {
         return;
     }
 
     const id = state.legendHover || state.highlight || null;
-    const groups = state.svg.querySelectorAll('[data-key^="series:"], [data-key^="labels:"]');
-    const drawn = id !== null && [...groups].some(g => g.getAttribute('data-key') === 'series:' + id);
+    const groups = [...state.svg.querySelectorAll('[data-key^="series:"], [data-key^="labels:"]')];
+    const hits = id === null ? [] : groups.filter(g => g.getAttribute('data-key') === 'series:' + id);
     for (const g of groups) {
         const key = g.getAttribute('data-key');
-        g.classList.toggle('rio-dimmed', drawn && key !== 'series:' + id && key !== 'labels:' + id);
+        const keep = key === 'series:' + id || key === 'labels:' + id || hits.some(h => h.contains(g) || g.contains(h));
+        g.classList.toggle('rio-dimmed', hits.length > 0 && !keep);
     }
 }
 

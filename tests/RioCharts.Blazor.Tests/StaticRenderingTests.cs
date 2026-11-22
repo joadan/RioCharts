@@ -39,12 +39,12 @@ public class StaticRenderingTests
         return (html, js);
     }
 
-    private static readonly Reading[] Supply = Enumerable.Range(0, 24).Select(i => new Reading(new DateTime(2026, 11, 16).AddHours(i), 19 + Math.Sin(i / 3.0))).ToArray();
+    private static readonly Reading[] London = Enumerable.Range(0, 24).Select(i => new Reading(new DateTime(2026, 11, 16).AddHours(i), 19 + Math.Sin(i / 3.0))).ToArray();
 
     private static RenderFragment Series => builder =>
     {
         builder.OpenComponent<LineSeries<Reading>>(0);
-        builder.AddAttribute(1, nameof(LineSeries<Reading>.Name), "Supply");
+        builder.AddAttribute(1, nameof(LineSeries<Reading>.Name), "London");
         builder.AddAttribute(2, nameof(LineSeries<Reading>.XValue), (Func<Reading, object?>)(r => r.Time));
         builder.AddAttribute(3, nameof(LineSeries<Reading>.YValue), (Func<Reading, double?>)(r => r.Value));
         builder.CloseComponent();
@@ -55,8 +55,8 @@ public class StaticRenderingTests
     {
         var (html, js) = await RenderAsync(new()
         {
-            [nameof(RioChart<Reading>.Items)] = Supply,
-            [nameof(RioChart<Reading>.Title)] = "Supply air",
+            [nameof(RioChart<Reading>.Items)] = London,
+            [nameof(RioChart<Reading>.Title)] = "Temperature",
             [nameof(RioChart<Reading>.ChildContent)] = Series,
         });
 
@@ -64,7 +64,7 @@ public class StaticRenderingTests
         Assert.Contains("<svg class=\"rio-chart-svg\"", html, StringComparison.Ordinal);
         Assert.Contains("viewBox=\"0 0 640 300\"", html, StringComparison.Ordinal); // the default width, scaled to fit by the browser
         Assert.Contains("class=\"rio-line", html, StringComparison.Ordinal);
-        Assert.Contains("Supply air", html, StringComparison.Ordinal);
+        Assert.Contains("Temperature", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class StaticRenderingTests
     {
         var (html, _) = await RenderAsync(new()
         {
-            [nameof(RioChart<Reading>.Items)] = Supply,
+            [nameof(RioChart<Reading>.Items)] = London,
             [nameof(RioChart<Reading>.Exportable)] = true,
             [nameof(RioChart<Reading>.SeriesLayer)] = SeriesLayer.Canvas,
             [nameof(RioChart<Reading>.ChildContent)] = Series,
@@ -93,7 +93,7 @@ public class StaticRenderingTests
         {
             Series(builder);
             builder.OpenComponent<LineSeries<Reading>>(10);
-            builder.AddAttribute(11, nameof(LineSeries<Reading>.Name), "Extract");
+            builder.AddAttribute(11, nameof(LineSeries<Reading>.Name), "Toronto");
             builder.AddAttribute(12, nameof(LineSeries<Reading>.XValue), (Func<Reading, object?>)(r => r.Time));
             builder.AddAttribute(13, nameof(LineSeries<Reading>.YValue), (Func<Reading, double?>)(r => r.Value + 3));
             builder.CloseComponent();
@@ -101,11 +101,11 @@ public class StaticRenderingTests
 
         var (html, _) = await RenderAsync(new()
         {
-            [nameof(RioChart<Reading>.Items)] = Supply,
+            [nameof(RioChart<Reading>.Items)] = London,
             [nameof(RioChart<Reading>.ChildContent)] = two,
         });
 
-        Assert.Contains("<title>Supply: ", html, StringComparison.Ordinal);
+        Assert.Contains("<title>London: ", html, StringComparison.Ordinal);
         Assert.DoesNotContain("data-tip", html, StringComparison.Ordinal);
     }
 
@@ -114,7 +114,7 @@ public class StaticRenderingTests
     {
         var (html, js) = await RenderAsync(new()
         {
-            [nameof(RioChart<Reading>.Items)] = Supply,
+            [nameof(RioChart<Reading>.Items)] = London,
             [nameof(RioChart<Reading>.Compact)] = true,
             [nameof(RioChart<Reading>.Interactive)] = false,
             [nameof(RioChart<Reading>.Width)] = 140.0,

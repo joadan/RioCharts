@@ -12,7 +12,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Time.** Inside Core, times are milliseconds since 1970-01-01 of the wall-clock time as given
   (`TimeValue`); `DateTime.Kind` and `DateTimeOffset.Offset` are ignored unless a display zone is set (see
   Time zones below).
-- **Step curve** is step-after: a value holds until the next point (states and setpoints).
+- **Step curve** is step-after: a value holds until the next point (states, prices and limits).
 - **Y axis title** is drawn horizontally above the axis labels instead of rotated.
 - **X labels** at the plot edges align to their tick (start/end) instead of centering.
 - **Markers** are hidden, except for a point with no neighbour (a single value or a value between
@@ -203,7 +203,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   are errors listing the valid ones. Limits: 20 series (after groupBy), 1000 inline rows, 50
   annotations.
 - **Errors** are `SpecError(path, message)`. Field errors list the dataset's fields with their
-  types and suggest a close name ("did you mean 'supplyTemp'?"). Parsing errors come first; binding
+  types and suggest a close name ("did you mean 'airTemp'?"). Parsing errors come first; binding
   errors appear once the spec parses, so a model fixes problems in two rounds at most.
 - **Defaults the binder fills in** (reported as warnings): x = the first time, else text field;
   y = the only numeric field; aggregate average with a timeBucket; sum when a text x repeats.

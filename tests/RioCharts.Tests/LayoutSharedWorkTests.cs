@@ -20,8 +20,8 @@ public class LayoutSharedWorkTests
 
     private static ChartSpec TwoLines() => new()
     {
-        Title = "Air handling unit",
-        Series = [new SeriesSpec { Id = "s", Name = "Supply" }, new SeriesSpec { Id = "e", Name = "Extract" }],
+        Title = "Weather stations",
+        Series = [new SeriesSpec { Id = "s", Name = "London" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
     };
 
     [Fact]

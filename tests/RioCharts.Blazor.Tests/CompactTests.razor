@@ -4,15 +4,15 @@
     [Fact]
     public void Compact_chart_is_an_image_with_a_short_summary()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32" Title="Supply air" Culture="System.Globalization.CultureInfo.InvariantCulture">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" Compact="true" Height="32" Title="Temperature" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
         </RioChart>);
 
         var svg = cut.Find("svg.rio-chart-svg");
         Assert.Equal("img", svg.GetAttribute("role"));
         Assert.Null(svg.GetAttribute("tabindex")); // no tab stop per sparkline
         Assert.Equal($"0 0 {Width} 32", svg.GetAttribute("viewBox"));
-        Assert.Equal("Supply air. Supply: 19.5 °C to 20.8 °C, last 20.2 °C, rising.", cut.Find("desc").TextContent);
+        Assert.Equal("Temperature. London: 19.5 °C to 20.8 °C, last 20.2 °C, rising.", cut.Find("desc").TextContent);
         Assert.Empty(cut.FindAll("svg.rio-chart-svg text"));
         Assert.NotEmpty(Calls("update")); // still interactive: the tooltip works
     }
@@ -20,8 +20,8 @@
     [Fact]
     public void Compact_charts_can_turn_keyboard_navigation_back_on()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32" KeyboardNavigation="true">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" Compact="true" Height="32" KeyboardNavigation="true">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Equal("application", cut.Find("svg.rio-chart-svg").GetAttribute("role"));
@@ -46,8 +46,8 @@
     [Fact]
     public void Highlight_on_a_series_draws_dots()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.Last | PointHighlight.Max" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" Compact="true" Height="32">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.Last | PointHighlight.Max" />
         </RioChart>);
 
         Assert.Single(cut.FindAll("path.rio-highlight"));
@@ -56,8 +56,8 @@
     [Fact]
     public void Not_interactive_draws_plain_svg_without_any_JS()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Compact="true" Height="32" Interactive="false" Exportable="true">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" Compact="true" Height="32" Interactive="false" Exportable="true">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Empty(JSInterop.Invocations); // not even the module import
@@ -69,8 +69,8 @@
     [Fact]
     public void Not_interactive_uses_the_given_width_and_keeps_canvas_series_as_svg()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Width="300" Height="120" Interactive="false" SeriesLayer="SeriesLayer.Canvas">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" Width="300" Height="120" Interactive="false" SeriesLayer="SeriesLayer.Canvas">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Empty(JSInterop.Invocations);
@@ -83,15 +83,15 @@
     [Fact]
     public void Low_charts_leave_out_the_title_unless_auto_compact_is_off()
     {
-        var auto = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Height="100" Title="Supply air">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var auto = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" Height="100" Title="Temperature">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
-        var off = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" Height="100" Title="Supply air" AutoCompact="false">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var off = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" Height="100" Title="Temperature" AutoCompact="false">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Empty(auto.FindAll("text.rio-title"));
         Assert.Single(off.FindAll("text.rio-title"));
-        Assert.Equal("Supply air", auto.Find("svg.rio-chart-svg").GetAttribute("aria-label")); // still named for screen readers
+        Assert.Equal("Temperature", auto.Find("svg.rio-chart-svg").GetAttribute("aria-label")); // still named for screen readers
     }
 }

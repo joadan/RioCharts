@@ -6,16 +6,16 @@
     [Fact]
     public void A_chart_with_data_is_a_focusable_application_with_instructions()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Temperature">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="Toronto" Name="Toronto" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var svg = cut.Find("svg.rio-chart-svg");
         Assert.Equal("application", svg.GetAttribute("role"));
         Assert.Equal("chart", svg.GetAttribute("aria-roledescription"));
         Assert.Equal("0", svg.GetAttribute("tabindex"));
-        Assert.Equal("Supply air", svg.GetAttribute("aria-label"));
+        Assert.Equal("Temperature", svg.GetAttribute("aria-label"));
 
         var described = svg.GetAttribute("aria-describedby")!.Split(' ');
         Assert.Equal(2, described.Length);
@@ -31,7 +31,7 @@
     public void Instructions_mention_Enter_when_points_are_clickable()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" OnPointClick="@((PointClickEventArgs<Reading> _) => { })">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Equal("Use Left and Right to move between points. Press Enter to select a point, Escape to leave.", cut.Find(".rio-sr-only").TextContent);
@@ -41,7 +41,7 @@
     public void Instructions_mention_the_zoom_keys_on_zoomable_charts()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Equal("Use Left and Right to move between points. Plus and minus zoom, Shift with Left and Right pans, 0 shows all data. Press Escape to leave.",
@@ -53,7 +53,7 @@
     public void Pies_move_between_slices()
     {
         var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms">
-            <PieSeries Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+            <PieSeries Name="Alarm time" XValue="a => a.Store" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>);
 
         Assert.Equal("application", cut.Find("svg.rio-chart-svg").GetAttribute("role"));
@@ -65,7 +65,7 @@
     public void Turned_off_the_chart_stays_an_image()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" KeyboardNavigation="false">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var svg = cut.Find("svg.rio-chart-svg");
@@ -78,7 +78,7 @@
     public void Without_data_there_is_nothing_to_move_through()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Array.Empty<Reading>()">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Equal("img", cut.Find("svg.rio-chart-svg").GetAttribute("role"));
@@ -90,7 +90,7 @@
     {
         var off = new TooltipSpec { Enabled = false };
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Tooltip="off">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var model = LastUpdateModel(Calls("update"));
@@ -103,7 +103,7 @@
     {
         var off = new TooltipSpec { Enabled = false };
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Tooltip="off" KeyboardNavigation="false">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Null(Calls("update")[^1].Arguments[1]); // no model at all

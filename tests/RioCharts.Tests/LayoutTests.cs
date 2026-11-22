@@ -246,9 +246,9 @@ public class LayoutTests
     [Fact]
     public void Description_mentions_extremes_and_trend()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "temp", Name = "Supply" }), new() { ["temp"] = SeriesData.From([0.0, 1, 2, 3], [10.0, 12, 14, 16]) });
+        var result = Layout(Spec(new SeriesSpec { Id = "temp", Name = "London" }), new() { ["temp"] = SeriesData.From([0.0, 1, 2, 3], [10.0, 12, 14, 16]) });
 
-        Assert.Contains("Supply: 4 values", result.Scene.Description);
+        Assert.Contains("London: 4 values", result.Scene.Description);
         Assert.Contains("highest 16", result.Scene.Description);
         Assert.Contains("trend rising", result.Scene.Description);
     }

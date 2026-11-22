@@ -9,22 +9,22 @@ namespace RioCharts.Tests;
 
 public class AggregationTests
 {
-    private sealed record Alarm(string? Unit, double? Minutes);
+    private sealed record Alarm(string? Store, double? Minutes);
 
     private sealed record Sample(object X, double Value);
 
     private static readonly Alarm[] Alarms =
     [
-        new("AHU 2", 30), new("AHU 1", 10), new("AHU 2", 20), new(null, 99), new("AHU 1", null), new("AHU 3", 5),
+        new("Store 2", 30), new("Store 1", 10), new("Store 2", 20), new(null, 99), new("Store 1", null), new("Store 3", 5),
     ];
 
     [Fact]
     public void Groups_keep_first_appearance_order_and_map_back_to_items()
     {
-        var data = SeriesData.FromGroups(Alarms, a => a.Unit, g => g.Sum(a => a.Minutes ?? 0), out var groups);
+        var data = SeriesData.FromGroups(Alarms, a => a.Store, g => g.Sum(a => a.Minutes ?? 0), out var groups);
 
         Assert.Equal(XKind.Category, data.Kind);
-        Assert.Equal(["AHU 2", "AHU 1", "AHU 3"], data.Categories);
+        Assert.Equal(["Store 2", "Store 1", "Store 3"], data.Categories);
         Assert.Equal([50.0, 10, 5], data.Y);
         Assert.Equal([0, 2], groups[data.ToSourceIndex(0)]); // null x is left out
         Assert.Equal([1, 4], groups[data.ToSourceIndex(1)]);
@@ -75,14 +75,14 @@ public class AggregationTests
         Assert.Equal(2, Aggregation.For<Alarm>(Aggregate.Count, null)([Alarms[0], Alarms[1]]));
         Assert.Null(Aggregation.For<Alarm>(Aggregate.Sum, null)([Alarms[0]]));
 
-        var data = SeriesData.FromGroups(Alarms, a => a.Unit, Aggregation.For<Alarm>(Aggregate.Average, a => a.Minutes));
-        Assert.Equal(10, data.Y[1]); // AHU 1: 10 and null
+        var data = SeriesData.FromGroups(Alarms, a => a.Store, Aggregation.For<Alarm>(Aggregate.Average, a => a.Minutes));
+        Assert.Equal(10, data.Y[1]); // Store 1: 10 and null
     }
 
     [Fact]
     public void Empty_items_give_empty_data()
     {
-        var data = SeriesData.FromGroups(Array.Empty<Alarm>(), a => a.Unit, g => g.Count, out var groups);
+        var data = SeriesData.FromGroups(Array.Empty<Alarm>(), a => a.Store, g => g.Count, out var groups);
 
         Assert.Equal(0, data.Count);
         Assert.Empty(groups);
@@ -99,7 +99,7 @@ public class AggregationTests
         var numericBars = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "b", Type = SeriesType.Bar }] }, new Dictionary<string, SeriesData> { ["b"] = times }, options);
         var line = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "l" }] }, new Dictionary<string, SeriesData> { ["l"] = times }, options);
         var grouped = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "b", Type = SeriesType.Bar }] },
-            new Dictionary<string, SeriesData> { ["b"] = SeriesData.FromGroups(Alarms, a => a.Unit, g => g.Count) }, options);
+            new Dictionary<string, SeriesData> { ["b"] = SeriesData.FromGroups(Alarms, a => a.Store, g => g.Count) }, options);
 
         Assert.Contains(bars.Warnings, w => w.Contains("x value 'A' appears more than once", StringComparison.Ordinal));
         Assert.Contains(numericBars.Warnings, w => w.Contains("x value 1 appears more than once", StringComparison.Ordinal));
@@ -111,15 +111,15 @@ public class AggregationTests
     public void Razor_export_writes_the_aggregate_as_a_parameter()
     {
         var spec = ChartSpecJson.Parse("""
-            { "series": [ { "type": "bar", "x": "unit", "aggregate": "count" },
-                          { "type": "bar", "x": "unit", "y": "minutes", "aggregate": "sum" },
+            { "series": [ { "type": "bar", "x": "store", "aggregate": "count" },
+                          { "type": "bar", "x": "store", "y": "minutes", "aggregate": "sum" },
                           { "type": "bar", "x": "time", "y": "energy", "aggregate": "sum", "timeBucket": "day" } ] }
             """).Spec!;
 
         var razor = ChartRazor.FromSpec(spec, "Alarm", "alarms");
 
-        Assert.Contains("<BarSeries XValue=\"r => r.Unit\" Aggregate=\"Aggregate.Count\" />", razor);
-        Assert.Contains("<BarSeries XValue=\"r => r.Unit\" YValue=\"r => r.Minutes\" Aggregate=\"Aggregate.Sum\" />", razor);
+        Assert.Contains("<BarSeries XValue=\"r => r.Store\" Aggregate=\"Aggregate.Count\" />", razor);
+        Assert.Contains("<BarSeries XValue=\"r => r.Store\" YValue=\"r => r.Minutes\" Aggregate=\"Aggregate.Sum\" />", razor);
         Assert.Contains("per day; aggregate: sum", razor);
         Assert.Contains("<BarSeries XValue=\"r => r.Time\" YValue=\"r => r.Energy\" />", razor);
     }

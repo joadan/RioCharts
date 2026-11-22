@@ -19,19 +19,19 @@ void Check(bool ok, string what)
 
 var start = new DateTime(2026, 11, 16);
 var readings = Enumerable.Range(0, 48).Select(i => new Reading(start.AddHours(i), 19 + Math.Sin(i / 4.0), 22 + Math.Cos(i / 5.0))).ToList();
-var ahu = ChartDataset.FromItems("ahu", readings, "Air handling unit, hourly");
-Check(ahu.Fields.Count == 3, "dataset from objects (reflection over public properties)");
+var weather = ChartDataset.FromItems("weather", readings, "Weather stations, hourly");
+Check(weather.Fields.Count == 3, "dataset from objects (reflection over public properties)");
 
 // JSON spec: tolerant reading, enums, defaults of properties missing from the JSON.
 var parsed = ChartSpecJson.Parse("""
     {
-      "title": "Supply and extract air",
-      "dataset": "ahu",
+      "title": "London and Toronto",
+      "dataset": "weather",
       "series": [
-        { "type": "spline", "x": "time", "y": "supply", "format": "0.0 °C", "highlight": "last, max" },
-        { "type": "line", "x": "time", "y": "extract", "format": "0.0 °C" }
+        { "type": "spline", "x": "time", "y": "london", "format": "0.0 °C", "highlight": "last, max" },
+        { "type": "line", "x": "time", "y": "toronto", "format": "0.0 °C" }
       ],
-      "annotations": [ { "type": "band", "from": 21.5, "to": 22.5, "label": "Comfort" } ],
+      "annotations": [ { "type": "band", "from": 21.5, "to": 22.5, "label": "Normal" } ],
       "tooltip": { "shared": false }
     }
     """);
@@ -48,28 +48,28 @@ var schema = ChartSpecJson.Schema().ToJsonString();
 Check(schema.Contains("\"description\"", StringComparison.Ordinal) && schema.Contains("\"series\"", StringComparison.Ordinal), "JSON schema with descriptions");
 
 // Binding, layout, texts, Skia rendering.
-var bound = ChartSpecBinder.Bind(spec, new Dictionary<string, ChartDataset> { ["ahu"] = ahu });
+var bound = ChartSpecBinder.Bind(spec, new Dictionary<string, ChartDataset> { ["weather"] = weather });
 Check(bound.Errors.Count == 0 && bound.Data.Count == 2, "bind fields to the dataset");
 
 var layout = ChartLayout.Compute(bound.Spec, bound.Data, new LayoutOptions { Culture = CultureInfo.GetCultureInfo("sv-SE") });
-Check(layout.Scene.Description.StartsWith("Diagram \"Supply and extract air\" med 2 serier.", StringComparison.Ordinal), "layout with Swedish texts");
+Check(layout.Scene.Description.StartsWith("Diagram \"London and Toronto\" med 2 serier.", StringComparison.Ordinal), "layout with Swedish texts");
 
 var svg = ChartExport.ToSvg(bound.Spec, bound.Data, new ExportOptions { Width = 600, Height = 300 });
-Check(svg.StartsWith("<svg", StringComparison.Ordinal) && svg.Contains("Supply and extract air", StringComparison.Ordinal), "SVG export");
+Check(svg.StartsWith("<svg", StringComparison.Ordinal) && svg.Contains("London and Toronto", StringComparison.Ordinal), "SVG export");
 
 var png = ChartExport.ToPng(bound.Spec, bound.Data, new ExportOptions { Width = 600, Height = 300, Scale = 1 });
 Check(png.Length > 1000 && png[1] == (byte)'P' && png[2] == (byte)'N' && png[3] == (byte)'G', "PNG export (SkiaSharp native code)");
 
 // The AI tool: validation, rendering, result JSON.
-var tool = new ChartTool(new InMemoryDataSource([ahu]));
-var result = await tool.CreateChartAsync("""{ "dataset": "ahu", "series": [ { "type": "line", "x": "time", "y": "supply" } ] }""");
+var tool = new ChartTool(new InMemoryDataSource([weather]));
+var result = await tool.CreateChartAsync("""{ "dataset": "weather", "series": [ { "type": "line", "x": "time", "y": "london" } ] }""");
 Check(result.Success && result.Png is { Length: > 0 }, "create_chart tool");
 var contents = ChartTool.ToAIContents(result);
 Check(contents.Count == 2, "tool result as AI content (source-generated result JSON)");
-var bad = await tool.CreateChartAsync("""{ "dataset": "ahu", "series": [ { "type": "line", "x": "time", "y": "supplly" } ] }""");
-Check(!bad.Success && bad.Errors.Any(e => e.Contains("supply", StringComparison.Ordinal)), "actionable errors for a wrong field");
+var bad = await tool.CreateChartAsync("""{ "dataset": "weather", "series": [ { "type": "line", "x": "time", "y": "londn" } ] }""");
+Check(!bad.Success && bad.Errors.Any(e => e.Contains("london", StringComparison.Ordinal)), "actionable errors for a wrong field");
 
 Console.WriteLine(failures.Count == 0 ? "All checks passed." : $"{failures.Count} checks failed.");
 return failures.Count == 0 ? 0 : 1;
 
-internal sealed record Reading(DateTime Time, double Supply, double Extract);
+internal sealed record Reading(DateTime Time, double London, double Toronto);

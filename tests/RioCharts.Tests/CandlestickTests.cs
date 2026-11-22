@@ -48,7 +48,7 @@ public class CandlestickTests
     [Fact]
     public void Readings_are_bucketed_per_hour_in_time_order()
     {
-        // Supply air temperature in °C every 15 minutes, given out of order.
+        // Outdoor temperature in °C every 15 minutes, given out of order.
         Reading[] readings =
         [
             new(Start.AddMinutes(45), 20.4), new(Start, 20.0), new(Start.AddMinutes(15), 21.2), new(Start.AddMinutes(30), 19.6),

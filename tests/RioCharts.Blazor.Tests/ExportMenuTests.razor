@@ -3,8 +3,8 @@
 @code {
     private IRenderedComponent<RioChart<Reading>> Chart(ExportFormats formats = ExportFormats.All, EventCallback<ChartExportingEventArgs> onExporting = default,
         bool exportable = true) =>
-        Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air" Exportable="exportable" ExportFormats="formats" OnExporting="onExporting">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Temperature" Exportable="exportable" ExportFormats="formats" OnExporting="onExporting">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
     private static string[] MenuItems(IRenderedComponent<RioChart<Reading>> cut) =>
@@ -68,8 +68,8 @@
 
         Assert.Empty(cut.FindAll(".rio-export-menu"));
         var call = Assert.Single(Calls("downloadText"));
-        Assert.Equal("Supply air.csv", call.Arguments[0]);
-        Assert.StartsWith("x,Supply\r\n2026-11-16T00:00:00,19.5", (string)call.Arguments[1]!);
+        Assert.Equal("Temperature.csv", call.Arguments[0]);
+        Assert.StartsWith("x,London\r\n2026-11-16T00:00:00,19.5", (string)call.Arguments[1]!);
     }
 
     [Fact]
@@ -90,7 +90,7 @@
 
         var call = Assert.Single(Calls("download"));
         Assert.Equal("svg", call.Arguments[1]);
-        Assert.Equal("Supply air.svg", call.Arguments[2]);
+        Assert.Equal("Temperature.svg", call.Arguments[2]);
         Assert.Empty(cut.FindAll(".rio-export-menu"));
     }
 
@@ -130,7 +130,7 @@
         cut.FindAll(".rio-export-menu button")[2].Click(); // CSV
 
         Assert.Empty(Calls("downloadText"));
-        Assert.StartsWith("x;Supply\r\n", csv);
+        Assert.StartsWith("x;London\r\n", csv);
     }
 
     [Fact]
@@ -149,14 +149,14 @@
     public void Csv_uses_the_x_axis_title_and_every_series()
     {
         var axis = new AxisSpec { Title = "Time" };
-        string[] hidden = ["extract"];
+        string[] hidden = ["toronto"];
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" XAxis="axis" HiddenSeries="hidden">
-            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
-            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="toronto" Items="Toronto" Name="Toronto" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var csv = cut.Instance.ExportCsv();
 
-        Assert.StartsWith("Time,Supply,Extract\r\n2026-11-16T00:00:00,19.5,21.9\r\n", csv);
+        Assert.StartsWith("Time,London,Toronto\r\n2026-11-16T00:00:00,19.5,21.9\r\n", csv);
     }
 }

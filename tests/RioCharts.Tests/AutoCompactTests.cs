@@ -21,10 +21,10 @@ public class AutoCompactTests
 
     private static readonly ChartSpec Full = new()
     {
-        Title = "Air handling unit",
+        Title = "Weather stations",
         X = new AxisSpec { Title = "Time" },
         Y = new AxisSpec { Title = "°C" },
-        Series = [new SeriesSpec { Id = "s", Name = "Supply" }, new SeriesSpec { Id = "e", Name = "Extract" }],
+        Series = [new SeriesSpec { Id = "s", Name = "London" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
     };
 
     private static readonly Dictionary<string, SeriesData> Data = new() { ["s"] = Temps(19), ["e"] = Temps(22) };
@@ -69,7 +69,7 @@ public class AutoCompactTests
         Assert.DoesNotContain(All(layout.Scene), n => n is TextNode);
         Assert.Equal(40, layout.Scene.Height); // not clamped to 50
         Assert.True(layout.Plot.Height > 30);  // the series fill the box
-        Assert.StartsWith("Air handling unit. Supply:", layout.Scene.Description, StringComparison.Ordinal); // the short summary
+        Assert.StartsWith("Weather stations. London:", layout.Scene.Description, StringComparison.Ordinal); // the short summary
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class AutoCompactTests
     [Fact]
     public void A_legend_taller_than_a_third_of_the_chart_is_left_out()
     {
-        var series = Enumerable.Range(0, 12).Select(i => new SeriesSpec { Id = $"s{i}", Name = $"Air handling unit {i + 1}" }).ToList();
+        var series = Enumerable.Range(0, 12).Select(i => new SeriesSpec { Id = $"s{i}", Name = $"Weather station {i + 1}" }).ToList();
         var data = series.ToDictionary(s => s.Id, s => Temps(18));
 
         var layout = ChartLayout.Compute(new ChartSpec { Series = series }, data, new LayoutOptions { Width = 320, Height = 260 });
@@ -119,8 +119,8 @@ public class AutoCompactTests
     [Fact]
     public void Small_pies_leave_out_the_legend_and_then_the_title()
     {
-        var spec = new ChartSpec { Title = "Energy use", Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie }] };
-        var data = new Dictionary<string, SeriesData> { ["p"] = SeriesData.FromCategories(["Fans", "Pumps", "Lighting"], [50, 30, 20]) };
+        var spec = new ChartSpec { Title = "Sales", Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie }] };
+        var data = new Dictionary<string, SeriesData> { ["p"] = SeriesData.FromCategories(["Shoes", "Jackets", "Hats"], [50, 30, 20]) };
 
         var big = ChartLayout.Compute(spec, data, new LayoutOptions { Width = 400, Height = 300 });
         var small = ChartLayout.Compute(spec, data, new LayoutOptions { Width = 180, Height = 140 });

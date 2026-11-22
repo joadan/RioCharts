@@ -245,7 +245,7 @@ public class Milestone2Tests
     public void Tooltip_model_has_formatted_values_per_drawn_point()
     {
         var start = new DateTime(2026, 3, 1, 8, 0, 0);
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Name = "Supply", Format = "0.0" }] };
+        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Name = "London", Format = "0.0" }] };
         var data = new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.From([start, start.AddMinutes(15)], [21.0, 21.25]),
@@ -255,7 +255,7 @@ public class Milestone2Tests
         var s = Assert.Single(result.Tooltip.Series);
 
         Assert.True(result.Tooltip.Enabled);
-        Assert.Equal("Supply", s.Name);
+        Assert.Equal("London", s.Name);
         Assert.Equal(["21.0", "21.3"], s.Values);
         Assert.Equal("03/01/2026 08:15", s.XLabels[1]);
         Assert.True(s.Snap > 1);

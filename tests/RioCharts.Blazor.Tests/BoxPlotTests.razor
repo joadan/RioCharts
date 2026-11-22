@@ -1,22 +1,22 @@
 @inherits ChartTestBase
 
 @code {
-    private sealed record Temp(string Unit, double? Value);
+    private sealed record Temp(string Station, double? Value);
 
-    private sealed record Box(string Unit, double Low, double Q1, double Median, double Q3, double High, double[] Outliers);
+    private sealed record Box(string Station, double Low, double Q1, double Median, double Q3, double High, double[] Outliers);
 
-    // Supply air temperatures in °C: one item per reading.
+    // Outdoor temperatures in °C: one item per reading.
     private static readonly Temp[] Temps =
     [
-        new("AHU 1", 18.0), new("AHU 1", 19.0), new("AHU 1", 20.0), new("AHU 1", 21.0),
-        new("AHU 2", 19.5), new("AHU 2", 20.0), new("AHU 2", 20.5), new("AHU 2", 27.0), new("AHU 2", null),
+        new("Station 1", 18.0), new("Station 1", 19.0), new("Station 1", 20.0), new("Station 1", 21.0),
+        new("Station 2", 19.5), new("Station 2", 20.0), new("Station 2", 20.5), new("Station 2", 27.0), new("Station 2", null),
     ];
 
     [Fact]
     public void Raw_values_become_one_box_per_x()
     {
         var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Culture="System.Globalization.CultureInfo.InvariantCulture">
-            <BoxPlotSeries Id="t" Name="Supply" XValue="t => t.Unit" YValue="t => t.Value" Format="0.0" />
+            <BoxPlotSeries Id="t" Name="Temperature" XValue="t => t.Station" YValue="t => t.Value" Format="0.0" />
         </RioChart>);
 
         Assert.Equal(2, cut.FindAll(".rio-box").Count);
@@ -32,7 +32,7 @@
     public void Clicking_a_box_selects_all_its_items()
     {
         var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Selection="SelectionMode.Points">
-            <BoxPlotSeries Id="t" Name="Supply" XValue="t => t.Unit" YValue="t => t.Value" />
+            <BoxPlotSeries Id="t" Name="Temperature" XValue="t => t.Station" YValue="t => t.Value" />
         </RioChart>);
 
         cut.InvokeAsync(() => cut.Instance.OnPointClicked("t", 0, false));
@@ -44,9 +44,9 @@
     [Fact]
     public void Precomputed_boxes_take_one_item_per_box()
     {
-        Box[] boxes = [new("AHU 1", 17, 18.5, 19.4, 20.1, 21, []), new("AHU 2", 18, 19, 20, 21, 22, [25.5, 26])];
+        Box[] boxes = [new("Station 1", 17, 18.5, 19.4, 20.1, 21, []), new("Station 2", 18, 19, 20, 21, 22, [25.5, 26])];
         var cut = Render<RioChart<Box>>(@<RioChart TItem="Box" Items="boxes">
-            <BoxPlotSeries Id="b" XValue="b => b.Unit" LowValue="b => b.Low" Q1Value="b => b.Q1" MedianValue="b => b.Median"
+            <BoxPlotSeries Id="b" XValue="b => b.Station" LowValue="b => b.Low" Q1Value="b => b.Q1" MedianValue="b => b.Median"
                            Q3Value="b => b.Q3" HighValue="b => b.High" OutliersValue="b => b.Outliers" />
         </RioChart>);
 

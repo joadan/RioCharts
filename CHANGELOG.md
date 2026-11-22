@@ -76,6 +76,11 @@ changes are called out under **Breaking**.
   `SeriesType.Treemap`, `SeriesSpec.Path` and `PathSeparator`, `TooltipSeries.CellHeights` and
   `PointColors`; new `ChartTexts` keys `Treemap`, `ShareOfGroup`, `ShareOfTotal` and
   `TreemapLeftOut`.
+- Pies, donuts and radial bars: hovering a legend item highlights its slice or bar (in every ring)
+  and fades the others; before, nothing happened, as the legend lists categories while the chart
+  only had one highlightable group per series. Slices and radial bars are now scene groups keyed
+  by category. With `SeriesLayer="Canvas"`, only the plot's top-level series groups move to the
+  canvas (nested keyed groups stay with their parent).
 - Shared tooltips with irregular readings: a line whose nearest point was a little too far from
   the hovered time (e.g. readings logged on change, or a silence) was left out of the tooltip,
   although its line runs through that time. Its nearest point is listed now, unless a gap or the

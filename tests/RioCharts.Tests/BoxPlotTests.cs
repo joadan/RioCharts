@@ -12,14 +12,14 @@ public class BoxPlotTests
 {
     private static readonly LayoutOptions Options = new() { Width = 600, Height = 300, Culture = CultureInfo.InvariantCulture };
 
-    private sealed record Reading(string Unit, double? Temp);
+    private sealed record Reading(string Station, double? Temp);
 
-    // Supply air temperatures in °C per air handling unit; AHU 2 has one reading far off.
+    // Outdoor temperatures in °C per weather station; Station 2 has one reading far off.
     private static readonly Reading[] Readings =
     [
-        .. new[] { 18.0, 18.5, 19.0, 19.5, 20.0, 20.5, 21.0 }.Select(t => new Reading("AHU 1", t)),
-        .. new[] { 19.0, 19.2, 19.4, 19.6, 19.8, 20.0, 27.5 }.Select(t => new Reading("AHU 2", t)),
-        new Reading("AHU 3", null),
+        .. new[] { 18.0, 18.5, 19.0, 19.5, 20.0, 20.5, 21.0 }.Select(t => new Reading("Station 1", t)),
+        .. new[] { 19.0, 19.2, 19.4, 19.6, 19.8, 20.0, 27.5 }.Select(t => new Reading("Station 2", t)),
+        new Reading("Station 3", null),
     ];
 
     private static List<T> All<T>(Node node) where T : Node
@@ -84,9 +84,9 @@ public class BoxPlotTests
     [Fact]
     public void Raw_values_group_by_x_into_boxes()
     {
-        var data = SeriesData.FromBoxGroups(Readings, r => r.Unit, r => r.Temp, out var groups);
+        var data = SeriesData.FromBoxGroups(Readings, r => r.Station, r => r.Temp, out var groups);
 
-        Assert.Equal(["AHU 1", "AHU 2", "AHU 3"], data.Categories);
+        Assert.Equal(["Station 1", "Station 2", "Station 3"], data.Categories);
         Assert.Equal(19.5, data.Y[0]); // the median
         Assert.Equal(19.6, data.Y[1], 6);
         Assert.True(double.IsNaN(data.Y[2])); // no values: a gap
@@ -118,17 +118,17 @@ public class BoxPlotTests
     private static ChartLayoutResult Layout(SeriesSpec[] series, Dictionary<string, SeriesData>? data)
     {
         var spec = new ChartSpec { Series = series };
-        data ??= series.ToDictionary(s => s.Id, _ => SeriesData.FromBoxGroups(Readings, r => r.Unit, r => r.Temp, out IReadOnlyList<int[]> _));
+        data ??= series.ToDictionary(s => s.Id, _ => SeriesData.FromBoxGroups(Readings, r => r.Station, r => r.Temp, out IReadOnlyList<int[]> _));
         return ChartLayout.Compute(spec, data, Options);
     }
 
     [Fact]
     public void Boxes_whiskers_medians_and_outliers_are_drawn()
     {
-        var layout = Layout(new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot, Name = "Supply" });
+        var layout = Layout(new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot, Name = "Temperature" });
 
         var nodes = All<Node>(layout.Scene.Series);
-        Assert.Equal(2, nodes.OfType<RectNode>().Count(n => n.Class == "rio-box")); // AHU 3 is a gap
+        Assert.Equal(2, nodes.OfType<RectNode>().Count(n => n.Class == "rio-box")); // Station 3 is a gap
         Assert.Single(nodes, n => n.Class == "rio-whiskers");
         Assert.Single(nodes, n => n.Class == "rio-medians");
         Assert.Single(nodes, n => n.Class == "rio-outliers");
@@ -153,7 +153,7 @@ public class BoxPlotTests
 
         var boxes = All<RectNode>(layout.Scene.Series).Where(n => n.Class == "rio-box").ToList();
         Assert.Equal(4, boxes.Count);
-        Assert.True(boxes[2].Bounds.X > boxes[0].Bounds.Right); // b's AHU 1 box is right of a's
+        Assert.True(boxes[2].Bounds.X > boxes[0].Bounds.Right); // b's Station 1 box is right of a's
         Assert.Equal(boxes[0].Bounds.Y, boxes[2].Bounds.Y); // same data, not stacked on top
     }
 
@@ -183,7 +183,7 @@ public class BoxPlotTests
     public void Empty_box_data_renders_the_empty_state()
     {
         var layout = Layout([new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot }],
-            new Dictionary<string, SeriesData> { ["t"] = SeriesData.FromBoxGroups(Array.Empty<Reading>(), r => r.Unit, r => r.Temp, out _) });
+            new Dictionary<string, SeriesData> { ["t"] = SeriesData.FromBoxGroups(Array.Empty<Reading>(), r => r.Station, r => r.Temp, out _) });
 
         Assert.False(layout.HasData);
     }
@@ -192,7 +192,7 @@ public class BoxPlotTests
     public void A_selected_box_is_outlined_from_quartile_to_quartile()
     {
         var spec = new ChartSpec { Series = [new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot }] };
-        var data = new Dictionary<string, SeriesData> { ["t"] = SeriesData.FromBoxGroups(Readings, r => r.Unit, r => r.Temp, out _) };
+        var data = new Dictionary<string, SeriesData> { ["t"] = SeriesData.FromBoxGroups(Readings, r => r.Station, r => r.Temp, out _) };
 
         var layout = ChartLayout.Compute(spec, data, Options with { SelectedPoints = new Dictionary<string, IReadOnlyCollection<int>> { ["t"] = [0] } });
 
@@ -204,17 +204,17 @@ public class BoxPlotTests
 
     // ---------- JSON specs ----------
 
-    private static Dictionary<string, ChartDataset> Rows(params (string Unit, double Temp)[] values) => new()
+    private static Dictionary<string, ChartDataset> Rows(params (string Station, double Temp)[] values) => new()
     {
-        ["d"] = ChartDataset.FromRows("d", values.Select(v => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["unit"] = v.Unit, ["temp"] = v.Temp })),
+        ["d"] = ChartDataset.FromRows("d", values.Select(v => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["station"] = v.Station, ["temp"] = v.Temp })),
     };
 
     [Fact]
     public void A_json_box_plot_computes_the_boxes_from_the_raw_values_per_x()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "box", "x": "unit", "y": "temp" } ] }""");
+        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "box", "x": "station", "y": "temp" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, Rows(("AHU 1", 18), ("AHU 1", 20), ("AHU 1", 22), ("AHU 2", 19), ("AHU 2", 21)));
+        var bound = ChartSpecBinder.Bind(parsed.Spec!, Rows(("Station 1", 18), ("Station 1", 20), ("Station 1", 22), ("Station 2", 19), ("Station 2", 21)));
 
         Assert.Empty(bound.Errors);
         Assert.DoesNotContain(bound.Warnings, w => w.Contains("using sum")); // repeating x is the point here
@@ -230,9 +230,9 @@ public class BoxPlotTests
     {
         var rows = new[] { (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>
         {
-            ["unit"] = "AHU 1", ["lo"] = 17.0, ["p25"] = 18.5, ["med"] = 19.4, ["p75"] = 20.1, ["hi"] = 21.0,
+            ["station"] = "Station 1", ["lo"] = 17.0, ["p25"] = 18.5, ["med"] = 19.4, ["p75"] = 20.1, ["hi"] = 21.0,
         } };
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "unit", "y": "med", "low": "lo", "q1": "p25", "q3": "p75", "high": "hi" } ] }""");
+        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "station", "y": "med", "low": "lo", "q1": "p25", "q3": "p75", "high": "hi" } ] }""");
 
         var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
@@ -246,9 +246,9 @@ public class BoxPlotTests
     [Fact]
     public void A_json_box_plot_with_only_one_quartile_explains_what_is_missing()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "unit", "y": "temp", "q1": "temp" } ] }""");
+        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "station", "y": "temp", "q1": "temp" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, Rows(("AHU 1", 18)));
+        var bound = ChartSpecBinder.Bind(parsed.Spec!, Rows(("Station 1", 18)));
 
         Assert.Equal("series[0].q3", Assert.Single(bound.Errors).Path);
     }

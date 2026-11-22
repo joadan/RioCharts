@@ -8,7 +8,7 @@ namespace RioCharts.Tests;
 
 public class TooltipTests
 {
-    private sealed record Reading(DateTime Time, double Temp, double Setpoint);
+    private sealed record Reading(DateTime Time, double Temp, double Forecast);
 
     private static readonly Reading[] Readings =
     [
@@ -33,16 +33,16 @@ public class TooltipTests
         Func<TooltipPoint<Reading>, string?>? tempValue)
     {
         var temp = SeriesData.FromItems(Readings, r => r.Time, r => r.Temp);
-        var setpoint = SeriesData.FromItems(Readings, r => r.Time, r => r.Setpoint);
-        var data = new Dictionary<string, SeriesData> { ["temp"] = temp, ["setpoint"] = setpoint };
+        var forecast = SeriesData.FromItems(Readings, r => r.Time, r => r.Forecast);
+        var data = new Dictionary<string, SeriesData> { ["temp"] = temp, ["forecast"] = forecast };
         var sources = new Dictionary<string, ISeriesSource>
         {
             ["temp"] = new FakeSeries("temp", temp, Readings, tempValue),
-            ["setpoint"] = new FakeSeries("setpoint", setpoint, Readings, null),
+            ["forecast"] = new FakeSeries("forecast", forecast, Readings, null),
         };
         var spec = new ChartSpec
         {
-            Series = [new SeriesSpec { Id = "temp", Name = "Temperature" }, new SeriesSpec { Id = "setpoint", Name = "Setpoint" }],
+            Series = [new SeriesSpec { Id = "temp", Name = "Temperature" }, new SeriesSpec { Id = "forecast", Name = "Forecast" }],
         };
         var layout = ChartLayout.Compute(spec, data, new LayoutOptions { Culture = CultureInfo.InvariantCulture });
         return (layout, data, sources);
@@ -61,13 +61,13 @@ public class TooltipTests
     [Fact]
     public void TooltipValue_replaces_the_values_of_its_series_only()
     {
-        var (layout, data, sources) = Build(p => string.Create(CultureInfo.InvariantCulture, $"{p.Y:0.0} °C (setpoint {p.Item!.Setpoint} °C)"));
+        var (layout, data, sources) = Build(p => string.Create(CultureInfo.InvariantCulture, $"{p.Y:0.0} °C (forecast {p.Item!.Forecast} °C)"));
 
         var model = TooltipBuilder.Customize<Reading>(layout.Tooltip, data.GetValueOrDefault, sources.GetValueOrDefault, layout.Time, null);
 
         var temp = model.Series.Single(s => s.Id == "temp");
-        Assert.Equal(["20.5 °C (setpoint 21 °C)", "21.3 °C (setpoint 21 °C)", "22.0 °C (setpoint 22 °C)"], temp.Values);
-        Assert.Same(layout.Tooltip.Series.Single(s => s.Id == "setpoint"), model.Series.Single(s => s.Id == "setpoint"));
+        Assert.Equal(["20.5 °C (forecast 21 °C)", "21.3 °C (forecast 21 °C)", "22.0 °C (forecast 22 °C)"], temp.Values);
+        Assert.Same(layout.Tooltip.Series.Single(s => s.Id == "forecast"), model.Series.Single(s => s.Id == "forecast"));
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class TooltipTests
             p => "Morning");
 
         var context = TooltipBuilder.Context<Reading>(model, data.GetValueOrDefault, sources.GetValueOrDefault, layout.Time,
-            ["temp", "setpoint"], [1, 1]);
+            ["temp", "forecast"], [1, 1]);
 
         Assert.NotNull(context);
         Assert.Equal("Morning", context.Header);
@@ -101,7 +101,7 @@ public class TooltipTests
         Assert.Equal(1, temp.Index);
         Assert.Equal(21.25, temp.Y);
         Assert.Equal("21.25 °C", temp.ValueText);
-        Assert.Equal("setpoint", context.Points[1].SeriesId);
+        Assert.Equal("forecast", context.Points[1].SeriesId);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class TooltipTests
     [Fact]
     public void TooltipValue_applies_to_pie_slices()
     {
-        var shares = SeriesData.FromCategories(["Heating", "Cooling", "Fans"], [50, 30, 20]);
+        var shares = SeriesData.FromCategories(["Industry", "Homes", "Transport"], [50, 30, 20]);
         var data = new Dictionary<string, SeriesData> { ["energy"] = shares };
         var sources = new Dictionary<string, ISeriesSource>
         {
@@ -127,10 +127,10 @@ public class TooltipTests
 
         var model = TooltipBuilder.Customize<Reading>(layout.Tooltip, data.GetValueOrDefault, sources.GetValueOrDefault, layout.Time, null);
 
-        Assert.Contains(model.Slices, s => s.Value == "Cooling: 30 kWh");
+        Assert.Contains(model.Slices, s => s.Value == "Homes: 30 kWh");
         var context = TooltipBuilder.Context<Reading>(model, data.GetValueOrDefault, sources.GetValueOrDefault, layout.Time, ["energy"], [2]);
-        Assert.Equal("Fans", context!.Points[0].X);
-        Assert.Equal("Fans: 20 kWh", context.Points[0].ValueText);
+        Assert.Equal("Transport", context!.Points[0].X);
+        Assert.Equal("Transport: 20 kWh", context.Points[0].ValueText);
     }
 
     [Fact]
@@ -138,24 +138,24 @@ public class TooltipTests
     {
         var data = new Dictionary<string, SeriesData>
         {
-            ["room"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Temp),
-            ["setpoint"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Setpoint),
+            ["outdoor"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Temp),
+            ["forecast"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Forecast),
             ["bars"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Temp),
         };
         var spec = new ChartSpec
         {
             Series =
             [
-                new SeriesSpec { Id = "room" },
-                new SeriesSpec { Id = "setpoint", Curve = CurveType.Step },
+                new SeriesSpec { Id = "outdoor" },
+                new SeriesSpec { Id = "forecast", Curve = CurveType.Step },
                 new SeriesSpec { Id = "bars", Type = SeriesType.Bar, Curve = CurveType.Step },
             ],
         };
 
         var layout = ChartLayout.Compute(spec, data, new LayoutOptions { Width = 600, Height = 300 });
 
-        Assert.False(layout.Tooltip.Series.Single(s => s.Id == "room").Step);
-        Assert.True(layout.Tooltip.Series.Single(s => s.Id == "setpoint").Step);
+        Assert.False(layout.Tooltip.Series.Single(s => s.Id == "outdoor").Step);
+        Assert.True(layout.Tooltip.Series.Single(s => s.Id == "forecast").Step);
         Assert.False(layout.Tooltip.Series.Single(s => s.Id == "bars").Step); // bars have no curve
     }
 }

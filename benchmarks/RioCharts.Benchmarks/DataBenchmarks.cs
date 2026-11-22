@@ -7,7 +7,7 @@ namespace RioCharts.Benchmarks;
 [MemoryDiagnoser]
 public class DataBenchmarks
 {
-    private sealed record Reading(DateTime Time, double SupplyTemp);
+    private sealed record Reading(DateTime Time, double AirTemp);
 
     private Reading[] _items = null!;
     private double[] _x = null!;
@@ -20,14 +20,14 @@ public class DataBenchmarks
     public void Setup()
     {
         var hours = Data.Hours(Points);
-        _items = hours.Select((t, i) => new Reading(t, Data.Supply(i))).ToArray();
+        _items = hours.Select((t, i) => new Reading(t, Data.London(i))).ToArray();
         _x = hours.Select(TimeValue.FromDateTime).ToArray();
-        _y = _items.Select(r => r.SupplyTemp).ToArray();
+        _y = _items.Select(r => r.AirTemp).ToArray();
     }
 
     /// <summary>What a <c>&lt;LineSeries Items XValue YValue&gt;</c> does when its items change.</summary>
     [Benchmark]
-    public SeriesData FromItems() => SeriesData.FromItems(_items, r => r.Time, r => r.SupplyTemp);
+    public SeriesData FromItems() => SeriesData.FromItems(_items, r => r.Time, r => r.AirTemp);
 
     /// <summary>To about two points per pixel of an 800 px wide chart.</summary>
     [Benchmark]

@@ -137,7 +137,7 @@ public class Milestone4Tests
             Annotations =
             [
                 new AnnotationSpec { Type = AnnotationType.Point, X = start.AddHours(5), Y = 30.0, Label = "Alarm" },
-                new AnnotationSpec { Type = AnnotationType.Callout, X = "2026-03-01T10:00", Y = 21.0, Label = "Filter changed" },
+                new AnnotationSpec { Type = AnnotationType.Callout, X = "2026-03-01T10:00", Y = 21.0, Label = "Sensor replaced" },
             ],
         };
 

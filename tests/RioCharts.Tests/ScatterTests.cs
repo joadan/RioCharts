@@ -35,15 +35,15 @@ public class ScatterTests
         return result;
     }
 
-    /// <summary>Supply air against outdoor temperature: the colder outside, the warmer the supply (unordered input).</summary>
+    /// <summary>Hot drinks sold (thousands) against outdoor temperature: the colder outside, the more sold (unordered input).</summary>
     private static readonly double[] Outdoor = [12.5, -3.2, 4.1, 21.7, -8.4, 0.6, 15.3, 8.8];
 
-    private static SeriesData SupplyVsOutdoor() => SeriesData.From(Outdoor, Outdoor.Select(t => Math.Round(22 - 0.25 * t, 1)).ToArray());
+    private static SeriesData SalesVsOutdoor() => SeriesData.From(Outdoor, Outdoor.Select(t => Math.Round(22 - 0.25 * t, 1)).ToArray());
 
     private static ChartSpec Spec(bool trend = false, double? size = null) => new()
     {
         X = new AxisSpec { Title = "Outdoor °C" },
-        Series = [new SeriesSpec { Id = "s", Name = "Supply", Type = SeriesType.Scatter, TrendLine = trend, MarkerSize = size, Format = "0.0 °C" }],
+        Series = [new SeriesSpec { Id = "s", Name = "Hot drinks", Type = SeriesType.Scatter, TrendLine = trend, MarkerSize = size, Format = "0.0 k" }],
     };
 
     private static ChartLayoutResult Layout(ChartSpec spec, SeriesData data, LayoutOptions? options = null) =>
@@ -52,7 +52,7 @@ public class ScatterTests
     [Fact]
     public void Each_point_gets_a_marker()
     {
-        var layout = Layout(Spec(), SupplyVsOutdoor());
+        var layout = Layout(Spec(), SalesVsOutdoor());
 
         var markers = All(layout.Scene).OfType<PathNode>().Single(n => n.Class == "rio-marker");
         var starts = MoveTos(markers.Path);
@@ -67,7 +67,7 @@ public class ScatterTests
     [Fact]
     public void Axes_get_nice_ranges_so_points_are_not_on_the_edge()
     {
-        var layout = Layout(Spec(), SupplyVsOutdoor());
+        var layout = Layout(Spec(), SalesVsOutdoor());
 
         Assert.True(layout.XScale!.DomainMin < -8.4 && layout.XScale.DomainMax > 21.7);
         Assert.Equal(0, layout.XScale.DomainMin % 5, 6); // a nice number
@@ -78,18 +78,18 @@ public class ScatterTests
     public void The_tooltip_finds_the_nearest_point_not_the_nearest_x()
     {
         var withLine = Spec() with { Series = [.. Spec().Series, new SeriesSpec { Id = "l", Name = "Curve" }] };
-        var data = new Dictionary<string, SeriesData> { ["s"] = SupplyVsOutdoor(), ["l"] = SeriesData.From([-10.0, 20], [24.5, 17]) };
+        var data = new Dictionary<string, SeriesData> { ["s"] = SalesVsOutdoor(), ["l"] = SeriesData.From([-10.0, 20], [24.5, 17]) };
 
         var layout = ChartLayout.Compute(withLine, data, Options);
 
         Assert.False(layout.Tooltip.Shared);
-        Assert.True(Layout(Spec() with { Series = [new SeriesSpec { Id = "s" }] }, SupplyVsOutdoor()).Tooltip.Shared); // lines stay shared
+        Assert.True(Layout(Spec() with { Series = [new SeriesSpec { Id = "s" }] }, SalesVsOutdoor()).Tooltip.Shared); // lines stay shared
     }
 
     [Fact]
     public void Trend_line_runs_through_the_fit_from_the_first_to_the_last_point()
     {
-        var layout = Layout(Spec(trend: true), SupplyVsOutdoor());
+        var layout = Layout(Spec(trend: true), SalesVsOutdoor());
 
         var trend = All(layout.Scene).OfType<PathNode>().Single(n => n.Class == "rio-trend");
         var hover = layout.Tooltip.Series[0];
@@ -118,7 +118,7 @@ public class ScatterTests
     [Fact]
     public void Zooming_draws_only_the_visible_points()
     {
-        var layout = Layout(Spec(), SupplyVsOutdoor(), Options with { XRange = (0, 10) });
+        var layout = Layout(Spec(), SalesVsOutdoor(), Options with { XRange = (0, 10) });
 
         Assert.Equal(3, MoveTos(All(layout.Scene).OfType<PathNode>().Single(n => n.Class == "rio-marker").Path).Count); // 0.6, 4.1, 8.8
     }
@@ -126,13 +126,13 @@ public class ScatterTests
     [Fact]
     public void Legend_has_a_dot_and_a_summary()
     {
-        var spec = Spec() with { Series = [.. Spec().Series, new SeriesSpec { Id = "l", Name = "Design curve" }] };
-        var data = new Dictionary<string, SeriesData> { ["s"] = SupplyVsOutdoor(), ["l"] = SeriesData.From([-10.0, 20], [24.5, 17]) };
+        var spec = Spec() with { Series = [.. Spec().Series, new SeriesSpec { Id = "l", Name = "Forecast" }] };
+        var data = new Dictionary<string, SeriesData> { ["s"] = SalesVsOutdoor(), ["l"] = SeriesData.From([-10.0, 20], [24.5, 17]) };
 
         var layout = ChartLayout.Compute(spec, data, Options);
 
         Assert.Contains(All(layout.Scene), n => n.Class == "rio-swatch rio-swatch-dot");
-        Assert.Equal("Supply: 8 data points, 16.6 °C to 24.1 °C, falling", layout.Legend[0].Tooltip);
+        Assert.Equal("Hot drinks: 8 data points, 16.6 k to 24.1 k, falling", layout.Legend[0].Tooltip);
     }
 
     [Theory]
@@ -141,7 +141,7 @@ public class ScatterTests
     [InlineData("scatterPlot")]
     public void Json_specs_read_scatter(string type)
     {
-        var parsed = ChartSpecJson.Parse($$"""{ "series": [ { "type": "{{type}}", "x": "outdoor", "y": "supply", "markerSize": 3, "trendLine": true } ] }""");
+        var parsed = ChartSpecJson.Parse($$"""{ "series": [ { "type": "{{type}}", "x": "outdoor", "y": "sales", "markerSize": 3, "trendLine": true } ] }""");
 
         Assert.Empty(parsed.Errors);
         var s = parsed.Spec!.Series[0];
@@ -155,7 +155,7 @@ public class ScatterTests
     [Fact]
     public void Skia_renders_scatter()
     {
-        var png = ChartExport.ToPng(Spec(trend: true), new Dictionary<string, SeriesData> { ["s"] = SupplyVsOutdoor() }, new ExportOptions { Width = 400, Height = 300, Scale = 1 });
+        var png = ChartExport.ToPng(Spec(trend: true), new Dictionary<string, SeriesData> { ["s"] = SalesVsOutdoor() }, new ExportOptions { Width = 400, Height = 300, Scale = 1 });
 
         using var bitmap = SKBitmap.Decode(png);
         Assert.Equal(400, bitmap.Width);

@@ -170,7 +170,9 @@ internal sealed class SvgSceneRenderer : ComponentBase
 
         foreach (var child in g.Children)
         {
-            if (OmitSeries && child is GroupNode cg && CanvasSeriesWriter.IsSeries(cg))
+            // Only the plot's own series groups go to the canvas (CanvasSeriesWriter); keyed groups
+            // nested in them (pie slices, treemap groups) go along with their parent.
+            if (OmitSeries && g.Class == "rio-plot" && child is GroupNode cg && CanvasSeriesWriter.IsSeries(cg))
             {
                 continue;
             }

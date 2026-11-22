@@ -505,7 +505,11 @@ public static partial class ChartLayout
                     path.LineTo(cx, cy);
                 }
 
-                nodes.Add(new PathNode(path.Close().Build(), style) { Class = "rio-slice" });
+                // Keyed like its legend item, so hovering that item highlights the slice (in every ring).
+                nodes.Add(new GroupNode([new PathNode(path.Close().Build(), style) { Class = "rio-slice" }])
+                {
+                    Key = "series:" + (s.Index < 0 ? OtherSliceKey : s.Label),
+                });
                 var share = s.Value / sum;
                 var valueText = ValueFormatter.Format(s.Value, culture, ring.Spec.Format ?? "");
                 tooltip.Add(new TooltipSlice(ring.Spec.Id, s.Index, n > 1 || ring.Spec.Name is not null ? ring.Spec.DisplayName : "", s.Label,
@@ -810,15 +814,17 @@ public static partial class ChartLayout
             var b = bars[k];
             var rm = radius - band * k - band / 2;
             var trackStyle = styles.Add("track-" + SvgSafe(thickness), new Style { Stroke = ThemeTokens.Grid, StrokeWidth = (float)thickness, Fill = "none" });
-            nodes.Add(new PathNode(new PathBuilder().Arc(cx, cy, rm, start, start + sweep).Build(), trackStyle) { Class = "rio-track" });
+            var bar = new List<Node> { new PathNode(new PathBuilder().Arc(cx, cy, rm, start, start + sweep).Build(), trackStyle) { Class = "rio-track" } };
 
             var share = Math.Clamp(b.Value / max, 0, 1);
             var a1 = start + sweep * share;
             if (share > 0)
             {
                 var style = styles.Add($"radial-{b.Color}-{SvgSafe(thickness)}", new Style { Stroke = b.Color, StrokeWidth = (float)thickness, Fill = "none" });
-                nodes.Add(new PathNode(new PathBuilder().Arc(cx, cy, rm, start, a1).Build(), style) { Class = "rio-radial-bar" });
+                bar.Add(new PathNode(new PathBuilder().Arc(cx, cy, rm, start, a1).Build(), style) { Class = "rio-radial-bar" });
             }
+
+            nodes.Add(new GroupNode(bar) { Key = "series:" + b.Label }); // keyed like its legend item
 
             var valueText = ValueFormatter.Format(b.Value, culture, spec.Format);
             tooltip.Add(new TooltipSlice(spec.Id, b.Index, spec.Name ?? "", b.Label, valueText, b.Color, cx, cy,

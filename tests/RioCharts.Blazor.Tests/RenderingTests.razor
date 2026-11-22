@@ -5,7 +5,7 @@
     public void Lays_out_at_the_width_the_browser_reports()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Height="240">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Equal($"0 0 {Width} 240", cut.Find("svg.rio-chart-svg").GetAttribute("viewBox"));
@@ -18,13 +18,13 @@
     {
         Init.SetException(new JSException("No JS (static rendering)"));
 
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Temperature">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var svg = cut.Find("svg.rio-chart-svg");
         Assert.Equal("0 0 640 300", svg.GetAttribute("viewBox"));
-        Assert.Equal("Supply air", svg.GetAttribute("aria-label"));
+        Assert.Equal("Temperature", svg.GetAttribute("aria-label"));
         Assert.NotEmpty(cut.FindAll("path"));
     }
 
@@ -33,15 +33,15 @@
     [InlineData(1)]
     public void Empty_and_single_point_data_render_a_clean_chart(int count)
     {
-        var items = Supply.Take(count).ToArray();
+        var items = London.Take(count).ToArray();
 
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="items" Exportable="true">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.NotNull(cut.Find("svg.rio-chart-svg"));
         Assert.Empty(cut.FindAll(".rio-spec-errors"));
-        Assert.StartsWith("x,Supply", cut.Instance.ExportCsv());
+        Assert.StartsWith("x,London", cut.Instance.ExportCsv());
     }
 
     [Fact]
@@ -62,12 +62,12 @@
     [Fact]
     public void Changing_items_lays_out_again()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply.Take(2).ToArray()">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London.Take(2).ToArray()">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
         var before = cut.Instance.Layout;
 
-        cut.Render(p => p.Add(c => c.Items, Supply));
+        cut.Render(p => p.Add(c => c.Items, London));
 
         Assert.NotSame(before, cut.Instance.Layout);
         Assert.Contains("4 values", cut.Instance.Layout!.Scene.Description);
@@ -77,7 +77,7 @@
     public async Task Disposing_releases_the_module()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         await DisposeComponentsAsync();
@@ -93,7 +93,7 @@
         // constructor parameter names. Payloads go as source-generated UTF-8 JSON bytes instead.
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true" Exportable="true" SeriesLayer="SeriesLayer.Canvas"
                                                        OnPointClick="@((PointClickEventArgs<Reading> _) => { })">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
             <ReferenceLine Value="20" Draggable="true" />
         </RioChart>);
         await cut.InvokeAsync(() => cut.Instance.DownloadPngAsync(options: new ChartImageOptions { Scale = 3 }));

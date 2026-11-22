@@ -9,17 +9,17 @@
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading"
                                                       HiddenSeriesChanged="@((IReadOnlyCollection<string> h) => hidden = h)"
                                                       OnLegendClick="@((LegendClickEventArgs e) => clicked = e)">
-            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
-            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="toronto" Items="Toronto" Name="Toronto" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
-        var supply = cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Supply"));
-        Assert.Equal("true", supply.GetAttribute("aria-pressed"));
+        var london = cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("London"));
+        Assert.Equal("true", london.GetAttribute("aria-pressed"));
 
-        supply.Click();
+        london.Click();
 
-        Assert.Equal(["supply"], hidden);
-        Assert.Equal(new LegendClickEventArgs("supply", "Supply", false), clicked);
-        var after = cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Supply"));
+        Assert.Equal(["london"], hidden);
+        Assert.Equal(new LegendClickEventArgs("london", "London", false), clicked);
+        var after = cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("London"));
         Assert.Equal("false", after.GetAttribute("aria-pressed"));
     }
 
@@ -28,13 +28,13 @@
     {
         LegendClickEventArgs? clicked = null;
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" OnLegendClick="@((LegendClickEventArgs e) => clicked = e)">
-            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
-            <LineSeries Id="extract" Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="toronto" Items="Toronto" Name="Toronto" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
-        cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Extract")).KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        cut.FindAll("[role=button][aria-pressed]").First(e => e.TextContent.Contains("Toronto")).KeyDown(new KeyboardEventArgs { Key = "Enter" });
 
-        Assert.Equal("extract", clicked?.SeriesId);
+        Assert.Equal("toronto", clicked?.SeriesId);
     }
 
     [Fact]
@@ -42,7 +42,7 @@
     {
         ChartRange? range = null;
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true" VisibleRangeChanged="@((ChartRange? r) => range = r)">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         cut.InvokeAsync(() => cut.Instance.ZoomToAsync(ChartRange.Of(Start.AddHours(1), Start.AddHours(2))));
@@ -60,7 +60,7 @@
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true"
                                                       OnZoomChanging="@((ZoomChangingEventArgs e) => e.Cancel = true)"
                                                       VisibleRangeChanged="@((ChartRange? _) => changed = true)">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         cut.InvokeAsync(() => cut.Instance.ZoomToAsync(ChartRange.Of(Start.AddHours(1), Start.AddHours(2))));
@@ -75,12 +75,12 @@
     {
         PointClickEventArgs<Alarm>? clicked = null;
         var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms" OnPointClick="@((PointClickEventArgs<Alarm> e) => clicked = e)">
-            <BarSeries Id="alarms" Name="Alarm time" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+            <BarSeries Id="alarms" Name="Alarm time" XValue="a => a.Store" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>);
 
         cut.InvokeAsync(() => cut.Instance.OnPointClicked("alarms", 0)); // what the JS module calls
 
-        Assert.Equal("AHU 1", clicked?.X);
+        Assert.Equal("Store 1", clicked?.X);
         Assert.Equal(15, clicked?.Y);
         Assert.Equal([Alarms[0], Alarms[2]], clicked?.Items);
         Assert.Equal(Alarms[0], clicked?.Item);
@@ -91,10 +91,10 @@
     {
         var raised = false;
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" OnPointClick="@((PointClickEventArgs<Reading> _) => raised = true)">
-            <LineSeries Id="supply" Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
-        cut.InvokeAsync(() => cut.Instance.OnPointClicked("supply", 99));
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("london", 99));
         cut.InvokeAsync(() => cut.Instance.OnPointClicked("nope", 0));
 
         Assert.False(raised);
@@ -104,12 +104,12 @@
     public void Legend_items_carry_their_summary_for_the_styled_tooltip()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="System.Globalization.CultureInfo.InvariantCulture">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
-            <LineSeries Items="Extract" Name="Extract" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" Format="0.0 °C" />
+            <LineSeries Items="Toronto" Name="Toronto" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var item = cut.Find(".rio-legend-item");
-        Assert.StartsWith("Supply: ", item.GetAttribute("data-tip"));
+        Assert.StartsWith("London: ", item.GetAttribute("data-tip"));
         Assert.Equal(item.GetAttribute("data-tip"), item.GetAttribute("aria-description"));
         Assert.Empty(item.QuerySelectorAll("title")); // no second, native tooltip
         Assert.Single(cut.FindAll(".rio-legend-tip"));
@@ -118,20 +118,20 @@
     [Fact]
     public void The_chart_has_no_native_tooltip_over_it()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air">
-            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Temperature">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var svg = cut.Find("svg.rio-chart-svg");
         Assert.DoesNotContain(svg.Children, c => c.LocalName == "title"); // a browser would show it on hover
-        Assert.Equal("Supply air", svg.GetAttribute("aria-label"));
+        Assert.Equal("Temperature", svg.GetAttribute("aria-label"));
     }
 
     [Fact]
     public void Scatter_series_draw_markers_and_ask_for_2D_hover()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
-            <ScatterSeries Items="Supply" Name="Supply" XValue="r => r.Value" YValue="r => r.Value + 2" TrendLine="true" />
+            <ScatterSeries Items="London" Name="London" XValue="r => r.Value" YValue="r => r.Value + 2" TrendLine="true" />
         </RioChart>);
 
         Assert.NotEmpty(cut.FindAll("path.rio-marker"));
@@ -145,8 +145,8 @@
     public void Heatmap_rows_draw_cells_and_send_cell_sizes()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
-            <HeatmapSeries Items="Supply" Name="Mon" XValue="r => r.Time" YValue="r => r.Value" />
-            <HeatmapSeries Items="Extract" Name="Tue" XValue="r => r.Time" YValue="r => r.Value" />
+            <HeatmapSeries Items="London" Name="Mon" XValue="r => r.Time" YValue="r => r.Value" />
+            <HeatmapSeries Items="Toronto" Name="Tue" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Equal(["Mon", "Tue"], cut.FindAll("text.rio-row-label").Select(t => t.TextContent));
@@ -159,7 +159,7 @@
     public void Range_area_takes_low_and_high_selectors()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="System.Globalization.CultureInfo.InvariantCulture">
-            <RangeAreaSeries Items="Supply" Name="Range" XValue="r => r.Time" LowValue="r => r.Value - 1" HighValue="r => r.Value + 1" Format="0.0" />
+            <RangeAreaSeries Items="London" Name="Range" XValue="r => r.Time" LowValue="r => r.Value - 1" HighValue="r => r.Value + 1" Format="0.0" />
         </RioChart>);
 
         Assert.Single(cut.FindAll("path.rio-range"));
@@ -171,7 +171,7 @@
     public void An_aggregated_range_keeps_the_lowest_low()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="System.Globalization.CultureInfo.InvariantCulture">
-            <RangeAreaSeries Items="Supply" Name="Range" XValue="r => r.Time.Date" LowValue="r => r.Value" HighValue="r => r.Value" Aggregate="Aggregate.Max" Format="0.0" />
+            <RangeAreaSeries Items="London" Name="Range" XValue="r => r.Time.Date" LowValue="r => r.Value" HighValue="r => r.Value" Aggregate="Aggregate.Max" Format="0.0" />
         </RioChart>);
 
         var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
@@ -182,10 +182,10 @@
     public void Horizontal_bar_charts_send_each_bar_size()
     {
         var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms" Horizontal="true">
-            <BarSeries Name="Minutes" XValue="a => a.Unit" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
+            <BarSeries Name="Minutes" XValue="a => a.Store" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>);
 
-        Assert.Equal(["AHU 1", "AHU 2"], cut.FindAll("text.rio-row-label").Select(t => t.TextContent));
+        Assert.Equal(["Store 1", "Store 2"], cut.FindAll("text.rio-row-label").Select(t => t.TextContent));
         var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
         Assert.Equal(2, series.GetProperty("cw").GetArrayLength());
         Assert.True(series.GetProperty("ch").GetSingle() > 0);
@@ -195,8 +195,8 @@
     public async Task Js_callbacks_go_to_a_private_object_not_the_component()
     {
         var zoomed = new List<ChartRange?>();
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="Supply" VisibleRangeChanged="@((ChartRange? r) => zoomed.Add(r))">
-            <LineSeries Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" VisibleRangeChanged="@((ChartRange? r) => zoomed.Add(r))">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.DoesNotContain(typeof(RioChart<Reading>).GetMethods(), m => m.IsDefined(typeof(Microsoft.JSInterop.JSInvokableAttribute), true));
@@ -205,7 +205,7 @@
         Assert.IsNotType<RioChart<Reading>>(target);
 
         // What the JS module does at the end of a drag zoom.
-        var start = new DateTimeOffset(DateTime.SpecifyKind(Supply[0].Time, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+        var start = new DateTimeOffset(DateTime.SpecifyKind(London[0].Time, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
         var onZoom = target.GetType().GetMethod("OnZoom")!;
         Assert.True(onZoom.IsDefined(typeof(Microsoft.JSInterop.JSInvokableAttribute), true));
         await cut.InvokeAsync(() => (Task)onZoom.Invoke(target, [(double)start, (double)start + 3_600_000])!);

@@ -45,9 +45,9 @@ public class CompactTests
     private static ChartSpec Sparkline(SeriesType type = SeriesType.Line, PointHighlight highlight = PointHighlight.None, string? format = null) => new()
     {
         Compact = true,
-        Title = "Supply air",
+        Title = "Temperature",
         Y = new AxisSpec { Title = "°C" },
-        Series = [new SeriesSpec { Id = "t", Name = "Room", Type = type, Highlight = highlight, Format = format }],
+        Series = [new SeriesSpec { Id = "t", Name = "London", Type = type, Highlight = highlight, Format = format }],
     };
 
     [Fact]
@@ -114,7 +114,7 @@ public class CompactTests
     {
         var spec = Sparkline() with
         {
-            Annotations = [new AnnotationSpec { Type = AnnotationType.Band, From = 20, To = 23, Label = "Comfort" }],
+            Annotations = [new AnnotationSpec { Type = AnnotationType.Band, From = 20, To = 23, Label = "Normal" }],
         };
 
         var layout = Layout(spec, new() { ["t"] = Temps(18, 21) });
@@ -158,9 +158,9 @@ public class CompactTests
         var flat = Layout(Sparkline(format: "0.0 °C") with { Title = null }, new() { ["t"] = Temps(20, 20) });
         var none = Layout(Sparkline(), new() { ["t"] = SeriesData.Empty });
 
-        Assert.Equal("Supply air. Room: 18.2 °C to 20.8 °C, last 20.8 °C, rising.", layout.Scene.Description);
-        Assert.Equal("Room: 20.0 °C, last 20.0 °C, stable.", flat.Scene.Description);
-        Assert.Equal("Supply air. No data.", none.Scene.Description);
+        Assert.Equal("Temperature. London: 18.2 °C to 20.8 °C, last 20.8 °C, rising.", layout.Scene.Description);
+        Assert.Equal("London: 20.0 °C, last 20.0 °C, stable.", flat.Scene.Description);
+        Assert.Equal("Temperature. No data.", none.Scene.Description);
     }
 
     [Theory]

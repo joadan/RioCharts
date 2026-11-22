@@ -8,22 +8,22 @@ public class ExportTests
     [Fact]
     public void Csv_joins_series_on_x_with_empty_cells_for_gaps()
     {
-        var supply = SeriesData.From([1.0, 2, 3], [20.5, double.NaN, 21]);
-        var extract = SeriesData.From([2.0, 4], [19, 18.25]);
+        var london = SeriesData.From([1.0, 2, 3], [20.5, double.NaN, 21]);
+        var toronto = SeriesData.From([2.0, 4], [19, 18.25]);
 
-        var csv = ChartCsv.Write([("Supply °C", supply), ("Extract", extract)]);
+        var csv = ChartCsv.Write([("London °C", london), ("Toronto", toronto)]);
 
-        Assert.Equal("x,Supply °C,Extract\r\n1,20.5,\r\n2,,19\r\n3,21,\r\n4,,18.25\r\n", csv);
+        Assert.Equal("x,London °C,Toronto\r\n1,20.5,\r\n2,,19\r\n3,21,\r\n4,,18.25\r\n", csv);
     }
 
     [Fact]
     public void Csv_keeps_category_order_and_quotes_cells()
     {
-        var data = SeriesData.FromCategories(["AHU 1", "Pump, east", "Say \"hi\""], [1, 2, 3]);
+        var data = SeriesData.FromCategories(["Store 1", "Store, east", "Say \"hi\""], [1, 2, 3]);
 
-        var csv = ChartCsv.Write([("Alarms", data)], new CsvOptions { XHeader = "Unit", NewLine = "\n" });
+        var csv = ChartCsv.Write([("Orders", data)], new CsvOptions { XHeader = "Store", NewLine = "\n" });
 
-        Assert.Equal("Unit,Alarms\nAHU 1,1\n\"Pump, east\",2\n\"Say \"\"hi\"\"\",3\n", csv);
+        Assert.Equal("Store,Orders\nStore 1,1\n\"Store, east\",2\n\"Say \"\"hi\"\"\",3\n", csv);
     }
 
     [Fact]

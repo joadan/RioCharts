@@ -24,15 +24,15 @@ public sealed class LocalMcpServerTests : IDisposable
     [Fact]
     public void Csv_reads_types_quotes_and_decimal_commas()
     {
-        var comma = ChartDataset.FromCsv("a", "﻿time,unit,temp\r\n2026-11-16T08:00,\"AHU, 1\",21.5\r\n2026-11-16T09:00,\"AHU \"\"2\"\"\",\r\n");
-        var semicolon = ChartDataset.FromCsv("b", "unit;temp;;temp\nAHU 1;21,5;x;1\n\n");
+        var comma = ChartDataset.FromCsv("a", "﻿time,station,temp\r\n2026-11-16T08:00,\"Station, 1\",21.5\r\n2026-11-16T09:00,\"Station \"\"2\"\"\",\r\n");
+        var semicolon = ChartDataset.FromCsv("b", "station;temp;;temp\nStation 1;21,5;x;1\n\n");
 
         Assert.Equal(FieldType.Time, comma.Field("time")!.Type);
-        Assert.Equal(["AHU, 1", "AHU \"2\""], comma.Field("unit")!.Values);
+        Assert.Equal(["Station, 1", "Station \"2\""], comma.Field("station")!.Values);
         Assert.Equal(FieldType.Number, comma.Field("temp")!.Type);
         Assert.Equal([21.5, null], comma.Field("temp")!.Values);
         Assert.Equal(1, semicolon.RowCount);
-        Assert.Equal(["unit", "temp", "column3", "temp_2"], semicolon.Fields.Select(f => f.Name));
+        Assert.Equal(["station", "temp", "column3", "temp_2"], semicolon.Fields.Select(f => f.Name));
         Assert.Equal([21.5], semicolon.Field("temp")!.Values);
     }
 
@@ -70,12 +70,12 @@ public sealed class LocalMcpServerTests : IDisposable
     public async Task Folder_lists_files_rereads_changes_and_reports_bad_files()
     {
         await File.WriteAllTextAsync(Path.Combine(_root, "energy.csv"), "day,kwh\n2026-11-16,10\n2026-11-17,12\n");
-        await File.WriteAllTextAsync(Path.Combine(_root, "units.json"), """{ "rows": [ { "unit": "AHU 1", "temp": 21 } ] }""");
+        await File.WriteAllTextAsync(Path.Combine(_root, "stations.json"), """{ "rows": [ { "station": "Station 1", "temp": 21 } ] }""");
         await File.WriteAllTextAsync(Path.Combine(_root, "broken.json"), "{ nope");
         await File.WriteAllTextAsync(Path.Combine(_root, "notes.txt"), "ignored");
         var source = new FolderDataSource(_root);
 
-        Assert.Equal(["broken", "energy", "units"], source.Describe().Select(d => d.Name));
+        Assert.Equal(["broken", "energy", "stations"], source.Describe().Select(d => d.Name));
         Assert.Contains("could not be read", source.Describe()[0].Description);
         Assert.Null(await source.LoadAsync("broken"));
         Assert.Equal(2, (await source.LoadAsync("ENERGY"))!.RowCount);

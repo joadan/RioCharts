@@ -36,6 +36,19 @@ public class Milestone3Tests
     }
 
     [Fact]
+    public void Slices_and_radial_bars_are_keyed_like_their_legend_items()
+    {
+        var pie = Pie([10, 20, 30, 1, 1], new SeriesSpec { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.05 });
+        var bars = Pie([10, 20, 30], new SeriesSpec { Id = "p", Type = SeriesType.RadialBar });
+
+        // Legend hover highlights the group with the item's key (the ring "series:p" holds them).
+        string[] Keys(ChartLayoutResult r) => [.. All(r.Scene).OfType<GroupNode>().Select(g => g.Key).OfType<string>().Where(k => k.StartsWith("series:", StringComparison.Ordinal))];
+        Assert.Equal(["series:p", "series:C1", "series:C2", "series:C3", "series:" + ChartLayout.OtherSliceKey], Keys(pie));
+        Assert.Equal(pie.Legend.Select(l => "series:" + l.SeriesId), Keys(pie).Skip(1));
+        Assert.Equal(["series:p", "series:C1", "series:C2", "series:C3"], Keys(bars));
+    }
+
+    [Fact]
     public void Hiding_a_category_removes_its_slice_and_keeps_its_color()
     {
         var result = Pie([10, 20, 30], options: Options with { HiddenSeries = new HashSet<string> { "C2" } });
@@ -123,15 +136,15 @@ public class Milestone3Tests
     {
         var spec = new SeriesSpec { Id = "r", Type = SeriesType.RadialBar, Max = 100 };
         var result = ChartLayout.Compute(new ChartSpec { Series = [spec] },
-            new Dictionary<string, SeriesData> { ["r"] = SeriesData.FromCategories(["Fan", "Filter"], [50.0, 100]) }, Options);
+            new Dictionary<string, SeriesData> { ["r"] = SeriesData.FromCategories(["North", "South"], [50.0, 100]) }, Options);
 
-        var fan = result.Tooltip.Slices[0];
-        var filter = result.Tooltip.Slices[1];
-        Assert.Equal(Math.PI * 1.5 / 2, fan.A1 - fan.A0, 3); // half of 270°
-        Assert.Equal(Math.PI * 1.5, filter.A1 - filter.A0, 3);
-        Assert.Equal(Math.PI * 1.5, fan.HitEnd, 3); // the whole track is hoverable
-        Assert.True(fan.R0 > filter.R1); // first category outermost
-        Assert.Contains(All(result.Scene), n => n is TextNode { Text: "Fan 50" });
+        var north = result.Tooltip.Slices[0];
+        var south = result.Tooltip.Slices[1];
+        Assert.Equal(Math.PI * 1.5 / 2, north.A1 - north.A0, 3); // half of 270°
+        Assert.Equal(Math.PI * 1.5, south.A1 - south.A0, 3);
+        Assert.Equal(Math.PI * 1.5, north.HitEnd, 3); // the whole track is hoverable
+        Assert.True(north.R0 > south.R1); // first category outermost
+        Assert.Contains(All(result.Scene), n => n is TextNode { Text: "North 50" });
     }
 
     [Fact]

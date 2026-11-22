@@ -6,7 +6,7 @@
     public void Texts_parameter_translates_the_chart_own_texts()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Texts="ChartTexts.Swedish" Exportable="true" ExportFormats="ExportFormats.Csv">
-            <LineSeries Items="Supply" Name="Tilluft" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="London" Name="Utetemperatur" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         var svg = cut.Find("svg.rio-chart-svg");
@@ -14,7 +14,7 @@
         Assert.Equal("diagram", svg.GetAttribute("aria-roledescription"));
         Assert.Equal("Använd vänster- och högerpil för att flytta mellan punkter. Tryck Escape för att lämna.", cut.Find(".rio-sr-only").TextContent);
         Assert.Equal("Ladda ner CSV", cut.Find(".rio-export-button").GetAttribute("aria-label"));
-        Assert.StartsWith("Diagram med 1 serie. Tilluft: 4 värden", cut.Find("desc").TextContent);
+        Assert.StartsWith("Diagram med 1 serie. Utetemperatur: 4 värden", cut.Find("desc").TextContent);
         Assert.Equal("{0} av {1}", Field(Payload(Calls("update")[^1]), "pos")); // "3 av 12", read by the JS module
     }
 
@@ -22,7 +22,7 @@
     public void Culture_picks_the_built_in_language()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Culture="@(new System.Globalization.CultureInfo("de-AT"))">
-            <LineSeries Items="Array.Empty<Reading>()" Name="Zuluft" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="Array.Empty<Reading>()" Name="Außentemperatur" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
         Assert.Contains(cut.FindAll("svg.rio-chart-svg text"), t => t.TextContent == "Keine Daten vorhanden");
@@ -33,8 +33,8 @@
     {
         var app = ChartTexts.English with { Chart = "Graph" };
         var cut = Render(@<CascadingValue Value="app">
-            <RioChart TItem="Reading" Items="Supply"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
-            <RioChart TItem="Reading" Items="Supply" Texts="ChartTexts.Finnish"><LineSeries Name="B" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+            <RioChart TItem="Reading" Items="London"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+            <RioChart TItem="Reading" Items="London" Texts="ChartTexts.Finnish"><LineSeries Name="B" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
         </CascadingValue>);
 
         var labels = cut.FindAll("svg.rio-chart-svg").Select(s => s.GetAttribute("aria-label")).ToList();

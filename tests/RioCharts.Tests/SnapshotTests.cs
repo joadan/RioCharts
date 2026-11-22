@@ -38,9 +38,9 @@ public class SnapshotTests
         SeriesData.From(Enumerable.Range(0, hours / step).Select(i => Start.AddHours(i * step)).ToArray(),
             Enumerable.Range(0, hours / step).Select(i => value(i * step)).ToArray());
 
-    private static double Supply(int i) => Math.Round(19 + 1.5 * Math.Sin(i / 24.0 * 2 * Math.PI) + 0.4 * Math.Sin(i * 1.7), 2);
+    private static double London(int i) => Math.Round(19 + 1.5 * Math.Sin(i / 24.0 * 2 * Math.PI) + 0.4 * Math.Sin(i * 1.7), 2);
 
-    private static double Extract(int i) => Math.Round(22 + 0.8 * Math.Sin((i - 3) / 24.0 * 2 * Math.PI) + 0.2 * Math.Cos(i * 1.3), 2);
+    private static double Toronto(int i) => Math.Round(22 + 0.8 * Math.Sin((i - 3) / 24.0 * 2 * Math.PI) + 0.2 * Math.Cos(i * 1.3), 2);
 
     private static SeriesData Categories(string[] names, params double[] values) => SeriesData.FromCategories(names, values);
 
@@ -52,15 +52,15 @@ public class SnapshotTests
     {
         ["line-time"] = new(new ChartSpec
         {
-            Title = "Air handling unit",
+            Title = "Weather stations",
             X = new AxisSpec { Title = "Time" },
             Y = new AxisSpec { Title = "°C", Format = "0.0" },
-            Series = [new SeriesSpec { Id = "s", Name = "Supply", Curve = CurveType.Monotone }, new SeriesSpec { Id = "e", Name = "Extract" }],
-        }, new() { ["s"] = Hourly(48, Supply), ["e"] = Hourly(48, Extract) }),
+            Series = [new SeriesSpec { Id = "s", Name = "London", Curve = CurveType.Monotone }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+        }, new() { ["s"] = Hourly(48, London), ["e"] = Hourly(48, Toronto) }),
 
         ["line-gaps-step"] = new(new ChartSpec
         {
-            Series = [new SeriesSpec { Id = "t", Name = "Room" }, new SeriesSpec { Id = "sp", Name = "Setpoint", Curve = CurveType.Step }],
+            Series = [new SeriesSpec { Id = "t", Name = "Outdoor" }, new SeriesSpec { Id = "sp", Name = "Forecast", Curve = CurveType.Step }],
         }, new()
         {
             ["t"] = Hourly(36, i => i is >= 12 and < 18 ? double.NaN : 21 + Math.Sin(i / 5.0)),
@@ -75,8 +75,8 @@ public class SnapshotTests
             Y = new AxisSpec { Title = "kW" },
             Series =
             [
-                new SeriesSpec { Id = "h", Name = "Heating", Type = SeriesType.Area, Stack = "load" },
-                new SeriesSpec { Id = "v", Name = "Ventilation", Type = SeriesType.Area, Stack = "load" },
+                new SeriesSpec { Id = "h", Name = "Wind", Type = SeriesType.Area, Stack = "load" },
+                new SeriesSpec { Id = "v", Name = "Solar", Type = SeriesType.Area, Stack = "load" },
             ],
         }, new()
         {
@@ -101,23 +101,23 @@ public class SnapshotTests
         ["bars-data-labels"] = new(new ChartSpec
         {
             Series = [new SeriesSpec { Id = "u", Name = "Energy", Type = SeriesType.Bar, DataLabels = true, Format = "0 MWh" }],
-        }, new() { ["u"] = Categories(["AHU 1", "AHU 2", "AHU 3", "AHU 4"], 412, 236, 148, 97) }, Height: 260),
+        }, new() { ["u"] = Categories(["Store 1", "Store 2", "Store 3", "Store 4"], 412, 236, 148, 97) }, Height: 260),
 
         ["pie-other"] = new(new ChartSpec
         {
             Title = "Energy use",
             Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.03, Format = "0 MWh" }],
-        }, new() { ["p"] = Categories(["Heating", "Ventilation", "Cooling", "Lighting", "Pumps", "Elevators", "Controls"], 412, 236, 148, 97, 31, 9, 6) }),
+        }, new() { ["p"] = Categories(["Industry", "Homes", "Transport", "Offices", "Shops", "Farms", "Rail"], 412, 236, 148, 97, 31, 9, 6) }),
 
         ["donut-total"] = new(new ChartSpec
         {
             Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6, DataLabels = false, Format = "0 MWh" }],
-        }, new() { ["p"] = Categories(["Heating", "Ventilation", "Cooling"], 412, 236, 148) }, Width: 400, Height: 300),
+        }, new() { ["p"] = Categories(["Industry", "Homes", "Transport"], 412, 236, 148) }, Width: 400, Height: 300),
 
         ["radial-bar"] = new(new ChartSpec
         {
-            Series = [new SeriesSpec { Id = "h", Name = "Health", Type = SeriesType.RadialBar, Max = 100, Format = "0'%'" }],
-        }, new() { ["h"] = Categories(["Supply fan", "Extract fan", "Filter", "Heat recovery"], 87, 74, 41, 92) }, Width: 420, Height: 300),
+            Series = [new SeriesSpec { Id = "h", Name = "Target", Type = SeriesType.RadialBar, Max = 100, Format = "0'%'" }],
+        }, new() { ["h"] = Categories(["North", "South", "East", "West"], 87, 74, 41, 92) }, Width: 420, Height: 300),
 
         ["dual-axes"] = new(new ChartSpec
         {
@@ -126,7 +126,7 @@ public class SnapshotTests
             Series =
             [
                 new SeriesSpec { Id = "t", Name = "Outdoor" },
-                new SeriesSpec { Id = "p", Name = "Heating", Type = SeriesType.Bar, YAxisId = "kw" },
+                new SeriesSpec { Id = "p", Name = "Power use", Type = SeriesType.Bar, YAxisId = "kw" },
             ],
         }, new()
         {
@@ -136,15 +136,15 @@ public class SnapshotTests
 
         ["annotations"] = new(new ChartSpec
         {
-            Series = [new SeriesSpec { Id = "s", Name = "Supply" }],
+            Series = [new SeriesSpec { Id = "s", Name = "London" }],
             Annotations =
             [
-                new AnnotationSpec { Type = AnnotationType.Band, From = 18.5, To = 20.5, Label = "Comfort" },
+                new AnnotationSpec { Type = AnnotationType.Band, From = 18.5, To = 20.5, Label = "Normal" },
                 new AnnotationSpec { Type = AnnotationType.Line, Value = 21, Label = "High limit" },
                 new AnnotationSpec { Type = AnnotationType.Band, Axis = AnnotationAxis.X, From = Start.AddHours(10), To = Start.AddHours(14), Label = "Service" },
-                new AnnotationSpec { Type = AnnotationType.Callout, X = Start.AddHours(30), Y = Supply(30), Label = "Valve stuck" },
+                new AnnotationSpec { Type = AnnotationType.Callout, X = Start.AddHours(30), Y = London(30), Label = "Sensor fault" },
             ],
-        }, new() { ["s"] = Hourly(48, Supply) }),
+        }, new() { ["s"] = Hourly(48, London) }),
 
         ["time-zone-dst"] = new(new ChartSpec
         {
@@ -156,33 +156,33 @@ public class SnapshotTests
                 Enumerable.Range(0, 36).Select(i => 8 + 3 * Math.Sin(i / 6.0)).ToArray()),
         }),
 
-        ["zoomed"] = new(new ChartSpec { Series = [new SeriesSpec { Id = "s", Name = "Supply" }] },
-            new() { ["s"] = Hourly(96, Supply) },
+        ["zoomed"] = new(new ChartSpec { Series = [new SeriesSpec { Id = "s", Name = "London" }] },
+            new() { ["s"] = Hourly(96, London) },
             XRange: (TimeValue.FromDateTime(Start.AddHours(30)), TimeValue.FromDateTime(Start.AddHours(42)))),
 
         ["compact-sparkline"] = new(new ChartSpec
         {
             Compact = true,
-            Series = [new SeriesSpec { Id = "s", Name = "Supply", Curve = CurveType.Monotone, Highlight = PointHighlight.Last | PointHighlight.Min | PointHighlight.Max }],
+            Series = [new SeriesSpec { Id = "s", Name = "London", Curve = CurveType.Monotone, Highlight = PointHighlight.Last | PointHighlight.Min | PointHighlight.Max }],
             Annotations = [new AnnotationSpec { Type = AnnotationType.Band, From = 18.5, To = 20.5 }],
-        }, new() { ["s"] = Hourly(48, Supply) }, Width: 160, Height: 32),
+        }, new() { ["s"] = Hourly(48, London) }, Width: 160, Height: 32),
 
         ["auto-compact-small"] = new(new ChartSpec
         {
-            Title = "Air handling unit",
+            Title = "Weather stations",
             X = new AxisSpec { Title = "Time" },
             Y = new AxisSpec { Title = "°C" },
-            Series = [new SeriesSpec { Id = "s", Name = "Supply" }, new SeriesSpec { Id = "e", Name = "Extract" }],
-        }, new() { ["s"] = Hourly(48, Supply), ["e"] = Hourly(48, Extract) }, Width: 360, Height: 130),
+            Series = [new SeriesSpec { Id = "s", Name = "London" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+        }, new() { ["s"] = Hourly(48, London), ["e"] = Hourly(48, Toronto) }, Width: 360, Height: 130),
 
         ["scatter-trend"] = new(new ChartSpec
         {
             X = new AxisSpec { Title = "Outdoor °C" },
-            Y = new AxisSpec { Title = "Supply °C" },
+            Y = new AxisSpec { Title = "Hot drinks sold, k" },
             Series =
             [
-                new SeriesSpec { Id = "s", Name = "AHU 1", Type = SeriesType.Scatter, TrendLine = true },
-                new SeriesSpec { Id = "t", Name = "AHU 2", Type = SeriesType.Scatter, MarkerSize = 4 },
+                new SeriesSpec { Id = "s", Name = "Café A", Type = SeriesType.Scatter, TrendLine = true },
+                new SeriesSpec { Id = "t", Name = "Café B", Type = SeriesType.Scatter, MarkerSize = 4 },
             ],
         }, new()
         {
@@ -218,11 +218,11 @@ public class SnapshotTests
                 Enumerable.Range(0, 30).Select(d => Math.Round(9000 + 2500 * Math.Sin(d / 7.0 * Math.PI))).ToArray()),
         }),
 
-        // Supply air temperatures in °C per unit: a tight one, a wide one, one with outliers, and a
+        // Outdoor temperatures in °C per weather station: a tight one, a wide one, one with outliers, and a
         // second series (last week) beside each box.
         ["box-plot"] = new(new ChartSpec
         {
-            Y = new AxisSpec { Title = "Supply air °C", Format = "0.0" },
+            Y = new AxisSpec { Title = "Temperature °C", Format = "0.0" },
             Series =
             [
                 new SeriesSpec { Id = "now", Name = "This week", Type = SeriesType.BoxPlot },
@@ -230,13 +230,13 @@ public class SnapshotTests
             ],
         }, new()
         {
-            ["now"] = SeriesData.FromCategories(["AHU 1", "AHU 2", "AHU 3"], [0.0, 0, 0]).WithBox(
+            ["now"] = SeriesData.FromCategories(["Station 1", "Station 2", "Station 3"], [0.0, 0, 0]).WithBox(
             [
                 BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.5 + Math.Sin(i * 1.7) * 0.6)),
                 BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 20.0 + Math.Sin(i * 2.3) * 2.2)),
                 BoxSummary.FromValues([.. Enumerable.Range(0, 40).Select(i => 18.8 + Math.Sin(i * 1.3) * 0.8), 24.6, 15.2]),
             ]),
-            ["before"] = SeriesData.FromCategories(["AHU 1", "AHU 2", "AHU 3"], [0.0, 0, 0]).WithBox(
+            ["before"] = SeriesData.FromCategories(["Station 1", "Station 2", "Station 3"], [0.0, 0, 0]).WithBox(
             [
                 BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.8 + Math.Sin(i * 1.1) * 0.9)),
                 BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 20.6 + Math.Sin(i * 2.9) * 1.4)),
@@ -275,11 +275,11 @@ public class SnapshotTests
             ["old"] = SeriesData.FromCategories(["Performance", "Battery", "Display", "Keyboard", "Weight", "Price"], [60.0, 48, double.NaN, 70, 40, 52]),
         }),
 
-        // Supply air temperature in °C as daily candles (first, highest, lowest, last reading), with
+        // Outdoor temperature in °C as daily candles (first, highest, lowest, last reading), with
         // the daily average as a line on top.
         ["candles"] = new(new ChartSpec
         {
-            Y = new AxisSpec { Title = "Supply air °C", Format = "0.0" },
+            Y = new AxisSpec { Title = "Temperature °C", Format = "0.0" },
             Series =
             [
                 new SeriesSpec { Id = "c", Name = "Daily range", Type = SeriesType.Candlestick },
@@ -314,10 +314,10 @@ public class SnapshotTests
             ["b"] = Categories(["Trail shoe · Ridge 2", "Rain jacket · Storm", "Headlamp · Beam 400", "Merino base layer, long sleeve", "Tent · Dome 2p"], 128, 92, 71, 58, 22),
         }, Height: 340),
 
-        ["empty-swedish"] = new(new ChartSpec { Title = "Tilluft", Series = [new SeriesSpec { Id = "s", Name = "Tilluft" }] },
+        ["empty-swedish"] = new(new ChartSpec { Title = "Utetemperatur", Series = [new SeriesSpec { Id = "s", Name = "Utetemperatur" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 
-        ["single-point"] = new(new ChartSpec { Series = [new SeriesSpec { Id = "s", Name = "Supply", Format = "0.0 °C" }] },
+        ["single-point"] = new(new ChartSpec { Series = [new SeriesSpec { Id = "s", Name = "London", Format = "0.0 °C" }] },
             new() { ["s"] = Hourly(1, _ => 20) }, Height: 200),
     };
 
