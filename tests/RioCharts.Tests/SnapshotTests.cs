@@ -244,6 +244,20 @@ public class SnapshotTests
             ]),
         }),
 
+        // Population in millions per continent and country (rounded), the small ones grouped per continent.
+        ["treemap"] = new(new ChartSpec
+        {
+            Series = [new SeriesSpec { Id = "p", Name = "Population", Type = SeriesType.Treemap, Format = "0 M", GroupSmallSlices = 0.05 }],
+        }, new()
+        {
+            ["p"] = SeriesData.FromCategories(
+                ["Asia/India", "Asia/China", "Asia/Indonesia", "Asia/Pakistan", "Asia/Japan", "Asia/Nepal", "Asia/Laos",
+                 "Africa/Nigeria", "Africa/Ethiopia", "Africa/Egypt", "Africa/Kenya",
+                 "Europe/Germany", "Europe/France", "Europe/Italy", "Europe/Spain", "Europe/Sweden", "Europe/Norway",
+                 "Americas/USA", "Americas/Brazil", "Americas/Mexico", "Americas/Canada"],
+                [1430, 1410, 278, 240, 124, 31, 8, 224, 127, 113, 55, 84, 68, 59, 48, 10.5, 5.5, 335, 216, 129, 40]),
+        }),
+
         // Two laptops' test scores (0-100) against the class average; the old one's display was not tested.
         ["radar"] = new(new ChartSpec
         {

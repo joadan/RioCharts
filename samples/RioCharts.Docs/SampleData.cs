@@ -205,6 +205,35 @@ public static class SampleData
             Math.Round(520 + Math.Sin((h - 14) / 24.0 * 2 * Math.PI) * 330));
     }).ToList();
 
+    /// <summary>A country's population in millions (rounded) and its continent.</summary>
+    public sealed record Country(string Continent, string Name, double Millions);
+
+    public static readonly List<Country> Countries =
+    [
+        new("Asia", "India", 1430), new("Asia", "China", 1410), new("Asia", "Indonesia", 278), new("Asia", "Pakistan", 240),
+        new("Asia", "Bangladesh", 173), new("Asia", "Japan", 124), new("Asia", "Philippines", 117), new("Asia", "Vietnam", 99),
+        new("Asia", "Thailand", 72), new("Asia", "Nepal", 31), new("Asia", "Laos", 8),
+        new("Africa", "Nigeria", 224), new("Africa", "Ethiopia", 127), new("Africa", "Egypt", 113), new("Africa", "DR Congo", 102),
+        new("Africa", "Tanzania", 67), new("Africa", "South Africa", 60), new("Africa", "Kenya", 55), new("Africa", "Ghana", 34),
+        new("Europe", "Russia", 144), new("Europe", "Germany", 84), new("Europe", "United Kingdom", 68), new("Europe", "France", 68),
+        new("Europe", "Italy", 59), new("Europe", "Spain", 48), new("Europe", "Poland", 37), new("Europe", "Sweden", 10.5),
+        new("Europe", "Norway", 5.5), new("Europe", "Denmark", 5.9), new("Europe", "Finland", 5.6),
+        new("Americas", "USA", 335), new("Americas", "Brazil", 216), new("Americas", "Mexico", 129), new("Americas", "Colombia", 52),
+        new("Americas", "Argentina", 46), new("Americas", "Canada", 40), new("Americas", "Peru", 34),
+        new("Oceania", "Australia", 27), new("Oceania", "Papua New Guinea", 10), new("Oceania", "New Zealand", 5.2),
+    ];
+
+    /// <summary>A folder on a disk, its parent folder and the gigabytes of the files directly in it.</summary>
+    public sealed record Folder(string Name, string? Parent, double? Gigabytes);
+
+    public static readonly List<Folder> Folders =
+    [
+        new("Home", null, null), new("Photos", "Home", null), new("2024", "Photos", 96), new("2025", "Photos", 132),
+        new("Videos", "Home", 210), new("Music", "Home", 48), new("Documents", "Home", 12),
+        new("Work", null, null), new("Projects", "Work", 74), new("Archive", "Work", 160), new("Mail", "Work", 18),
+        new("System", null, null), new("Apps", "System", 85), new("Cache", "System", 22), new("Updates", "System", 9),
+    ];
+
     /// <summary>One order: the weekday, the channel and its value in €.</summary>
     public sealed record OrderValue(string Day, string Channel, double Value);
 

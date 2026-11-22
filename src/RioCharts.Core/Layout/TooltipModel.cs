@@ -54,6 +54,12 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
     /// <summary>Box plots: per point, the values for <see cref="PartLabels"/> (empty: leave the row out).</summary>
     public string[][]? PartValues { get; init; }
 
+    /// <summary>Treemaps: each rectangle's height (with <see cref="CellWidths"/> its hover area, centered on its point); null for other series.</summary>
+    public float[]? CellHeights { get; init; }
+
+    /// <summary>Treemaps: each point's color (CSS color or theme token), when it differs from <see cref="Color"/>; null otherwise.</summary>
+    public string[]? PointColors { get; init; }
+
     /// <summary>Radar charts: the spoke of each point; null for other series.</summary>
     public int[]? Spokes { get; init; }
 

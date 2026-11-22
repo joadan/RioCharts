@@ -682,6 +682,41 @@ Design.md "Radar" (milestone 7).
   announced) and point clicks. `ShowTooltipAsync` (an x value) does nothing on radar charts.
 - **Not yet:** data labels, a circular grid option, a sqrt scale (polar area), and per-spoke scales.
 
+## Treemap
+
+Design.md "Treemap" (milestone 7).
+
+- **Own layout path** (`ComputeTreemap`, `ChartLayout.Treemap.cs`), coordinate system
+  `SpaceFilling`. One treemap series is drawn; other series are skipped with a warning.
+- **Hierarchy from paths:** the series stays plain category data whose names are paths
+  (`"Asia/India"`, split on `SeriesSpec.PathSeparator`, default "/"), so `SeriesData` needed no new
+  column. Design.md's "node list with parent indices" is built per layout as a small tree.
+  `TreemapSeries.ParentValue` turns a parent-child list into paths in the component (cycles and
+  unknown parents end the path). JSON: `SeriesSpec.Path` (the groups' fields) is joined into an x
+  path by the binder. Repeated paths are added; a group's own value is ignored (warnings).
+- **Layout:** squarified (Bruls, Huizing, van Wijk), children largest first. A group gets a header
+  (name left, total right when both fit) when its rectangle is at least 2.4 headers tall and 48 px
+  wide, otherwise a 2 px frame; items are inset 1 px, so neighbours are 2 px apart. Groups are
+  tinted (fill opacity 0.16, nested groups add up); items are solid in their top-level group's
+  palette color with inverse text (theme token, not computed contrast). Name and value inside when
+  they fit; a shortened name keeps at least three characters, else it is hidden.
+- **Other:** `GroupSmallSlices` (component: `GroupSmallItems`) per group: two or more items under
+  the share become one lighter "Other" item.
+- **Legend:** the top-level groups (`HiddenSeries` takes group names). Shown by default only with
+  nested groups and 2 to 12 of them; a flat list colors each item and needs no legend. The legend
+  tooltip lists the group's first children.
+- **Interaction:** one tooltip series with each rectangle's center, `CellWidths`, `CellHeights` and
+  `PointColors`: items first, then groups (found in their headers and frames). Rows: the path,
+  the value, then share of group and of total as part rows. Groups have index -1 (not clickable).
+  The JS module finds the rectangle under the pointer (as for heatmap cells), outlines it and puts
+  the tooltip beside the pointer. Selected items get an outline.
+- **Highlight:** each top-level group's rectangles and labels are their own scene groups keyed
+  `series:{group}` and `labels:{group}` (the legend item's id), so legend hover and
+  `HighlightSeriesAsync("Asia")` fade the other groups. The treemap series id itself matches no
+  group.
+- **Not yet:** drill-down, color by a separate value on a sequential scale, and listing an "Other"
+  item's parts in its tooltip.
+
 ## Horizontal bars
 
 - **A chart option, not a series type** (`ChartSpec.Horizontal`): orientation is a property of the

@@ -254,9 +254,17 @@ public sealed record SeriesSpec
     [Description("Pie, donut and radial bar: end angle in degrees. Default: start + 360 for pies, 270 for radial bars.")]
     public double? EndAngle { get; init; }
 
-    /// <summary>Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one "Other" slice.</summary>
-    [Description("Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one \"Other\" slice.")]
+    /// <summary>Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one "Other" slice. Treemap: items smaller than this share of their group, per group.</summary>
+    [Description("Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one \"Other\" slice. Treemap: items smaller than this share of their group, per group.")]
     public double? GroupSmallSlices { get; init; }
+
+    /// <summary>Treemap: the fields that name the groups, from the outermost to the item, e.g. ["region", "country", "city"]; used instead of x. Without it, x is the item's path, e.g. "Europe/Sweden/Stockholm".</summary>
+    [Description("Treemap: the fields that name the groups, from the outermost to the item, e.g. [\"region\", \"country\", \"city\"]; used instead of x. Without it, x is the item's path, e.g. \"Europe/Sweden/Stockholm\".")]
+    public IReadOnlyList<string>? Path { get; init; }
+
+    /// <summary>Treemap: what separates the groups in an x path. Default "/".</summary>
+    [Description("Treemap: what separates the groups in an x path. Default \"/\".")]
+    public string? PathSeparator { get; init; }
 
     /// <summary>Radial bar: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.</summary>
     [Description("Radial bar: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.")]
@@ -381,6 +389,9 @@ public enum SeriesType
 
     /// <summary>A closed shape per series across category spokes, for comparing several measures (e.g. products' test scores).</summary>
     Radar,
+
+    /// <summary>Rectangles sized by value, nested by group (a path such as "Europe/Sweden/Stockholm"), for how a total splits into many parts.</summary>
+    Treemap,
 
     /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

@@ -6,7 +6,7 @@ using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Series;
 
-internal enum CoordinateSystem { Cartesian, Polar }
+internal enum CoordinateSystem { Cartesian, Polar, SpaceFilling }
 
 /// <summary>
 /// What a series type contributes: its coordinate system, extent rules, layout needs and
@@ -38,6 +38,7 @@ internal interface ISeriesType
         SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
         SeriesType.Candlestick => CandlestickSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar or SeriesType.Radar => new PolarSeriesType(type),
+        SeriesType.Treemap => new PolarSeriesType(type, CoordinateSystem.SpaceFilling),
         _ => LineSeriesType.Instance,
     };
 }
@@ -916,10 +917,11 @@ internal sealed class HeatmapSeriesType : ISeriesType
     }
 }
 
-internal sealed class PolarSeriesType(SeriesType type) : ISeriesType
+/// <summary>Types laid out by their own pass (pies, radial bars, radar, treemap): nothing to build per series.</summary>
+internal sealed class PolarSeriesType(SeriesType type, CoordinateSystem coordinates = CoordinateSystem.Polar) : ISeriesType
 {
     public SeriesType Type => type;
-    public CoordinateSystem CoordinateSystem => CoordinateSystem.Polar;
+    public CoordinateSystem CoordinateSystem => coordinates;
     public int DefaultLayer => 1;
     public bool IncludesZero => true;
     public bool UsesSlots => false;

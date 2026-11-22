@@ -1,0 +1,42 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Folder(string Name, string? Parent, double? Gigabytes);
+
+    // Disk usage: folders with their parent folder; only the files' folders have a size.
+    private static readonly Folder[] Folders =
+    [
+        new("Home", null, null), new("Photos", "Home", 120), new("Music", "Home", 40),
+        new("Work", null, null), new("Projects", "Work", 60), new("Archive", "Work", 25),
+    ];
+
+    [Fact]
+    public void Parent_names_build_the_paths()
+    {
+        var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <TreemapSeries Id="d" Name="Disk" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB" />
+        </RioChart>);
+
+        Assert.Equal(4, cut.FindAll(".rio-treemap-cell").Count);
+        Assert.Equal(2, cut.FindAll(".rio-treemap-group").Count);
+        var model = Payload(Calls("update")[^1]);
+        var series = model.GetProperty("series")[0];
+        Assert.Equal("Home › Photos", series.GetProperty("xl")[0].GetString());
+        Assert.Equal("120 GB", series.GetProperty("v")[0].GetString());
+        Assert.True(series.GetProperty("chs")[0].GetSingle() > 0);
+        Assert.Equal(series.GetProperty("pc")[0].GetString(), series.GetProperty("pc")[1].GetString()); // both in Home
+    }
+
+    [Fact]
+    public void Clicking_an_item_selects_it()
+    {
+        var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders" Selection="SelectionMode.Points">
+            <TreemapSeries Id="d" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("d", 4, false));
+
+        Assert.Equal([Folders[4]], cut.Instance.GetSelectedItems());
+        Assert.Single(cut.FindAll(".rio-selected-bar"));
+    }
+}

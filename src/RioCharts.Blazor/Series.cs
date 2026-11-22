@@ -636,6 +636,74 @@ public sealed class RadarSeries<TItem> : SeriesBase<TItem>
     protected override SeriesType Type => SeriesType.Radar;
 }
 
+/// <summary>
+/// Treemap: rectangles sized by value, nested by group, for how a total splits into many parts.
+/// <c>XValue</c> is each item's path from the outermost group, e.g. <c>"Europe/Sweden/Stockholm"</c>
+/// (see <see cref="PathSeparator"/>), or its name with <see cref="ParentValue"/>. A group's value is
+/// the sum of its items. Colors and legend items follow the top-level groups. Zero and negative
+/// values are left out. Cannot be mixed with other series types.
+/// </summary>
+public sealed class TreemapSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>
+    /// The name of each item's group, matching another item's <c>XValue</c> (null or unknown: a
+    /// top-level item). Builds the paths from a parent-child list, e.g. cities with their countries
+    /// and countries with their regions; names must then be unique.
+    /// </summary>
+    [Parameter] public Func<TItem, object?>? ParentValue { get; set; }
+
+    /// <summary>What separates the groups in an <c>XValue</c> path. Default "/".</summary>
+    [Parameter] public string? PathSeparator { get; set; }
+
+    /// <summary>Group items smaller than this share of their group (e.g. 0.03) into one "Other" item per group.</summary>
+    [Parameter] public double? GroupSmallItems { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Treemap;
+
+    private protected override object? DataSettings => (ParentValue is not null, PathSeparator);
+
+    /// <inheritdoc />
+    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
+    {
+        PathSeparator = PathSeparator,
+        GroupSmallSlices = GroupSmallItems,
+    };
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (ParentValue is not { } parentOf || XValue is not { } nameOf || data.Kind != XKind.Category)
+        {
+            return data;
+        }
+
+        static string Text(object? value) => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        var parents = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var item in items)
+        {
+            parents.TryAdd(Text(nameOf(item)), parentOf(item) is { } parent ? Text(parent) : null);
+        }
+
+        var separator = string.IsNullOrEmpty(PathSeparator) ? "/" : PathSeparator;
+        var paths = new string[data.Count];
+        for (var i = 0; i < paths.Length; i++)
+        {
+            var item = items[groups is null ? data.ToSourceIndex(i) : groups[i][0]];
+            var name = Text(nameOf(item));
+            var path = new List<string> { name };
+            var seen = new HashSet<string>(StringComparer.Ordinal) { name };
+            for (var p = parentOf(item) is { } first ? Text(first) : null; !string.IsNullOrEmpty(p) && seen.Add(p); p = parents.GetValueOrDefault(p))
+            {
+                path.Insert(0, p); // stops at a top-level item, an unknown name or a cycle
+            }
+
+            paths[i] = string.Join(separator, path);
+        }
+
+        return SeriesData.FromCategories(paths, data.Y);
+    }
+}
+
 /// <summary>Radial bars: one circular track per category, filled up to its value.</summary>
 public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
 {

@@ -103,8 +103,10 @@ public static class ChartSpecBinder
 
         // ---------- Fields ----------
         var count = s.Aggregate == Aggregate.Count;
-        var x = s.X is null ? InferX(dataset) : Find(dataset, s.X, $"{path}.x", null, errors);
-        if (s.X is null)
+        var treePath = s.Type == SeriesType.Treemap && s.Path is { Count: > 0 } pathFields ? pathFields : null;
+        var x = treePath is not null ? TreePath(dataset, treePath, s.PathSeparator, path, errors)
+            : s.X is null ? InferX(dataset) : Find(dataset, s.X, $"{path}.x", null, errors);
+        if (s.X is null && treePath is null)
         {
             if (x is null)
             {
@@ -293,6 +295,25 @@ public static class ChartSpecBinder
             var series = SeriesData.FromItems(points, p => p.X, p => p.Y);
             data[id] = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
         }
+    }
+
+    /// <summary>Treemap: the path fields joined into one text field per row ("Europe/Sweden/Stockholm"); null when a field is missing.</summary>
+    private static DataField? TreePath(ChartDataset dataset, IReadOnlyList<string> fields, string? separator, string path, List<SpecError> errors)
+    {
+        var found = fields.Select((f, k) => Find(dataset, f, $"{path}.path[{k}]", null, errors)).ToList();
+        if (found.Any(f => f is null))
+        {
+            return null;
+        }
+
+        var values = new object?[dataset.RowCount];
+        for (var r = 0; r < values.Length; r++)
+        {
+            var parts = found.Select(f => Text(f!.Values[r])).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+            values[r] = parts.Count > 0 ? string.Join(string.IsNullOrEmpty(separator) ? "/" : separator, parts) : null;
+        }
+
+        return new DataField(string.Join("/", fields), FieldType.Text, values);
     }
 
     /// <summary>Box plot data: one box per row (precomputed, with q1 and q3), or per x from the rows' y values.</summary>

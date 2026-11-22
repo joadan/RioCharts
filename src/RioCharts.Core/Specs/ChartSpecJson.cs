@@ -284,6 +284,9 @@ public static class ChartSpecJson
         ["ring"] = ("pie", s => s.TryAdd("innerRadius", 0.6)),
         ["radialbar"] = ("radialBar", null),
         ["radar"] = ("radar", null),
+        ["treemap"] = ("treemap", null),
+        ["tree"] = ("treemap", null),
+        ["treemapchart"] = ("treemap", null),
         ["radarchart"] = ("radar", null),
         ["spider"] = ("radar", null),
         ["spiderweb"] = ("radar", null),
@@ -403,7 +406,7 @@ public static class ChartSpecJson
                     else
                     {
                         errors.Add(new SpecError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, pie, radialBar, radar, auto (also column, donut, stackedBar, spline, gauge, points, spider)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, pie, radialBar, radar, treemap, auto (also column, donut, stackedBar, spline, gauge, points, spider)."));
                     }
                 }
 

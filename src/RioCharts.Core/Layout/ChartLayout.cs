@@ -235,7 +235,7 @@ public static partial class ChartLayout
             }
 
             r.Axis = FindAxis(axes, s.YAxisId, $"series[{i}].yAxisId", warnings) ?? primary;
-            if ((d.Kind == XKind.Category || r.Type.UsesSlots) && RepeatsX(d) is { } repeated)
+            if ((d.Kind == XKind.Category || r.Type.UsesSlots) && s.Type != SeriesType.Treemap && RepeatsX(d) is { } repeated)
             {
                 warnings.Add($"series '{s.Id}': x value {repeated} appears more than once; the points are drawn on top of each other. Combine them with an aggregate (Aggregate or YAggregate on a series component, 'aggregate' in a spec).");
             }
@@ -251,6 +251,11 @@ public static partial class ChartLayout
         if (resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
         {
             return ComputeHeatmap(spec, resolved, options, warnings, styles, time);
+        }
+
+        if (resolved.Any(r => r.Spec.Type == SeriesType.Treemap))
+        {
+            return ComputeTreemap(spec, resolved, options, warnings, styles);
         }
 
         if (resolved.Any(r => r.Spec.Type == SeriesType.Radar))

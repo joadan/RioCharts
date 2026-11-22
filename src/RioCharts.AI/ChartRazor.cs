@@ -116,6 +116,7 @@ public static class ChartRazor
                 SeriesType.Pie => "PieSeries",
                 SeriesType.RadialBar => "RadialBarSeries",
                 SeriesType.Radar => "RadarSeries",
+                SeriesType.Treemap => "TreemapSeries",
                 SeriesType.Scatter => "ScatterSeries",
                 SeriesType.Heatmap => "HeatmapSeries",
                 SeriesType.RangeArea => "RangeAreaSeries",
@@ -130,7 +131,20 @@ public static class ChartRazor
                 sb.Append($" Name=\"{Attr(name)}\"");
             }
 
-            sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\"");
+            if (s.Type == SeriesType.Treemap && s.Path is { Count: > 0 } pathFields)
+            {
+                // The groups' fields joined into the item's path.
+                var separator = s.PathSeparator ?? "/";
+                sb.Append($" XValue=\"r => $\"{string.Join(Attr(separator), pathFields.Select(f => "{r." + Property(f) + "}"))}\"\"");
+                if (s.PathSeparator is { } custom)
+                {
+                    sb.Append($" PathSeparator=\"{Attr(custom)}\"");
+                }
+            }
+            else
+            {
+                sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\"");
+            }
             if (s.Type == SeriesType.RangeArea && s.Low is { } lowField)
             {
                 sb.Append($" LowValue=\"r => r.{Property(lowField)}\"");

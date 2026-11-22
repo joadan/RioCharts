@@ -813,13 +813,25 @@ function findShared(m, px) {
         }
 
         const i = nearest(s.x, anchor);
-        if (i >= 0 && Math.abs(s.x[i] - anchor) <= s.snap) {
+        if (i >= 0 && (Math.abs(s.x[i] - anchor) <= s.snap || joins(s, i, anchor))) {
             rows.push({ s, i });
         }
     }
 
     rows.anchor = anchor;
     return rows;
+}
+
+// A line drawn through x although no point is near it (irregular readings, e.g. logged on change,
+// or a silence): its nearest point still belongs in the shared tooltip. Not across a gap (a
+// skipped data index between the two points) and not for bars.
+function joins(s, i, x) {
+    if (s.bar || s.ch > 0 || s.chs || s.sp) {
+        return false;
+    }
+
+    const k = x > s.x[i] ? i + 1 : i - 1;
+    return k >= 0 && k < s.x.length && Math.abs(s.index[k] - s.index[i]) === 1;
 }
 
 // Index of the last value in the ascending array at or before v (half a pixel of slack); -1 when none.
@@ -849,11 +861,11 @@ function headerOf(rows) {
 function findSingle(m, px, py) {
     let best = null;
     for (const s of m.series) {
-        if (s.ch > 0) {
-            // Heatmap cells and horizontal bars: the one under the pointer.
+        if (s.ch > 0 || s.chs) {
+            // Heatmap cells, horizontal bars and treemap rectangles: the one under the pointer.
             for (let j = 0; j < s.x.length; j++) {
-                const w = s.cw ? s.cw[j] : s.barWidth;
-                if (Math.abs(s.x[j] - px) <= w / 2 + 0.5 && Math.abs(s.y[j] - py) <= s.ch / 2 + 0.5) {
+                const w = s.cw ? s.cw[j] : s.barWidth, h = s.chs ? s.chs[j] : s.ch;
+                if (Math.abs(s.x[j] - px) <= w / 2 + 0.5 && Math.abs(s.y[j] - py) <= h / 2 + 0.5) {
                     return [{ s, i: j, d: 0 }];
                 }
             }
@@ -1088,9 +1100,9 @@ function drawHover(state, rows, m) {
         const r = m.radar, a = rows.spoke * TAU / r.n;
         const [ex, ey] = arcPoint(r.cx, r.cy, r.r, a);
         g.appendChild(el('line', { class: 'rio-crosshair', x1: r.cx, y1: r.cy, x2: ex, y2: ey }));
-    } else if (first.s.ch > 0) {
-        // Heatmap: outline the cell.
-        const w = first.s.cw ? first.s.cw[first.i] : first.s.barWidth, h = first.s.ch, cx = first.s.x[first.i], cy = first.s.y[first.i];
+    } else if (first.s.ch > 0 || first.s.chs) {
+        // Heatmap and treemap: outline the cell.
+        const w = first.s.cw ? first.s.cw[first.i] : first.s.barWidth, h = first.s.chs ? first.s.chs[first.i] : first.s.ch, cx = first.s.x[first.i], cy = first.s.y[first.i];
         g.appendChild(el('rect', { class: 'rio-hover-cell', x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 2 }));
         return;
     } else if (first.s.dots) {
@@ -1138,7 +1150,7 @@ function drawTooltip(state, rows, pos) {
         row.className = 'rio-tooltip-row';
         const dot = document.createElement('span');
         dot.className = 'rio-tooltip-dot';
-        dot.style.background = s.color;
+        dot.style.background = s.pc ? s.pc[i] : s.color;
         const name = document.createElement('span');
         name.className = 'rio-tooltip-name';
         name.textContent = s.name;
@@ -1154,7 +1166,8 @@ function drawTooltip(state, rows, pos) {
         }
     }
 
-    placeTooltip(state, pos, rows.anchor !== undefined ? rows.anchor : first.s.x[first.i], pos.y);
+    // Treemap rectangles can be large: beside the pointer, not their center.
+    placeTooltip(state, pos, rows.anchor !== undefined ? rows.anchor : first.s.chs ? pos.x : first.s.x[first.i], pos.y);
 }
 
 // Beside x (right, or left when there is no room), vertically centered on y (chart units).
@@ -1580,6 +1593,10 @@ function click(state, e) {
     const hits = find(m, pos)
         .map(r => {
             const s = r.s;
+            if (s.ch > 0 || s.chs) {
+                return { ...r, d: 0 }; // the cell under the pointer
+            }
+
             if (s.bar) {
                 const dx = Math.abs(s.x[r.i] + s.barOffset - pos.x);
                 return { ...r, d: dx <= s.barWidth / 2 + 1 && pos.y >= s.y[r.i] - 4 ? dx : Infinity };
@@ -1587,7 +1604,7 @@ function click(state, e) {
 
             return { ...r, d: Math.hypot(s.x[r.i] - pos.x, s.y[r.i] - pos.y) };
         })
-        .filter(r => r.d <= 16 || (r.s.bar && r.d !== Infinity))
+        .filter(r => (r.d <= 16 || (r.s.bar && r.d !== Infinity)) && r.s.index[r.i] >= 0)
         .sort((a, b) => a.d - b.d);
 
     if (hits.length > 0) {

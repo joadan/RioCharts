@@ -1,0 +1,79 @@
+@page "/treemap"
+
+<PageTitle>Treemap · RioCharts</PageTitle>
+
+<h1>Treemap</h1>
+<p class="lead">
+    A treemap shows how a total splits into parts by area, when there are too many parts for a pie: each item is a rectangle sized by its
+    value, nested inside its group.
+</p>
+
+<Example Title="From paths" Code="@PathCode">
+    <Description>
+        <p>
+            Give <code>TreemapSeries</code> each item's path from the outermost group as <code>XValue</code>, here
+            <code>"Asia/India"</code>. A group's value is the sum of its items, and its name sits in a header when there is room. Colors and
+            legend items follow the top-level groups; click one in the legend to leave it out. <code>GroupSmallItems</code> gathers the
+            smallest countries of each continent into "Other". Hover a rectangle for its share of the continent and of the world.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Country" Items="Countries" Height="420">
+            <TreemapSeries Name="Population" XValue="@(c => $"{c.Continent}/{c.Name}")" YValue="c => c.Millions" Format="0 M"
+                           GroupSmallItems="0.03" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="From a parent-child list" Code="@ParentCode">
+    <Description>
+        <p>
+            With <code>ParentValue</code>, <code>XValue</code> is the item's name and the parent's name builds the path: folders on a disk,
+            an organisation, a bill of materials. Names must then be unique. Only items with a value get a rectangle; a folder's own size is
+            the sum of what is in it.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Folder" Items="Folders" Height="360">
+            <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>Good to know</h2>
+<ul>
+    <li>Zero and negative values are left out (the chart's screen reader text says how many); a treemap cannot show them as areas.</li>
+    <li>A flat list (no separator in the paths) is a one-level treemap; each item gets its own color and the legend stays hidden.</li>
+    <li>Names and values are shortened with "…" or hidden when a rectangle is too small; the tooltip always has them in full.</li>
+    <li>Use <code>PathSeparator</code> when names contain "/", e.g. <code>PathSeparator=" > "</code>.</li>
+    <li>Treemaps cannot be mixed with other series types, and only one treemap series is drawn.</li>
+</ul>
+
+<h2>In JSON specs</h2>
+<p>
+    <code>"type": "treemap"</code> with <code>"path": ["continent", "country"]</code> (the groups' fields, outermost first) and the value as
+    <code>y</code>; or a single <code>x</code> field that holds the path. Rows with the same path are added up.
+</p>
+
+@code {
+    private const string PathCode = """
+        <RioChart TItem="Country" Items="countries">
+            <TreemapSeries Name="Population" XValue="@(c => $"{c.Continent}/{c.Name}")" YValue="c => c.Millions"
+                           Format="0 M" GroupSmallItems="0.03" />
+        </RioChart>
+
+        @code {
+            record Country(string Continent, string Name, double Millions);
+        }
+        """;
+
+    private const string ParentCode = """
+        <RioChart TItem="Folder" Items="folders">
+            <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB" />
+        </RioChart>
+
+        @code {
+            record Folder(string Name, string? Parent, double? Gigabytes); // Parent null: a top-level folder
+        }
+        """;
+}

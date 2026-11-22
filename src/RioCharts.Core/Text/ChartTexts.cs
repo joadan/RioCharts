@@ -174,6 +174,18 @@ public sealed record ChartTexts
     /// <summary>A radar chart.</summary>
     public string RadarChart { get => Get(); init => Set(value); }
 
+    /// <summary>A treemap.</summary>
+    public string Treemap { get => Get(); init => Set(value); }
+
+    /// <summary>Treemap tooltip: the item's share of its group.</summary>
+    public string ShareOfGroup { get => Get(); init => Set(value); }
+
+    /// <summary>Treemap tooltip: the item's share of the total.</summary>
+    public string ShareOfTotal { get => Get(); init => Set(value); }
+
+    /// <summary>Treemap description: items left out. {0}: how many (one|other).</summary>
+    public string TreemapLeftOut { get => Get(); init => Set(value); }
+
     /// <summary>Description of a pie or radial bar chart. {0}: the kind of chart, {1}: the number of items (one|other), {2}: the items.</summary>
     public string PolarItems { get => Get(); init => Set(value); }
 
@@ -376,6 +388,10 @@ public sealed record ChartTexts
         [nameof(DonutChart)] = "Donut chart",
         [nameof(RadialBarChart)] = "Radial bar chart",
         [nameof(RadarChart)] = "Radar chart",
+        [nameof(Treemap)] = "Treemap",
+        [nameof(ShareOfGroup)] = "Share of group",
+        [nameof(ShareOfTotal)] = "Share of total",
+        [nameof(TreemapLeftOut)] = "{0} item with zero or negative value left out|{0} items with zero or negative values left out",
         [nameof(PolarItems)] = "{0} with {1} item: {2}|{0} with {1} items: {2}",
         [nameof(PolarNoData)] = "{0}, no data.",
         [nameof(More)] = "and {0} more",
@@ -440,6 +456,10 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radiellt stapeldiagram",
         RadarChart = "Radardiagram",
+        Treemap = "Trädkarta",
+        ShareOfGroup = "Andel av gruppen",
+        ShareOfTotal = "Andel av totalen",
+        TreemapLeftOut = "{0} post med noll eller negativt värde utelämnad|{0} poster med noll eller negativa värden utelämnade",
         PolarItems = "{0} med {1} post: {2}|{0} med {1} poster: {2}",
         PolarNoData = "{0}, inga data.",
         More = "och {0} till",
@@ -498,6 +518,10 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radielt stolpediagram",
         RadarChart = "Radardiagram",
+        Treemap = "Trekart",
+        ShareOfGroup = "Andel av gruppen",
+        ShareOfTotal = "Andel av totalen",
+        TreemapLeftOut = "{0} post med null eller negativ verdi utelatt|{0} poster med null eller negative verdier utelatt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
         More = "og {0} til",
@@ -556,6 +580,10 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radialt søjlediagram",
         RadarChart = "Radardiagram",
+        Treemap = "Trækort",
+        ShareOfGroup = "Andel af gruppen",
+        ShareOfTotal = "Andel af totalen",
+        TreemapLeftOut = "{0} post med nul eller negativ værdi udeladt|{0} poster med nul eller negative værdier udeladt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
         More = "og {0} mere",
@@ -614,6 +642,10 @@ public sealed record ChartTexts
         DonutChart = "Rengaskaavio",
         RadialBarChart = "Säteittäinen pylväskaavio",
         RadarChart = "Tutkakaavio",
+        Treemap = "Puukartta",
+        ShareOfGroup = "Osuus ryhmästä",
+        ShareOfTotal = "Osuus kokonaisuudesta",
+        TreemapLeftOut = "{0} kohde, jonka arvo on nolla tai negatiivinen, jätetty pois|{0} kohdetta, joiden arvo on nolla tai negatiivinen, jätetty pois",
         PolarItems = "{0}, {1} kohde: {2}|{0}, {1} kohdetta: {2}",
         PolarNoData = "{0}, ei tietoja.",
         More = "ja {0} muuta",
@@ -672,6 +704,10 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagramm",
         RadialBarChart = "Radiales Balkendiagramm",
         RadarChart = "Netzdiagramm",
+        Treemap = "Treemap",
+        ShareOfGroup = "Anteil an der Gruppe",
+        ShareOfTotal = "Anteil am Gesamtwert",
+        TreemapLeftOut = "{0} Eintrag mit Wert null oder negativ ausgelassen|{0} Einträge mit Wert null oder negativ ausgelassen",
         PolarItems = "{0} mit {1} Eintrag: {2}|{0} mit {1} Einträgen: {2}",
         PolarNoData = "{0}, keine Daten.",
         More = "und {0} weitere",
@@ -730,6 +766,10 @@ public sealed record ChartTexts
         DonutChart = "Graphique en anneau",
         RadialBarChart = "Graphique à barres radiales",
         RadarChart = "Graphique en radar",
+        Treemap = "Carte proportionnelle",
+        ShareOfGroup = "Part du groupe",
+        ShareOfTotal = "Part du total",
+        TreemapLeftOut = "{0} élément de valeur nulle ou négative omis|{0} éléments de valeur nulle ou négative omis",
         PolarItems = "{0} avec {1} élément : {2}|{0} avec {1} éléments : {2}",
         PolarNoData = "{0}, aucune donnée.",
         More = "et {0} de plus",
@@ -788,6 +828,10 @@ public sealed record ChartTexts
         DonutChart = "Gráfico de anillo",
         RadialBarChart = "Gráfico de barras radiales",
         RadarChart = "Gráfico radial",
+        Treemap = "Mapa de árbol",
+        ShareOfGroup = "Parte del grupo",
+        ShareOfTotal = "Parte del total",
+        TreemapLeftOut = "{0} elemento con valor cero o negativo omitido|{0} elementos con valor cero o negativo omitidos",
         PolarItems = "{0} con {1} elemento: {2}|{0} con {1} elementos: {2}",
         PolarNoData = "{0}, sin datos.",
         More = "y {0} más",

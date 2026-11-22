@@ -1,0 +1,601 @@
+using System.Globalization;
+using RioCharts.Core.Data;
+using RioCharts.Core.Formatting;
+using RioCharts.Core.Scales;
+using RioCharts.Core.Scene;
+using RioCharts.Core.Text;
+
+namespace RioCharts.Core.Layout;
+
+public static partial class ChartLayout
+{
+    /// <summary>A group or item of a treemap, built from the paths.</summary>
+    private sealed class TreeNode(string name, TreeNode? parent)
+    {
+        public string Name { get; } = name;
+        public TreeNode? Parent { get; } = parent;
+        public List<TreeNode> Children { get; } = [];
+        public Dictionary<string, TreeNode> ByName { get; } = new(StringComparer.Ordinal);
+        public double Value { get; set; }
+
+        /// <summary>The item's data index; -1 for groups and "Other".</summary>
+        public int Index { get; set; } = -1;
+
+        /// <summary>The top-level group it belongs to (its color).</summary>
+        public int Group { get; set; }
+
+        public bool IsOther { get; init; }
+        public bool HadValue { get; set; }
+        public RectF Rect { get; set; }
+        public bool HasHeader { get; set; }
+
+        public IEnumerable<TreeNode> Ancestors()
+        {
+            for (var n = Parent; n?.Parent is not null; n = n.Parent)
+            {
+                yield return n;
+            }
+        }
+
+        public string PathText(string separator) =>
+            string.Join(separator, Ancestors().Reverse().Select(a => a.Name).Append(Name));
+    }
+
+    /// <summary>
+    /// The treemap pass: the series' x values are paths ("Europe/Sweden/Stockholm"), split into
+    /// groups and items, laid out with the squarified algorithm. The legend lists the top-level
+    /// groups, which also pick the colors; hiding one leaves it out.
+    /// </summary>
+    private static ChartLayoutResult ComputeTreemap(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
+    {
+        var culture = options.Culture;
+        var texts = options.Texts ?? ChartTexts.For(culture);
+        var measure = options.Measurer;
+        var width = Math.Max(50, options.Width);
+        var height = Math.Max(50, options.Height);
+        var font = options.FontSize;
+        var small = Math.Max(9, font - 1);
+        var lineHeight = font * 1.3;
+        var chrome = FitChrome(spec.AutoCompact, width, height, font);
+
+        foreach (var r in resolved.Where(r => r.Spec.Type != SeriesType.Treemap))
+        {
+            warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} series cannot be mixed with a treemap; the series is skipped.");
+        }
+
+        var trees = resolved.Where(r => r.Spec.Type == SeriesType.Treemap).ToList();
+        if (trees.Count > 1)
+        {
+            warnings.Add("only one treemap series is drawn; the others are skipped.");
+        }
+
+        var series = trees[0];
+        var format = series.Spec.Format ?? spec.Y.Format ?? "";
+        string Format(double v) => ValueFormatter.Format(v, culture, format, compactFrom: 1e5);
+
+        // ---------- The tree ----------
+        var root = BuildTree(series, culture, warnings, out var leftOut);
+        var groups = root.Children.ToList(); // before hiding: the legend keeps hidden groups
+        for (var g = 0; g < groups.Count; g++)
+        {
+            SetGroup(groups[g], g);
+        }
+
+        bool Hidden(string group) => options.HiddenSeries?.Contains(group) == true;
+        root.Children.RemoveAll(c => Hidden(c.Name));
+        if (series.Spec.GroupSmallSlices is > 0 and var threshold)
+        {
+            GroupSmall(root, threshold, texts.Other);
+        }
+
+        Sum(root);
+        var total = root.Value;
+        var hasData = total > 0 && series.Visible;
+        string ColorOf(int group) => groups.Count == 1 && series.Spec.Color is { } own ? own : ThemeTokens.Series(group);
+
+        // ---------- Legend: the top-level groups ----------
+        var depth = MaxDepth(root);
+        var legendEntries = groups.Select(g => new LegendEntry(g.Name, g.Name, ColorOf(g.Group), SeriesType.Treemap, !Hidden(g.Name), false,
+                GroupTip(g)))
+            .ToList();
+        string GroupTip(TreeNode g)
+        {
+            var lines = new List<string> { $"{g.Name}\t{Format(g.Value)}" + (total > 0 && !Hidden(g.Name) ? $" ({Percent(g.Value / total, culture)})" : "") };
+            lines.AddRange(g.Children.Take(8).Select(c => $"{OtherPartPrefix}{c.Name}\t{Format(c.Value)}"));
+            return string.Join("\n", lines);
+        }
+
+        var showLegend = spec.Legend.Mode switch
+        {
+            LegendMode.Show => legendEntries.Count > 0,
+            LegendMode.Hide => false,
+            _ => depth > 1 && legendEntries.Count is > 1 and <= 12 && chrome.Legend,
+        };
+        var legendPosition = FitLegendPosition(spec.Legend.Position, chrome);
+
+        // ---------- Title and legend ----------
+        var statics = new List<Node>();
+        var y0 = PadTop;
+        if (chrome.Title && !string.IsNullOrWhiteSpace(spec.Title))
+        {
+            var titleHeight = options.TitleFontSize * 1.3;
+            statics.Add(new TextNode(spec.Title!, new PointF((float)PadLeft, (float)(y0 + titleHeight / 2)), new TextStyle("title"), Anchor.Start)
+            {
+                Class = "rio-title",
+            });
+            y0 += titleHeight + 6;
+        }
+
+        var legendItems = showLegend ? MeasureLegend(legendEntries, measure, font) : [];
+        double legendTop = 0, legendBottom = 0, legendRight = 0;
+        List<List<(LegendEntry Entry, double Width)>> legendRows = [];
+        if (showLegend)
+        {
+            if (legendPosition == LegendPosition.Right)
+            {
+                legendRight = legendItems.Max(i => i.Width) + 16;
+            }
+            else
+            {
+                legendRows = WrapRows(legendItems, width - PadLeft - PadRight);
+                var legendHeight = legendRows.Count * (lineHeight + 4);
+                if (LegendTooTall(spec, legendHeight, height))
+                {
+                    showLegend = false;
+                    legendRows = [];
+                }
+                else
+                {
+                    (legendTop, legendBottom) = legendPosition == LegendPosition.Top ? (legendHeight + 8, 0.0) : (0.0, legendHeight + 8);
+                }
+            }
+        }
+
+        var plotTop = y0 + legendTop + 2;
+        var plotBottom = height - PadBottom - legendBottom - 2;
+        var plotRight = width - PadRight - legendRight;
+        var plot = new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
+        if (showLegend)
+        {
+            statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
+                plotBottom + 8, lineHeight, styles, texts.Legend));
+        }
+
+        // ---------- Rectangles ----------
+        var headerHeight = small * 1.25 + 6;
+        if (hasData)
+        {
+            Place(root, plot, headerHeight, measure, small);
+        }
+
+        var showLabels = series.Spec.DataLabels ?? true;
+        styles.Add("treemap-header", new TextStyleDef { FontSize = (float)small, FontWeight = 600, Fill = ThemeTokens.Text });
+        styles.Add("treemap-header-value", new TextStyleDef { FontSize = (float)small, Fill = ThemeTokens.TextMuted });
+        styles.Add("treemap-value", new TextStyleDef { FontSize = (float)small, FontWeight = 400, Fill = ThemeTokens.DataLabelInverse });
+        // Per top-level group (in walk order: a group's tint before its items), so hovering its
+        // legend item can highlight it like a series.
+        var shapes = root.Children.ToDictionary(g => g.Group, _ => new List<Node>());
+        var groupTexts = root.Children.ToDictionary(g => g.Group, _ => new List<Node>());
+        var leaves = new List<TreeNode>();
+        var parents = new List<TreeNode>();
+        foreach (var node in hasData ? Walk(root).Skip(1) : [])
+        {
+            var r = node.Rect;
+            if (r.Width < 0.5 || r.Height < 0.5)
+            {
+                continue;
+            }
+
+            var color = ColorOf(node.Group);
+            if (node.Children.Count > 0)
+            {
+                parents.Add(node);
+                shapes[node.Group].Add(new RectNode(r, styles.Add("treemap-group-" + color, new Style { Fill = color, FillOpacity = 0.16f }))
+                {
+                    CornerRadius = 3,
+                    Class = "rio-treemap-group",
+                });
+                if (node.HasHeader && showLabels)
+                {
+                    var room = r.Width - 12;
+                    var value = Format(node.Value);
+                    var valueWidth = measure.Measure(value, small);
+                    var name = Shorten(node.Name, room - (room > valueWidth * 2.5 ? valueWidth + 8 : 0), measure, small);
+                    var y = r.Y + headerHeight / 2;
+                    if (Readable(name, node.Name))
+                    {
+                        groupTexts[node.Group].Add(new TextNode(name, new PointF(r.X + 6, (float)y), new TextStyle("treemap-header"), Anchor.Start) { Class = "rio-treemap-header" });
+                    }
+
+                    if (room > valueWidth * 2.5 && measure.Measure(name, small) + valueWidth + 8 <= room)
+                    {
+                        groupTexts[node.Group].Add(new TextNode(value, new PointF(r.Right - 6, (float)y), new TextStyle("treemap-header-value"), Anchor.End));
+                    }
+                }
+
+                continue;
+            }
+
+            // An item: inset by half the gap, so neighbours are set apart.
+            leaves.Add(node);
+            var inset = new RectF(r.X + 1, r.Y + 1, Math.Max(0.5f, r.Width - 2), Math.Max(0.5f, r.Height - 2));
+            var style = node.IsOther
+                ? styles.Add("treemap-other-" + color, new Style { Fill = color, FillOpacity = 0.55f })
+                : styles.Add("treemap-" + color, new Style { Fill = color });
+            shapes[node.Group].Add(new RectNode(inset, style) { CornerRadius = 2, Class = node.IsOther ? "rio-treemap-cell rio-treemap-other" : "rio-treemap-cell" });
+            if (showLabels && inset.Width >= 28 && inset.Height >= small * 1.25 + 6)
+            {
+                var name = Shorten(node.Name, inset.Width - 12, measure, small);
+                if (Readable(name, node.Name))
+                {
+                    var top = inset.Y + 4 + small * 0.65;
+                    groupTexts[node.Group].Add(new TextNode(name, new PointF(inset.X + 6, (float)top), new TextStyle("data-label-inverse"), Anchor.Start));
+                    var value = Format(node.Value);
+                    if (inset.Height >= small * 2.5 + 8 && measure.Measure(value, small) <= inset.Width - 12)
+                    {
+                        groupTexts[node.Group].Add(new TextNode(value, new PointF(inset.X + 6, (float)(top + small * 1.25)), new TextStyle("treemap-value"), Anchor.Start));
+                    }
+                }
+            }
+        }
+
+        // Selected items: an outline.
+        var selected = new List<Node>();
+        if (options.SelectedPoints is { } picked && picked.TryGetValue(series.Spec.Id, out var indexes) && indexes.Count > 0)
+        {
+            var outline = styles.Add("selected-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.5f });
+            foreach (var leaf in leaves.Where(l => l.Index >= 0 && indexes.Contains(l.Index)))
+            {
+                var r = leaf.Rect;
+                selected.Add(new RectNode(new RectF(r.X + 0.5f, r.Y + 0.5f, r.Width - 1, r.Height - 1), outline) { CornerRadius = 3, Class = "rio-selected-bar" });
+            }
+        }
+
+        // Each top-level group is keyed like a series (its legend item's id), so legend hover and
+        // HighlightSeriesAsync with a group name fade the others.
+        var seriesNodes = new List<Node>
+        {
+            new GroupNode([.. root.Children.Select(g => new GroupNode(shapes[g.Group])
+            {
+                Key = "series:" + g.Name,
+                Class = "rio-series rio-treemap-branch",
+                AriaLabel = $"{g.Name} {Format(g.Value)} ({Percent(g.Value / Math.Max(total, double.Epsilon), culture)})",
+            })])
+            {
+                Class = "rio-series-treemap",
+                AriaLabel = series.Spec.DisplayName,
+            },
+        };
+        var labelNodes = root.Children.Select(g => (Node)new GroupNode(groupTexts[g.Group]) { Key = "labels:" + g.Name }).ToList();
+        if (selected.Count > 0)
+        {
+            seriesNodes.Add(new GroupNode(selected) { Key = "selection:points", Class = "rio-selected-points" });
+        }
+
+        // ---------- Tooltip: items first, then groups (found in their headers and gaps) ----------
+        var tips = leaves.Concat(parents).ToList();
+        var tooltipSeries = new List<TooltipSeries>();
+        if (hasData && tips.Count > 0)
+        {
+            const string separator = " › ";
+            tooltipSeries.Add(new TooltipSeries(series.Spec.Id, series.Spec.DisplayName, series.Color, SeriesType.Treemap, 0, 0, 0,
+                [.. tips.Select(n => n.Rect.CenterX)], [.. tips.Select(n => n.Rect.CenterY)], [.. tips.Select(n => n.Index)],
+                [.. tips.Select(n => n.PathText(separator))], [.. tips.Select(n => Format(n.Value))])
+            {
+                CellWidths = [.. tips.Select(n => n.Rect.Width)],
+                CellHeights = [.. tips.Select(n => n.Rect.Height)],
+                PointColors = [.. tips.Select(n => ColorOf(n.Group))],
+                PartLabels = [texts.ShareOfGroup, texts.ShareOfTotal],
+                PartValues = [.. tips.Select(n => new[]
+                {
+                    n.Parent is { Parent: not null } p && p.Value > 0 ? Percent(n.Value / p.Value, culture) : "",
+                    Percent(n.Value / total, culture),
+                })],
+            });
+        }
+
+        var overlay = new List<Node>();
+        if (!hasData)
+        {
+            var allHidden = groups.Count > 0 && groups.All(g => Hidden(g.Name));
+            overlay.Add(new TextNode(allHidden ? texts.AllSlicesHidden : EmptyMessage(resolved, texts), new PointF(plot.CenterX, plot.CenterY),
+                new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
+        }
+
+        // ---------- Description: the top-level groups and their shares ----------
+        var shown = root.Children;
+        var items = string.Join(", ", shown.Take(8).Select(g => $"{g.Name} {Percent(g.Value / Math.Max(total, double.Epsilon), culture)}"))
+            + (shown.Count > 8 ? " " + texts.Fill(nameof(ChartTexts.More), culture, shown.Count - 8) : "");
+        var description = (string.IsNullOrWhiteSpace(spec.Title) ? "" : spec.Title + ". ")
+            + (hasData
+                ? texts.FillCount(nameof(ChartTexts.PolarItems), shown.Count, culture, texts.Treemap, shown.Count, items) + "."
+                : texts.Fill(nameof(ChartTexts.PolarNoData), culture, texts.Treemap))
+            + (leftOut > 0 ? " " + texts.FillCount(nameof(ChartTexts.TreemapLeftOut), leftOut, culture, leftOut) + "." : "");
+
+        var scene = new Scene.Scene(
+            new GroupNode(statics) { Class = "rio-static" },
+            new GroupNode([new GroupNode(seriesNodes) { Class = "rio-plot" }, new GroupNode(labelNodes) { Class = "rio-labels" }]) { Class = "rio-series-layer rio-treemap" },
+            new GroupNode(overlay) { Class = "rio-overlay" })
+        {
+            Width = (float)width,
+            Height = (float)height,
+            Styles = styles,
+            Description = description,
+        };
+
+        var unit = new LinearScale(0, 1, plot.Bottom, plot.Y);
+        return new ChartLayoutResult
+        {
+            Scene = scene,
+            Plot = plot,
+            HitTest = new HitTestIndex(),
+            Tooltip = new TooltipModel(plot, spec.Tooltip.Enabled && hasData, false, 0, tooltipSeries),
+            Legend = legendEntries,
+            Warnings = warnings,
+            XKind = XKind.Category,
+            YScale = unit,
+            YScales = new Dictionary<string, LinearScale>(StringComparer.Ordinal) { [spec.Y.Id ?? "y"] = unit },
+            HasData = hasData,
+        };
+    }
+
+    /// <summary>A shortened name is shown only with at least three characters before the "…".</summary>
+    private static bool Readable(string shown, string full) => shown == full ? shown.Length > 0 : shown.Length >= 4;
+
+    /// <summary>The tree from the series' paths. Zero and negative values are left out (counted); gaps are skipped.</summary>
+    private static TreeNode BuildTree(Resolved series, CultureInfo culture, List<string> warnings, out int leftOut)
+    {
+        var root = new TreeNode("", null);
+        var separator = string.IsNullOrEmpty(series.Spec.PathSeparator) ? "/" : series.Spec.PathSeparator;
+        var labels = SliceLabels(series.Data, culture);
+        var (duplicates, parentValues) = (0, 0);
+        leftOut = 0;
+        for (var i = 0; i < labels.Length; i++)
+        {
+            var v = series.Data.Y[i];
+            if (!double.IsFinite(v))
+            {
+                continue;
+            }
+
+            if (v <= 0)
+            {
+                leftOut++;
+                continue;
+            }
+
+            var parts = labels[i].Split(separator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+            {
+                parts = [labels[i]];
+            }
+
+            var node = root;
+            foreach (var part in parts)
+            {
+                if (!node.ByName.TryGetValue(part, out var child))
+                {
+                    child = new TreeNode(part, node);
+                    node.ByName[part] = child;
+                    node.Children.Add(child);
+                }
+
+                node = child;
+            }
+
+            if (node.HadValue)
+            {
+                duplicates++;
+            }
+            else
+            {
+                node.Index = i;
+            }
+
+            node.Value += v;
+            node.HadValue = true;
+        }
+
+        foreach (var node in Walk(root).Where(n => n.HadValue && n.Children.Count > 0))
+        {
+            parentValues++;
+            node.Index = -1; // a group's value is the sum of its items
+        }
+
+        if (leftOut > 0)
+        {
+            warnings.Add($"series '{series.Spec.Id}': {leftOut} zero or negative value(s) cannot be shown in a treemap and are left out.");
+        }
+
+        if (duplicates > 0)
+        {
+            warnings.Add($"series '{series.Spec.Id}': {duplicates} path(s) appear more than once; their values are added.");
+        }
+
+        if (parentValues > 0)
+        {
+            warnings.Add($"series '{series.Spec.Id}': {parentValues} group(s) also have a value of their own; a group's value is the sum of its items, so it is ignored.");
+        }
+
+        return root;
+    }
+
+    private static IEnumerable<TreeNode> Walk(TreeNode node)
+    {
+        yield return node;
+        foreach (var child in node.Children)
+        {
+            foreach (var n in Walk(child))
+            {
+                yield return n;
+            }
+        }
+    }
+
+    private static void SetGroup(TreeNode node, int group)
+    {
+        foreach (var n in Walk(node))
+        {
+            n.Group = group;
+        }
+    }
+
+    private static int MaxDepth(TreeNode node) => node.Children.Count == 0 ? 0 : 1 + node.Children.Max(MaxDepth);
+
+    /// <summary>Group values from their items, largest first; empty groups are removed.</summary>
+    private static double Sum(TreeNode node)
+    {
+        if (node.Children.Count > 0)
+        {
+            foreach (var child in node.Children)
+            {
+                Sum(child);
+            }
+
+            node.Children.RemoveAll(c => !(c.Value > 0));
+            node.Children.Sort((a, b) => b.Value.CompareTo(a.Value));
+            node.Value = node.Children.Sum(c => c.Value);
+        }
+
+        return node.Value;
+    }
+
+    /// <summary>Per group: items under the threshold share of the group (two or more) become one "Other" item.</summary>
+    private static void GroupSmall(TreeNode node, double threshold, string other)
+    {
+        foreach (var child in node.Children)
+        {
+            GroupSmall(child, threshold, other);
+        }
+
+        var total = node.Children.Sum(c => c.Children.Count > 0 ? Walk(c).Where(n => n.Children.Count == 0).Sum(n => n.Value) : c.Value);
+        var small = node.Children.Where(c => c.Children.Count == 0 && total > 0 && c.Value / total < threshold).ToList();
+        if (small.Count < 2)
+        {
+            return;
+        }
+
+        node.Children.RemoveAll(small.Contains);
+        node.Children.Add(new TreeNode(other, node) { IsOther = true, Value = small.Sum(c => c.Value), Group = small[0].Group });
+    }
+
+    /// <summary>
+    /// Gives each node its rectangle: children share their group's rectangle (minus a header with
+    /// the group's name when there is room) with the squarified layout.
+    /// </summary>
+    private static void Place(TreeNode node, RectF rect, double headerHeight, ITextMeasurer measure, double font)
+    {
+        node.Rect = rect;
+        if (node.Children.Count == 0)
+        {
+            return;
+        }
+
+        var inner = rect;
+        if (node.Parent is not null)
+        {
+            const float pad = 2;
+            node.HasHeader = rect.Height >= headerHeight * 2.4 && rect.Width >= 48;
+            var top = node.HasHeader ? (float)headerHeight : pad;
+            inner = new RectF(rect.X + pad, rect.Y + top, Math.Max(0, rect.Width - 2 * pad), Math.Max(0, rect.Height - top - pad));
+        }
+
+        var rects = Squarify([.. node.Children.Select(c => c.Value)], inner);
+        for (var i = 0; i < node.Children.Count; i++)
+        {
+            Place(node.Children[i], rects[i], headerHeight, measure, font);
+        }
+    }
+
+    /// <summary>
+    /// The squarified treemap layout (Bruls, Huizing and van Wijk): values (largest first) fill the
+    /// rectangle in rows along its shorter side, a row growing while its worst aspect ratio improves.
+    /// </summary>
+    internal static RectF[] Squarify(IReadOnlyList<double> values, RectF rect)
+    {
+        var result = new RectF[values.Count];
+        var sum = values.Sum();
+        if (values.Count == 0 || !(sum > 0) || rect.Width <= 0 || rect.Height <= 0)
+        {
+            Array.Fill(result, new RectF(rect.X, rect.Y, 0, 0));
+            return result;
+        }
+
+        var scale = rect.Width * (double)rect.Height / sum;
+        double x = rect.X, y = rect.Y, w = rect.Width, h = rect.Height;
+        var row = new List<int>();
+        double rowSum = 0;
+
+        double Worst(double total, double min, double max, double side)
+        {
+            var s2 = side * side;
+            var t2 = total * total;
+            return Math.Max(s2 * max / t2, t2 / (s2 * min));
+        }
+
+        void LayoutRow()
+        {
+            if (row.Count == 0)
+            {
+                return;
+            }
+
+            if (w >= h)
+            {
+                // A column on the left.
+                var cw = h > 0 ? rowSum / h : 0;
+                var cy = y;
+                foreach (var i in row)
+                {
+                    var ch = cw > 0 ? values[i] * scale / cw : 0;
+                    result[i] = new RectF((float)x, (float)cy, (float)cw, (float)ch);
+                    cy += ch;
+                }
+
+                x += cw;
+                w = Math.Max(0, w - cw);
+            }
+            else
+            {
+                // A row along the top.
+                var rh = w > 0 ? rowSum / w : 0;
+                var cx = x;
+                foreach (var i in row)
+                {
+                    var cw = rh > 0 ? values[i] * scale / rh : 0;
+                    result[i] = new RectF((float)cx, (float)y, (float)cw, (float)rh);
+                    cx += cw;
+                }
+
+                y += rh;
+                h = Math.Max(0, h - rh);
+            }
+
+            row.Clear();
+            rowSum = 0;
+        }
+
+        double rowMin = double.PositiveInfinity, rowMax = 0;
+        for (var i = 0; i < values.Count;)
+        {
+            var area = Math.Max(0, values[i]) * scale;
+            var side = Math.Min(w, h);
+            if (row.Count == 0 || side <= 0
+                || Worst(rowSum + area, Math.Min(rowMin, area), Math.Max(rowMax, area), side) <= Worst(rowSum, rowMin, rowMax, side))
+            {
+                row.Add(i);
+                rowSum += area;
+                (rowMin, rowMax) = (Math.Min(rowMin, area), Math.Max(rowMax, area));
+                i++;
+            }
+            else
+            {
+                LayoutRow();
+                (rowMin, rowMax) = (double.PositiveInfinity, 0);
+            }
+        }
+
+        LayoutRow();
+        return result;
+    }
+}

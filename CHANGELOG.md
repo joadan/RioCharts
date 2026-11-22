@@ -65,6 +65,24 @@ changes are called out under **Breaking**.
   are shortened with "…". JSON specs: `"type": "radar"` (also `spider`). Core:
   `SeriesType.Radar`, `TooltipModel.Radar` (`RadarGeometry`), `TooltipSeries.Spokes`; new
   `ChartTexts.RadarChart`.
+- Treemaps: `TreemapSeries` shows how a total splits into many parts as rectangles sized by value
+  (squarified), nested by group. `XValue` is each item's path (`"Asia/India"`, `PathSeparator` to
+  change the "/"), or its name with `ParentValue` for a parent-child list. Groups get a header
+  with their name and total when there is room; colors and legend items follow the top-level
+  groups: hovering a legend item highlights its group, and clicking it leaves it out. `GroupSmallItems` gathers small items into "Other" per
+  group. The tooltip shows the path, the value and its share of the group and of the total. Zero
+  and negative values are left out (the screen reader text says how many). JSON specs:
+  `"type": "treemap"` with `"path": ["continent", "country"]` or an x path. Core:
+  `SeriesType.Treemap`, `SeriesSpec.Path` and `PathSeparator`, `TooltipSeries.CellHeights` and
+  `PointColors`; new `ChartTexts` keys `Treemap`, `ShareOfGroup`, `ShareOfTotal` and
+  `TreemapLeftOut`.
+- Shared tooltips with irregular readings: a line whose nearest point was a little too far from
+  the hovered time (e.g. readings logged on change, or a silence) was left out of the tooltip,
+  although its line runs through that time. Its nearest point is listed now, unless a gap or the
+  end of the line lies between.
+- No more native "Chart" tooltip over the whole chart: the SVG's `<title>` is gone (`aria-label`
+  still names the chart for screen readers).
+- Clicking a heatmap cell anywhere in it counts as a click on it (before, only near its center).
 - JSON specs with `timeBucket`: bucketed DateTime values were turned into DateTimeOffsets with the
   machine's local offset; they stay DateTimes now.
 

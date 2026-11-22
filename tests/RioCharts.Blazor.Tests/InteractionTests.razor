@@ -116,6 +116,18 @@
     }
 
     [Fact]
+    public void The_chart_has_no_native_tooltip_over_it()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Title="Supply air">
+            <LineSeries Items="Supply" Name="Supply" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        var svg = cut.Find("svg.rio-chart-svg");
+        Assert.DoesNotContain(svg.Children, c => c.LocalName == "title"); // a browser would show it on hover
+        Assert.Equal("Supply air", svg.GetAttribute("aria-label"));
+    }
+
+    [Fact]
     public void Scatter_series_draw_markers_and_ask_for_2D_hover()
     {
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">

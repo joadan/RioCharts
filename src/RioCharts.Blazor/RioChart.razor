@@ -27,7 +27,7 @@
          tabindex="@(keys ? "0" : null)"
          aria-label="@label"
          aria-describedby="@(keys ? $"{_id}-desc {_id}-keys" : _id + "-desc")">
-        <title>@label</title>
+        @* No <title>: browsers show it as a native tooltip over the whole chart; aria-label names it. *@
         <desc id="@(_id + "-desc")">@scene.Description</desc>
         @SceneFragment(scene)
     </svg>
