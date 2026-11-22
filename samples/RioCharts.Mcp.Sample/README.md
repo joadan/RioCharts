@@ -58,5 +58,10 @@ Check it with `riocharts-mcp --help`. To update after code changes, pack again a
 The agent gets the image back, a short description of the chart, and the path of the saved file.
 If the spec is wrong it gets errors that name the problem and the valid options, and tries again.
 
+In a Blazor project, the agent can also put a chart in the code:
+
+- "Make that chart a component in this app." (get_razor: the `<RioChart>` markup and a record for the rows)
+- "Add a chart of orders per day to the dashboard page." (get_usage: setup, examples and every parameter)
+
 Server options (add them to `args`): `--width`, `--height`, `--theme light|dark`, and
 `--culture` (e.g. `sv-SE` for decimal commas and Swedish dates). Run `riocharts-mcp --help` for all.

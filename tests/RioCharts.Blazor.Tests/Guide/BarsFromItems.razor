@@ -1,0 +1,15 @@
+@* Bars summed per category | Raw items in, one bar per category: Aggregate sums the items with the same x. Categories keep the order of the items. *@
+<RioChart Items="orders" Title="Order value per country">
+    <BarSeries Name="Value" XValue="o => o.Country" YValue="o => (double)o.Value" Aggregate="Aggregate.Sum"
+               Format="#,0 €" DataLabels="true" />
+</RioChart>
+
+@code {
+    private sealed record Order(string Country, decimal Value);
+
+    private readonly List<Order> orders =
+    [
+        new("Sweden", 120), new("Norway", 80), new("Sweden", 95),
+        new("Denmark", 60), new("Norway", 45), new("Finland", 70),
+    ];
+}

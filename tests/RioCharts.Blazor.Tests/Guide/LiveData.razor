@@ -1,0 +1,17 @@
+@* Live data | Append to a SeriesBuffer from any thread; the chart redraws at most every RefreshInterval ms. With a buffer, TItem is not used: set it to double. *@
+@using RioCharts.Core.Data
+@implements IDisposable
+
+<RioChart TItem="double" RefreshInterval="250">
+    <LineSeries Name="Requests per second" Buffer="requests" Curve="CurveType.Monotone" />
+</RioChart>
+
+@code {
+    private readonly SeriesBuffer requests = new(timeWindow: TimeSpan.FromMinutes(2));
+    private Timer? timer;
+
+    protected override void OnInitialized() =>
+        timer = new Timer(_ => requests.Append(DateTime.Now, Random.Shared.Next(80, 120)), null, 0, 500);
+
+    public void Dispose() => timer?.Dispose();
+}

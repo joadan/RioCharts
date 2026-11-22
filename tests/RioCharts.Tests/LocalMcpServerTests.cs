@@ -113,7 +113,7 @@ public sealed class LocalMcpServerTests : IDisposable
         var options = new ServerOptions { DataFolder = data, OutputFolder = Path.Combine(_root, "out") };
         var tools = LocalServer.CreateTools(LocalServer.CreateChartTool(options));
 
-        Assert.Equal(["render_chart", "list_datasets", "get_chart_schema"], tools.Select(t => t.ProtocolTool.Name));
+        Assert.Equal(["render_chart", "list_datasets", "get_chart_schema", "get_razor", "get_usage"], tools.Select(t => t.ProtocolTool.Name));
         Assert.Contains("list_datasets", tools[0].ProtocolTool.Description);
         Assert.DoesNotContain("create_chart", tools[0].ProtocolTool.Description);
 

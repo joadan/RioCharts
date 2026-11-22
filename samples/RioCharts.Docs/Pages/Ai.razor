@@ -38,7 +38,8 @@
     For agents on your machine, such as Claude Code, Claude Desktop or GitHub Copilot in VS Code, there is a ready-made MCP server. It runs over stdio,
     so the agent starts it; you write no host app. CSV and JSON files in the <code>--data</code> folder become datasets (read again when they change),
     and every chart is saved to <code>--out</code> as PNG or SVG, with the path returned to the agent. Tools: <code>render_chart</code>,
-    <code>list_datasets</code> and <code>get_chart_schema</code>. It runs on Windows (x64, arm64, x86), macOS and Linux (x64 and arm64, glibc and musl).
+    <code>list_datasets</code>, <code>get_chart_schema</code>, and for agents writing app code <code>get_razor</code> and <code>get_usage</code>
+    (see <a href="ai#coding-agents">coding agents</a>). It runs on Windows (x64, arm64, x86), macOS and Linux (x64 and arm64, glibc and musl).
 </p>
 <CodeBlock Language="shell" Code="@ToolInstallCode" />
 <CodeBlock Language="json" Code="@ToolConfigCode" />
@@ -48,10 +49,47 @@
     with semicolons, as Excel writes them.
 </p>
 
+<h2 id="coding-agents">Coding agents</h2>
+<p>
+    A coding agent (Claude Code, Copilot, Cursor) that adds a chart to your app needs to know a library its model was not trained on.
+    RioCharts gives it that in two ways:
+</p>
+<ul>
+    <li>
+        <a href="llms.txt" target="_blank"><code>llms.txt</code></a> and <a href="llms-full.txt" target="_blank"><code>llms-full.txt</code></a> on this site:
+        the second is the whole guide in one Markdown file, with setup, rules, examples and every component parameter. It is generated from the code
+        and its examples are compiled and rendered by the tests, so it matches the packages. Point the agent at it in your <code>AGENTS.md</code>
+        or <code>CLAUDE.md</code>; <a href="getting-started#coding-agents">Getting started</a> has a block to paste.
+    </li>
+    <li>
+        <code>riocharts-mcp</code> has two tools for it. <code>get_usage</code> returns the same guide: the overview, or one component or type with a
+        <code>topic</code>. <code>get_razor</code> turns a spec into code: the agent designs the chart with <code>render_chart</code>, looks at the
+        image, then gets the <code>&lt;RioChart&gt;</code> markup, a record for the rows (from the dataset's fields) and, for inline data, the rows as a
+        C# list.
+    </li>
+</ul>
+<CodeBlock Language="razor" Code="@GetRazorCode" />
+
 <h2>From chat to code</h2>
 <CodeBlock Language="csharp" Code="@RazorCode" />
 
 @code {
+    private const string GetRazorCode = """
+        @* get_razor with {"data":[{"product":"Shoes","sold":45},{"product":"Bags","sold":12}],
+                           "series":[{"type":"pie","x":"product","y":"sold"}]} returns: *@
+        public sealed record Row(string Product, double Sold);
+
+        List<Row> rows =
+        [
+            new("Shoes", 45),
+            new("Bags", 12),
+        ];
+
+        <RioChart TItem="Row" Items="rows">
+            <PieSeries XValue="r => r.Product" YValue="r => r.Sold" />
+        </RioChart>
+        """;
+
     private const string DataCode = """
         // Datasets the agent may chart: from rows, objects or JSON.
         var shop = ChartDataset.FromItems("shop", traffic, "Store traffic per sales channel, hourly",

@@ -230,6 +230,59 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
     public Task<ChartToolResult> RenderChartAsync(JsonElement spec, ChartImageRequest? request = null, CancellationToken cancellationToken = default) =>
         RenderChartAsync(SpecText(spec), request, cancellationToken);
 
+    /// <summary>
+    /// Turns a spec into code for a Blazor app (get_razor): checks it against the datasets like
+    /// render_chart, then returns the &lt;RioChart&gt; markup, a record for the rows (from the
+    /// dataset's fields) and, for inline data, the rows as a C# list. So an agent can design a chart
+    /// with render_chart, look at it, and then put the same chart in the codebase.
+    /// </summary>
+    /// <param name="spec">The chart spec (JSON).</param>
+    /// <param name="itemType">The C# type of the rows. Default: from the dataset name ("sales" → "Sale").</param>
+    /// <param name="itemsName">The variable that holds the rows. Default: the dataset name.</param>
+    /// <param name="cancellationToken">Cancels loading the datasets.</param>
+    public async Task<ChartCodeResult> GetRazorAsync(string spec, string? itemType = null, string? itemsName = null, CancellationToken cancellationToken = default)
+    {
+        var parsed = ChartSpecJson.Parse(spec);
+        if (!parsed.Success)
+        {
+            return new ChartCodeResult { Errors = [.. parsed.Errors.Select(e => e.ToString())], Warnings = parsed.Warnings };
+        }
+
+        var chart = parsed.Spec!;
+        var bound = await ChartSpecBinder.BindAsync(chart, dataSource, cancellationToken).ConfigureAwait(false);
+        var warnings = parsed.Warnings.Concat(bound.Warnings).ToList();
+        if (!bound.Success)
+        {
+            return new ChartCodeResult { Errors = [.. bound.Errors.Select(e => e.ToString())], Warnings = warnings };
+        }
+
+        // The rows' type comes from the chart's dataset, or the first series' own one.
+        var datasetName = chart.Dataset ?? chart.Series.Select(s => s.Dataset).FirstOrDefault(d => d is not null);
+        var inline = chart.Data is { Count: > 0 } && datasetName is null;
+        var dataset = inline
+            ? ChartDataset.FromRows("rows", chart.Data!)
+            : datasetName is null ? null : await dataSource.LoadAsync(datasetName, cancellationToken).ConfigureAwait(false);
+        var type = itemType ?? (datasetName is null ? "Row" : ChartRazor.ItemTypeName(datasetName));
+        var items = itemsName ?? (datasetName is null ? "rows" : ChartRazor.ItemsName(datasetName));
+        if (chart.Series.Select(s => s.Dataset ?? chart.Dataset).Distinct().Count() > 1)
+        {
+            warnings.Add("The series use different datasets, but the markup has one item type: give the other series their own Items (see the dataset notes in the markup).");
+        }
+
+        return new ChartCodeResult
+        {
+            Success = true,
+            Warnings = warnings,
+            Razor = ChartRazor.FromSpec(chart, type, items),
+            ItemType = dataset is null ? null : ChartRazor.ItemRecord(dataset, type),
+            Items = inline ? ChartRazor.ItemsList(dataset!, type, items) : null,
+        };
+    }
+
+    /// <inheritdoc cref="GetRazorAsync(string, string?, string?, CancellationToken)"/>
+    public Task<ChartCodeResult> GetRazorAsync(JsonElement spec, string? itemType = null, string? itemsName = null, CancellationToken cancellationToken = default) =>
+        GetRazorAsync(SpecText(spec), itemType, itemsName, cancellationToken);
+
     /// <summary>The datasets and fields the model can chart, as text.</summary>
     public string ListDatasets() => DescribeDatasets(dataSource.Describe());
 
@@ -473,6 +526,75 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
 
             sb.Append("  fields: ").AppendLine(string.Join(", ", d.Fields.Select(f =>
                 $"{f.Name} ({f.Type.ToString().ToLowerInvariant()}{(string.IsNullOrWhiteSpace(f.Description) ? "" : ", " + f.Description)})")));
+        }
+
+        return sb.ToString();
+    }
+}
+
+/// <summary>The result of <see cref="ChartTool.GetRazorAsync(string, string?, string?, CancellationToken)"/>: code for a Blazor app, or errors to fix.</summary>
+public sealed record ChartCodeResult
+{
+    /// <summary>True when the spec was valid and the code was made.</summary>
+    public bool Success { get; init; }
+
+    /// <summary>What to fix in the spec.</summary>
+    public IReadOnlyList<string> Errors { get; init; } = [];
+
+    /// <summary>Things to check.</summary>
+    public IReadOnlyList<string> Warnings { get; init; } = [];
+
+    /// <summary>The &lt;RioChart&gt; markup.</summary>
+    public string? Razor { get; init; }
+
+    /// <summary>A C# record for the rows, from the dataset's fields; null when there is no dataset.</summary>
+    public string? ItemType { get; init; }
+
+    /// <summary>For inline data: the rows as a C# list.</summary>
+    public string? Items { get; init; }
+
+    /// <summary>The result as Markdown for an agent: setup, the record, the rows and the markup, or the errors.</summary>
+    public string ToMarkdown()
+    {
+        var sb = new StringBuilder();
+        if (!Success)
+        {
+            sb.AppendLine("The spec has errors; fix them and call again:");
+            foreach (var e in Errors)
+            {
+                sb.Append("- ").AppendLine(e);
+            }
+        }
+        else
+        {
+            sb.AppendLine("Setup, once per app: `dotnet add package RioCharts.Blazor --prerelease`, and in `_Imports.razor`: `@using RioCharts.Blazor` and `@using RioCharts.Core`.");
+            sb.AppendLine("Tooltips, zoom and clicks need an interactive render mode on the page. Call get_usage for the full guide.");
+            sb.AppendLine();
+            if (ItemType is not null)
+            {
+                sb.AppendLine("The item type (from the dataset's fields; if the app already has a type with these properties, use it):");
+                sb.AppendLine("```csharp").AppendLine(ItemType).AppendLine("```");
+                sb.AppendLine();
+            }
+
+            if (Items is not null)
+            {
+                sb.AppendLine("The rows (the spec's inline data):");
+                sb.AppendLine("```csharp").AppendLine(Items).AppendLine("```");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("The chart (comments mark transforms to do in your query, such as filters and time buckets):");
+            sb.AppendLine("```razor").AppendLine(Razor).AppendLine("```");
+        }
+
+        if (Warnings.Count > 0)
+        {
+            sb.AppendLine().AppendLine("Warnings:");
+            foreach (var w in Warnings)
+            {
+                sb.Append("- ").AppendLine(w);
+            }
         }
 
         return sb.ToString();

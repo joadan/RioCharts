@@ -1,0 +1,18 @@
+@* Line chart over time | Two series from one list of items. Times give a time axis; more than one series adds a legend. *@
+<RioChart Items="visits" Title="Visits per day" YAxis="@(new AxisSpec { Title = "Visits" })">
+    <LineSeries Name="Web" XValue="v => v.Day" YValue="v => v.Web" Format="#,0" />
+    <LineSeries Name="App" XValue="v => v.Day" YValue="v => v.App" Format="#,0" Curve="CurveType.Monotone" />
+</RioChart>
+
+@code {
+    private sealed record DayVisits(DateTime Day, double Web, double App);
+
+    private readonly List<DayVisits> visits =
+    [
+        new(new DateTime(2026, 3, 2), 1240, 860),
+        new(new DateTime(2026, 3, 3), 1310, 905),
+        new(new DateTime(2026, 3, 4), 1185, 940),
+        new(new DateTime(2026, 3, 5), 1420, 990),
+        new(new DateTime(2026, 3, 6), 1530, 1080),
+    ];
+}

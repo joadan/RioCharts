@@ -1,0 +1,1128 @@
+# RioCharts
+
+> Charts for Blazor in pure .NET: line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick and treemap. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10.
+
+This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://joadan.github.io/RioCharts/
+
+## Setup
+
+1. Add the package (a preview, so `--prerelease` is needed):
+
+   ```shell
+   dotnet add package RioCharts.Blazor --prerelease
+   ```
+
+2. Add two usings to `_Imports.razor`:
+
+   ```razor
+   @using RioCharts.Blazor
+   @using RioCharts.Core
+   ```
+
+3. That is all. There are no services to register and no script or stylesheet tags: the styles come with the app's `{AssemblyName}.styles.css` bundle (already linked by the Blazor templates) and the JS module loads itself.
+
+Tooltips, zoom, clicks, selection, keyboard navigation and downloads need an interactive page (`@rendermode InteractiveServer`, `InteractiveWebAssembly` or `InteractiveAuto`, or a global interactive render mode). On a static page the chart renders as plain SVG without interaction.
+
+Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server, `ChartExport`), `RioCharts.AI` (chart tools for AI agents), `RioCharts.Core` (the engine alone; RioCharts.Blazor already brings it).
+
+## How it works
+
+- `<RioChart>` holds series as child components (`<LineSeries>`, `<BarSeries>`, ...) and annotations (`<ReferenceLine>`, ...). Series render nothing themselves; the chart lays them out together.
+- `Items` goes on the chart (shared by all series) or on each series. `TItem` is inferred from `Items`; set `TItem` on `<RioChart>` when only the series have `Items` or when the chart has event handlers (`OnPointClick`, ...).
+- `XValue` returns the x value: `DateTime`/`DateTimeOffset` give a time axis, numbers a linear axis, strings a category axis (categories keep the order of the items).
+- `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
+- Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
+- Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
+- Size: the chart fills its container's width; `Height` is 300 px by default.
+- Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture).
+- Colors: CSS colors or theme variables, e.g. `Color="#2563eb"` or `Color="--rio-negative"`. The palette and light/dark theme come from CSS variables (`--rio-series-1` ... `--rio-series-10`, `--rio-text`, ...).
+- Namespaces beyond the two usings: `RioCharts.Core.Data` (`SeriesData`, `SeriesBuffer`), `RioCharts.Core.Specs` (`ChartDataset`, `ChartSpecJson`).
+
+## Choosing a series
+
+| To show | Component | Key parameters |
+| --- | --- | --- |
+| Change over time, trends | `LineSeries` | `XValue`, `YValue`, `Curve` |
+| Volume over time, parts of a total over time | `AreaSeries` | `Stack` to stack |
+| Compare categories | `BarSeries` | `Aggregate`, `Stack`, `Horizontal="true"` on the chart |
+| Min to max band | `RangeAreaSeries` | `LowValue`, `YValue` |
+| Relation between two numbers | `ScatterSeries` | `XValue` and `YValue` numeric, `TrendLine` |
+| Shares of a whole | `PieSeries`, `DonutSeries` | `GroupSmallSlices` |
+| Progress toward a goal | `RadialBarSeries` | `Max` |
+| Several measures per item | `RadarSeries` | one series per item |
+| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
+| Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
+| Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
+| Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
+
+Check the parameters of each component in the reference below before using them.
+
+## Examples
+
+Each example is a complete component file. These exact files are compiled and rendered by the RioCharts tests.
+
+### Line chart over time
+
+Two series from one list of items. Times give a time axis; more than one series adds a legend.
+
+```razor
+<RioChart Items="visits" Title="Visits per day" YAxis="@(new AxisSpec { Title = "Visits" })">
+    <LineSeries Name="Web" XValue="v => v.Day" YValue="v => v.Web" Format="#,0" />
+    <LineSeries Name="App" XValue="v => v.Day" YValue="v => v.App" Format="#,0" Curve="CurveType.Monotone" />
+</RioChart>
+
+@code {
+    private sealed record DayVisits(DateTime Day, double Web, double App);
+
+    private readonly List<DayVisits> visits =
+    [
+        new(new DateTime(2026, 3, 2), 1240, 860),
+        new(new DateTime(2026, 3, 3), 1310, 905),
+        new(new DateTime(2026, 3, 4), 1185, 940),
+        new(new DateTime(2026, 3, 5), 1420, 990),
+        new(new DateTime(2026, 3, 6), 1530, 1080),
+    ];
+}
+```
+
+### Bars summed per category
+
+Raw items in, one bar per category: Aggregate sums the items with the same x. Categories keep the order of the items.
+
+```razor
+<RioChart Items="orders" Title="Order value per country">
+    <BarSeries Name="Value" XValue="o => o.Country" YValue="o => (double)o.Value" Aggregate="Aggregate.Sum"
+               Format="#,0 €" DataLabels="true" />
+</RioChart>
+
+@code {
+    private sealed record Order(string Country, decimal Value);
+
+    private readonly List<Order> orders =
+    [
+        new("Sweden", 120), new("Norway", 80), new("Sweden", 95),
+        new("Denmark", 60), new("Norway", 45), new("Finland", 70),
+    ];
+}
+```
+
+### Stacked bars
+
+Series with the same Stack value stack on each other.
+
+```razor
+<RioChart Items="sales" Title="Sales per month, k€">
+    <BarSeries Name="Shoes" XValue="s => s.Month" YValue="s => s.Shoes" Stack="total" />
+    <BarSeries Name="Clothing" XValue="s => s.Month" YValue="s => s.Clothing" Stack="total" />
+    <BarSeries Name="Gear" XValue="s => s.Month" YValue="s => s.Gear" Stack="total" />
+</RioChart>
+
+@code {
+    private sealed record MonthSales(string Month, double Shoes, double Clothing, double Gear);
+
+    private readonly List<MonthSales> sales =
+    [
+        new("Jan", 42, 61, 18),
+        new("Feb", 38, 57, 22),
+        new("Mar", 51, 66, 25),
+    ];
+}
+```
+
+### Donut (or pie)
+
+Shares of a whole. GroupSmallSlices puts slices under 3 % into "Other". PieSeries takes the same parameters.
+
+```razor
+<RioChart Items="channels" Title="Revenue by channel">
+    <DonutSeries XValue="c => c.Name" YValue="c => c.Revenue" Format="0 k€" GroupSmallSlices="0.03" />
+</RioChart>
+
+@code {
+    private sealed record Channel(string Name, double Revenue);
+
+    private readonly List<Channel> channels =
+    [
+        new("Web shop", 420), new("Stores", 310), new("Marketplaces", 150), new("Phone", 12),
+    ];
+}
+```
+
+### Two y axes and a target line
+
+Extra axes in YAxes go on the right; a series picks one with YAxisId. Annotations are child components.
+
+```razor
+<RioChart Items="days" YAxis="@(new AxisSpec { Title = "Orders" })"
+          YAxes="@([new AxisSpec { Id = "rate", Title = "Conversion, %" }])">
+    <BarSeries Name="Orders" XValue="d => d.Day" YValue="d => d.Orders" />
+    <LineSeries Name="Conversion" XValue="d => d.Day" YValue="d => d.Conversion" YAxisId="rate" Format="0.0'%'" />
+    <ReferenceLine Value="300" Label="Target" />
+</RioChart>
+
+@code {
+    private sealed record DayStats(string Day, double Orders, double Conversion);
+
+    private readonly List<DayStats> days =
+    [
+        new("Mon", 280, 2.1), new("Tue", 310, 2.4), new("Wed", 265, 1.9), new("Thu", 340, 2.6), new("Fri", 390, 2.9),
+    ];
+}
+```
+
+### Clicks, zoom and downloads
+
+Needs an interactive page (@rendermode InteractiveServer, InteractiveWebAssembly or InteractiveAuto); static pages show the chart without interaction.
+
+```razor
+<RioChart TItem="Reading" Items="readings" Zoomable="true" Exportable="true" OnPointClick="e => clicked = e">
+    <LineSeries Name="Temperature" XValue="r => r.Time" YValue="r => r.Celsius" Format="0.0 °C" />
+</RioChart>
+
+@if (clicked is not null)
+{
+    <p>@clicked.SeriesName at @clicked.X: @clicked.Y °C</p>
+}
+
+@code {
+    private sealed record Reading(DateTime Time, double? Celsius); // null leaves a gap in the line
+
+    private PointClickEventArgs<Reading>? clicked;
+
+    private readonly List<Reading> readings =
+        [.. Enumerable.Range(0, 48).Select(h => new Reading(new DateTime(2026, 6, 1).AddHours(h), 18 + 6 * Math.Sin(h / 24.0 * 2 * Math.PI)))];
+}
+```
+
+### Live data
+
+Append to a SeriesBuffer from any thread; the chart redraws at most every RefreshInterval ms. With a buffer, TItem is not used: set it to double.
+
+```razor
+@using RioCharts.Core.Data
+@implements IDisposable
+
+<RioChart TItem="double" RefreshInterval="250">
+    <LineSeries Name="Requests per second" Buffer="requests" Curve="CurveType.Monotone" />
+</RioChart>
+
+@code {
+    private readonly SeriesBuffer requests = new(timeWindow: TimeSpan.FromMinutes(2));
+    private Timer? timer;
+
+    protected override void OnInitialized() =>
+        timer = new Timer(_ => requests.Append(DateTime.Now, Random.Shared.Next(80, 120)), null, 0, 500);
+
+    public void Dispose() => timer?.Dispose();
+}
+```
+
+### A chart built in code
+
+A ChartSpec (the same model as JSON specs) with datasets instead of child components, e.g. for charts chosen at runtime. Fields are camelCase property names.
+
+```razor
+@using RioCharts.Core.Specs
+
+<RioChart TItem="object" Spec="spec" Datasets="datasets" Height="280" />
+
+@code {
+    private sealed record Sale(string Region, double Amount);
+
+    private readonly ChartSpec spec = new()
+    {
+        Title = "Sales per region",
+        Series = [new SeriesSpec { Id = "sales", Type = SeriesType.Bar, Dataset = "sales", X = "region", Y = "amount", Aggregate = Aggregate.Sum }],
+    };
+
+    private readonly Dictionary<string, ChartDataset> datasets = new()
+    {
+        ["sales"] = ChartDataset.FromItems("sales", new[] { new Sale("North", 120), new Sale("South", 95), new Sale("North", 40) }),
+    };
+}
+```
+
+## Common mistakes
+
+- No interactive render mode: the chart shows, but tooltips, zoom, clicks and downloads do nothing. Add `@rendermode InteractiveServer` (or WebAssembly/Auto) to the page.
+- Changing a `List<T>` in place (`Add`, `Remove`) and expecting the chart to update: assign a new list, or change `DataVersion`.
+- `YValue="x => x.Amount"` where `Amount` is `decimal`: write `(double)x.Amount`.
+- Several series with their own `Items` and no `TItem` on `<RioChart>`: set `TItem="YourType"`.
+- An event handler lambda (`OnPointClick="e => clicked = e"`) without `TItem`: Blazor cannot infer `TItem` through it and reports errors such as "Cannot convert lambda expression". Set `TItem="YourType"` on `<RioChart>`.
+- Blazor-ApexCharts names: there is no `ApexPointSeries` or `SeriesType` parameter; each type is its own component (`<BarSeries>`, `<LineSeries>`, ...). `XValue`, `YValue`, `YAggregate` work as in ApexCharts.
+- Setting a width: not needed, the chart follows its container. Set `Height` for another height.
+- Types not found (`SeriesData`, `SeriesBuffer`, `ChartDataset`): add `@using RioCharts.Core.Data` or `@using RioCharts.Core.Specs`.
+- Hard-coded colors for light and dark: use theme variables such as `--rio-negative` and `--rio-positive`; they follow the theme.
+
+## Reference
+
+Every public component and its parameters, from the XML docs. Types in `RioCharts.Core` and `RioCharts.Blazor` used by parameters follow the components.
+
+### Components
+
+#### `<RioChart>` (`RioChart<TItem>`)
+
+A chart. Series are added as child components: `<RioChart Items="readings"><LineSeries XValue="r => r.Time" YValue="r => r.Sessions" /></RioChart>` The chart fills its container's width and lays out again when the width changes.
+
+- `Items`: `IEnumerable<TItem>?` — Items shared by all series that do not set their own.
+- `ChildContent`: `RenderFragment?` — The series and annotation components, e.g. <LineSeries> and <ReferenceLine>.
+- `Title`: `string?` — Title shown above the chart.
+- `Height`: `double` = `300` — Height in pixels. Default 300.
+- `Width`: `double?` — Fixed width in pixels. Default: the container's width (responsive).
+- `TreemapPath`: `string?` — Treemaps: the group shown (drill-down), as a path with the series' separator, e.g. `"Asia"` or `"Asia/India"`; null shows the whole tree. Two-way bindable with `@bind-TreemapPath`, e.g. to keep it in the page's URL.
+- `Exportable`: `bool` — Shows a download button in the chart's top-right corner (on hover or focus) with a menu for SVG, PNG and CSV. The same exports are available from code: `RioChart.DownloadPngAsync` etc.
+- `ExportFormats`: `ExportFormats` = `ExportFormats.All` — The formats in the download menu. Default all. With a single format the button saves it directly, without a menu; with none there is no button.
+- `ExportFileName`: `string?` — File name without extension for downloads. Default: the title, else "chart".
+- `XAxis`: `AxisSpec?` — The horizontal axis: title, range, scale and label format. Default: the scale is picked from the data.
+- `YAxis`: `AxisSpec?` — The primary vertical axis (id "y" unless set).
+- `YAxes`: `IReadOnlyList<AxisSpec>?` — Additional vertical axes; series pick one with `YAxisId`.
+- `Legend`: `LegendSpec?` — Legend settings. Default: at the top, shown when there is more than one series.
+- `Tooltip`: `TooltipSpec?` — Tooltip settings. On and shared across series by default.
+- `TooltipHeader`: `Func<TooltipPoint<TItem>, string?>?` — Text for the tooltip header from the hovered point, e.g. `p => $"Week {Iso(p.X)}"`; null keeps the default (the formatted x, or the series name for nested pies). Runs once per layout for the points that can be hovered, not on pointer moves.
+- `TooltipTemplate`: `RenderFragment<TooltipContext<TItem>>?` — Custom tooltip content (Razor), rendered inside the tooltip card. The crosshair still follows the pointer in the browser; the content is rendered by .NET when the hovered x changes, so on Blazor Server it follows one network round trip behind. Prefer `RioChart.TooltipHeader` and the series' `TooltipValue` when text is enough.
+- `Annotations`: `IReadOnlyList<AnnotationSpec>?` — Annotations as data (in addition to <ReferenceLine> and <ReferenceBand> children).
+- `TimeZone`: `string?` — Display time zone: "UTC", "local" (the viewer's browser zone) or an IANA id such as "Europe/Stockholm". Default: none, times are shown as given. With a zone, times are plotted on instants (no doubling back at DST changes) and labelled in that zone.
+- `UnspecifiedTimes`: `UnspecifiedTimes?` — With a TimeZone: how DateTime values with Kind Unspecified are read (UTC or the display zone).
+- `Culture`: `CultureInfo?` — Culture for labels. Default: the current culture.
+- `Texts`: `ChartTexts?` — The chart's own texts ("Reset zoom", "No data available", the download menu, screen reader texts), e.g. `ChartTexts.Swedish with { ResetZoom = "Visa allt" }`. Default: a `ChartTexts` cascaded by the app, else `ChartTexts.For` the `RioChart.Culture` or, without one, the current UI culture.
+- `HiddenSeries`: `IReadOnlyCollection<string>?` — Ids of hidden series. Two-way bindable with `@bind-HiddenSeries`.
+- `Zoomable`: `bool` — Zoom and pan on the x axis: drag to zoom in, Shift+drag to pan, Ctrl/⌘+wheel to zoom at the pointer, pinch or two-finger drag on touch screens, double-click or the reset button to zoom out. Not for category axes.
+- `VisibleRange`: `ChartRange?` — The visible x range (null: all data). Two-way bindable with `@bind-VisibleRange`.
+- `Group`: `string?` — Charts with the same group name share the crosshair and (when zoomable) the zoom. They should have the same kind of x axis.
+- `SeriesLayer`: `SeriesLayer` — Draw the series as SVG (default) or on a canvas: no DOM per series, for large or many series. Axes, labels and annotations stay SVG (annotations then sit under the series).
+- `DownsampleThreshold`: `int?` — Line and area series with more points than this are downsampled (LTTB). Default: twice the plot width, four times on a canvas.
+- `RefreshInterval`: `int` = `100` — Live data (series with a `Buffer`): the shortest time between redraws, in milliseconds. Default 100.
+- `Compact`: `bool` — Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y range fits the data (bars keep zero). Set a small `RioChart.Height` too, e.g. 32. Keyboard navigation is off unless `RioChart.KeyboardNavigation` is set; the chart has a short text summary.
+- `AutoCompact`: `bool` = `true` — Default true: as the chart gets small (a narrow container, a low `RioChart.Height`), it leaves out axis titles first, then the legend, the title and the axis labels, so the plot keeps the space; the tooltip still shows the series and values. Below 120 × 60 px it becomes a compact chart. False keeps everything at any size.
+- `Horizontal`: `bool` — Bar charts: bars run left to right, with the categories down the side (first on top). For rankings and long category names. `RioChart.YAxis` (title, format, min, max) applies to the values.
+- `Interactive`: `bool` = `true` — False draws plain SVG without the JS module: no tooltip, hover, zoom, keyboard navigation, download button or width measuring. For many small charts (compact charts in a table) or static pages. Set `RioChart.Width` for exact geometry; otherwise the chart is laid out at a default width (640, compact 160) and scaled to fit. Read once, when the chart first renders.
+- `KeyboardNavigation`: `bool?` — Keyboard navigation (default on, off for compact charts): the chart is a tab stop, and with it focused the arrow keys move between points (Up/Down: between series; pies: between slices), showing the tooltip and announcing the point to screen readers; Enter clicks it, Escape leaves. With `RioChart.Zoomable`, + and - zoom around the focused point, Shift+Left/Right pans and 0 resets. Handled in the browser.
+- `Class`: `string?` — Extra CSS class on the container.
+- `Spec`: `ChartSpec?` — A chart spec (e.g. from JSON or an AI agent) instead of child components: series read their x and y fields from `RioChart.Datasets` or the spec's inline data. Layout options such as Height, Culture and HiddenSeries still come from the component.
+- `Datasets`: `IReadOnlyDictionary<string, ChartDataset>?` — Datasets that a `RioChart.Spec` refers to, by name.
+- `Selection`: `SelectionMode` — What the user can select: points (click) or an x range (drag). Default none. Selections from code (`RioChart.SelectedItems`, `RioChart.SelectedRange`, `RioChart.SelectItemsAsync`) show either way. Points need items (not columnar data). Drawn on vertical cartesian charts.
+- `SelectedItems`: `IReadOnlyCollection<TItem>?` — The selected items. Two-way bindable with `@bind-SelectedItems`.
+- `SelectedRange`: `ChartRange?` — The selected x range (null: none). Two-way bindable with `@bind-SelectedRange`.
+- `OnLegendClicking`: `EventCallback<LegendClickingEventArgs>` — Raised before a legend click shows or hides a series; set `Cancel` to keep it as it is. `RioChart.OnLegendClick` follows only when the series was toggled.
+- `TreemapPathChanged`: `EventCallback<string?>` — Raised when the group shown changes (two-way binding of `RioChart.TreemapPath`).
+- `OnDrillDown`: `EventCallback<string?>` — Treemaps: raised when the shown group changes (a click on a group or the path bar, or `RioChart.DrillDownAsync`), with its path (e.g. "Asia/India"); null for the whole tree.
+- `OnExporting`: `EventCallback<ChartExportingEventArgs>` — Raised when the user picks a format in the download menu, before the file is saved: rename it, change the options, or cancel the download and handle the content yourself. Not raised for the export methods called from code.
+- `HiddenSeriesChanged`: `EventCallback<IReadOnlyCollection<string>>` — Called with the new hidden series when the user toggles one in the legend.
+- `OnLegendClick`: `EventCallback<LegendClickEventArgs>` — Raised after a legend click has toggled a series.
+- `OnPointClick`: `EventCallback<PointClickEventArgs<TItem>>` — Raised when a point or bar is clicked.
+- `OnAnnotationClick`: `EventCallback<AnnotationClickEventArgs>` — Raised when a reference line or band is clicked (it becomes a focusable button).
+- `OnAnnotationChanged`: `EventCallback<AnnotationChangedEventArgs>` — Raised when the user has dragged a reference line (`Draggable`). For lines in `RioChart.Annotations`, update the spec's value here; components use `@bind-Value`.
+- `VisibleRangeChanged`: `EventCallback<ChartRange?>` — Called with the new visible range after a zoom, pan or reset (null: all data).
+- `OnZoomChanging`: `EventCallback<ZoomChangingEventArgs>` — Raised before a zoom or pan is applied; the handler may change or cancel it.
+- `SelectedItemsChanged`: `EventCallback<IReadOnlyCollection<TItem>>` — Called with the selected items when the selection changes.
+- `SelectedRangeChanged`: `EventCallback<ChartRange?>` — Called with the selected range when the selection changes (null: none).
+- `OnSelectionChanged`: `EventCallback<SelectionChangedEventArgs<TItem>>` — Raised when the selection changes, by the user or from code.
+
+##### Methods (call through `@ref`)
+
+- `string? GetTreemapPath()` — Treemaps: the group shown, as a path with the series' separator; null when the whole tree is shown (or the path is not there).
+- `Task DrillDownAsync(string? path)` — Treemaps: shows a group (drill-down), e.g. `"Asia"` or `"Asia/India"` (the series' path separator), as clicking it does; null or "" shows the whole tree. A path that is not there shows the whole tree.
+- `bool IsSeriesVisible(string seriesId)` — Whether a series is shown (not hidden through the legend, `RioChart.HiddenSeries` or code).
+- `Task ShowSeriesAsync(string seriesId)` — Shows a hidden series (raises `HiddenSeriesChanged`).
+- `Task HideSeriesAsync(string seriesId)` — Hides a series; it keeps its color and legend item (raises `HiddenSeriesChanged`).
+- `Task ToggleSeriesAsync(string seriesId)` — Shows a hidden series or hides a shown one, as a legend click does (without the legend events).
+- `Task HighlightSeriesAsync(string? seriesId)` — Fades every series but this one (and their data labels), e.g. while a matching table row is hovered; null shows all again. Hovering or focusing a legend item does the same for its series meanwhile. SVG series layer; needs JS (interactive rendering).
+- `string? GetHighlightedSeries()` — The series highlighted with `RioChart.HighlightSeriesAsync`, or null.
+- `ChartPoint? ValueToPixel(object x, double y, string? yAxis = null)` — The chart position of a data value, e.g. to place your own element over the chart: x as a DateTime, number or category name, y on the given axis (default: the first). Positions outside the plot are returned too. Null before the first layout, for an x not on the axis, and for pies and horizontal bars.
+- `ChartValue? PixelToValue(double x, double y, string? yAxis = null)` — The data value at a chart position (CSS pixels from the chart's top left), e.g. from a mouse event: x as a DateTime, number or the nearest category's name, y on the given axis (default: the first). Null before the first layout, and for pies and horizontal bars.
+- `Task ApplyAsync(Func<Task> changes)` — Runs several changes (zoom, selection, hidden series, …) and draws the chart once at the end instead of after each. Events and bound parameters are raised as the changes happen. Matters most on Blazor Server, where each render is a round trip.
+- `Task<string> ExportSvgAsync(ChartImageOptions? options = null)` — The chart as a standalone SVG document, as currently drawn (size, zoom, hidden series and theme colors resolved). Needs an interactive render mode.
+- `Task<byte[]> ExportPngAsync(ChartImageOptions? options = null)` — The chart as a PNG image, as currently drawn. Needs an interactive render mode.
+- `string ExportCsv(CsvOptions? options = null)` — The data of every series (hidden ones too) as CSV: an x column and one column per series. Works without a browser. See `ChartCsv`.
+- `Task DownloadSvgAsync(string? fileName = null, ChartImageOptions? options = null)` — Saves the chart as an SVG file in the browser (file name without extension; default `RioChart.ExportFileName`).
+- `Task DownloadPngAsync(string? fileName = null, ChartImageOptions? options = null)` — Saves the chart as a PNG file in the browser.
+- `Task DownloadCsvAsync(string? fileName = null, CsvOptions? options = null)` — Saves the data as a CSV file in the browser.
+- `ChartSpec GetSpec()` — The chart model: the `RioChart.Spec` parameter, or one built from the parameters and child components (for saving, or as a starting point for edits).
+- `void Refresh()` — Lays out again, e.g. after changing data in place without a new reference or DataVersion.
+- `ChartRange? GetVisibleRange()` — The visible x range, or null when all data is shown.
+- `Task ZoomToAsync(ChartRange range)` — Shows the given x range (clamped to the data).
+- `Task ResetZoomAsync()` — Shows all data again.
+- `Task PanAsync(double fraction)` — Moves the visible range by a fraction of its width (negative: left).
+- `IReadOnlyList<TItem> GetSelectedItems()` — The selected items: the selected points', or those of the points in the selected range.
+- `ChartRange? GetSelectedRange()` — The selected x range, or null.
+- `Task SelectItemsAsync(IEnumerable<TItem> items)` — Selects the points of these items (replacing the selection).
+- `Task SelectRangeAsync(ChartRange? range)` — Selects an x range (replacing the selection); null clears it.
+- `Task ClearSelectionAsync()` — Clears the selection.
+- `IReadOnlyList<TItem> GetItemsInRange(ChartRange range)` — The items of the visible series' points inside an x range, in series order, each once. Empty for columnar data and category axes.
+- `Task ShowTooltipAsync(object x)` — Shows the crosshair and tooltip at an x value (DateTime, number or category name), as if the pointer were there; linked charts (same `RioChart.Group`) show their crosshair too. It stays until `RioChart.HideTooltipAsync`, also across new data, and comes back after the pointer leaves the chart. Cartesian charts; needs JS (interactive rendering).
+- `Task HideTooltipAsync()` — Hides the tooltip shown with `RioChart.ShowTooltipAsync`.
+
+#### Parameters of every series (`SeriesBase<TItem>`)
+
+Every series component below takes these, plus its own.
+
+- `Items`: `IEnumerable<TItem>?` — Items to plot. Defaults to the chart's Items.
+- `Id`: `string?` — Unique id (used by `HiddenSeries`). Defaults to `SeriesBase.Name`, else generated.
+- `Name`: `string?` — Name shown in the legend.
+- `XValue`: `Func<TItem, object?>?` — X value: a number, DateTime, DateTimeOffset, DateOnly or string (category).
+- `YValue`: `Func<TItem, double?>?` — Y value; null leaves a gap.
+- `Aggregate`: `Aggregate?` — Combines items with the same x into one point: the Sum, Average, Min, Max or Last of `SeriesBase.YValue`, or the Count of items (needs no YValue). Use `SeriesBase.YAggregate` for anything else. Without either, items with the same x are drawn on top of each other.
+- `YAggregate`: `Func<IReadOnlyList<TItem>, double?>?` — Combines items with the same x into one point, with y computed from the group, e.g. `g => g.Sum(o => o.Amount)`; null leaves a gap. Used instead of `SeriesBase.YValue` and `SeriesBase.Aggregate` when set. A clicked point's items are in `PointClickEventArgs.Items`.
+- `Data`: `SeriesData?` — Columnar data (fast path for large series); used instead of Items when set.
+- `DataVersion`: `object?` — Change this to reprocess the data after changing Items in place.
+- `Color`: `string?` — CSS color. Defaults to the next palette color.
+- `ColorValue`: `Func<TItem, string?>?` — A color per item, e.g. `o => o.Late ? "--rio-negative" : null`: a CSS color or a theme token (tokens follow light and dark themes); null keeps the series color. Bars, scatter markers, pie slices, radial bars and treemap items take the color; lines and areas mark the point with a dot in it. Aggregated points take their first item's color. Runs once per data change, like the other selectors.
+- `ColorBands`: `IReadOnlyList<ColorBand>?` — Colors by value, e.g. `[new() { Above = 120, Color = "--rio-negative" }]`: a line or area changes color where it crosses into a band, a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; `SeriesBase.ColorValue` wins over bands.
+- `ZIndex`: `int?` — Draw order override (default: areas, then bars, then lines).
+- `YAxisId`: `string?` — Id of the vertical axis to use (see `RioChart.YAxes`). Default: the primary axis.
+- `Stack`: `string?` — Stack group: series of the same type with the same stack name are stacked.
+- `DataLabels`: `bool?` — Show values on the chart. Default: off, except for pie, donut and radial bar.
+- `Format`: `string?` — .NET format string for values in tooltips and data labels, e.g. "0.0".
+- `TooltipValue`: `Func<TooltipPoint<TItem>, string?>?` — Text for this series' value in the tooltip, e.g. `p => $"{p.Y:0} ms"` or `p => $"{p.Y:0} ms (target {p.Item!.Target} ms)"`; null keeps the default (`SeriesBase.Format`). Runs once per layout for the points that can be hovered, not on pointer moves.
+- `Buffer`: `SeriesBuffer?` — Live data (used instead of Items and Data when set). Append to it from any thread; the chart redraws at most every `RioChart.RefreshInterval` milliseconds.
+
+#### `<LineSeries>` (`LineSeries<TItem>`)
+
+Line series.
+
+- `Curve`: `CurveType` — Line shape: Linear, Monotone (smooth, no overshoot) or Step.
+- `StrokeWidth`: `double` = `2` — Line width in pixels.
+- `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last | PointHighlight.Max`. Default none.
+
+#### `<AreaSeries>` (`AreaSeries<TItem>`)
+
+Area series, filled down to zero.
+
+- `Curve`: `CurveType` — Shape of the top edge: Linear, Monotone (smooth, no overshoot) or Step.
+- `StrokeWidth`: `double` = `2` — Width of the top line in pixels. Default 2.
+- `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last`. Default none.
+
+#### `<ScatterSeries>` (`ScatterSeries<TItem>`)
+
+Scatter series: a marker per point, for how two measures relate, e.g. delivery distance against delivery time. The tooltip shows the point nearest the pointer.
+
+- `MarkerSize`: `double` = `5` — Marker diameter in pixels. Default 5.
+- `TrendLine`: `bool` — Draw a dashed least-squares trend line through the points.
+
+#### `<HeatmapSeries>` (`HeatmapSeries<TItem>`)
+
+One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one color scale (the first row's Color, Format and Max).
+
+- `Max`: `double?` — The value that gets the full color (e.g. 100 for percentages). Default: the highest value.
+
+#### `<RangeAreaSeries>` (`RangeAreaSeries<TItem>`)
+
+Range area: a band between a low and a high value per x, e.g. the lowest and highest daily revenue around its average. Usually drawn behind a line; the tooltip shows "low – high".
+
+- `LowValue`: `Func<TItem, double?>?` — The low end of each point.
+- `HighValue`: `Func<TItem, double?>?` — The high end of each point (the same as `YValue`).
+- `Curve`: `CurveType` — Line shape of the band's edges: Linear or Monotone.
+
+#### `<BoxPlotSeries>` (`BoxPlotSeries<TItem>`)
+
+Box plot: the spread of values per x, e.g. supply temperatures per unit. Give the raw values (`XValue` and `YValue`, one item per value: items with the same x form a box, with quartiles, whiskers at 1.5 × the box length and outliers computed here), or boxes computed elsewhere (`BoxPlotSeries.Q1Value`, `BoxPlotSeries.Q3Value` and the others, one item per box). Several box series sit side by side like grouped bars.
+
+- `LowValue`: `Func<TItem, double?>?` — Precomputed boxes: the lower whisker end.
+- `Q1Value`: `Func<TItem, double?>?` — Precomputed boxes: the lower quartile. With `BoxPlotSeries.Q3Value`, each item is one box.
+- `MedianValue`: `Func<TItem, double?>?` — Precomputed boxes: the median (the same as `YValue`).
+- `Q3Value`: `Func<TItem, double?>?` — Precomputed boxes: the upper quartile.
+- `HighValue`: `Func<TItem, double?>?` — Precomputed boxes: the upper whisker end.
+- `OutliersValue`: `Func<TItem, IEnumerable<double>?>?` — Precomputed boxes: values beyond the whiskers, drawn as dots (optional).
+- `CountValue`: `Func<TItem, int?>?` — Precomputed boxes: how many values the box summarizes, for the tooltip (optional).
+
+#### `<CandlestickSeries>` (`CandlestickSeries<TItem>`)
+
+Candlestick: how a value moved within each period: a wick from low to high and a body from open to close, lightly filled when it rose and solid when it fell (theme colors `--rio-positive` and `--rio-negative`). Give raw readings (`XValue` and `YValue`, one item per reading) with a `CandlestickSeries.Bucket` such as an hour or a day, or candles computed elsewhere (`CandlestickSeries.OpenValue`, `CandlestickSeries.HighValue`, `CandlestickSeries.LowValue` and `CandlestickSeries.CloseValue`, one item per period). When zoomed out, candles too narrow to see merge into wider ones.
+
+- `Bucket`: `TimeBucket?` — Raw readings: the period of each candle, e.g. `TimeBucket.Hour` (on the readings' wall-clock time).
+- `OpenValue`: `Func<TItem, double?>?` — Precomputed candles: the period's first value.
+- `HighValue`: `Func<TItem, double?>?` — Precomputed candles: the highest value.
+- `LowValue`: `Func<TItem, double?>?` — Precomputed candles: the lowest value.
+- `CloseValue`: `Func<TItem, double?>?` — Precomputed candles: the period's last value (the same as `YValue`).
+
+#### `<BarSeries>` (`BarSeries<TItem>`)
+
+Bar series. Several bar series in one chart are grouped side by side.
+
+No parameters of its own.
+
+#### `<PieSeries>` (`PieSeries<TItem>`)
+
+Pie: one slice per category (the x value), sized by its share of the total. Several pie series in one chart are drawn as nested rings, the first one outermost.
+
+- `InnerRadius`: `double?` — Inner radius as a fraction of the outer radius; above 0 makes a donut. Default: 0 for one pie, 0.4 when several pie series are drawn as rings.
+- `StartAngle`: `double?` — Start angle in degrees, clockwise from 12 o'clock. Default 0.
+- `EndAngle`: `double?` — End angle in degrees. Default: a full circle. 180 with StartAngle -90 makes a half donut.
+- `GroupSmallSlices`: `double?` — Group slices below this share of the total (e.g. 0.03) into one "Other" slice.
+
+#### `<DonutSeries>` (`DonutSeries<TItem>`)
+
+A pie with a hole (inner radius 0.6 by default); shows the total in the middle.
+
+- `InnerRadius`: `double?` = `0.6` — Inner radius as a fraction of the outer radius; above 0 makes a donut. Default: 0 for one pie, 0.4 when several pie series are drawn as rings.
+- `StartAngle`: `double?` — Start angle in degrees, clockwise from 12 o'clock. Default 0.
+- `EndAngle`: `double?` — End angle in degrees. Default: a full circle. 180 with StartAngle -90 makes a half donut.
+- `GroupSmallSlices`: `double?` — Group slices below this share of the total (e.g. 0.03) into one "Other" slice.
+
+#### `<RadarSeries>` (`RadarSeries<TItem>`)
+
+Radar: one spoke per category (x), clockwise from 12 o'clock, and a closed shape per series through its values. The radius is a linear scale from zero shared by all spokes; set the chart's `YAxis` Min and Max to fix it (e.g. 0 to 100 for percentages). Several radar series compare, e.g. two products' test scores against their class average. Cannot be mixed with other series types.
+
+No parameters of its own.
+
+#### `<TreemapSeries>` (`TreemapSeries<TItem>`)
+
+Treemap: rectangles sized by value, nested by group, for how a total splits into many parts. `XValue` is each item's path from the outermost group, e.g. `"Europe/Sweden/Stockholm"` (see `TreemapSeries.PathSeparator`), or its name with `TreemapSeries.ParentValue`. A group's value is the sum of its items. Colors and legend items follow the top-level groups. Zero and negative values are left out. Cannot be mixed with other series types.
+
+- `ParentValue`: `Func<TItem, object?>?` — The name of each item's group, matching another item's `XValue` (null or unknown: a top-level item). Builds the paths from a parent-child list, e.g. cities with their countries and countries with their regions; names must then be unique.
+- `PathSeparator`: `string?` — What separates the groups in an `XValue` path. Default "/".
+- `GroupSmallItems`: `double?` — Group items smaller than this share of their group (e.g. 0.03) into one "Other" item per group.
+- `VisibleLevels`: `int?` — How many levels to draw at once below the group shown, e.g. 2 for continents and their countries; deeper groups show as one cell with their total and open on a click (drill-down). Null: all levels. The data keeps every level either way.
+
+#### `<RadialBarSeries>` (`RadialBarSeries<TItem>`)
+
+Radial bars: one circular track per category, filled up to its value.
+
+- `Max`: `double?` — The value of a full track, e.g. 100 for percentages. Default: a nice value above the largest.
+- `InnerRadius`: `double?` — Inner radius as a fraction of the outer radius. Default 0.3.
+- `StartAngle`: `double?` — Start angle in degrees, clockwise from 12 o'clock. Default 0.
+- `EndAngle`: `double?` — End angle in degrees. Default 270.
+
+#### Parameters of every annotation (`AnnotationBase`)
+
+Every annotation component below takes these, plus its own.
+
+- `Id`: `string?` — Optional id, reported by `RioChart.OnAnnotationClick` and `OnAnnotationChanged`.
+- `YAxisId`: `string?` — Vertical axis id for Y annotations, points and callouts. Default: the primary axis.
+- `Label`: `string?` — Text shown next to the annotation.
+- `Color`: `string?` — CSS color. Default: the muted annotation color (`--rio-annotation`).
+- `ExpandsDomain`: `bool?` — Grow the axis range to include the annotation. Default: yes, except for bands.
+- `Layer`: `AnnotationLayer?` — Draw below or above the series. Default: bands below, the rest above.
+
+#### `<ReferenceLine>` (`ReferenceLine<TValue>`)
+
+A horizontal (Axis="Y", default) or vertical (Axis="X") line, e.g. a target or "today". With `ReferenceLine.Draggable` the user can move it; bind the value with `@bind-Value`. `<ReferenceLine @bind-Value="limit" Label="Limit" Draggable="true" />`
+
+- `Value`: `TValue` — Position in data units.
+- `Axis`: `AnnotationAxis` = `AnnotationAxis.Y` — X for a vertical line; Y (default) for a horizontal one.
+- `LabelPosition`: `LabelPosition?` — Where the label sits along the line. Default: End.
+- `Draggable`: `bool` — Let the user drag the line; the new value goes to `ReferenceLine.ValueChanged`.
+- `ValueChanged`: `EventCallback<TValue>` — Called with the new value when the user drags the line.
+
+#### `<ReferenceBand>`
+
+A range on the y axis (an acceptable zone) or the x axis (a period such as a fault). `<ReferenceBand Axis="AnnotationAxis.X" From="faultStart" To="faultEnd" Label="Fault" />`
+
+- `From`: `object?` — Start of the range: a number, DateTime, DateTimeOffset, DateOnly or category name.
+- `To`: `object?` — End of the range, in the same units as `ReferenceBand.From`.
+- `Axis`: `AnnotationAxis` = `AnnotationAxis.Y` — X for a time period or category range; Y (default) for a value range.
+- `LabelPosition`: `LabelPosition?` — Where the label sits. Default: Start.
+
+#### `<PointAnnotation>`
+
+A marker at a data point with an optional label above it, e.g. "Alarm". `<PointAnnotation X="alarmTime" Y="26.5" Label="Alarm" />`
+
+- `X`: `object?` — The x value: a number, DateTime, DateTimeOffset, DateOnly or category name.
+- `Y`: `double` — The y value on the annotation's vertical axis.
+
+#### `<Callout>`
+
+A text box with a connector line to a data point. `<Callout X="t" Y="18.2" Label="Filter changed" OffsetX="30" OffsetY="-40" />`
+
+- `X`: `object?` — The x value of the point: a number, DateTime, DateTimeOffset, DateOnly or category name.
+- `Y`: `double` — The y value of the point on the annotation's vertical axis.
+- `OffsetX`: `double?` — Horizontal offset of the box from the point in pixels (negative: to the left). Default 24.
+- `OffsetY`: `double?` — Vertical offset of the box from the point in pixels (negative: up). Default -32.
+
+### Types used by parameters
+
+#### `LegendClickingEventArgs` (class, RioCharts.Blazor)
+
+Raised before a legend click shows or hides its series. Set `LegendClickingEventArgs.Cancel` to keep it as it is, e.g. to do something else instead (show only that series, open details).
+
+- `SeriesId`: `string` — The clicked item's series id (or category, for pies).
+- `Name`: `string` — The clicked item's name.
+- `Visible`: `bool` — Whether the series is about to be shown (true) or hidden (false).
+- `Cancel`: `bool` — Set to true to leave the series as it is.
+
+#### `ExportFormats` (enum, RioCharts.Blazor)
+
+The formats offered in the download menu (`Exportable`).
+
+- `None` — No download menu.
+- `Png` — PNG image.
+- `Svg` — SVG document.
+- `Csv` — The data as CSV.
+- `All` — All formats.
+
+Flags: combine values with `|`.
+
+#### `ChartExportingEventArgs` (class, RioCharts.Blazor)
+
+Raised when the user picks a format in the download menu, before the file is saved. Change `ChartExportingEventArgs.FileName` or the options, or set `ChartExportingEventArgs.Cancel` and handle the export yourself (e.g. upload it) with `ChartExportingEventArgs.GetPngAsync`, `ChartExportingEventArgs.GetSvgAsync` or `ChartExportingEventArgs.GetCsv`. The content is made only when one of those is called, so a handler that only renames costs nothing.
+
+- `Format`: `ExportFormat` (read-only) — The format the user picked.
+- `FileName`: `string` — The file name with extension; change it to save under another name.
+- `ImageOptions`: `ChartImageOptions` — Options for PNG and SVG (used by the download and by GetPngAsync/GetSvgAsync).
+- `CsvOptions`: `CsvOptions?` — Options for CSV; null: the defaults, with the x axis title as the x header.
+- `Cancel`: `bool` — Set to true to skip the browser download (after handling the export yourself, or to block it).
+
+- `Task<byte[]> GetPngAsync()` — The chart as PNG bytes, with `ChartExportingEventArgs.ImageOptions`.
+- `Task<string> GetSvgAsync()` — The chart as an SVG document, with `ChartExportingEventArgs.ImageOptions`.
+- `string GetCsv()` — The data as CSV, with `ChartExportingEventArgs.CsvOptions`.
+
+#### `AxisSpec` (record, RioCharts.Core)
+
+Settings for one axis: title, range, scale, label format and grid lines.
+
+- `Id`: `string?` — Axis id that series and annotations refer to (vertical axes only). The primary vertical axis defaults to "y".
+- `Title`: `string?` — Axis title.
+- `Min`: `double?` — Fixed minimum. When null it comes from the data.
+- `Max`: `double?` — Fixed maximum. When null it comes from the data.
+- `Scale`: `ScaleType` — Scale type. Auto picks from the data: times give a time axis, numbers a linear axis, strings a band axis.
+- `Format`: `string?` — .NET format string for labels, e.g. "P0", "C0" or "yyyy-MM-dd". Null for automatic formatting.
+- `GridLines`: `bool?` — Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.
+- `Position`: `AxisPosition` — Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.
+
+#### `LegendSpec` (record, RioCharts.Core)
+
+Legend settings: when to show it and where.
+
+- `Mode`: `LegendMode` — Auto shows the legend only when there is more than one series.
+- `Position`: `LegendPosition` — Where the legend sits. Default Top.
+
+#### `TooltipSpec` (record, RioCharts.Core)
+
+Tooltip settings.
+
+- `Enabled`: `bool` = `true` — Show a tooltip and crosshair when hovering the plot.
+- `Shared`: `bool` = `true` — True: one tooltip per x position listing every series. False: only the nearest point.
+
+#### `TooltipPoint<TItem>` (record, RioCharts.Blazor)
+
+One point in a tooltip: what `TooltipValue`, `TooltipHeader` and the rows of a `TooltipTemplate` get.
+
+- `SeriesId`: `string` — Id of the series.
+- `SeriesName`: `string` — Name of the series (as in the legend).
+- `Color`: `string` — The series color as a CSS color, e.g. for a dot in a template.
+- `Index`: `int` — Index into the series' input (items list or columns); the first item's when the series aggregates; -1 for a grouped "Other" slice.
+- `X`: `object?` — The x value: a number, DateTime (DateTimeOffset with a display time zone) or category name.
+- `Y`: `double` — The y value (the series' own value, also when stacked); NaN for a gap or an "Other" slice.
+- `XText`: `string` — The x value as the tooltip header shows it by default (the category for pie slices).
+- `ValueText`: `string` — The value as the tooltip shows it: formatted with the series' `Format`, or the series' `TooltipValue`.
+- `Item`: `TItem` — The input item (the first of the group when the series aggregates), or default for columnar data.
+- `Items`: `IReadOnlyList<TItem>` — All input items behind the point: the group when the series aggregates; empty for columnar data.
+
+- `new TooltipPoint(string SeriesId, string SeriesName, string Color, int Index, object? X, double Y, string XText, string ValueText)` — One point in a tooltip: what `TooltipValue`, `TooltipHeader` and the rows of a `TooltipTemplate` get.
+
+#### `TooltipContext<TItem>` (record, RioCharts.Blazor)
+
+What a `TooltipTemplate` renders: the hovered x and one point per listed series.
+
+- `Header`: `string` — The default header text (the formatted x, or `TooltipHeader`); the series name for nested pies.
+- `X`: `object?` — The hovered x value (the first point's).
+- `Points`: `IReadOnlyList<TooltipPoint<TItem>>` — The listed points in tooltip order: one per series for a shared tooltip, else one.
+
+- `new TooltipContext(string Header, object? X, IReadOnlyList<TooltipPoint<TItem>> Points)` — What a `TooltipTemplate` renders: the hovered x and one point per listed series.
+
+#### `AnnotationSpec` (record, RioCharts.Core)
+
+A reference line or band. Values are in data units of the axis: numbers, times (DateTime, DateTimeOffset, DateOnly or an ISO 8601 string) or category names.
+
+- `Id`: `string?` — Optional id, reported in click events.
+- `Type`: `AnnotationType` — Kind of annotation: a line, a band, a point or a callout. Default Line.
+- `Axis`: `AnnotationAxis` = `AnnotationAxis.Y` — Axis the value(s) refer to: Y for a horizontal line or band, X for a vertical one.
+- `YAxisId`: `string?` — Vertical axis id for Y annotations. Null uses the primary axis.
+- `Value`: `object?` — Position of a line: a number, a time (ISO 8601) or a category.
+- `From`: `object?` — Start of a band.
+- `To`: `object?` — End of a band.
+- `X`: `object?` — Point and callout: the x value (a number, a time or a category).
+- `Y`: `object?` — Point and callout: the y value on the annotation's vertical axis.
+- `OffsetX`: `double?` — Callout: horizontal offset of the text box from the point, in pixels. Default 24.
+- `OffsetY`: `double?` — Callout: vertical offset of the text box from the point, in pixels (negative is up). Default -32.
+- `Draggable`: `bool` — Line: the user can drag it to a new value (e.g. to edit a threshold); the chart reports the new value.
+- `Label`: `string?` — Optional label.
+- `LabelPosition`: `LabelPosition?` — Where the label sits along the line or band. Default: End for lines, Start for bands.
+- `Color`: `string?` — CSS color. Null uses the muted annotation color.
+- `ExpandsDomain`: `bool?` — Whether the axis range grows to include the annotation. Default: true for lines, false for bands.
+- `Layer`: `AnnotationLayer?` — Draw below or above the series. Default: bands below, lines above.
+
+#### `UnspecifiedTimes` (enum, RioCharts.Core.Data)
+
+How times without a zone (DateTime with Kind Unspecified, DateOnly, plain strings) are read when a display zone is set.
+
+- `Utc` — They are UTC.
+- `DisplayZone` — They are wall-clock times in the display zone.
+
+#### `ChartTexts` (record, RioCharts.Core)
+
+The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
+
+70 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+
+- `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
+- `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.
+- `static ChartTexts From(Func<string, string?> lookup, ChartTexts? fallback = null)` — Texts from a lookup by key (see `ChartTexts.Keys`), e.g. resx resources or an IStringLocalizer: `ChartTexts.From(key => localizer[key] is { ResourceNotFound: false } s ? s.Value : null)`. Keys it returns null or empty for keep the text from `fallback` (default English).
+- `string Fill(string key, IFormatProvider? provider, object?[] args)` — Fills in this set's template for `key` (a property name, see `ChartTexts.Keys`) with `args`, the way charts do. Never throws: a template that cannot be filled falls back to the English one.
+
+#### `LegendClickEventArgs` (record, RioCharts.Blazor)
+
+Raised when a legend item is clicked (the series has already been toggled).
+
+- `SeriesId`: `string`
+- `Name`: `string`
+- `Visible`: `bool`
+
+- `new LegendClickEventArgs(string SeriesId, string Name, bool Visible)` — Raised when a legend item is clicked (the series has already been toggled).
+
+#### `PointClickEventArgs<TItem>` (record, RioCharts.Blazor)
+
+Raised when a point or bar is clicked.
+
+- `SeriesId`: `string`
+- `SeriesName`: `string`
+- `Item`: `TItem` — The input item (the first of the group when the series aggregates), or default for columnar data.
+- `Index`: `int` — Index into the series' input (items list or columns); the first item's when the series aggregates.
+- `X`: `object?` — The x value: a number, DateTime or category name.
+- `Y`: `double` — The y value (the series' own value, also when stacked).
+- `Items`: `IReadOnlyList<TItem>` — All input items behind the point: the group when the series aggregates (`Aggregate` or `YAggregate`), else just `PointClickEventArgs.Item`; empty for columnar data.
+
+- `new PointClickEventArgs(string SeriesId, string SeriesName, TItem Item, int Index, object? X, double Y)` — Raised when a point or bar is clicked.
+
+#### `AnnotationClickEventArgs` (record, RioCharts.Blazor)
+
+Raised when a reference line or band is clicked.
+
+- `AnnotationId`: `string` — The annotation's `Id`.
+- `Label`: `string?` — The annotation's label.
+
+- `new AnnotationClickEventArgs(string AnnotationId, string? Label)` — Raised when a reference line or band is clicked.
+
+#### `AnnotationChangedEventArgs` (record, RioCharts.Blazor)
+
+Raised when the user has dragged a reference line to a new value.
+
+- `AnnotationId`: `string` — The annotation's `Id`.
+- `Label`: `string?` — The annotation's label.
+- `Value`: `object` — The new value: DateTime on time axes, else double.
+
+- `new AnnotationChangedEventArgs(string AnnotationId, string? Label, object Value)` — Raised when the user has dragged a reference line to a new value.
+
+#### `ChartRange` (record, RioCharts.Blazor)
+
+A range on the x axis (the visible window when zoomed). Values are `DateTime` on time axes and `Double` on numeric axes; DateTimeOffset, DateOnly and numbers are accepted as input.
+
+- `Min`: `object` — Start of the range.
+- `Max`: `object` — End of the range.
+
+- `new ChartRange(object Min, object Max)` — A range on the x axis (the visible window when zoomed). Values are `DateTime` on time axes and `Double` on numeric axes; DateTimeOffset, DateOnly and numbers are accepted as input.
+- `static ChartRange Of(DateTime min, DateTime max)` — A range on a time axis.
+- `static ChartRange Of(double min, double max)` — A range on a numeric axis.
+
+#### `ZoomChangingEventArgs` (class, RioCharts.Blazor)
+
+Raised before a zoom or pan is applied. Change `ZoomChangingEventArgs.Range` to clamp it, or set `ZoomChangingEventArgs.Cancel` to keep the current view. `ZoomChangingEventArgs.Range` is null for a reset.
+
+- `Range`: `ChartRange?` — The range about to be shown; null when the zoom is reset.
+- `Cancel`: `bool` — Set to true to keep the current view.
+
+#### `SeriesLayer` (enum, RioCharts.Blazor)
+
+Where the chart draws its series.
+
+- `Svg` — SVG elements (default): crisp, styleable, one path per series.
+- `Canvas` — A canvas over the SVG: no DOM per series, for many or dense series. Axes, labels and annotations stay SVG.
+
+#### `ChartSpec` (record, RioCharts.Core)
+
+The chart model. Plain, serializable data: Razor components and (later) JSON specs both compile to this. Data is not part of the spec; it is passed separately by series id.
+
+- `Title`: `string?` — Optional chart title.
+- `Compact`: `bool` — Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y range fits the data tightly (bars keep zero). For small charts in tables and tiles.
+- `AutoCompact`: `bool` = `true` — Default true: as the chart gets small, leave out axis titles, then the legend, title and axis labels; very small charts become compact. False keeps everything at any size.
+- `Horizontal`: `bool` — Bar charts: bars run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.
+- `X`: `AxisSpec` — Horizontal axis.
+- `Y`: `AxisSpec` — Primary vertical axis (id "y" unless set). Drawn on the left and owns the grid lines.
+- `YAxes`: `IReadOnlyList<AxisSpec>` — Additional vertical axes, e.g. a second unit. Drawn on the right unless Position is Left. Series bind to them with yAxisId.
+- `Legend`: `LegendSpec` — Legend settings. By default it is shown only when there is more than one series.
+- `Tooltip`: `TooltipSpec` — Tooltip settings. On by default, with one tooltip per x position across series.
+- `Series`: `IReadOnlyList<SeriesSpec>` — Series to draw, in order. Colors are assigned from the palette in this order.
+- `Annotations`: `IReadOnlyList<AnnotationSpec>` — Reference lines and bands, e.g. a target or an incident period.
+- `TimeZone`: `string?` — Display time zone: "UTC", "local" (the viewer's zone) or an IANA id such as "Europe/Stockholm". Null shows times as given. Times are then plotted on instants and labelled in this zone.
+- `UnspecifiedTimes`: `UnspecifiedTimes?` — With a display zone: how to read times without a zone (DateTime with Kind Unspecified). Utc or DisplayZone.
+- `Dataset`: `string?` — Dataset (by id from the data source) that series read their x and y fields from, unless a series names its own.
+- `Data`: `IReadOnlyList<IReadOnlyDictionary<string, object?>>?` — Inline rows for small data, e.g. [{"month":"Jan","revenue":42}]. At most 1000 rows; prefer a dataset id for real data.
+
+#### `ChartDataset` (class, RioCharts.Core.Specs)
+
+Tabular data that chart specs refer to by name and fields, so a spec (e.g. from an AI agent) stays small and never has to carry the data itself.
+
+- `Name`: `string` (read-only) — The name specs refer to (matched case-insensitively).
+- `Description`: `string?` (read-only) — What the data is (shown to AI agents), e.g. "Orders per day and store".
+- `Fields`: `IReadOnlyList<DataField>` (read-only) — The columns.
+- `RowCount`: `int` (read-only) — The number of rows (the longest field).
+
+- `new ChartDataset(string name, IReadOnlyList<DataField> fields, string? description = null)` — Creates a dataset.
+- `DataField? Field(string name)` — The field with this name (case-insensitive), or null.
+- `static ChartDataset FromRows(string name, IEnumerable<IReadOnlyDictionary<string, object?>> rows, string? description = null, IReadOnlyDictionary<string, string>? fieldDescriptions = null)` — Builds a dataset from rows of field values (numbers, times, text; JSON elements are read too).
+- `static ChartDataset FromItems<T>(string name, IEnumerable<T> items, string? description = null, IReadOnlyDictionary<string, string>? fieldDescriptions = null)` — Builds a dataset from objects: one field per public readable property (camelCase names).
+- `static ChartDataset FromJson(string name, JsonElement array, string? description = null)` — Builds a dataset from a JSON array of objects.
+- `static ChartDataset FromCsv(string name, string csv, string? description = null, IReadOnlyDictionary<string, string>? fieldDescriptions = null)` — Builds a dataset from CSV text with a header row. The delimiter (comma, semicolon or tab) is detected from the header. Quoted cells may hold delimiters, quotes ("") and line breaks. Numbers use a decimal point; with a semicolon or tab delimiter a decimal comma also works (as Excel writes in many locales). ISO 8601 cells become times, empty cells are gaps.
+
+#### `SelectionMode` (enum, RioCharts.Blazor)
+
+What the user can select on a chart with the pointer or keyboard.
+
+- `None` — Nothing (default). Selections set from code still show.
+- `Points` — Points and bars: a click (or Enter on a focused point) selects one, Ctrl/Cmd or Shift+click adds or removes one, a click on an empty part of the plot clears the selection.
+- `Range` — An x range: drag across the plot (mouse). A click without a drag clears it. With `Zoomable`, drag selects; zoom with Ctrl/Cmd+wheel, pinch or the keyboard instead.
+
+#### `SelectionChangedEventArgs<TItem>` (record, RioCharts.Blazor)
+
+Raised when the selection changes, by the user or from code.
+
+- `Items`: `IReadOnlyList<TItem>` — The selected items: the selected points' items, or with a range the items of the visible series' points inside it. Empty for columnar data.
+- `Range`: `ChartRange?` — The selected x range, or null when points (or nothing) are selected.
+
+- `new SelectionChangedEventArgs(IReadOnlyList<TItem> Items, ChartRange? Range)` — Raised when the selection changes, by the user or from code.
+
+#### `ChartImageOptions` (record, RioCharts.Blazor)
+
+Options for exporting a chart as an image in the browser.
+
+- `Scale`: `double` = `2` — PNG only: pixels per CSS pixel. Default 2 (sharp on high-density screens and in print).
+- `Background`: `string?` — Background color (any CSS color). Default: the chart's surface color (`--rio-surface`), so the image reads the same outside the page. "transparent" for none.
+
+#### `CsvOptions` (record, RioCharts.Core.Data)
+
+Options for `ChartCsv.Write`.
+
+- `Delimiter`: `Char` — Column separator. Default ','.
+- `Culture`: `CultureInfo` — Culture for numbers. Default invariant (a '.' decimal point), which spreadsheets and code read alike.
+- `XHeader`: `string` = `"x"` — Header of the x column. Default "x".
+- `NewLine`: `string` = `"\r\n"` — Line ending. Default "\r\n" (RFC 4180).
+
+#### `Aggregate` (enum, RioCharts.Core)
+
+How rows with the same x (or time bucket) are combined into one value.
+
+- `Sum` — The sum of the values.
+- `Average` — The mean of the values.
+- `Min` — The lowest value.
+- `Max` — The highest value.
+- `Count` — The number of rows (no y field needed).
+- `Last` — The last value in row order, skipping missing values.
+
+#### `SeriesData` (class, RioCharts.Core.Data)
+
+The single data representation inside Core: contiguous columns (structure of arrays). `SeriesData.Y` uses NaN for missing values, which become gaps in lines. Numeric and time data is sorted by x on creation; `SeriesData.SourceIndex` maps back to the input.
+
+- `X`: `double[]` (read-only) — The x values, sorted ascending: numbers, time in milliseconds (see `TimeValue`) or category indexes. Treat as read-only; the arrays are exposed for speed.
+- `Y`: `double[]` (read-only) — The y values, one per x; NaN is a gap. Treat as read-only.
+- `Kind`: `XKind` (read-only) — What the x values are: numbers, times or categories.
+- `Count`: `int` (read-only) — The number of points.
+- `Categories`: `IReadOnlyList<string>` (read-only) — Category names when `SeriesData.Kind` is Category; X holds indexes into this list.
+- `SourceIndex`: `int[]?` (read-only) — For each point, its index in the original input; null when the input order was kept.
+- `Low`: `double[]?` (read-only) — Range series: the low value of each point (`SeriesData.Y` is the high value), NaN where missing; null for other series. Set with `SeriesData.WithLow`.
+- `Colors`: `string?[]?` (read-only) — Each point's own color (a CSS color or theme token such as "--rio-negative"), null where the point keeps its series color; null when no point has one. Set with `SeriesData.WithColors`.
+- `Candles`: `CandleColumns?` (read-only) — Candlesticks: the open, high and low of each point (`SeriesData.Y` is the close); null for other series. Set with `SeriesData.WithCandles`.
+- `Box`: `BoxColumns?` (read-only) — Box plots: the quartiles, whiskers, extremes and outliers of each point (`SeriesData.Y` is the median); null for other series. Set with `SeriesData.WithBox`.
+- `TimeOffsets`: `double[]?` (read-only) — Time data: the UTC offset (milliseconds) of each point when the input had one (DateTimeOffset, or DateTime with Kind Utc or Local), NaN otherwise; null when no point had one. Used only when the chart has a display time zone; by default times are shown as given.
+- `Empty`: `SeriesData` (static) — A series with no points.
+
+- `SeriesData WithColors(IReadOnlyList<string?> colors)` — The same points with a color each (bars, scatter markers, slices, treemap items; a dot on lines and areas). `colors` is in input order like the y values: index i is the color of input item (or group) i; null keeps the series color.
+- `string ColorAt(int point, string fallback)` — The color of a point: its own, or `fallback` (the series color).
+- `SeriesData WithLow(ReadOnlySpan<double> low)` — The same points with a low value each, for range series (`SeriesData.Y` is the high value). `low` is in input order, like the y values given when creating the data: index i is the low of input item (or column entry) i.
+- `SeriesData WithCandles(ReadOnlySpan<CandleSummary> candles)` — The same points as candles: `candles` is in input order (index i is the candle of input item or group i). Each point's y becomes its candle's close; an incomplete candle is a gap.
+- `static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value, TimeBucket bucket, IReadOnlyList<int[]> groups)` — Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on their wall-clock time) and each bucket gives the first, highest, lowest and last value in time order. Null values are skipped.
+- `SeriesData WithBox(ReadOnlySpan<BoxSummary> boxes)` — The same points as boxes: `boxes` is in input order, like the y values given when creating the data (index i is the box of input item or group i). Each point's y becomes its box's median.
+- `static SeriesData FromBoxGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> value, IReadOnlyList<int[]> groups)` — Box plot data from raw values: items with the same x form one box, summarized with `BoxSummary.FromValues`. Categories keep the order of first appearance; numbers and times are sorted. Null values are skipped.
+- `int ToSourceIndex(int index)` — Index of the point in the original input (items list or columns).
+- `static SeriesData From(ReadOnlySpan<double> x, ReadOnlySpan<double> y)` — Numeric x and y columns (copied). Points without a finite x are dropped, unsorted x is sorted, and missing y values are NaN (gaps).
+- `static SeriesData From(ReadOnlyMemory<double> x, ReadOnlyMemory<double> y)` — Numeric x and y columns (copied).
+- `static SeriesData From(ReadOnlySpan<DateTime> x, ReadOnlySpan<double> y)` — Time x and y columns (copied); times are used as given, see `TimeValue`.
+- `static SeriesData From(ReadOnlyMemory<DateTime> x, ReadOnlyMemory<double> y)` — Time x and y columns (copied).
+- `static SeriesData From(ReadOnlySpan<DateTimeOffset> x, ReadOnlySpan<double> y)` — Time x and y columns (copied); each value contributes its own wall-clock time.
+- `static SeriesData From(ReadOnlyMemory<DateTimeOffset> x, ReadOnlyMemory<double> y)` — Time x and y columns (copied).
+- `static SeriesData FromCategories(IReadOnlyList<string> categories, ReadOnlySpan<double> y)` — Category data; order of first appearance is kept.
+- `static SeriesData FromItems<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> yValue)` — Builds columns from items. X may be a number, DateTime, DateTimeOffset, DateOnly or string (category); the first non-null value decides the kind. A null Y is a gap. Selectors run once here, never per render.
+- `static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate)`
+- `static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups)` — Groups items with the same x and makes one point per group, with y from `aggregate` (null is a gap). Categories keep the order of first appearance; numbers and times are sorted as usual. Items with a null x are left out. Selectors and the aggregate run once here, never per render.
+
+#### `ColorBand` (record, RioCharts.Core)
+
+A color for values in a range, e.g. { "above": 120, "color": "--rio-negative" }: a line or area takes it where it runs in the range, a bar or scatter point when its value is in it.
+
+- `Above`: `double?` — Values above this take the color. Null: no lower bound.
+- `Below`: `double?` — Values below this take the color. Null: no upper bound.
+- `Color`: `string` — A CSS color or a theme token such as "--rio-negative".
+
+#### `SeriesBuffer` (class, RioCharts.Core.Data)
+
+A growing window of points for live data: append from any thread, and charts that use it redraw at a capped rate. The oldest points drop out when `SeriesBuffer.Capacity` is reached or, for time data, when they are older than `SeriesBuffer.TimeWindow` behind the newest point.
+
+- `Capacity`: `int` (read-only) — The most points kept; the oldest drop out beyond it.
+- `TimeWindow`: `TimeSpan?` (read-only) — For time data: points further than this behind the newest one drop out. Null keeps them until `SeriesBuffer.Capacity`.
+- `Kind`: `XKind` (read-only) — Time or Numeric x values.
+- `Version`: `long` (read-only) — Increases with every change; charts compare it to know when to redraw.
+- `Count`: `int` (read-only) — The number of points in the buffer now.
+
+- `new SeriesBuffer(int capacity = 100000, TimeSpan? timeWindow = null, XKind kind = XKind.Time)`
+- `void Append(DateTime x, double y)` — Appends a point at a time (used as given, see `TimeValue`). Thread-safe.
+- `void Append(DateTimeOffset x, double y)` — Appends a point at a time (its own wall-clock time). Thread-safe.
+- `void Append(double x, double y)` — Appends a point; y may be NaN for a gap. On time buffers x is in milliseconds (`TimeValue`).
+- `void AppendRange(ReadOnlySpan<DateTime> x, ReadOnlySpan<double> y)` — Appends many points with one change notification.
+- `void AppendRange(ReadOnlySpan<double> x, ReadOnlySpan<double> y)` — Appends many points with one change notification (x in data units).
+- `void Clear()` — Removes all points. Thread-safe.
+- `SeriesData ToSeriesData()` — A copy of the current points as chart data (sorted by x).
+
+#### `CurveType` (enum, RioCharts.Core)
+
+Line shape. Step holds each value until the next point.
+
+- `Linear` — Straight segments between points.
+- `Monotone` — A smooth curve that does not overshoot the data.
+- `Step` — Holds each value until the next point.
+
+#### `PointHighlight` (enum, RioCharts.Core)
+
+Points of a line or area series to mark with a dot (combine with |).
+
+- `None` — No highlighted points.
+- `Last` — The last value (the latest, for time series).
+- `First` — The first value.
+- `Min` — The lowest value.
+- `Max` — The highest value.
+
+Flags: combine values with `|`.
+
+#### `TimeBucket` (enum, RioCharts.Core)
+
+Time interval that rows are grouped into before aggregating.
+
+- `Minute` — One bucket per minute.
+- `Hour` — One bucket per hour.
+- `Day` — One bucket per day.
+- `Week` — One bucket per week, starting on Monday.
+- `Month` — One bucket per calendar month.
+- `Quarter` — One bucket per calendar quarter.
+- `Year` — One bucket per calendar year.
+
+#### `AnnotationLayer` (enum, RioCharts.Core)
+
+Whether an annotation is drawn below or above the series.
+
+- `Below` — Behind the series.
+- `Above` — On top of the series.
+
+#### `AnnotationAxis` (enum, RioCharts.Core)
+
+The axis a line or band annotation refers to.
+
+- `X` — The horizontal axis: a vertical line or band.
+- `Y` — A vertical axis: a horizontal line or band.
+
+#### `LabelPosition` (enum, RioCharts.Core)
+
+Where an annotation label sits along its line or band.
+
+- `Start` — At the start: the left of a horizontal line, the bottom of a vertical line.
+- `Middle` — In the middle.
+- `End` — At the end: the right of a horizontal line, the top of a vertical line.
+
+#### `ExportFormat` (enum, RioCharts.Blazor)
+
+An export format.
+
+- `Png` — A PNG image.
+- `Svg` — An SVG document.
+- `Csv` — The chart's data as CSV.
+
+#### `ScaleType` (enum, RioCharts.Core)
+
+The scale of an axis.
+
+- `Auto` — Picked from the data: times give a time axis, numbers a linear axis, strings a band axis.
+- `Linear` — A continuous numeric axis.
+- `Time` — A continuous time axis with calendar ticks.
+- `Band` — Evenly spaced categories.
+
+#### `AxisPosition` (enum, RioCharts.Core)
+
+Side of a vertical axis.
+
+- `Auto` — The primary axis on the left, additional axes on the right.
+- `Left` — On the left of the plot.
+- `Right` — On the right of the plot.
+
+#### `LegendMode` (enum, RioCharts.Core)
+
+When the legend is shown.
+
+- `Auto` — Only when there is more than one series.
+- `Show` — Always.
+- `Hide` — Never.
+
+#### `LegendPosition` (enum, RioCharts.Core)
+
+Where the legend sits.
+
+- `Top` — Above the plot.
+- `Bottom` — Below the plot.
+- `Right` — To the right of the plot (moves to the top when the chart is too narrow).
+
+#### `AnnotationType` (enum, RioCharts.Core)
+
+Kind of annotation.
+
+- `Line` — A reference line at `AnnotationSpec.Value` (e.g. a sales target).
+- `Band` — A shaded band from `AnnotationSpec.From` to `AnnotationSpec.To` (e.g. a campaign period).
+- `Point` — A marker at `AnnotationSpec.X`, `AnnotationSpec.Y`.
+- `Callout` — A point marker with its label in a text box offset from the point.
+
+#### `SeriesSpec` (record, RioCharts.Core)
+
+One series: its type, where its data comes from (fields and transforms in JSON specs) and how it looks.
+
+- `Id`: `string` — Unique id of the series. Optional in JSON specs (generated from the y field).
+- `Type`: `SeriesType` — Chart type: line, area, bar, pie (donut with innerRadius), radialBar, or auto to pick from the data.
+- `Dataset`: `string?` — Dataset id to read fields from. Defaults to the chart's dataset (or its inline data).
+- `X`: `string?` — Field for the x axis: a time, number or text (category; the slice name for pies).
+- `Y`: `string?` — Numeric field for the y value. Optional with aggregate count.
+- `Filter`: `IReadOnlyList<FilterSpec>?` — Keep only rows that match all of these conditions.
+- `TimeBucket`: `TimeBucket?` — Time x: group rows into buckets (hour, day, week, month, quarter, year) and aggregate y per bucket.
+- `Aggregate`: `Aggregate?` — Combine rows with the same x (or time bucket): sum, average, min, max, count or last.
+- `GroupBy`: `string?` — Field to split by: one series per distinct value (e.g. one line per sales channel).
+- `Sort`: `SortOrder?` — Order points by y (for categories, e.g. a ranking): ascending or descending.
+- `Limit`: `int?` — Keep only the first N points after sorting (e.g. top 10).
+- `Name`: `string?` — Name shown in the legend and tooltips. Defaults to the id.
+- `Color`: `string?` — CSS color. Null uses the next palette color.
+- `Curve`: `CurveType` — Line shape for line and area series.
+- `StrokeWidth`: `double?` — Line width in pixels. Default 2.
+- `ZIndex`: `int?` — Draw order override. By default areas are drawn first, then bars, then lines.
+- `YAxisId`: `string?` — Id of the vertical axis this series uses. Null uses the primary axis.
+- `Stack`: `string?` — Stack group name. Series of the same type with the same stack name (and axis) are stacked on top of each other.
+- `DataLabels`: `bool?` — Show values on the chart. Null uses the default: on for pie, donut and radial bar, off otherwise.
+- `Low`: `string?` — Range area: the field with the low value of each point (y is the high value). Box plot with precomputed boxes: the lower whisker end.
+- `Open`: `string?` — Candlestick with precomputed candles: the field with each period's first value (y is the close, low and high the extremes). Leave it out to make candles from the raw y values per timeBucket.
+- `Q1`: `string?` — Box plot with precomputed boxes: the field with the lower quartile (y is the median). Leave out q1, q3, low and high to compute the boxes from the raw y values per x.
+- `Q3`: `string?` — Box plot with precomputed boxes: the field with the upper quartile.
+- `High`: `string?` — Box plot with precomputed boxes: the field with the upper whisker end.
+- `MarkerSize`: `double?` — Scatter: marker diameter in pixels. Default 5.
+- `TrendLine`: `bool` — Scatter: draw a dashed least-squares trend line through the points.
+- `Highlight`: `PointHighlight` — Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. "last, max").
+- `InnerRadius`: `double?` — Pie, donut and radial bar: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut).
+- `StartAngle`: `double?` — Pie, donut and radial bar: start angle in degrees, clockwise from 12 o'clock. Default 0.
+- `EndAngle`: `double?` — Pie, donut and radial bar: end angle in degrees. Default: start + 360 for pies, 270 for radial bars.
+- `GroupSmallSlices`: `double?` — Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one "Other" slice. Treemap: items smaller than this share of their group, per group.
+- `Path`: `IReadOnlyList<string>?` — Treemap: the fields that name the groups, from the outermost to the item, e.g. ["region", "country", "city"]; used instead of x. Without it, x is the item's path, e.g. "Europe/Sweden/Stockholm".
+- `VisibleLevels`: `int?` — Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.
+- `ColorBands`: `IReadOnlyList<ColorBand>?` — Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.
+- `ColorField`: `string?` — The field with each row's own color (a CSS color such as "#d6485a", or a theme token such as "--rio-negative"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.
+- `PathSeparator`: `string?` — Treemap: what separates the groups in an x path. Default "/".
+- `Max`: `double?` — Radial bar: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
+- `Format`: `string?` — .NET format string for values in tooltips and data labels, e.g. "0.0" or "P0". Null: the axis format, else automatic.
+- `DisplayName`: `string` (read-only) — The name shown in the legend and tooltips: `SeriesSpec.Name`, or the id when no name is set.
+
+#### `DataField` (class, RioCharts.Core.Specs)
+
+A named column: its type and values (double, DateTime/DateTimeOffset or string; null for missing).
+
+- `Name`: `string` (read-only) — The field name specs refer to (matched case-insensitively).
+- `Type`: `FieldType` (read-only) — The kind of values.
+- `Values`: `object?[]` (read-only) — One value per row: double, DateTime/DateTimeOffset or string; null for missing.
+- `Description`: `string?` (read-only) — What the field means (shown to AI agents), e.g. "Revenue in €".
+
+- `new DataField(string name, FieldType type, object?[] values, string? description = null)` — Creates a field.
+
+#### `XKind` (enum, RioCharts.Core.Data)
+
+What the x values of a series are.
+
+- `Numeric` — Plain numbers.
+- `Time` — Times, stored as milliseconds (see `TimeValue`).
+- `Category` — Categories, stored as indexes into `SeriesData.Categories`.
+
+#### `CandleColumns` (class, RioCharts.Core.Data)
+
+The candlestick columns of a `SeriesData`, one entry per point in point order; the point's `SeriesData.Y` is its close. Treat as read-only.
+
+- `Open`: `double[]` (read-only) — The open per point.
+- `High`: `double[]` (read-only) — The high per point.
+- `Low`: `double[]` (read-only) — The low per point.
+- `Count`: `int[]` (read-only) — How many values each candle summarizes (0: not known).
+
+- `CandleSummary At(int point, double close)` — The candle of one point (its close is the series' y value).
+
+#### `BoxColumns` (class, RioCharts.Core.Data)
+
+The box plot columns of a `SeriesData`, one entry per point (in point order; the point's `SeriesData.Y` is its median). Treat as read-only.
+
+- `Min`: `double[]` (read-only) — The lowest value per point, outliers included.
+- `Low`: `double[]` (read-only) — The lower whisker end per point.
+- `Q1`: `double[]` (read-only) — The lower quartile per point.
+- `Q3`: `double[]` (read-only) — The upper quartile per point.
+- `High`: `double[]` (read-only) — The upper whisker end per point.
+- `Max`: `double[]` (read-only) — The highest value per point, outliers included.
+- `Count`: `int[]` (read-only) — How many values each point summarizes (0: not known).
+- `OutlierValues`: `double[]` (read-only) — All outliers, grouped by point in point order.
+- `OutlierPoints`: `int[]` (read-only) — The point of each outlier in `BoxColumns.OutlierValues`.
+
+- `ReadOnlySpan<double> OutliersOf(int point)` — The outliers of one point.
+- `BoxSummary At(int point, double median)` — The summary of one point (its median is the series' y value).
+
+#### `SeriesType` (enum, RioCharts.Core)
+
+How a series is drawn.
+
+- `Line` — A line through the points, for trends over time or another continuous x.
+- `Area` — A line with the area below it filled.
+- `Bar` — A bar per point, for comparing categories (or time buckets).
+- `Pie` — Slices of a circle, for shares of a whole; a donut with `SeriesSpec.InnerRadius`.
+- `RadialBar` — A circular bar per category, each on its own track.
+- `Scatter` — A marker per point, for how two measures relate (e.g. delivery distance against delivery time).
+- `Heatmap` — A grid of colored cells: every heatmap series is a row, x the columns, y the color.
+- `RangeArea` — A band between a low and a high value per x (e.g. min to max around an average).
+- `BoxPlot` — The spread of values per x: a box from the lower to the upper quartile, the median, whiskers and outliers.
+- `Candlestick` — How a value moved within each period: open, high, low and close.
+- `Radar` — A closed shape per series across category spokes, for comparing several measures (e.g. products' test scores).
+- `Treemap` — Rectangles sized by value, nested by group (a path such as "Europe/Sweden/Stockholm"), for how a total splits into many parts.
+- `Auto` — JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
+
+#### `FilterSpec` (record, RioCharts.Core)
+
+A condition on a field, e.g. { "field": "channel", "op": "eq", "value": "Web" }.
+
+- `Field`: `string` — Field name.
+- `Op`: `FilterOp` — Comparison: eq, ne, gt, gte, lt, lte or contains (text).
+- `Value`: `object?` — Value to compare with: a number, a time (ISO 8601) or text.
+
+#### `SortOrder` (enum, RioCharts.Core)
+
+Order of points sorted by value.
+
+- `Ascending` — Smallest first.
+- `Descending` — Largest first.
+
+#### `FieldType` (enum, RioCharts.Core.Specs)
+
+The kind of values in a dataset field.
+
+- `Number` — Numbers (double).
+- `Time` — Times (DateTime or DateTimeOffset).
+- `Text` — Text (string).
+
+#### `FilterOp` (enum, RioCharts.Core)
+
+Comparison of a `FilterSpec`.
+
+- `Eq` — Equal to the value.
+- `Ne` — Not equal to the value.
+- `Gt` — Greater than the value.
+- `Gte` — Greater than or equal to the value.
+- `Lt` — Less than the value.
+- `Lte` — Less than or equal to the value.
+- `Contains` — Text that contains the value, ignoring case.
+
+## More
+
+- Getting started: https://joadan.github.io/RioCharts/getting-started
+- All chart types with live examples: https://joadan.github.io/RioCharts/lines-and-areas
+- JSON specs and the playground: https://joadan.github.io/RioCharts/specs
+- AI agents and MCP (`riocharts-mcp` renders charts to PNG and turns specs into Razor): https://joadan.github.io/RioCharts/ai
+- Source: https://github.com/joadan/RioCharts

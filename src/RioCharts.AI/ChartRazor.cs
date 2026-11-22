@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using RioCharts.Core;
+using RioCharts.Core.Specs;
 
 namespace RioCharts.AI;
 
@@ -305,6 +306,83 @@ public static class ChartRazor
             : $"@({Str(s)})";
 
     private static string Number(double value) => value.ToString("0.####", CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// A C# record for a dataset's rows, with the property names <see cref="FromSpec"/> uses, e.g.
+    /// <c>public sealed record Sale(DateTime Date, string Region, double Amount);</c>. Numbers are
+    /// <c>double</c>, times <c>DateTime</c> (or <c>DateTimeOffset</c>), text <c>string</c>;
+    /// nullable when the field has missing values.
+    /// </summary>
+    public static string ItemRecord(ChartDataset dataset, string itemType)
+    {
+        ArgumentNullException.ThrowIfNull(dataset);
+        var properties = dataset.Fields.Select(f =>
+        {
+            var missing = f.Values.Any(v => v is null);
+            var type = f.Type switch
+            {
+                FieldType.Number => "double",
+                FieldType.Time => f.Values.Any(v => v is DateTimeOffset) ? "DateTimeOffset" : "DateTime",
+                _ => "string",
+            };
+            return $"{type}{(missing ? "?" : "")} {Property(f.Name)}";
+        });
+        return $"public sealed record {itemType}({string.Join(", ", properties)});";
+    }
+
+    /// <summary>
+    /// The rows of a (small, e.g. inline) dataset as a C# list of <see cref="ItemRecord"/> items:
+    /// <c>List&lt;Sale&gt; sales = [new("North", 120), ...];</c>. At most <paramref name="maxRows"/> rows.
+    /// </summary>
+    public static string ItemsList(ChartDataset dataset, string itemType, string itemsName, int maxRows = 100)
+    {
+        ArgumentNullException.ThrowIfNull(dataset);
+        var sb = new StringBuilder($"List<{itemType}> {itemsName} =\n[\n");
+        var rows = Math.Min(dataset.RowCount, maxRows);
+        for (var row = 0; row < rows; row++)
+        {
+            sb.Append("    new(").Append(string.Join(", ", dataset.Fields.Select(f => Literal(f.Values[row])))).Append("),\n");
+        }
+
+        if (dataset.RowCount > rows)
+        {
+            sb.Append($"    // ... {dataset.RowCount - rows} more rows\n");
+        }
+
+        return sb.Append("];").ToString();
+    }
+
+    private static string Literal(object? value) => value switch
+    {
+        null => "null",
+        double d => d.ToString("R", CultureInfo.InvariantCulture),
+        DateTime t => t.TimeOfDay == TimeSpan.Zero
+            ? $"new DateTime({t.Year}, {t.Month}, {t.Day})"
+            : $"new DateTime({t.Year}, {t.Month}, {t.Day}, {t.Hour}, {t.Minute}, {t.Second})",
+        DateTimeOffset o => $"DateTimeOffset.Parse({Str(o.ToString("O", CultureInfo.InvariantCulture))}, CultureInfo.InvariantCulture)",
+        string text => Str(text),
+        IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
+        _ => Str(value.ToString() ?? ""),
+    };
+
+    /// <summary>A type name for a dataset's rows: "sales" → "Sale", "web_orders" → "WebOrder".</summary>
+    public static string ItemTypeName(string datasetName)
+    {
+        var name = Property(datasetName);
+        if (name.Length > 3 && name.EndsWith('s') && !name.EndsWith("ss", StringComparison.Ordinal))
+        {
+            name = name.EndsWith("ies", StringComparison.Ordinal) ? name[..^3] + "y" : name[..^1];
+        }
+
+        return name.Length == 0 ? "Row" : name;
+    }
+
+    /// <summary>A variable name for a dataset's rows: "web_orders" → "webOrders".</summary>
+    public static string ItemsName(string datasetName)
+    {
+        var name = Property(datasetName);
+        return name.Length == 0 ? "rows" : char.ToLowerInvariant(name[0]) + name[1..];
+    }
 
     /// <summary>"responseMs", "response_ms" → "ResponseMs".</summary>
     private static string Property(string field)

@@ -181,6 +181,25 @@ dotnet tool install -g RioCharts.Mcp --prerelease
 To try it, open [samples/RioCharts.Mcp.Sample](samples/RioCharts.Mcp.Sample) in Claude Code or VS Code: it has
 sample data, the agent configuration and example prompts.
 
+**Coding agents** that add charts to your app: point them at
+[llms-full.txt](https://joadan.github.io/RioCharts/llms-full.txt), one Markdown file with setup, rules,
+examples (compiled by the tests) and every component parameter, generated from the code. `riocharts-mcp`
+serves the same guide (`get_usage`) and turns a spec into `<RioChart>` markup with a record for the rows
+(`get_razor`), so an agent can design a chart with `render_chart`, look at it, then put it in the app.
+Paste this into your repository's `AGENTS.md` (or `CLAUDE.md`, `.github/copilot-instructions.md`):
+
+```markdown
+## Charts
+
+Charts use RioCharts.Blazor (preview, .NET 10). Before writing chart code, read
+https://joadan.github.io/RioCharts/llms-full.txt, or call get_usage if the riocharts MCP server is set up.
+
+- Setup: the RioCharts.Blazor package, and `@using RioCharts.Blazor` and `@using RioCharts.Core` in `_Imports.razor`. Nothing to register.
+- Set `TItem` on `<RioChart>` when it has event handlers (`OnPointClick`, ...).
+- A chart updates when `Items` is a new list or `DataVersion` changes, not when a list is changed in place.
+- Tooltips, zoom and clicks need an interactive render mode on the page.
+```
+
 The same specs work in Blazor: `<RioChart TItem="object" Spec="spec" Datasets="datasets" />`, e.g.
 `{"dataset":"shop","series":[{"type":"line","x":"timestamp","y":"sessions","groupBy":"channel"}]}`.
 

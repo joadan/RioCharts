@@ -23,7 +23,7 @@
 @code {
     [Parameter, EditorRequired] public string Code { get; set; } = "";
 
-    /// <summary>razor, csharp, json or shell.</summary>
+    /// <summary>razor, csharp, json, shell or markdown (no highlighting).</summary>
     [Parameter] public string Language { get; set; } = "razor";
 
     [Parameter] public string? Class { get; set; }
@@ -37,6 +37,7 @@
         "csharp" => "C#",
         "json" => "JSON",
         "shell" => "Terminal",
+        "markdown" => "Markdown",
         _ => "Razor",
     };
 

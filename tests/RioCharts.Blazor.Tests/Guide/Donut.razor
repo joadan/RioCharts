@@ -1,0 +1,13 @@
+@* Donut (or pie) | Shares of a whole. GroupSmallSlices puts slices under 3 % into "Other". PieSeries takes the same parameters. *@
+<RioChart Items="channels" Title="Revenue by channel">
+    <DonutSeries XValue="c => c.Name" YValue="c => c.Revenue" Format="0 k€" GroupSmallSlices="0.03" />
+</RioChart>
+
+@code {
+    private sealed record Channel(string Name, double Revenue);
+
+    private readonly List<Channel> channels =
+    [
+        new("Web shop", 420), new("Stores", 310), new("Marketplaces", 150), new("Phone", 12),
+    ];
+}

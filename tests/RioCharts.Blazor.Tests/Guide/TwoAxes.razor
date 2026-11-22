@@ -1,0 +1,16 @@
+@* Two y axes and a target line | Extra axes in YAxes go on the right; a series picks one with YAxisId. Annotations are child components. *@
+<RioChart Items="days" YAxis="@(new AxisSpec { Title = "Orders" })"
+          YAxes="@([new AxisSpec { Id = "rate", Title = "Conversion, %" }])">
+    <BarSeries Name="Orders" XValue="d => d.Day" YValue="d => d.Orders" />
+    <LineSeries Name="Conversion" XValue="d => d.Day" YValue="d => d.Conversion" YAxisId="rate" Format="0.0'%'" />
+    <ReferenceLine Value="300" Label="Target" />
+</RioChart>
+
+@code {
+    private sealed record DayStats(string Day, double Orders, double Conversion);
+
+    private readonly List<DayStats> days =
+    [
+        new("Mon", 280, 2.1), new("Tue", 310, 2.4), new("Wed", 265, 1.9), new("Thu", 340, 2.6), new("Fri", 390, 2.9),
+    ];
+}

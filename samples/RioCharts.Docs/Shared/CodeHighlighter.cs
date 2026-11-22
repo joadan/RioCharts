@@ -35,6 +35,11 @@ public static partial class CodeHighlighter
     public static string ToHtml(string code, string language = "razor")
     {
         var sb = new StringBuilder(code.Length * 2);
+        if (language is "markdown")
+        {
+            return System.Net.WebUtility.HtmlEncode(code); // text to paste: no highlighting
+        }
+
         if (language is "json")
         {
             HighlightJson(code, sb);

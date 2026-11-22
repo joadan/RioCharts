@@ -1,0 +1,18 @@
+@* Clicks, zoom and downloads | Needs an interactive page (@rendermode InteractiveServer, InteractiveWebAssembly or InteractiveAuto); static pages show the chart without interaction. *@
+<RioChart TItem="Reading" Items="readings" Zoomable="true" Exportable="true" OnPointClick="e => clicked = e">
+    <LineSeries Name="Temperature" XValue="r => r.Time" YValue="r => r.Celsius" Format="0.0 °C" />
+</RioChart>
+
+@if (clicked is not null)
+{
+    <p>@clicked.SeriesName at @clicked.X: @clicked.Y °C</p>
+}
+
+@code {
+    private sealed record Reading(DateTime Time, double? Celsius); // null leaves a gap in the line
+
+    private PointClickEventArgs<Reading>? clicked;
+
+    private readonly List<Reading> readings =
+        [.. Enumerable.Range(0, 48).Select(h => new Reading(new DateTime(2026, 6, 1).AddHours(h), 18 + 6 * Math.Sin(h / 24.0 * 2 * Math.PI)))];
+}

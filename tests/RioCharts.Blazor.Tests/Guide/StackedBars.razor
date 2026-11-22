@@ -1,0 +1,17 @@
+@* Stacked bars | Series with the same Stack value stack on each other. *@
+<RioChart Items="sales" Title="Sales per month, k€">
+    <BarSeries Name="Shoes" XValue="s => s.Month" YValue="s => s.Shoes" Stack="total" />
+    <BarSeries Name="Clothing" XValue="s => s.Month" YValue="s => s.Clothing" Stack="total" />
+    <BarSeries Name="Gear" XValue="s => s.Month" YValue="s => s.Gear" Stack="total" />
+</RioChart>
+
+@code {
+    private sealed record MonthSales(string Month, double Shoes, double Clothing, double Gear);
+
+    private readonly List<MonthSales> sales =
+    [
+        new("Jan", 42, 61, 18),
+        new("Feb", 38, 57, 22),
+        new("Mar", 51, 66, 25),
+    ];
+}

@@ -98,7 +98,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>Draw order override (default: areas, then bars, then lines).</summary>
     [Parameter] public int? ZIndex { get; set; }
 
-    /// <summary>Id of the vertical axis to use (see <c>Chart.YAxes</c>). Default: the primary axis.</summary>
+    /// <summary>Id of the vertical axis to use (see <c>RioChart.YAxes</c>). Default: the primary axis.</summary>
     [Parameter] public string? YAxisId { get; set; }
 
     /// <summary>Stack group: series of the same type with the same stack name are stacked.</summary>
@@ -184,7 +184,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
     /// <summary>
     /// Live data (used instead of Items and Data when set). Append to it from any thread; the
-    /// chart redraws at most every <c>Chart.RefreshInterval</c> milliseconds.
+    /// chart redraws at most every <c>RioChart.RefreshInterval</c> milliseconds.
     /// </summary>
     [Parameter] public SeriesBuffer? Buffer { get; set; }
 

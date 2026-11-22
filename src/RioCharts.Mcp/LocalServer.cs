@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text.Json;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RioCharts.AI;
 using RioCharts.Core.Specs;
@@ -23,8 +24,9 @@ public static class LocalServer
     }
 
     /// <summary>
-    /// render_chart, list_datasets and get_chart_schema. create_chart is left out: there is no app
-    /// here to show a chart to the user, so the agent gets the image (and the file) itself.
+    /// render_chart, list_datasets, get_chart_schema, get_razor and get_usage. create_chart is left
+    /// out: there is no app here to show a chart to the user, so the agent gets the image (and the
+    /// file) itself. get_razor and get_usage are for agents writing RioCharts code in an app.
     /// </summary>
     public static IReadOnlyList<McpServerTool> CreateTools(ChartTool tool)
     {
@@ -62,6 +64,36 @@ public static class LocalServer
                     Name = "get_chart_schema",
                     Title = "Chart spec schema",
                     Description = "Returns the JSON schema of a chart spec, with a description of every option.",
+                    ReadOnly = true,
+                }),
+            McpServerTool.Create(
+                async ([Description("The chart spec as a JSON object (the same spec as render_chart).")] JsonElement spec,
+                       [Description("The C# type of the rows, e.g. \"Sale\". Default: from the dataset name.")] string? itemType = null,
+                       [Description("The variable or expression that holds the rows, e.g. \"sales\". Default: the dataset name.")] string? itemsName = null,
+                       CancellationToken cancellationToken = default) =>
+                {
+                    var result = await tool.GetRazorAsync(spec, itemType, itemsName, cancellationToken).ConfigureAwait(false);
+                    return new CallToolResult { Content = [new TextContentBlock { Text = result.ToMarkdown() }], IsError = !result.Success };
+                },
+                new McpServerToolCreateOptions
+                {
+                    Name = "get_razor",
+                    Title = "Chart spec to Blazor code",
+                    Description = "Turns a chart spec into code for a Blazor app with the RioCharts.Blazor package: the <RioChart> markup, "
+                        + "a C# record for the rows (from the dataset's fields) and, for inline data, the rows as a list. "
+                        + "Design the chart with render_chart and look at it first, then call this with the same spec. "
+                        + "For writing RioCharts code by hand, call get_usage.",
+                    ReadOnly = true,
+                }),
+            McpServerTool.Create(
+                ([Description("Optional: one section, e.g. a component (\"RioChart\", \"LineSeries\"), a type (\"AxisSpec\") or a heading (\"Common mistakes\"). Empty: the overview.")] string? topic = null) =>
+                    RioChartsUsage.Get(topic),
+                new McpServerToolCreateOptions
+                {
+                    Name = "get_usage",
+                    Title = "RioCharts usage guide",
+                    Description = "How to use RioCharts in Blazor code: setup (package and usings), rules, which series to use, compiled examples "
+                        + "and common mistakes; with a topic, the parameters of one component or type. Call before writing <RioChart> markup.",
                     ReadOnly = true,
                 }),
         ];

@@ -232,8 +232,8 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   outside the directory. Whether a model can see an SVG it gets back depends on the provider; most
   only look at raster images, so PNG is the default.
 - **riocharts-mcp** (`src/RioCharts.Mcp`) is a stdio MCP server packed as a .NET tool. It offers
-  only render_chart, list_datasets and get_chart_schema: with no app to show a chart, create_chart
-  makes no sense. render_chart there uses `ChartTool.StandaloneRenderDescription`, which carries
+  render_chart, list_datasets and get_chart_schema, plus get_razor and get_usage for coding agents
+  (see "Guide for coding agents"); with no app to show a chart, create_chart makes no sense. render_chart there uses `ChartTool.StandaloneRenderDescription`, which carries
   the spec format and points to list_datasets instead of listing datasets, since files may change
   while the server runs. Logging goes to stderr; stdout is the protocol. Images always go to
   `--out` (default `./charts` under the agent's working directory). There is no `--data` default:
@@ -735,6 +735,39 @@ Design.md "Treemap" (milestone 7).
   `VisibleRange` (Design.md does not name it); "MaxDepth" read as if it cut the data.
 - **Not yet:** color by a separate value on a sequential scale, and listing an "Other" item's parts
   in its tooltip.
+
+## Guide for coding agents
+
+Design.md has no section on this; it extends "Low priority: a short README note for
+Blazor-ApexCharts users" and the AI spec work toward agents that write app code.
+
+- **llms-full.txt** (docs site) is generated, not written: `AgentGuideTests` in the Blazor tests
+  builds it from `docs/llms/guide.md` (hand-written: setup, rules, which series, common mistakes)
+  with two placeholders. `{{examples}}` takes the components in `tests/RioCharts.Blazor.Tests/Guide/`
+  verbatim (first line `@* Title | Description *@`); the same tests compile and render them, and
+  that folder's `_Imports.razor` has only the two usings the guide tells apps to add, so the
+  setup is checked too. `{{api}}` is a reference from reflection and the XML docs: every public
+  component's `[Parameter]`s (type with nullability, default from a new instance, summary),
+  `RioChart`'s public methods, the parameters common to series and annotations once, and every
+  RioCharts type the parameters use, followed transitively (records with properties, enums with
+  values; a type with more than 60 properties, i.e. `ChartTexts`, lists names only). The test fails
+  when the file is out of date; it is accepted like the snapshots.
+- **llms.txt** is the short index from the llms.txt convention, written by hand (the page list
+  changes rarely).
+- **RioChartsUsage** (RioCharts.AI) embeds llms-full.txt, so get_usage matches the package
+  version. `Get(topic)` cuts one section by heading (a component, type or `##` heading, matched
+  case-insensitively without markup, then by substring); no topic gives everything up to the
+  reference plus the list of reference topics, about a third of the size.
+- **get_razor** (`ChartTool.GetRazorAsync`) checks the spec like render_chart, then returns
+  `ChartRazor.FromSpec` markup, a positional record for the rows from the dataset's fields
+  (`ChartRazor.ItemRecord`: double, DateTime or DateTimeOffset, string; nullable when a field has
+  missing values; property names as FromSpec writes them) and, for inline data, the rows as a C#
+  list (`ItemsList`, at most 100 rows). Type and variable names default to the dataset name
+  ("web_orders" → `WebOrder`, `webOrders`). The record has every field of the dataset, not only
+  the ones the spec uses, so the app's own type is easy to match. Only riocharts-mcp offers it and
+  get_usage; `WithRioChartsTools` (servers in apps, for end users) keeps its four tools.
+- Found while writing the examples: an event handler lambda on `<RioChart>` (`OnPointClick="e =>
+  ..."`) stops Blazor from inferring `TItem`, even with `Items` set; the guide says to set `TItem`.
 
 ## Colors per item
 

@@ -11,6 +11,14 @@
 <p>Then in <code>_Imports.razor</code>:</p>
 <CodeBlock Code="@ImportsCode" />
 <p>Styles come with your app's <code>{App}.styles.css</code> bundle automatically; there is nothing else to register.</p>
+<h3 id="coding-agents">Using a coding agent</h3>
+<p>
+    Models do not know RioCharts yet. Paste this into your repository's <code>AGENTS.md</code> (or <code>CLAUDE.md</code>,
+    <code>.github/copilot-instructions.md</code>) so the agent reads the guide before it writes chart code.
+    <a href="llms-full.txt" target="_blank"><code>llms-full.txt</code></a> has setup, rules, examples and every parameter in one file;
+    see also <a href="ai#coding-agents">coding agents and MCP</a>.
+</p>
+<CodeBlock Language="markdown" Code="@AgentsCode" />
 
 <h3>All packages</h3>
 <p>
@@ -104,6 +112,18 @@
         new("RioCharts.AI", "create_chart and render_chart tools for AI agents."),
         new("RioCharts.Mcp", "riocharts-mcp, a local MCP server for agents (a .NET tool)."),
     ];
+
+    private const string AgentsCode = """
+        ## Charts
+
+        Charts use RioCharts.Blazor (preview, .NET 10). Before writing chart code, read
+        https://joadan.github.io/RioCharts/llms-full.txt, or call get_usage if the riocharts MCP server is set up.
+
+        - Setup: the RioCharts.Blazor package, and `@using RioCharts.Blazor` and `@using RioCharts.Core` in `_Imports.razor`. Nothing to register.
+        - Set `TItem` on `<RioChart>` when it has event handlers (`OnPointClick`, ...).
+        - A chart updates when `Items` is a new list or `DataVersion` changes, not when a list is changed in place.
+        - Tooltips, zoom and clicks need an interactive render mode on the page.
+        """;
 
     private const string InstallCode = """
         dotnet add package RioCharts.Core --prerelease

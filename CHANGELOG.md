@@ -5,6 +5,20 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Guide for coding agents: `llms.txt` and `llms-full.txt` on the docs site. llms-full.txt has setup,
+  rules, which series to use, common mistakes, compiled examples and every component parameter
+  and the types they use, generated from the code and XML docs by the Blazor tests (they fail
+  when it is out of date; accept with `RIOCHARTS_ACCEPT_SNAPSHOTS=1`).
+- A block to paste into an app's `AGENTS.md` (or `CLAUDE.md`, Copilot instructions) so coding
+  agents read the guide first: on Getting started, in the README and in the NuGet README. The NuGet
+  README now lists every series type.
+- This repository's agent instructions moved from `CLAUDE.md` to `AGENTS.md` (read by Copilot,
+  Codex, Cursor and others); `CLAUDE.md` imports it (`@AGENTS.md`).
+- riocharts-mcp: `get_usage` returns that guide (the overview, or one component or type with
+  `topic`), and `get_razor` turns a spec into code for a Blazor app: the `<RioChart>` markup, a
+  record for the rows from the dataset's fields and, for inline data, the rows as a C# list. In
+  RioCharts.AI: `RioChartsUsage`, `ChartTool.GetRazorAsync` (`ChartCodeResult`) and
+  `ChartRazor.ItemRecord`, `ItemsList`, `ItemTypeName`, `ItemsName`.
 - Docs site: the header badge shows the RioCharts version the site runs (e.g. `v0.1.73-preview`)
   and links to this changelog; the footer adds the commit it was built from.
 - Pies: the "Other" slice's tooltip lists the slices it holds, and in both that tooltip and the

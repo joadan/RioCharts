@@ -12,7 +12,7 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
 {
     [CascadingParameter] internal IChartContext? Chart { get; set; }
 
-    /// <summary>Optional id, reported by <c>Chart.OnAnnotationClick</c> and <c>OnAnnotationChanged</c>.</summary>
+    /// <summary>Optional id, reported by <c>RioChart.OnAnnotationClick</c> and <c>OnAnnotationChanged</c>.</summary>
     [Parameter] public string? Id { get; set; }
 
     /// <summary>Vertical axis id for Y annotations, points and callouts. Default: the primary axis.</summary>
