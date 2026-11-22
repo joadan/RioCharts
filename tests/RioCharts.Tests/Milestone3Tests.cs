@@ -46,6 +46,9 @@ public class Milestone3Tests
         Assert.Equal(["series:p", "series:C1", "series:C2", "series:C3", "series:" + ChartLayout.OtherSliceKey], Keys(pie));
         Assert.Equal(pie.Legend.Select(l => "series:" + l.SeriesId), Keys(pie).Skip(1));
         Assert.Equal(["series:p", "series:C1", "series:C2", "series:C3"], Keys(bars));
+        // Their labels fade with them.
+        Assert.Contains(All(pie.Scene).OfType<GroupNode>(), g => g.Key == "labels:C3");
+        Assert.Contains(All(bars.Scene).OfType<GroupNode>(), g => g.Key == "labels:C3");
     }
 
     [Fact]

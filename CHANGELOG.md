@@ -77,10 +77,15 @@ changes are called out under **Breaking**.
   `PointColors`; new `ChartTexts` keys `Treemap`, `ShareOfGroup`, `ShareOfTotal` and
   `TreemapLeftOut`.
 - Treemap drill-down: click a group (its header or frame) to show only it, with its children in their
-  own colors and a path bar ("All › Asia") to go back up. From code: `DrillDownAsync(path)`,
-  `TreemapPath` and `OnDrillDown`. Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
+  own colors and a path bar ("All › Asia") to go back up. From code: `@bind-TreemapPath`
+  (e.g. to keep it in the URL), `DrillDownAsync(path)`, `GetTreemapPath()` and `OnDrillDown`. Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
   `ChartLayoutResult.TreemapPath`, scene interactions of kind "treemap"; new `ChartTexts` keys
   `TreemapAll`, `TreemapShow` and `TreemapPathLabel`.
+- Radar: the scale values sit above the shapes on a light backing, so a shape crossing the first
+  spoke no longer covers them, and `ShowTooltipAsync("Battery")` shows that spoke's tooltip
+  (before, it did nothing on radar charts).
+- Pies, donuts and radial bars: the labels of the other slices fade too when a legend item is
+  hovered.
 - Linked charts (same `Group`) follow a zoom set from code: a bound `VisibleRange` changed by the
   parent, `ZoomToAsync`, `ResetZoomAsync` and `PanAsync`. Before, only the chart it was set on
   zoomed; drag, pan and wheel zooms already reached the others.

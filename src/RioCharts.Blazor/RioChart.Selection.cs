@@ -109,6 +109,22 @@ public partial class RioChart<TItem>
     /// <summary>The x pixel of an axis value, or null when it is not on the axis.</summary>
     private static double? Pixel(ChartLayoutResult layout, object x)
     {
+        if (layout.Tooltip.Radar is not null)
+        {
+            // Radar: the spoke's index (the JS module shows that spoke's shared tooltip).
+            var spoke = Convert.ToString(x, System.Globalization.CultureInfo.InvariantCulture);
+            foreach (var s in layout.Tooltip.Series)
+            {
+                var i = Array.IndexOf(s.XLabels, spoke);
+                if (i >= 0 && s.Spokes is { } spokes)
+                {
+                    return spokes[i];
+                }
+            }
+
+            return null;
+        }
+
         if (layout.XKind == XKind.Category)
         {
             var name = Convert.ToString(x, System.Globalization.CultureInfo.InvariantCulture);

@@ -666,8 +666,8 @@ Design.md "Radar" (milestone 7).
   first value, with a warning.
 - **Scale:** linear from zero (from the smallest value when it is negative), nice ticks (3 to 6
   rings depending on the radius); `ChartSpec.Y.Min`/`Max` fix it. Rings are polygons, or circles
-  with fewer than three spokes. Tick values sit just right of the first spoke, in the static layer
-  under the shapes.
+  with fewer than three spokes. Tick values sit just right of the first spoke, in the labels layer
+  above the shapes on a backing in the surface color (opacity 0.8).
 - **Drawing:** a closed path per series, line 2 px (`StrokeWidth`) with fill opacity 0.14. With a
   missing value the series is open lines that wrap around the circle; a value between two gaps
   (or a single spoke) is a dot. Markers stay hidden until hover.
@@ -679,7 +679,8 @@ Design.md "Radar" (milestone 7).
   model the geometry (`TooltipModel.Radar`); the JS module picks the spoke nearest the pointer by
   angle (within the radius + 24 px), draws it as the crosshair, and reuses the shared tooltip rows,
   keyboard navigation (Left/Right along the series, Up/Down between series, the whole spoke
-  announced) and point clicks. `ShowTooltipAsync` (an x value) does nothing on radar charts.
+  announced) and point clicks. `ShowTooltipAsync` takes a category: the component sends its spoke's index and the
+  JS module shows that spoke.
 - **Not yet:** data labels, a circular grid option, a sqrt scale (polar area), and per-spoke scales.
 
 ## Treemap
@@ -722,10 +723,10 @@ Design.md "Treemap" (milestone 7).
   step but the last are scene buttons (interaction kind "treemap", id = the path, "" for all),
   so clicks and Enter/Space work without the JS module; the labels layer ignores the pointer so
   headers do not block them. Shares in the tooltip stay shares of the whole tree. The component
-  keeps the path (`DrillDownAsync`, `TreemapPath`, `OnDrillDown`); it is not a bindable parameter
-  yet.
-- **Not yet:** color by a separate value on a sequential scale, listing an "Other" item's parts in
-  its tooltip, and a bindable drill path.
+  keeps the path: `TreemapPath` is a two-way bindable parameter (like `VisibleRange`),
+  `DrillDownAsync` and `GetTreemapPath()` work from code, and `OnDrillDown` follows every change.
+- **Not yet:** color by a separate value on a sequential scale, and listing an "Other" item's parts
+  in its tooltip.
 
 ## Horizontal bars
 

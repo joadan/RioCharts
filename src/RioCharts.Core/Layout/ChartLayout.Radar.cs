@@ -240,10 +240,19 @@ public static partial class ChartLayout
 
             // Tick values along the first spoke (12 o'clock), just right of it.
             var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, spec.Y.Format);
+            // Drawn above the shapes on a light backing in the surface color, so a shape crossing the
+            // first spoke does not cover them.
             styles.Add("radar-tick", new TextStyleDef { FontSize = (float)small, Fill = ThemeTokens.TextMuted });
+            var backing = styles.Add("radar-tick-bg", new Style { Fill = ThemeTokens.Surface, FillOpacity = 0.8f });
             foreach (var t in ticks)
             {
-                axisNodes.Add(new TextNode(tickFormat(t), new PointF((float)(cx + 4), (float)(cy - R(t) + small * 0.6)), new TextStyle("radar-tick"), Anchor.Start));
+                var label = tickFormat(t);
+                var ty = cy - R(t) + small * 0.6;
+                axisNodes.Add(new RectNode(new RectF((float)(cx + 2), (float)(ty - small * 0.65), (float)(measure.Measure(label, small) + 4), (float)(small * 1.3)), backing)
+                {
+                    CornerRadius = 2,
+                });
+                axisNodes.Add(new TextNode(label, new PointF((float)(cx + 4), (float)ty), new TextStyle("radar-tick"), Anchor.Start));
             }
 
             // Spoke labels just outside the ends, anchored by side. A label that would overlap one
@@ -276,7 +285,7 @@ public static partial class ChartLayout
         statics.Add(new GroupNode(grid) { Class = "rio-grid" });
         if (hasData)
         {
-            statics.Add(new GroupNode(axisNodes) { Class = "rio-axis-y", AriaLabel = AxisLabel(texts, culture, texts.YAxis, spec.Y.Title, axisNodes.OfType<TextNode>().Select(t => t.Text).ToList()) });
+
             statics.Add(new GroupNode(spokeNodes) { Class = "rio-axis-x", AriaLabel = texts.XAxis + ": " + string.Join(", ", spokes) });
         }
 
@@ -420,7 +429,13 @@ public static partial class ChartLayout
 
         var scene = new Scene.Scene(
             new GroupNode(statics) { Class = "rio-static" },
-            new GroupNode([new GroupNode(seriesNodes) { Class = "rio-plot" }, new GroupNode([]) { Class = "rio-labels" }]) { Class = "rio-series-layer rio-radar" },
+            new GroupNode(
+            [
+                new GroupNode(seriesNodes) { Class = "rio-plot" },
+                new GroupNode(hasData
+                    ? [new GroupNode(axisNodes) { Class = "rio-axis-y", AriaLabel = AxisLabel(texts, culture, texts.YAxis, spec.Y.Title, axisNodes.OfType<TextNode>().Select(t => t.Text).ToList()) }]
+                    : []) { Class = "rio-labels" },
+            ]) { Class = "rio-series-layer rio-radar" },
             new GroupNode(overlay) { Class = "rio-overlay" })
         {
             Width = (float)width,

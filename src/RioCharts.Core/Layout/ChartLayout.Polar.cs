@@ -477,7 +477,7 @@ public static partial class ChartLayout
         var cx = (float)(plot.CenterX - (box.MinX + box.MaxX) / 2 * radius);
         var cy = (float)(plot.CenterY - (box.MinY + box.MaxY) / 2 * radius);
         var gap = n > 1 ? 3 : 0;
-        var outsideLabels = new List<(double Angle, string Text, double Width, double Sweep)>();
+        var outsideLabels = new List<(double Angle, string Text, double Width, double Sweep, string Key)>();
         for (var k = 0; k < n; k++)
         {
             var (ring, slices, total, grouped) = slicesPerRing[k];
@@ -534,14 +534,18 @@ public static partial class ChartLayout
                 var text = LabelText(ring, s, sum);
                 var w = measure.Measure(text, small);
                 var mid = (a0 + a1) / 2;
+                var labelKey = "labels:" + (s.Index < 0 ? OtherSliceKey : s.Label); // fades with its slice on legend hover
                 if (FitsInside(r0, r1, a0, a1, w))
                 {
                     var (lx, ly) = Polar(cx, cy, r0 > 0 ? (r0 + r1) / 2 : r1 * 0.62, mid);
-                    labelNodes.Add(new TextNode(text, new PointF((float)lx, (float)ly), new TextStyle("data-label-inverse"), Anchor.Middle));
+                    labelNodes.Add(new GroupNode([new TextNode(text, new PointF((float)lx, (float)ly), new TextStyle("data-label-inverse"), Anchor.Middle)])
+                    {
+                        Key = labelKey,
+                    });
                 }
                 else if (k == 0 && outsideAllowed)
                 {
-                    outsideLabels.Add((mid, text, w, Math.Abs(a1 - a0)));
+                    outsideLabels.Add((mid, text, w, Math.Abs(a1 - a0), labelKey));
                 }
             }
 
@@ -582,7 +586,7 @@ public static partial class ChartLayout
     /// Labels outside the pie with leader lines. Each side is stacked top to bottom so labels
     /// never overlap, then shifted up if the stack runs past the plot.
     /// </summary>
-    private static List<Node> PlaceOutsideLabels(List<(double Angle, string Text, double Width, double Sweep)> labels, double cx, double cy, double radius,
+    private static List<Node> PlaceOutsideLabels(List<(double Angle, string Text, double Width, double Sweep, string Key)> labels, double cx, double cy, double radius,
         RectF plot, double textHeight)
     {
         var nodes = new List<Node>();
@@ -590,7 +594,7 @@ public static partial class ChartLayout
         {
             var side = labels
                 .Where(l => Math.Sin(l.Angle) >= 0 == right)
-                .Select(l => (l.Angle, l.Text, l.Width, l.Sweep, Y: Polar(cx, cy, radius + 10, l.Angle).Y))
+                .Select(l => (l.Angle, l.Text, l.Width, l.Sweep, l.Key, Y: Polar(cx, cy, radius + 10, l.Angle).Y))
                 .OrderBy(l => l.Y)
                 .ToList();
             if (side.Count == 0)
@@ -753,8 +757,14 @@ public static partial class ChartLayout
                 path.LineTo(r.C.X, r.C.Y);
 
                 var leader = path.Build();
-                nodes.Add(new PathNode(leader, new StyleRef("leader")) { Class = "rio-leader" });
-                nodes.Add(new TextNode(text, new PointF((float)textX, (float)y), new TextStyle("slice-label"), right ? Anchor.Start : Anchor.End));
+                nodes.Add(new GroupNode(
+                [
+                    new PathNode(leader, new StyleRef("leader")) { Class = "rio-leader" },
+                    new TextNode(text, new PointF((float)textX, (float)y), new TextStyle("slice-label"), right ? Anchor.Start : Anchor.End),
+                ])
+                {
+                    Key = side[i].Key,
+                });
             }
         }
 
@@ -839,7 +849,10 @@ public static partial class ChartLayout
                 var text = $"{b.Label} {valueText}";
                 if (measure.Measure(text, small) <= sx - plot.X - 10)
                 {
-                    labelNodes.Add(new TextNode(text, new PointF((float)(sx - 10), (float)sy), new TextStyle("slice-label"), Anchor.End));
+                    labelNodes.Add(new GroupNode([new TextNode(text, new PointF((float)(sx - 10), (float)sy), new TextStyle("slice-label"), Anchor.End)])
+                    {
+                        Key = "labels:" + b.Label,
+                    });
                 }
             }
         }

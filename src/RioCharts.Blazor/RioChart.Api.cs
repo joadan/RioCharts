@@ -22,6 +22,17 @@ public partial class RioChart<TItem>
     // ---------- Treemap drill-down ----------
 
     private string? _treemapPath;
+    private string? _lastTreemapPathParameter;
+
+    /// <summary>
+    /// Treemaps: the group shown (drill-down), as a path with the series' separator, e.g.
+    /// <c>"Asia"</c> or <c>"Asia/India"</c>; null shows the whole tree. Two-way bindable with
+    /// <c>@bind-TreemapPath</c>, e.g. to keep it in the page's URL.
+    /// </summary>
+    [Parameter] public string? TreemapPath { get; set; }
+
+    /// <summary>Raised when the group shown changes (two-way binding of <see cref="TreemapPath"/>).</summary>
+    [Parameter] public EventCallback<string?> TreemapPathChanged { get; set; }
 
     /// <summary>
     /// Treemaps: raised when the shown group changes (a click on a group or the path bar, or
@@ -29,8 +40,19 @@ public partial class RioChart<TItem>
     /// </summary>
     [Parameter] public EventCallback<string?> OnDrillDown { get; set; }
 
-    /// <summary>Treemaps: the group shown, as a path with the series' separator; null when the whole tree is shown.</summary>
-    public string? TreemapPath => _layout?.TreemapPath ?? _treemapPath;
+    /// <summary>Treemaps: the group shown, as a path with the series' separator; null when the whole tree is shown (or the path is not there).</summary>
+    public string? GetTreemapPath() => _layout is { } layout && !_dirty ? layout.TreemapPath : _treemapPath;
+
+    // TreemapPath set by the parent: shown on the next layout.
+    private void TreemapParametersSet()
+    {
+        if (TreemapPath != _lastTreemapPathParameter)
+        {
+            _lastTreemapPathParameter = TreemapPath;
+            _treemapPath = string.IsNullOrWhiteSpace(TreemapPath) ? null : TreemapPath;
+            _dirty = true;
+        }
+    }
 
     /// <summary>
     /// Treemaps: shows a group (drill-down), e.g. <c>"Asia"</c> or <c>"Asia/India"</c> (the series'
@@ -47,6 +69,13 @@ public partial class RioChart<TItem>
 
         _treemapPath = path;
         _dirty = true;
+        if (TreemapPathChanged.HasDelegate)
+        {
+            // The parent will pass this path back as TreemapPath; it matches the current state.
+            _lastTreemapPathParameter = path;
+            await TreemapPathChanged.InvokeAsync(path);
+        }
+
         StateHasChanged();
         await OnDrillDown.InvokeAsync(path);
     }

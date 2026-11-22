@@ -392,6 +392,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         SelectionParametersSet();
+        TreemapParametersSet();
         if (Group != _lastGroup)
         {
             _lastGroup = Group;

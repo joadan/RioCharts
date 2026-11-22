@@ -273,11 +273,12 @@ export function hideTooltip(container) {
 
 function showShown(state) {
     const m = state.model, px = state.shown;
-    if (px === null || px === undefined || !m || !m.series || !state.svg || (m.slices && m.slices.length > 0) || m.radar) {
+    if (px === null || px === undefined || !m || !m.series || !state.svg || (m.slices && m.slices.length > 0)) {
         return;
     }
 
-    let rows = findShared(m, px);
+    // Radar: px is the spoke's index.
+    let rows = m.radar ? radarRows(m, Math.round(px)) : findShared(m, px);
     if (!m.shared) {
         rows = rows.slice(0, 1);
     }

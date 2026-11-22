@@ -28,6 +28,19 @@
     }
 
     [Fact]
+    public async Task ShowTooltipAsync_shows_a_spoke()
+    {
+        Module.SetupVoid("showTooltip", _ => true).SetVoidResult();
+        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores">
+            <RadarSeries Id="u" XValue="s => s.Measure" YValue="s => s.Laptop" />
+        </RioChart>);
+
+        await cut.InvokeAsync(() => cut.Instance.ShowTooltipAsync("Battery"));
+
+        Assert.Equal(1.0, (double)Calls("showTooltip")[^1].Arguments[1]!); // the spoke's index
+    }
+
+    [Fact]
     public void Clicking_a_radar_point_selects_its_item()
     {
         var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Selection="SelectionMode.Points">

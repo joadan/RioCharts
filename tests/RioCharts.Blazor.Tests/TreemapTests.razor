@@ -37,12 +37,29 @@
 
         cut.Find(".rio-treemap-drill[aria-label='Show Work']").Click();
 
-        Assert.Equal("Work", cut.Instance.TreemapPath);
+        Assert.Equal("Work", cut.Instance.GetTreemapPath());
         Assert.Equal(2, cut.FindAll(".rio-treemap-cell").Count);
         cut.Find(".rio-treemap-crumb").Click(); // "All"
-        Assert.Null(cut.Instance.TreemapPath);
+        Assert.Null(cut.Instance.GetTreemapPath());
         Assert.Equal(4, cut.FindAll(".rio-treemap-cell").Count);
         Assert.Equal(["Work", null], shown);
+    }
+
+    [Fact]
+    public void The_drill_path_is_two_way_bindable()
+    {
+        string? path = "Work";
+        var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders" @bind-TreemapPath="path">
+            <TreemapSeries Id="d" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" />
+        </RioChart>);
+
+        Assert.Equal(2, cut.FindAll(".rio-treemap-cell").Count); // starts in Work
+        cut.Find(".rio-treemap-crumb").Click(); // "All"
+        Assert.Null(path);
+
+        cut.Render(p => p.Add(c => c.TreemapPath, "Home"));
+        Assert.Equal("Home", cut.Instance.GetTreemapPath());
+        Assert.Equal(2, cut.FindAll(".rio-treemap-cell").Count);
     }
 
     [Fact]
@@ -54,7 +71,7 @@
 
         await cut.InvokeAsync(() => cut.Instance.DrillDownAsync("Home"));
 
-        Assert.Equal("Home", cut.Instance.TreemapPath);
+        Assert.Equal("Home", cut.Instance.GetTreemapPath());
         Assert.Equal(2, cut.FindAll(".rio-treemap-cell").Count);
     }
 

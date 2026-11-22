@@ -50,8 +50,8 @@
     <li>A flat list (no separator in the paths) is a one-level treemap; each item gets its own color and the legend stays hidden.</li>
     <li>Names and values are shortened with "…" or hidden when a rectangle is too small; the tooltip always has them in full.</li>
     <li>Use <code>PathSeparator</code> when names contain "/", e.g. <code>PathSeparator=" > "</code>.</li>
-    <li>Drill down from code with <code>DrillDownAsync("Asia")</code> (<code>null</code> for the whole tree), read the group shown from
-        <code>TreemapPath</code>, and handle <code>OnDrillDown</code> to follow clicks, e.g. to load more detail.</li>
+    <li>Drill down from code with <code>DrillDownAsync("Asia")</code> (<code>null</code> for the whole tree), bind the group shown with
+        <code>@@bind-TreemapPath</code> (e.g. to keep it in the URL), and handle <code>OnDrillDown</code> to follow clicks, e.g. to load more detail.</li>
     <li>Treemaps cannot be mixed with other series types, and only one treemap series is drawn.</li>
 </ul>
 

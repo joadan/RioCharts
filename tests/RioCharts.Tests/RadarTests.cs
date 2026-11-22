@@ -157,7 +157,10 @@ public class RadarTests
         Assert.Equal(100, result.YScale.DomainMax);
         var radar = result.Tooltip.Radar!;
         Assert.Equal(radar.Cy - radar.Radius / 2, result.Tooltip.Series[0].Y[0], 0.5); // 50 is half way out
-        Assert.Contains(All<TextNode>(result.Scene.Static), t => t.Text == "100");
+        // The scale values sit above the shapes (labels layer) on a backing, so shapes never cover them.
+        var axis = All<GroupNode>(result.Scene.Series).Single(g => g.Class == "rio-axis-y");
+        Assert.Contains(All<TextNode>(axis), t => t.Text == "100");
+        Assert.Equal(All<TextNode>(axis).Count, axis.Children.OfType<RectNode>().Count());
     }
 
     [Fact]
