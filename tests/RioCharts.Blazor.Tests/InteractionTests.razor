@@ -38,6 +38,30 @@
     }
 
     [Fact]
+    public void A_zoom_from_code_reaches_the_linked_charts()
+    {
+        ChartRange? bound = null;
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true" Group="g" VisibleRange="bound">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        Assert.Empty(Module.Invocations["zoomGroup"]);
+
+        // A bound VisibleRange set by the parent (e.g. a "Zoom to" button), ZoomToAsync and ResetZoomAsync.
+        bound = ChartRange.Of(Start.AddHours(1), Start.AddHours(2));
+        cut.Render(p => p.Add(c => c.VisibleRange, bound));
+        cut.InvokeAsync(() => cut.Instance.ResetZoomAsync());
+
+        var calls = Calls("zoomGroup");
+        Assert.Equal(2, calls.Count);
+        Assert.Equal(TimeValue.FromDateTime(Start.AddHours(1)), (double)calls[0].Arguments[1]!);
+        Assert.Null(calls[1].Arguments[1]); // all data
+
+        // A drag in the browser: the JS module zooms the linked charts itself.
+        cut.InvokeAsync(() => cut.Instance.OnZoom(TimeValue.FromDateTime(Start.AddHours(1)), TimeValue.FromDateTime(Start.AddHours(3))));
+        Assert.Equal(2, Calls("zoomGroup").Count);
+    }
+
+    [Fact]
     public void ZoomTo_raises_VisibleRangeChanged_with_the_range()
     {
         ChartRange? range = null;

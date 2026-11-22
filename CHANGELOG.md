@@ -81,6 +81,9 @@ changes are called out under **Breaking**.
   `TreemapPath` and `OnDrillDown`. Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
   `ChartLayoutResult.TreemapPath`, scene interactions of kind "treemap"; new `ChartTexts` keys
   `TreemapAll`, `TreemapShow` and `TreemapPathLabel`.
+- Linked charts (same `Group`) follow a zoom set from code: a bound `VisibleRange` changed by the
+  parent, `ZoomToAsync`, `ResetZoomAsync` and `PanAsync`. Before, only the chart it was set on
+  zoomed; drag, pan and wheel zooms already reached the others.
 - Box plots and candlesticks: clicking anywhere on a box or candle selects it (and raises
   `OnPointClick`). Before, they were hit-tested as points at the category's center and median,
   ignoring each series' own slot, so most clicks on a box missed.

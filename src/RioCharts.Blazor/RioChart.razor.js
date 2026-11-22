@@ -302,6 +302,22 @@ function showShown(state) {
     }
 }
 
+// A zoom set from code (VisibleRange, ZoomToAsync, ...): the zoomable charts linked to this one
+// follow, as with a drag. min/max in data units (time in ms); null shows all data.
+export function zoomGroup(container, min, max) {
+    const state = states.get(container);
+    if (!state) {
+        return;
+    }
+
+    for (const s of others(state).filter(o => o.model.zoom)) {
+        const call = min === null || min === undefined || max === null || max === undefined
+            ? s.dotnet.invokeMethodAsync('OnZoomReset')
+            : s.dotnet.invokeMethodAsync('OnZoom', min, max);
+        call.catch(() => { });
+    }
+}
+
 // The Reset zoom button: resets this chart and the zoomable charts linked to it.
 export function resetZoom(container) {
     const state = states.get(container);

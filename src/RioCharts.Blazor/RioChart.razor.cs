@@ -44,6 +44,10 @@ public partial class RioChart<TItem> : IChartContext
     private PlotInsets? _groupInsets;
     private string? _lastGroup;
     private ChartRange? _lastVisibleRangeParameter;
+
+    // The range changed from code or a parameter (not from the JS module): linked charts follow on
+    // the next update. A drag, pan or wheel zoom already reaches them from the module.
+    private bool _shareZoom;
     private string? _viewerZone;
     private bool _disposed;
     private IReadOnlyDictionary<string, SeriesData> _layoutData = new Dictionary<string, SeriesData>();
@@ -384,6 +388,7 @@ public partial class RioChart<TItem> : IChartContext
             _lastVisibleRangeParameter = VisibleRange;
             _range = ToRange(VisibleRange);
             _dirty = true;
+            _shareZoom = true;
         }
 
         SelectionParametersSet();
@@ -734,6 +739,15 @@ public partial class RioChart<TItem> : IChartContext
                 Radar: model.Radar is { } radar ? new RadarModel(radar.Cx, radar.Cy, radar.Radius, radar.Count) : null))
             : null;
         await _module.InvokeVoidAsync("update", _container, payload);
+        if (_shareZoom)
+        {
+            _shareZoom = false;
+            if (Group is not null)
+            {
+                await _module.InvokeVoidAsync("zoomGroup", _container, _range?.Min, _range?.Max);
+            }
+        }
+
         await SendTooltipAsync(); // a tooltip shown from code moves with the new layout
         await SendHighlightAsync(); // set before the module was loaded
     }
@@ -779,10 +793,10 @@ public partial class RioChart<TItem> : IChartContext
     }
 
     /// <summary>Called by JS at the end of a drag, pan or wheel zoom (data units).</summary>
-    internal Task OnZoom(double min, double max) => ApplyRangeAsync((min, max));
+    internal Task OnZoom(double min, double max) => ApplyRangeAsync((min, max), share: false);
 
     /// <summary>Called by JS on a double-click (zoom reset).</summary>
-    internal Task OnZoomReset() => ApplyRangeAsync(null);
+    internal Task OnZoomReset() => ApplyRangeAsync(null, share: false);
 
     // The Reset zoom button: linked charts (same Group) reset together, as with a double-click.
     private async Task OnResetZoomClick()
@@ -805,7 +819,8 @@ public partial class RioChart<TItem> : IChartContext
         await ResetZoomAsync();
     }
 
-    private async Task ApplyRangeAsync((double Min, double Max)? range)
+    /// <param name="share">Linked charts follow (a change from code); false when it came from the JS module, which zooms them itself.</param>
+    private async Task ApplyRangeAsync((double Min, double Max)? range, bool share = true)
     {
         if (range is { } r)
         {
@@ -835,6 +850,7 @@ public partial class RioChart<TItem> : IChartContext
 
         _range = range;
         _dirty = true;
+        _shareZoom |= share;
         var bound = GetVisibleRange();
         if (VisibleRangeChanged.HasDelegate)
         {

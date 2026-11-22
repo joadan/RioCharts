@@ -20,7 +20,7 @@ public abstract class ChartTestBase : BunitContext
         Module = JSInterop.SetupModule(ModulePath);
         Init = Module.Setup<JsonElement>("init", _ => true);
         Init.SetResult(JsonSerializer.SerializeToElement(new { width = Width, widths = (double[]?)null, timeZone = "Europe/Stockholm" }));
-        foreach (var name in new[] { "update", "paint", "dispose", "download", "downloadText" })
+        foreach (var name in new[] { "update", "paint", "dispose", "download", "downloadText", "zoomGroup" })
         {
             Module.SetupVoid(name, _ => true).SetVoidResult();
         }
