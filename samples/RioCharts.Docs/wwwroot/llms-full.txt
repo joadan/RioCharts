@@ -23,6 +23,8 @@ This is the complete guide for coding agents: setup, rules, examples that compil
 
 Tooltips, zoom, clicks, selection, keyboard navigation and downloads need an interactive page (`@rendermode InteractiveServer`, `InteractiveWebAssembly` or `InteractiveAuto`, or a global interactive render mode). On a static page the chart renders as plain SVG without interaction.
 
+.NET MAUI Blazor Hybrid apps (`dotnet new maui-blazor`) use the same package and usings, nothing else: the chart runs in the app's WebView and is always interactive, so no render mode is needed. Tested on Windows; Android and iOS not yet.
+
 Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server, `ChartExport`), `RioCharts.AI` (chart tools for AI agents), `RioCharts.Core` (the engine alone; RioCharts.Blazor already brings it).
 
 ## How it works
