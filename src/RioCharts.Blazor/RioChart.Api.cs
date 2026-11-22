@@ -19,6 +19,38 @@ public partial class RioChart<TItem>
     /// </summary>
     [Parameter] public EventCallback<LegendClickingEventArgs> OnLegendClicking { get; set; }
 
+    // ---------- Treemap drill-down ----------
+
+    private string? _treemapPath;
+
+    /// <summary>
+    /// Treemaps: raised when the shown group changes (a click on a group or the path bar, or
+    /// <see cref="DrillDownAsync"/>), with its path (e.g. "Asia/India"); null for the whole tree.
+    /// </summary>
+    [Parameter] public EventCallback<string?> OnDrillDown { get; set; }
+
+    /// <summary>Treemaps: the group shown, as a path with the series' separator; null when the whole tree is shown.</summary>
+    public string? TreemapPath => _layout?.TreemapPath ?? _treemapPath;
+
+    /// <summary>
+    /// Treemaps: shows a group (drill-down), e.g. <c>"Asia"</c> or <c>"Asia/India"</c> (the series'
+    /// path separator), as clicking it does; null or "" shows the whole tree. A path that is not
+    /// there shows the whole tree.
+    /// </summary>
+    public async Task DrillDownAsync(string? path)
+    {
+        path = string.IsNullOrWhiteSpace(path) ? null : path;
+        if (path == _treemapPath)
+        {
+            return;
+        }
+
+        _treemapPath = path;
+        _dirty = true;
+        StateHasChanged();
+        await OnDrillDown.InvokeAsync(path);
+    }
+
     // ---------- Series ----------
 
     /// <summary>Whether a series is shown (not hidden through the legend, <see cref="HiddenSeries"/> or code).</summary>

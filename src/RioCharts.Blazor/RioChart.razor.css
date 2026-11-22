@@ -278,6 +278,31 @@
     outline: none;
 }
 
+/* Treemap drill-down: groups and the path bar are buttons; labels on top must not catch the clicks. */
+.rio-chart ::deep .rio-treemap .rio-labels {
+    pointer-events: none;
+}
+
+.rio-chart ::deep .rio-treemap-drill,
+.rio-chart ::deep .rio-treemap-crumb {
+    cursor: pointer;
+    outline: none;
+}
+
+.rio-chart ::deep .rio-treemap-drill:hover > rect {
+    fill-opacity: 0.26;
+}
+
+.rio-chart ::deep .rio-treemap-drill:focus-visible > rect,
+.rio-chart ::deep .rio-treemap-crumb:focus-visible .rio-legend-hit {
+    stroke: var(--rio-focus, var(--_rio-focus));
+    stroke-width: 1.5;
+}
+
+.rio-chart ::deep .rio-treemap-crumb:hover text {
+    text-decoration: underline;
+}
+
 .rio-chart ::deep .rio-legend-item:focus-visible .rio-legend-hit {
     stroke: var(--rio-focus, var(--_rio-focus));
     stroke-width: 1.5;

@@ -16,6 +16,10 @@
             legend items follow the top-level groups; click one in the legend to leave it out. <code>GroupSmallItems</code> gathers the
             smallest countries of each continent into "Other". Hover a rectangle for its share of the continent and of the world.
         </p>
+        <p>
+            Click a continent (its header or frame) to drill into it: it fills the chart, its countries get their own colors, and the path
+            bar above (<em>All › Asia</em>) leads back up.
+        </p>
     </Description>
     <ChildContent>
         <RioChart TItem="Country" Items="Countries" Height="420">
@@ -46,6 +50,8 @@
     <li>A flat list (no separator in the paths) is a one-level treemap; each item gets its own color and the legend stays hidden.</li>
     <li>Names and values are shortened with "…" or hidden when a rectangle is too small; the tooltip always has them in full.</li>
     <li>Use <code>PathSeparator</code> when names contain "/", e.g. <code>PathSeparator=" > "</code>.</li>
+    <li>Drill down from code with <code>DrillDownAsync("Asia")</code> (<code>null</code> for the whole tree), read the group shown from
+        <code>TreemapPath</code>, and handle <code>OnDrillDown</code> to follow clicks, e.g. to load more detail.</li>
     <li>Treemaps cannot be mixed with other series types, and only one treemap series is drawn.</li>
 </ul>
 

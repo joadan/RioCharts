@@ -68,6 +68,15 @@ public sealed record LayoutOptions
     /// as markers on lines, areas and scatter points, and as outlines around bars. Null: none.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyCollection<int>>? SelectedPoints { get; init; }
+
+    /// <summary>
+    /// Treemaps: the group to show (drill-down), as a path with the series' separator, e.g. "Asia" or
+    /// "Asia/India". Null, or a path that is not there: the whole tree.
+    /// </summary>
+    public string? TreemapPath { get; init; }
+
+    /// <summary>Treemaps: make groups and the path bar clickable (scene interactions of kind "treemap", with the group's path).</summary>
+    public bool InteractiveTreemap { get; init; }
 }
 
 /// <summary>The space between the chart's edges and its plot, in pixels.</summary>
@@ -135,6 +144,9 @@ public sealed class ChartLayoutResult
     /// horizontal bars, heatmaps, compact charts).
     /// </summary>
     public PlotInsets? NeededInsets { get; init; }
+
+    /// <summary>Treemaps: the group shown (<see cref="LayoutOptions.TreemapPath"/>), or null when the whole tree is shown.</summary>
+    public string? TreemapPath { get; init; }
 }
 
 /// <summary>

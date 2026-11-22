@@ -474,6 +474,8 @@ public partial class RioChart<TItem> : IChartContext
             MinInsets = Group is null ? null : _groupInsets,
             SelectedRange = selectedRange,
             SelectedPoints = selectedPoints,
+            TreemapPath = _treemapPath,
+            InteractiveTreemap = Live,
         });
         _dirty = false;
         return _layout;
@@ -487,6 +489,12 @@ public partial class RioChart<TItem> : IChartContext
         {
             var label = CurrentSpec().Annotations.Select((a, i) => (a, i)).FirstOrDefault(t => (t.a.Id ?? $"annotation-{t.i + 1}") == interaction.Id).a?.Label;
             await OnAnnotationClick.InvokeAsync(new AnnotationClickEventArgs(interaction.Id, label));
+            return;
+        }
+
+        if (interaction.Kind == "treemap")
+        {
+            await DrillDownAsync(interaction.Id);
             return;
         }
 
@@ -711,10 +719,11 @@ public partial class RioChart<TItem> : IChartContext
                 Zoomed: _layout.Zoomed,
                 Group: Group,
                 Xscale: scale is null ? null : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
-                Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type == SeriesType.Bar, s.Step, s.Snap,
+                Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick, s.Step, s.Snap,
                     s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight, s.CellWidths,
                     s.PartLabels, s.PartValues, s.Spokes, s.CellHeights,
-                    s.PointColors is { } colors ? [.. colors.Select(SvgWriter.Color)] : null))],
+                    s.PointColors is { } colors ? [.. colors.Select(SvgWriter.Color)] : null,
+                    s.Type is SeriesType.BoxPlot or SeriesType.Candlestick))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd,
                     s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))],

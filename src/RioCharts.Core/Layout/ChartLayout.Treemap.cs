@@ -91,7 +91,18 @@ public static partial class ChartLayout
         Sum(root);
         var total = root.Value;
         var hasData = total > 0 && series.Visible;
-        string ColorOf(int group) => groups.Count == 1 && series.Spec.Color is { } own ? own : ThemeTokens.Series(group);
+
+        // Drilled into a group (LayoutOptions.TreemapPath): it fills the plot, its children pick the
+        // colors, and a path bar above leads back up. A path that is not (or no longer) there shows all.
+        var separator = string.IsNullOrEmpty(series.Spec.PathSeparator) ? "/" : series.Spec.PathSeparator;
+        var focus = hasData ? FindGroup(root, options.TreemapPath, separator) ?? root : root;
+        var drilled = focus != root;
+        for (var g = 0; drilled && g < focus.Children.Count; g++)
+        {
+            SetGroup(focus.Children[g], g);
+        }
+
+        string ColorOf(int group) => groups.Count == 1 && !drilled && series.Spec.Color is { } own ? own : ThemeTokens.Series(group);
 
         // ---------- Legend: the top-level groups ----------
         var depth = MaxDepth(root);
@@ -110,7 +121,7 @@ public static partial class ChartLayout
             LegendMode.Show => legendEntries.Count > 0,
             LegendMode.Hide => false,
             _ => depth > 1 && legendEntries.Count is > 1 and <= 12 && chrome.Legend,
-        };
+        } && !drilled; // drilled, the colors follow the group's own children and the path bar leads back
         var legendPosition = FitLegendPosition(spec.Legend.Position, chrome);
 
         // ---------- Title and legend ----------
@@ -124,6 +135,11 @@ public static partial class ChartLayout
                 Class = "rio-title",
             });
             y0 += titleHeight + 6;
+        }
+
+        if (drilled)
+        {
+            y0 += PathBar(focus, separator, texts, culture, measure, small, y0, options.InteractiveTreemap, styles, statics);
         }
 
         var legendItems = showLegend ? MeasureLegend(legendEntries, measure, font) : [];
@@ -165,7 +181,7 @@ public static partial class ChartLayout
         var headerHeight = small * 1.25 + 6;
         if (hasData)
         {
-            Place(root, plot, headerHeight, measure, small);
+            Place(focus, plot, headerHeight, focus);
         }
 
         var showLabels = series.Spec.DataLabels ?? true;
@@ -174,11 +190,11 @@ public static partial class ChartLayout
         styles.Add("treemap-value", new TextStyleDef { FontSize = (float)small, FontWeight = 400, Fill = ThemeTokens.DataLabelInverse });
         // Per top-level group (in walk order: a group's tint before its items), so hovering its
         // legend item can highlight it like a series.
-        var shapes = root.Children.ToDictionary(g => g.Group, _ => new List<Node>());
-        var groupTexts = root.Children.ToDictionary(g => g.Group, _ => new List<Node>());
+        var shapes = focus.Children.ToDictionary(g => g.Group, _ => new List<Node>());
+        var groupTexts = focus.Children.ToDictionary(g => g.Group, _ => new List<Node>());
         var leaves = new List<TreeNode>();
         var parents = new List<TreeNode>();
-        foreach (var node in hasData ? Walk(root).Skip(1) : [])
+        foreach (var node in hasData ? Walk(focus).Skip(1) : [])
         {
             var r = node.Rect;
             if (r.Width < 0.5 || r.Height < 0.5)
@@ -190,11 +206,23 @@ public static partial class ChartLayout
             if (node.Children.Count > 0)
             {
                 parents.Add(node);
-                shapes[node.Group].Add(new RectNode(r, styles.Add("treemap-group-" + color, new Style { Fill = color, FillOpacity = 0.16f }))
+                Node tint = new RectNode(r, styles.Add("treemap-group-" + color, new Style { Fill = color, FillOpacity = 0.16f }))
                 {
                     CornerRadius = 3,
                     Class = "rio-treemap-group",
-                });
+                };
+                if (options.InteractiveTreemap)
+                {
+                    // Click the group (its header or frame) to drill into it.
+                    tint = new GroupNode([tint])
+                    {
+                        Class = "rio-treemap-drill",
+                        Interaction = new NodeInteraction("treemap", node.PathText(separator)),
+                        AriaLabel = texts.Fill(nameof(ChartTexts.TreemapShow), culture, node.PathText(" › ")),
+                    };
+                }
+
+                shapes[node.Group].Add(tint);
                 if (node.HasHeader && showLabels)
                 {
                     var room = r.Width - 12;
@@ -255,7 +283,7 @@ public static partial class ChartLayout
         // HighlightSeriesAsync with a group name fade the others.
         var seriesNodes = new List<Node>
         {
-            new GroupNode([.. root.Children.Select(g => new GroupNode(shapes[g.Group])
+            new GroupNode([.. focus.Children.Select(g => new GroupNode(shapes[g.Group])
             {
                 Key = "series:" + g.Name,
                 Class = "rio-series rio-treemap-branch",
@@ -266,7 +294,7 @@ public static partial class ChartLayout
                 AriaLabel = series.Spec.DisplayName,
             },
         };
-        var labelNodes = root.Children.Select(g => (Node)new GroupNode(groupTexts[g.Group]) { Key = "labels:" + g.Name }).ToList();
+        var labelNodes = focus.Children.Select(g => (Node)new GroupNode(groupTexts[g.Group]) { Key = "labels:" + g.Name }).ToList();
         if (selected.Count > 0)
         {
             seriesNodes.Add(new GroupNode(selected) { Key = "selection:points", Class = "rio-selected-points" });
@@ -277,10 +305,10 @@ public static partial class ChartLayout
         var tooltipSeries = new List<TooltipSeries>();
         if (hasData && tips.Count > 0)
         {
-            const string separator = " › ";
+            const string arrow = " › ";
             tooltipSeries.Add(new TooltipSeries(series.Spec.Id, series.Spec.DisplayName, series.Color, SeriesType.Treemap, 0, 0, 0,
                 [.. tips.Select(n => n.Rect.CenterX)], [.. tips.Select(n => n.Rect.CenterY)], [.. tips.Select(n => n.Index)],
-                [.. tips.Select(n => n.PathText(separator))], [.. tips.Select(n => Format(n.Value))])
+                [.. tips.Select(n => n.PathText(arrow))], [.. tips.Select(n => Format(n.Value))])
             {
                 CellWidths = [.. tips.Select(n => n.Rect.Width)],
                 CellHeights = [.. tips.Select(n => n.Rect.Height)],
@@ -303,12 +331,13 @@ public static partial class ChartLayout
         }
 
         // ---------- Description: the top-level groups and their shares ----------
-        var shown = root.Children;
+        var shown = focus.Children;
+        var kind = drilled ? $"{texts.Treemap}, {focus.PathText(" › ")}" : texts.Treemap;
         var items = string.Join(", ", shown.Take(8).Select(g => $"{g.Name} {Percent(g.Value / Math.Max(total, double.Epsilon), culture)}"))
             + (shown.Count > 8 ? " " + texts.Fill(nameof(ChartTexts.More), culture, shown.Count - 8) : "");
         var description = (string.IsNullOrWhiteSpace(spec.Title) ? "" : spec.Title + ". ")
             + (hasData
-                ? texts.FillCount(nameof(ChartTexts.PolarItems), shown.Count, culture, texts.Treemap, shown.Count, items) + "."
+                ? texts.FillCount(nameof(ChartTexts.PolarItems), shown.Count, culture, kind, shown.Count, items) + "."
                 : texts.Fill(nameof(ChartTexts.PolarNoData), culture, texts.Treemap))
             + (leftOut > 0 ? " " + texts.FillCount(nameof(ChartTexts.TreemapLeftOut), leftOut, culture, leftOut) + "." : "");
 
@@ -336,7 +365,86 @@ public static partial class ChartLayout
             YScale = unit,
             YScales = new Dictionary<string, LinearScale>(StringComparer.Ordinal) { [spec.Y.Id ?? "y"] = unit },
             HasData = hasData,
+            TreemapPath = drilled ? focus.PathText(separator) : null,
         };
+    }
+
+    /// <summary>The group at a path ("Asia/India"), or null when there is none (or it has no children).</summary>
+    private static TreeNode? FindGroup(TreeNode root, string? path, string separator)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var node = root;
+        foreach (var part in path.Split(separator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (!node.ByName.TryGetValue(part, out var child) || !node.Children.Contains(child))
+            {
+                return null; // hidden, left out or not there
+            }
+
+            node = child;
+        }
+
+        return node.Children.Count > 0 && node != root ? node : null;
+    }
+
+    /// <summary>
+    /// The path bar of a drilled treemap: "All › Asia › India", each step but the last a button that
+    /// shows that group (Interaction "treemap" with its path; "" for all). Returns its height.
+    /// </summary>
+    private static double PathBar(TreeNode focus, string separator, ChartTexts texts, CultureInfo culture, ITextMeasurer measure, double font, double y0,
+        bool interactive, StyleTable styles, List<Node> statics)
+    {
+        styles.Add("treemap-crumb", new TextStyleDef { FontSize = (float)font, Fill = ThemeTokens.TextMuted });
+        styles.Add("treemap-crumb-current", new TextStyleDef { FontSize = (float)font, FontWeight = 600, Fill = ThemeTokens.Text });
+        var height = font * 1.3 + 8;
+        var cy = (float)(y0 + height / 2 - 2);
+        var steps = new List<(string Label, string Path)> { (texts.TreemapAll, "") };
+        steps.AddRange(focus.Ancestors().Reverse().Select(a => (a.Name, a.PathText(separator))));
+        steps.Add((focus.Name, focus.PathText(separator)));
+        var x = PadLeft;
+        var nodes = new List<Node>();
+        for (var i = 0; i < steps.Count; i++)
+        {
+            var (label, path) = steps[i];
+            var last = i == steps.Count - 1;
+            var w = measure.Measure(label, font);
+            var text = new TextNode(label, new PointF((float)x, cy), new TextStyle(last ? "treemap-crumb-current" : "treemap-crumb"), Anchor.Start);
+            if (last || !interactive)
+            {
+                nodes.Add(text);
+            }
+            else
+            {
+                nodes.Add(new GroupNode(
+                [
+                    new RectNode(new RectF((float)(x - 3), (float)(cy - height / 2 + 2), (float)(w + 6), (float)(height - 4)), new StyleRef("legend-hit"))
+                    {
+                        CornerRadius = 3,
+                        Class = "rio-legend-hit",
+                    },
+                    text,
+                ])
+                {
+                    Class = "rio-treemap-crumb",
+                    Interaction = new NodeInteraction("treemap", path),
+                    AriaLabel = texts.Fill(nameof(ChartTexts.TreemapShow), culture, label),
+                });
+            }
+
+            x += w;
+            if (!last)
+            {
+                nodes.Add(new TextNode("›", new PointF((float)(x + 6), cy), new TextStyle("treemap-crumb"), Anchor.Middle));
+                x += 12;
+            }
+        }
+
+        statics.Add(new GroupNode(nodes) { Class = "rio-treemap-path", AriaLabel = texts.TreemapPathLabel });
+        return height;
     }
 
     /// <summary>A shortened name is shown only with at least three characters before the "…".</summary>
@@ -483,7 +591,7 @@ public static partial class ChartLayout
     /// Gives each node its rectangle: children share their group's rectangle (minus a header with
     /// the group's name when there is room) with the squarified layout.
     /// </summary>
-    private static void Place(TreeNode node, RectF rect, double headerHeight, ITextMeasurer measure, double font)
+    private static void Place(TreeNode node, RectF rect, double headerHeight, TreeNode top)
     {
         node.Rect = rect;
         if (node.Children.Count == 0)
@@ -492,18 +600,18 @@ public static partial class ChartLayout
         }
 
         var inner = rect;
-        if (node.Parent is not null)
+        if (node != top)
         {
             const float pad = 2;
             node.HasHeader = rect.Height >= headerHeight * 2.4 && rect.Width >= 48;
-            var top = node.HasHeader ? (float)headerHeight : pad;
-            inner = new RectF(rect.X + pad, rect.Y + top, Math.Max(0, rect.Width - 2 * pad), Math.Max(0, rect.Height - top - pad));
+            var headerTop = node.HasHeader ? (float)headerHeight : pad;
+            inner = new RectF(rect.X + pad, rect.Y + headerTop, Math.Max(0, rect.Width - 2 * pad), Math.Max(0, rect.Height - headerTop - pad));
         }
 
         var rects = Squarify([.. node.Children.Select(c => c.Value)], inner);
         for (var i = 0; i < node.Children.Count; i++)
         {
-            Place(node.Children[i], rects[i], headerHeight, measure, font);
+            Place(node.Children[i], rects[i], headerHeight, top);
         }
     }
 

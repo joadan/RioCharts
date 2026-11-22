@@ -181,6 +181,57 @@ public class TreemapTests
     }
 
     [Fact]
+    public void Drilling_into_a_group_shows_only_it_with_a_path_bar()
+    {
+        var result = ChartLayout.Compute(Spec(), Data(), Options with { TreemapPath = "Asia", InteractiveTreemap = true });
+
+        Assert.Equal("Asia", result.TreemapPath);
+        Assert.Equal(3, Cells(result).Count); // India, China, Japan
+        Assert.DoesNotContain(All<GroupNode>(result.Scene.Static), g => g.Key?.StartsWith("legend:", StringComparison.Ordinal) == true);
+        var crumbs = All<GroupNode>(result.Scene.Static).Single(g => g.Class == "rio-treemap-path");
+        Assert.Equal(["All", "\u203a", "Asia"], All<TextNode>(crumbs).Select(t => t.Text));
+        var back = All<GroupNode>(crumbs).Single(g => g.Interaction is not null);
+        Assert.Equal(("treemap", ""), (back.Interaction!.Kind, back.Interaction.Id));
+        var colors = result.Tooltip.Series[0].PointColors!;
+        Assert.Equal(3, colors.Distinct().Count()); // the group's children pick the colors now
+        Assert.Equal("1430 M", result.Tooltip.Series[0].Values[0]);
+        Assert.Contains("Treemap, Asia", result.Scene.Description, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Groups_are_buttons_that_drill_in_when_interactive()
+    {
+        var plain = ChartLayout.Compute(Spec(), Data(), Options);
+        var live = ChartLayout.Compute(Spec(), Data(), Options with { InteractiveTreemap = true });
+
+        Assert.DoesNotContain(All<GroupNode>(plain.Scene.Series), g => g.Interaction is not null);
+        var drill = All<GroupNode>(live.Scene.Series).Where(g => g.Interaction?.Kind == "treemap").ToList();
+        Assert.Equal(["Americas", "Asia", "Europe"], drill.Select(g => g.Interaction!.Id).Order());
+        Assert.Equal("Show Asia", drill.Single(g => g.Interaction!.Id == "Asia").AriaLabel);
+    }
+
+    [Fact]
+    public void Nested_groups_and_unknown_paths()
+    {
+        string[] paths = ["Home/Photos/2024", "Home/Photos/2025", "Home/Music", "Work/Projects"];
+        double[] sizes = [96, 132, 48, 74];
+
+        var nested = ChartLayout.Compute(Spec(), Data(paths, sizes), Options with { TreemapPath = "Home/Photos", InteractiveTreemap = true });
+        var unknown = ChartLayout.Compute(Spec(), Data(paths, sizes), Options with { TreemapPath = "Home/Videos" });
+        var leaf = ChartLayout.Compute(Spec(), Data(paths, sizes), Options with { TreemapPath = "Work/Projects" });
+        var hidden = ChartLayout.Compute(Spec(), Data(paths, sizes), Options with { TreemapPath = "Work", HiddenSeries = new HashSet<string> { "Work" } });
+
+        Assert.Equal("Home/Photos", nested.TreemapPath);
+        Assert.Equal(2, Cells(nested).Count);
+        var crumbs = All<GroupNode>(nested.Scene.Static).Single(g => g.Class == "rio-treemap-path");
+        Assert.Equal(["", "Home"], All<GroupNode>(crumbs).Where(g => g.Interaction is not null).Select(g => g.Interaction!.Id));
+        Assert.Null(unknown.TreemapPath);
+        Assert.Equal(4, Cells(unknown).Count);
+        Assert.Null(leaf.TreemapPath); // an item, not a group
+        Assert.Null(hidden.TreemapPath);
+    }
+
+    [Fact]
     public void A_custom_separator_splits_the_paths()
     {
         var spec = Spec(Tree() with { PathSeparator = " > " });

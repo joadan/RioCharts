@@ -1602,7 +1602,8 @@ function click(state, e) {
 
             if (s.bar) {
                 const dx = Math.abs(s.x[r.i] + s.barOffset - pos.x);
-                return { ...r, d: dx <= s.barWidth / 2 + 1 && pos.y >= s.y[r.i] - 4 ? dx : Infinity };
+                // Bars from their top down; box plots and candlesticks (col) anywhere in their slot.
+                return { ...r, d: dx <= s.barWidth / 2 + 1 && (s.col || pos.y >= s.y[r.i] - 4) ? dx : Infinity };
             }
 
             return { ...r, d: Math.hypot(s.x[r.i] - pos.x, s.y[r.i] - pos.y) };

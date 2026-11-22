@@ -76,6 +76,14 @@ changes are called out under **Breaking**.
   `SeriesType.Treemap`, `SeriesSpec.Path` and `PathSeparator`, `TooltipSeries.CellHeights` and
   `PointColors`; new `ChartTexts` keys `Treemap`, `ShareOfGroup`, `ShareOfTotal` and
   `TreemapLeftOut`.
+- Treemap drill-down: click a group (its header or frame) to show only it, with its children in their
+  own colors and a path bar ("All › Asia") to go back up. From code: `DrillDownAsync(path)`,
+  `TreemapPath` and `OnDrillDown`. Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
+  `ChartLayoutResult.TreemapPath`, scene interactions of kind "treemap"; new `ChartTexts` keys
+  `TreemapAll`, `TreemapShow` and `TreemapPathLabel`.
+- Box plots and candlesticks: clicking anywhere on a box or candle selects it (and raises
+  `OnPointClick`). Before, they were hit-tested as points at the category's center and median,
+  ignoring each series' own slot, so most clicks on a box missed.
 - Pies, donuts and radial bars: hovering a legend item highlights its slice or bar (in every ring)
   and fades the others; before, nothing happened, as the legend lists categories while the chart
   only had one highlightable group per series. Slices and radial bars are now scene groups keyed

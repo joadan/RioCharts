@@ -23,6 +23,9 @@
         Assert.Single(cut.FindAll(".rio-medians"));
         var model = Payload(Calls("update")[^1]);
         var series = model.GetProperty("series")[0];
+        // Hit-tested as a bar in its own slot (barOffset), over the whole box, not as a point at the median.
+        Assert.True(series.GetProperty("bar").GetBoolean());
+        Assert.True(series.GetProperty("col").GetBoolean());
         Assert.Equal("19.5", series.GetProperty("v")[0].GetString()); // the median
         Assert.Equal("Median", series.GetProperty("pl")[2].GetString());
         Assert.Equal("4", series.GetProperty("pv")[0][5].GetString()); // the count

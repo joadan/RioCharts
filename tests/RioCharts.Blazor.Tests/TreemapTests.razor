@@ -28,6 +28,37 @@
     }
 
     [Fact]
+    public void Clicking_a_group_drills_in_and_the_path_bar_leads_back()
+    {
+        var shown = new List<string?>();
+        var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders" OnDrillDown="p => shown.Add(p)">
+            <TreemapSeries Id="d" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" />
+        </RioChart>);
+
+        cut.Find(".rio-treemap-drill[aria-label='Show Work']").Click();
+
+        Assert.Equal("Work", cut.Instance.TreemapPath);
+        Assert.Equal(2, cut.FindAll(".rio-treemap-cell").Count);
+        cut.Find(".rio-treemap-crumb").Click(); // "All"
+        Assert.Null(cut.Instance.TreemapPath);
+        Assert.Equal(4, cut.FindAll(".rio-treemap-cell").Count);
+        Assert.Equal(["Work", null], shown);
+    }
+
+    [Fact]
+    public async Task DrillDownAsync_shows_a_group_from_code()
+    {
+        var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders">
+            <TreemapSeries Id="d" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" />
+        </RioChart>);
+
+        await cut.InvokeAsync(() => cut.Instance.DrillDownAsync("Home"));
+
+        Assert.Equal("Home", cut.Instance.TreemapPath);
+        Assert.Equal(2, cut.FindAll(".rio-treemap-cell").Count);
+    }
+
+    [Fact]
     public void Clicking_an_item_selects_it()
     {
         var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders" Selection="SelectionMode.Points">

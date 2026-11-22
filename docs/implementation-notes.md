@@ -714,8 +714,18 @@ Design.md "Treemap" (milestone 7).
   `series:{group}` and `labels:{group}` (the legend item's id), so legend hover and
   `HighlightSeriesAsync("Asia")` fade the other groups. The treemap series id itself matches no
   group.
-- **Not yet:** drill-down, color by a separate value on a sequential scale, and listing an "Other"
-  item's parts in its tooltip.
+- **Drill-down:** `LayoutOptions.TreemapPath` picks the group to lay out (found by name, path split
+  on the separator; hidden, missing or item paths show the whole tree). The group fills the plot
+  without a header; its children are recolored from the palette and the legend is hidden (its
+  colors no longer apply); a path bar above the plot names the steps. With
+  `InteractiveTreemap` (the component passes `Live`), each group's tint rectangle and each path
+  step but the last are scene buttons (interaction kind "treemap", id = the path, "" for all),
+  so clicks and Enter/Space work without the JS module; the labels layer ignores the pointer so
+  headers do not block them. Shares in the tooltip stay shares of the whole tree. The component
+  keeps the path (`DrillDownAsync`, `TreemapPath`, `OnDrillDown`); it is not a bindable parameter
+  yet.
+- **Not yet:** color by a separate value on a sequential scale, listing an "Other" item's parts in
+  its tooltip, and a bindable drill path.
 
 ## Horizontal bars
 

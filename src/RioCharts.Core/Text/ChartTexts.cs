@@ -183,6 +183,15 @@ public sealed record ChartTexts
     /// <summary>Treemap tooltip: the item's share of the total.</summary>
     public string ShareOfTotal { get => Get(); init => Set(value); }
 
+    /// <summary>Treemap path bar: the step that shows the whole tree.</summary>
+    public string TreemapAll { get => Get(); init => Set(value); }
+
+    /// <summary>Treemap: the button that shows a group (drill-down). {0}: the group.</summary>
+    public string TreemapShow { get => Get(); init => Set(value); }
+
+    /// <summary>Treemap: the path bar's name for screen readers.</summary>
+    public string TreemapPathLabel { get => Get(); init => Set(value); }
+
     /// <summary>Treemap description: items left out. {0}: how many (one|other).</summary>
     public string TreemapLeftOut { get => Get(); init => Set(value); }
 
@@ -391,6 +400,9 @@ public sealed record ChartTexts
         [nameof(Treemap)] = "Treemap",
         [nameof(ShareOfGroup)] = "Share of group",
         [nameof(ShareOfTotal)] = "Share of total",
+        [nameof(TreemapAll)] = "All",
+        [nameof(TreemapShow)] = "Show {0}",
+        [nameof(TreemapPathLabel)] = "Path",
         [nameof(TreemapLeftOut)] = "{0} item with zero or negative value left out|{0} items with zero or negative values left out",
         [nameof(PolarItems)] = "{0} with {1} item: {2}|{0} with {1} items: {2}",
         [nameof(PolarNoData)] = "{0}, no data.",
@@ -459,6 +471,9 @@ public sealed record ChartTexts
         Treemap = "Trädkarta",
         ShareOfGroup = "Andel av gruppen",
         ShareOfTotal = "Andel av totalen",
+        TreemapAll = "Alla",
+        TreemapShow = "Visa {0}",
+        TreemapPathLabel = "Sökväg",
         TreemapLeftOut = "{0} post med noll eller negativt värde utelämnad|{0} poster med noll eller negativa värden utelämnade",
         PolarItems = "{0} med {1} post: {2}|{0} med {1} poster: {2}",
         PolarNoData = "{0}, inga data.",
@@ -521,6 +536,9 @@ public sealed record ChartTexts
         Treemap = "Trekart",
         ShareOfGroup = "Andel av gruppen",
         ShareOfTotal = "Andel av totalen",
+        TreemapAll = "Alle",
+        TreemapShow = "Vis {0}",
+        TreemapPathLabel = "Sti",
         TreemapLeftOut = "{0} post med null eller negativ verdi utelatt|{0} poster med null eller negative verdier utelatt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
@@ -583,6 +601,9 @@ public sealed record ChartTexts
         Treemap = "Trækort",
         ShareOfGroup = "Andel af gruppen",
         ShareOfTotal = "Andel af totalen",
+        TreemapAll = "Alle",
+        TreemapShow = "Vis {0}",
+        TreemapPathLabel = "Sti",
         TreemapLeftOut = "{0} post med nul eller negativ værdi udeladt|{0} poster med nul eller negative værdier udeladt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
@@ -645,6 +666,9 @@ public sealed record ChartTexts
         Treemap = "Puukartta",
         ShareOfGroup = "Osuus ryhmästä",
         ShareOfTotal = "Osuus kokonaisuudesta",
+        TreemapAll = "Kaikki",
+        TreemapShow = "Näytä {0}",
+        TreemapPathLabel = "Polku",
         TreemapLeftOut = "{0} kohde, jonka arvo on nolla tai negatiivinen, jätetty pois|{0} kohdetta, joiden arvo on nolla tai negatiivinen, jätetty pois",
         PolarItems = "{0}, {1} kohde: {2}|{0}, {1} kohdetta: {2}",
         PolarNoData = "{0}, ei tietoja.",
@@ -707,6 +731,9 @@ public sealed record ChartTexts
         Treemap = "Treemap",
         ShareOfGroup = "Anteil an der Gruppe",
         ShareOfTotal = "Anteil am Gesamtwert",
+        TreemapAll = "Alle",
+        TreemapShow = "{0} anzeigen",
+        TreemapPathLabel = "Pfad",
         TreemapLeftOut = "{0} Eintrag mit Wert null oder negativ ausgelassen|{0} Einträge mit Wert null oder negativ ausgelassen",
         PolarItems = "{0} mit {1} Eintrag: {2}|{0} mit {1} Einträgen: {2}",
         PolarNoData = "{0}, keine Daten.",
@@ -769,6 +796,9 @@ public sealed record ChartTexts
         Treemap = "Carte proportionnelle",
         ShareOfGroup = "Part du groupe",
         ShareOfTotal = "Part du total",
+        TreemapAll = "Tout",
+        TreemapShow = "Afficher {0}",
+        TreemapPathLabel = "Chemin",
         TreemapLeftOut = "{0} élément de valeur nulle ou négative omis|{0} éléments de valeur nulle ou négative omis",
         PolarItems = "{0} avec {1} élément : {2}|{0} avec {1} éléments : {2}",
         PolarNoData = "{0}, aucune donnée.",
@@ -831,6 +861,9 @@ public sealed record ChartTexts
         Treemap = "Mapa de árbol",
         ShareOfGroup = "Parte del grupo",
         ShareOfTotal = "Parte del total",
+        TreemapAll = "Todo",
+        TreemapShow = "Mostrar {0}",
+        TreemapPathLabel = "Ruta",
         TreemapLeftOut = "{0} elemento con valor cero o negativo omitido|{0} elementos con valor cero o negativo omitidos",
         PolarItems = "{0} con {1} elemento: {2}|{0} con {1} elementos: {2}",
         PolarNoData = "{0}, sin datos.",
