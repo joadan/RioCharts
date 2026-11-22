@@ -24,6 +24,10 @@ changes are called out under **Breaking**.
   users in a load test, with an x reference line), so line charts are not shown only over time.
 - Docs: "Negative values" examples on Lines and areas (daily net cash flow as an area, red below
   zero with `ColorBands`) and on Bars (result per month with loss months).
+- Fix: bar data labels at the ends of the y axis are no longer dropped. A bar ending close to the
+  top or bottom of the axis (e.g. −18 on an axis to −20) lost its label when the label did not fit
+  inside the bar; the axis now gets one more tick step on that side. Charts with data labels on
+  bars near the axis ends get a slightly larger y range (unless `Min`/`Max` is set).
 
 ## 0.2.1-preview (2026-11-22)
 

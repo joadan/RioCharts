@@ -432,10 +432,10 @@ public static partial class ChartLayout
         }
         else
         {
-            ComputeYTicks(gridAxis, yTarget, culture, measure, font);
+            ComputeYTicks(gridAxis, yTarget, culture, measure, font, plotHeight);
             foreach (var axis in axes.Where(a => a != gridAxis))
             {
-                ComputeYTicks(axis, yTarget, culture, measure, font, axis.Visible ? gridAxis : null);
+                ComputeYTicks(axis, yTarget, culture, measure, font, plotHeight, axis.Visible ? gridAxis : null);
             }
         }
 

@@ -22,6 +22,13 @@ public static partial class ChartLayout
 
         public double ExtentMin { get; set; }
         public double ExtentMax { get; set; }
+
+        /// <summary>
+        /// The highest positive and lowest negative value of bars with data labels (NaN when none): their labels go beyond
+        /// the bar's end, so the domain leaves room for them.
+        /// </summary>
+        public double LabelMax { get; set; } = double.NaN;
+        public double LabelMin { get; set; } = double.NaN;
         public double DomainMin { get; set; }
         public double DomainMax { get; set; } = 1;
         public List<double> Ticks { get; set; } = [];
@@ -75,12 +82,30 @@ public static partial class ChartLayout
     private static void YExtent(YAxisLayout axis, IEnumerable<ResolvedAnnotation> annotations, (double Min, double Max)? window, bool compact = false)
     {
         double min = double.PositiveInfinity, max = double.NegativeInfinity;
+        double labelMin = double.PositiveInfinity, labelMax = double.NegativeInfinity;
         var includeZero = false;
         foreach (var r in axis.Series)
         {
             // Compact charts fit the data; only bars keep zero (a bar's length is its value).
             includeZero |= r.Type.IncludesZero && (!compact || r.Type.UsesSlots);
             Include(r.Upper, r.Data.X);
+            if (!compact && r.Spec.DataLabels == true && r.Spec.Type == SeriesType.Bar && r.Lower is null)
+            {
+                // Unstacked bars: the label sits above a positive bar and below a negative one.
+                var (start, end) = window is { } w ? VisibleIndexes(r.Data.X, w.Min, w.Max, 0) : (0, r.Upper.Length);
+                for (var i = start; i < end; i++)
+                {
+                    var y = r.Upper[i];
+                    if (y > 0 && y > labelMax)
+                    {
+                        labelMax = y;
+                    }
+                    else if (y < 0 && y < labelMin)
+                    {
+                        labelMin = y;
+                    }
+                }
+            }
             if (r.Lower is not null)
             {
                 Include(r.Lower, r.Data.X);
@@ -125,6 +150,8 @@ public static partial class ChartLayout
 
         axis.ExtentMin = axis.Spec.Min ?? min;
         axis.ExtentMax = axis.Spec.Max ?? max;
+        axis.LabelMin = double.IsFinite(labelMin) ? labelMin : double.NaN;
+        axis.LabelMax = double.IsFinite(labelMax) ? labelMax : double.NaN;
 
         // Zoomed: only the points in the visible x range count, so the y axis fits what is shown.
         void Include(double[] values, double[] xs)
@@ -182,7 +209,8 @@ public static partial class ChartLayout
         }
     }
 
-    private static void ComputeYTicks(YAxisLayout axis, int target, CultureInfo culture, ITextMeasurer measure, double font, YAxisLayout? align = null)
+    private static void ComputeYTicks(YAxisLayout axis, int target, CultureInfo culture, ITextMeasurer measure, double font, double plotHeight,
+        YAxisLayout? align = null)
     {
         var (min, max) = (axis.ExtentMin, axis.ExtentMax);
         if (max < min)
@@ -211,6 +239,34 @@ public static partial class ChartLayout
         }
 
         var (niceMin, niceMax, step) = NiceTicks.NiceDomain(min, max, target);
+
+        // Bar data labels go beyond the bar's end and are left out when they would leave the plot: when the highest or
+        // lowest bar has no room for its label, the domain gets one more step on that side (the step stays, so the ticks
+        // stay round; a few rounds, as a wider domain also shrinks the pixels per unit).
+        var room = DataLabelHeight(font) + DataLabelGap - DataLabelOverhang;
+        for (var round = 0; round < 3 && plotHeight > room * 3; round++)
+        {
+            var perUnit = plotHeight / (niceMax - niceMin);
+            var grow = false;
+            if (axis.Spec.Max is null && axis.LabelMax is var top && double.IsFinite(top) && (niceMax - top) * perUnit < room)
+            {
+                niceMax = NiceTicks.Clean(niceMax + step);
+                grow = true;
+            }
+
+            if (axis.Spec.Min is null && axis.LabelMin is var bottom && double.IsFinite(bottom) && (bottom - niceMin) * perUnit < room)
+            {
+                niceMin = NiceTicks.Clean(niceMin - step);
+                grow = true;
+            }
+
+            if (!grow)
+            {
+                break;
+            }
+
+            (min, max) = (Math.Min(min, niceMin), Math.Max(max, niceMax));
+        }
 
         // Secondary axes put their ticks on the grid axis' lines when they can.
         if (align is { Ticks.Count: > 1 } grid && axis.Spec.Min is null && axis.Spec.Max is null

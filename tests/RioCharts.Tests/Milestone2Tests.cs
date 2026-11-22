@@ -239,6 +239,52 @@ public class Milestone2Tests
         }
     }
 
+    [Theory]
+    [InlineData(new[] { -18.0, -7, 12, 21, 26, 19, 4, -11, 15, 24, 37, 52 })] // the lowest bar ends just above a nice -20
+    [InlineData(new[] { 58.0, 31, 12, 40, 22, 35, 18, 27, 44, 9, 30, 25 })] // the highest bar ends just under a nice 60
+    [InlineData(new[] { -59.0, -20, -35, -12, -44, -27, -8, -31, -50, -16, -22, -38 })] // all negative
+    public void Bar_data_labels_at_the_ends_of_the_axis_have_room(double[] values)
+    {
+        // Narrow bars: the labels do not fit inside, so they need room beyond the bar's end.
+        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" }] };
+        var categories = values.Select((_, i) => $"M{i}").ToArray();
+        var options = Options with { Width = 400, Height = 240 };
+
+        var result = Layout(spec, new() { ["a"] = SeriesData.FromCategories(categories, values) }, options);
+        var labels = All(result.Scene).Where(g => g is GroupNode { Class: "rio-data-labels" }).SelectMany(All).OfType<TextNode>().ToList();
+
+        Assert.Equal(values.Length, labels.Count);
+    }
+
+    [Fact]
+    public void Bar_data_labels_add_one_step_only_where_a_label_needs_room()
+    {
+        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" }] };
+        double[] values = [-18, -7, 12, 21, 26, 19, 4, -11, 15, 24, 37, 52];
+        var categories = values.Select((_, i) => $"M{i}").ToArray();
+
+        var result = Layout(spec, new() { ["a"] = SeriesData.FromCategories(categories, values) }, Options with { Width = 400, Height = 240 });
+
+        // Without the labels the axis is -20..60 in steps of 20: -18 gets one more step, 52 has room under 60.
+        Assert.Equal(-40, result.YScale.DomainMin);
+        Assert.Equal(60, result.YScale.DomainMax);
+    }
+
+    [Fact]
+    public void Bar_data_labels_keep_a_fixed_axis_range()
+    {
+        var spec = new ChartSpec
+        {
+            Y = new AxisSpec { Min = -20, Max = 60 },
+            Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar, DataLabels = true }],
+        };
+
+        var result = Layout(spec, new() { ["a"] = SeriesData.FromCategories(["a", "b"], [-18.0, 58]) }, Options with { Width = 400, Height = 240 });
+
+        Assert.Equal(-20, result.YScale.DomainMin);
+        Assert.Equal(60, result.YScale.DomainMax);
+    }
+
     // ---------- Tooltip model ----------
 
     [Fact]

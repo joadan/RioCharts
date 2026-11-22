@@ -339,6 +339,15 @@ public static partial class ChartLayout
 
     private const int MaxDataLabels = 1000;
 
+    /// <summary>The height of a data label's box at the chart's font size.</summary>
+    private static double DataLabelHeight(double font) => Math.Max(9, font - 1) * 1.25;
+
+    /// <summary>Pixels between a bar's end and its label.</summary>
+    private const double DataLabelGap = 3;
+
+    /// <summary>Pixels a data label may reach past the plot's top or bottom.</summary>
+    private const double DataLabelOverhang = 2;
+
     /// <summary>
     /// Value labels for series that ask for them. Bars get labels above (below for negative
     /// values), or inside stacked segments when they fit. Points get labels above, else below.
@@ -348,7 +357,7 @@ public static partial class ChartLayout
         ITextMeasurer measure, double font, StyleTable styles, List<RectF> placed, List<string> warnings)
     {
         var small = Math.Max(9, font - 1);
-        var h = small * 1.25;
+        var h = DataLabelHeight(font);
         var groups = new List<Node>();
         foreach (var (r, anchors) in series)
         {
@@ -378,18 +387,18 @@ public static partial class ChartLayout
                     }
                     else if (a.Value >= 0)
                     {
-                        candidates.Add((a.Y - 3, Baseline.Bottom, false));
+                        candidates.Add((a.Y - DataLabelGap, Baseline.Bottom, false));
                         if (fitsInside)
                         {
-                            candidates.Add((a.Y + 3, Baseline.Top, true));
+                            candidates.Add((a.Y + DataLabelGap, Baseline.Top, true));
                         }
                     }
                     else
                     {
-                        candidates.Add((a.Y + 3, Baseline.Top, false));
+                        candidates.Add((a.Y + DataLabelGap, Baseline.Top, false));
                         if (fitsInside)
                         {
-                            candidates.Add((a.Y - 3, Baseline.Bottom, true));
+                            candidates.Add((a.Y - DataLabelGap, Baseline.Bottom, true));
                         }
                     }
                 }
@@ -402,7 +411,7 @@ public static partial class ChartLayout
                 foreach (var (y, baseline, inverse) in candidates)
                 {
                     var rect = TextRect(a.X, y, w, h, Anchor.Middle, baseline);
-                    if (rect.Y < plot.Y - 2 || rect.Bottom > plot.Bottom + 2 || rect.X < plot.X - 4 || rect.Right > plot.Right + 4
+                    if (rect.Y < plot.Y - DataLabelOverhang || rect.Bottom > plot.Bottom + DataLabelOverhang || rect.X < plot.X - 4 || rect.Right > plot.Right + 4
                         || placed.Any(p => Overlaps(p, rect)))
                     {
                         continue;

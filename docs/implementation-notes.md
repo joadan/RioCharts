@@ -71,7 +71,12 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Data labels** are off by default (`DataLabels` per series). Bars: above the bar (below when
   negative), or inside it in the inverse color when there is no room above; stacked segments only
   inside, when the label fits. Points: above, else below. A label overlapping an earlier label or
-  an annotation label is dropped. More than 1000 points: no labels, with a warning.
+  an annotation label is dropped. More than 1000 points: no labels, with a warning. The y axis
+  makes room for the labels of unstacked bars: when the highest or lowest bar's label would not fit
+  between the bar's end and the plot edge, the domain gets one more tick step on that side (same
+  step, so ticks stay round; up to three rounds, as a wider domain has fewer pixels per unit). An
+  axis `Min` or `Max` set in the spec is kept. Horizontal bars put a label that does not fit
+  outside inside the bar instead.
 - **Annotations** are `AnnotationSpec` records (`<ReferenceLine>` and `<ReferenceBand>`
   components, or `RioChart.Annotations`). Values are `object`: numbers, `DateTime`,
   `DateTimeOffset`, `DateOnly`, category names, or strings (ISO 8601 times, numbers) so JSON

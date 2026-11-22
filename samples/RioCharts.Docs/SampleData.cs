@@ -339,7 +339,7 @@ public static class SampleData
     /// <summary>Result per month this year, k€: losses in the slow months after the holidays and in late summer.</summary>
     public static readonly List<Share> MonthlyResult =
     [
-        new("Jan", -12), new("Feb", -7), new("Mar", 12), new("Apr", 21), new("May", 26), new("Jun", 19),
+        new("Jan", -18), new("Feb", -7), new("Mar", 12), new("Apr", 21), new("May", 26), new("Jun", 19),
         new("Jul", 4), new("Aug", -11), new("Sep", 15), new("Oct", 24), new("Nov", 37), new("Dec", 52),
     ];
 
