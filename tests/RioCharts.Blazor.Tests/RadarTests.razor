@@ -1,0 +1,42 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Score(string Measure, double Laptop, double Average);
+
+    // A laptop's test scores (0-100) against the class average.
+    private static readonly Score[] Scores =
+    [
+        new("Performance", 82, 75), new("Battery", 64, 75), new("Display", 71, 75), new("Keyboard", 90, 75), new("Weight", 55, 75),
+    ];
+
+    [Fact]
+    public void Radar_series_send_their_spokes_for_the_shared_tooltip()
+    {
+        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <RadarSeries Id="u" Name="Laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
+            <RadarSeries Id="r" Name="Average" XValue="s => s.Measure" YValue="s => s.Average" />
+        </RioChart>);
+
+        Assert.Equal(2, cut.FindAll(".rio-radar-shape").Count);
+        Assert.Equal(2, cut.FindAll("[data-key^='legend:']").Count);
+        var model = Payload(Calls("update")[^1]);
+        Assert.Equal(5, model.GetProperty("radar").GetProperty("n").GetInt32());
+        var series = model.GetProperty("series")[0];
+        Assert.Equal(4, series.GetProperty("sp")[4].GetInt32());
+        Assert.Equal("Weight", series.GetProperty("xl")[4].GetString());
+        Assert.Equal("55", series.GetProperty("v")[4].GetString());
+    }
+
+    [Fact]
+    public void Clicking_a_radar_point_selects_its_item()
+    {
+        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Selection="SelectionMode.Points">
+            <RadarSeries Id="u" XValue="s => s.Measure" YValue="s => s.Laptop" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("u", 3, false));
+
+        Assert.Equal([Scores[3]], cut.Instance.GetSelectedItems());
+        Assert.Single(cut.FindAll(".rio-selected-point"));
+    }
+}

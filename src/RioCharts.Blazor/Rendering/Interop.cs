@@ -29,7 +29,11 @@ internal sealed record UpdateModel(
     InsetsModel? Need = null,
     InsetsModel? At = null,
     string? Select = null,
-    bool Sel = false);
+    bool Sel = false,
+    RadarModel? Radar = null);
+
+/// <summary>A radar chart's spokes: n of them around (cx, cy), r long, clockwise from 12 o'clock.</summary>
+internal sealed record RadarModel(float Cx, float Cy, float R, int N);
 
 /// <summary>Plot insets: what the chart's labels need, or the group minimum it was laid out with.</summary>
 internal sealed record InsetsModel(double L, double R);
@@ -43,7 +47,7 @@ internal sealed record ScaleModel(double D0, double D1, double R0, double R1);
 internal sealed record SeriesModel(
     string Id, string Name, string Color, bool Bar, bool Step, float Snap, float BarWidth, float BarOffset,
     float[] X, float[] Y, int[] Index, string[] Xl, string[] V, bool Dots = false, float Ch = 0, float[]? Cw = null,
-    string[]? Pl = null, string[][]? Pv = null);
+    string[]? Pl = null, string[][]? Pv = null, int[]? Sp = null);
 
 internal sealed record SliceModel(
     string Id, int Index, string Header, string Label, string Value, string Color,

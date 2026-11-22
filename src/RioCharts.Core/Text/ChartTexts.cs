@@ -171,6 +171,9 @@ public sealed record ChartTexts
     /// <summary>A radial bar chart.</summary>
     public string RadialBarChart { get => Get(); init => Set(value); }
 
+    /// <summary>A radar chart.</summary>
+    public string RadarChart { get => Get(); init => Set(value); }
+
     /// <summary>Description of a pie or radial bar chart. {0}: the kind of chart, {1}: the number of items (one|other), {2}: the items.</summary>
     public string PolarItems { get => Get(); init => Set(value); }
 
@@ -372,6 +375,7 @@ public sealed record ChartTexts
         [nameof(PieChart)] = "Pie chart",
         [nameof(DonutChart)] = "Donut chart",
         [nameof(RadialBarChart)] = "Radial bar chart",
+        [nameof(RadarChart)] = "Radar chart",
         [nameof(PolarItems)] = "{0} with {1} item: {2}|{0} with {1} items: {2}",
         [nameof(PolarNoData)] = "{0}, no data.",
         [nameof(More)] = "and {0} more",
@@ -435,6 +439,7 @@ public sealed record ChartTexts
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radiellt stapeldiagram",
+        RadarChart = "Radardiagram",
         PolarItems = "{0} med {1} post: {2}|{0} med {1} poster: {2}",
         PolarNoData = "{0}, inga data.",
         More = "och {0} till",
@@ -492,6 +497,7 @@ public sealed record ChartTexts
         PieChart = "Sektordiagram",
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radielt stolpediagram",
+        RadarChart = "Radardiagram",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
         More = "og {0} til",
@@ -549,6 +555,7 @@ public sealed record ChartTexts
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radialt søjlediagram",
+        RadarChart = "Radardiagram",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
         More = "og {0} mere",
@@ -606,6 +613,7 @@ public sealed record ChartTexts
         PieChart = "Ympyräkaavio",
         DonutChart = "Rengaskaavio",
         RadialBarChart = "Säteittäinen pylväskaavio",
+        RadarChart = "Tutkakaavio",
         PolarItems = "{0}, {1} kohde: {2}|{0}, {1} kohdetta: {2}",
         PolarNoData = "{0}, ei tietoja.",
         More = "ja {0} muuta",
@@ -663,6 +671,7 @@ public sealed record ChartTexts
         PieChart = "Kreisdiagramm",
         DonutChart = "Ringdiagramm",
         RadialBarChart = "Radiales Balkendiagramm",
+        RadarChart = "Netzdiagramm",
         PolarItems = "{0} mit {1} Eintrag: {2}|{0} mit {1} Einträgen: {2}",
         PolarNoData = "{0}, keine Daten.",
         More = "und {0} weitere",
@@ -720,6 +729,7 @@ public sealed record ChartTexts
         PieChart = "Graphique en secteurs",
         DonutChart = "Graphique en anneau",
         RadialBarChart = "Graphique à barres radiales",
+        RadarChart = "Graphique en radar",
         PolarItems = "{0} avec {1} élément : {2}|{0} avec {1} éléments : {2}",
         PolarNoData = "{0}, aucune donnée.",
         More = "et {0} de plus",
@@ -777,6 +787,7 @@ public sealed record ChartTexts
         PieChart = "Gráfico circular",
         DonutChart = "Gráfico de anillo",
         RadialBarChart = "Gráfico de barras radiales",
+        RadarChart = "Gráfico radial",
         PolarItems = "{0} con {1} elemento: {2}|{0} con {1} elementos: {2}",
         PolarNoData = "{0}, sin datos.",
         More = "y {0} más",

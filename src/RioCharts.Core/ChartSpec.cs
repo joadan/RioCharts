@@ -378,6 +378,10 @@ public enum SeriesType
 
     /// <summary>How a value moved within each period: open, high, low and close.</summary>
     Candlestick,
+
+    /// <summary>A closed shape per series across category spokes, for comparing several measures (e.g. products' test scores).</summary>
+    Radar,
+
     /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,
 }

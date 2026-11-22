@@ -244,6 +244,23 @@ public class SnapshotTests
             ]),
         }),
 
+        // Two laptops' test scores (0-100) against the class average; the old one's display was not tested.
+        ["radar"] = new(new ChartSpec
+        {
+            Y = new AxisSpec { Max = 100 },
+            Series =
+            [
+                new SeriesSpec { Id = "unit", Name = "New laptop", Type = SeriesType.Radar },
+                new SeriesSpec { Id = "ref", Name = "Class average", Type = SeriesType.Radar },
+                new SeriesSpec { Id = "old", Name = "Old laptop", Type = SeriesType.Radar },
+            ],
+        }, new()
+        {
+            ["unit"] = SeriesData.FromCategories(["Performance", "Battery", "Display", "Keyboard", "Weight", "Price"], [82.0, 64, 71, 90, 55, 77]),
+            ["ref"] = SeriesData.FromCategories(["Performance", "Battery", "Display", "Keyboard", "Weight", "Price"], [75.0, 75, 75, 75, 75, 75]),
+            ["old"] = SeriesData.FromCategories(["Performance", "Battery", "Display", "Keyboard", "Weight", "Price"], [60.0, 48, double.NaN, 70, 40, 52]),
+        }),
+
         // Supply air temperature in °C as daily candles (first, highest, lowest, last reading), with
         // the daily average as a line on top.
         ["candles"] = new(new ChartSpec

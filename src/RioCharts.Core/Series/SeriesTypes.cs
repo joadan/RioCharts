@@ -37,7 +37,7 @@ internal interface ISeriesType
         SeriesType.RangeArea => RangeAreaSeriesType.Instance,
         SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
         SeriesType.Candlestick => CandlestickSeriesType.Instance,
-        SeriesType.Pie or SeriesType.RadialBar => new PolarSeriesType(type),
+        SeriesType.Pie or SeriesType.RadialBar or SeriesType.Radar => new PolarSeriesType(type),
         _ => LineSeriesType.Instance,
     };
 }

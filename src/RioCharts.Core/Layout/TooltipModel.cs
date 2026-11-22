@@ -13,7 +13,21 @@ public sealed record TooltipModel(RectF Plot, bool Enabled, bool Shared, float B
 {
     /// <summary>Pie slices and radial bars (polar charts); empty for cartesian charts.</summary>
     public IReadOnlyList<TooltipSlice> Slices { get; init; } = [];
+
+    /// <summary>
+    /// Radar charts: where the spokes are. The tooltip is shared per spoke (the one nearest the
+    /// pointer by angle) and lists each <see cref="Series"/> point with that spoke in
+    /// <see cref="TooltipSeries.Spokes"/>. Null for other charts.
+    /// </summary>
+    public RadarGeometry? Radar { get; init; }
 }
+
+/// <summary>A radar chart's spokes: <paramref name="Count"/> of them, evenly spaced clockwise from 12 o'clock.</summary>
+/// <param name="Cx">Center x in pixels.</param>
+/// <param name="Cy">Center y in pixels.</param>
+/// <param name="Radius">Length of the spokes in pixels.</param>
+/// <param name="Count">How many spokes there are.</param>
+public sealed record RadarGeometry(float Cx, float Cy, float Radius, int Count);
 
 /// <param name="Color">CSS color or theme token.</param>
 /// <param name="Snap">How far (px) from the hovered x a point may be and still be listed in a shared tooltip.</param>
@@ -39,6 +53,9 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
 
     /// <summary>Box plots: per point, the values for <see cref="PartLabels"/> (empty: leave the row out).</summary>
     public string[][]? PartValues { get; init; }
+
+    /// <summary>Radar charts: the spoke of each point; null for other series.</summary>
+    public int[]? Spokes { get; init; }
 
     /// <summary>Heatmap: the cell height (a cell is <see cref="BarWidth"/> wide, centered on its point).</summary>
     public float CellHeight { get; init; }

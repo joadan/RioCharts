@@ -115,6 +115,7 @@ public static class ChartRazor
                 SeriesType.Pie when s.InnerRadius is > 0 => "DonutSeries",
                 SeriesType.Pie => "PieSeries",
                 SeriesType.RadialBar => "RadialBarSeries",
+                SeriesType.Radar => "RadarSeries",
                 SeriesType.Scatter => "ScatterSeries",
                 SeriesType.Heatmap => "HeatmapSeries",
                 SeriesType.RangeArea => "RangeAreaSeries",

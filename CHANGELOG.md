@@ -58,6 +58,13 @@ changes are called out under **Breaking**.
   `--rio-negative`. JSON specs: `"type": "candlestick"` (also `ohlc`) with `timeBucket`, or `open`,
   `high` and `low` fields. Core: `SeriesType.Candlestick`, `CandleSummary`, `CandleColumns`,
   `SeriesData.WithCandles` and `FromCandleBuckets`, `TimeBuckets.Floor`.
+- Radar charts: `RadarSeries` draws one spoke per category (x), clockwise from 12 o'clock, and a
+  lightly filled shape per series on a value scale from zero shared by all spokes (fix it with the
+  y axis `Min`/`Max`). Hovering a spoke shows every series' value on it; the legend lists series.
+  A missing value leaves the shape open instead of pulling it to the center. Long category names
+  are shortened with "…". JSON specs: `"type": "radar"` (also `spider`). Core:
+  `SeriesType.Radar`, `TooltipModel.Radar` (`RadarGeometry`), `TooltipSeries.Spokes`; new
+  `ChartTexts.RadarChart`.
 - JSON specs with `timeBucket`: bucketed DateTime values were turned into DateTimeOffsets with the
   machine's local offset; they stay DateTimes now.
 

@@ -653,6 +653,35 @@ Design.md "Candlestick" (milestone 7).
 - **Not yet:** live data (`SeriesBuffer`) with candles, a hollow/filled option, a volume pane
   helper (use a bar series on a second axis), and `Horizontal` candles.
 
+## Radar
+
+Design.md "Radar" (milestone 7).
+
+- **Own layout path** (`ComputeRadar`, `ChartLayout.Radar.cs`), not the pie/radial bar pass: the
+  legend lists series (pies list categories), hiding works per series, and the tooltip is shared
+  per spoke. A chart with any radar series is a radar chart; other series are skipped with a
+  warning. `SeriesType.Radar` reports the polar coordinate system.
+- **Spokes:** the categories of all series in order of first appearance (numbers and times are
+  formatted as labels), clockwise from 12 o'clock. A category that repeats in a series keeps its
+  first value, with a warning.
+- **Scale:** linear from zero (from the smallest value when it is negative), nice ticks (3 to 6
+  rings depending on the radius); `ChartSpec.Y.Min`/`Max` fix it. Rings are polygons, or circles
+  with fewer than three spokes. Tick values sit just right of the first spoke, in the static layer
+  under the shapes.
+- **Drawing:** a closed path per series, line 2 px (`StrokeWidth`) with fill opacity 0.14. With a
+  missing value the series is open lines that wrap around the circle; a value between two gaps
+  (or a single spoke) is a dot. Markers stay hidden until hover.
+- **Labels:** the radius leaves room for the spoke labels (capped at 22% of the width, shortened
+  with "…"), at least 30% of the plot's smaller side. Side labels are anchored by side; top and
+  bottom labels are centered and limited to the chord between neighbouring spokes. A label that
+  would overlap one already placed is left out (the tooltip names the spoke).
+- **Interaction:** the tooltip series carry each point's spoke (`TooltipSeries.Spokes`) and the
+  model the geometry (`TooltipModel.Radar`); the JS module picks the spoke nearest the pointer by
+  angle (within the radius + 24 px), draws it as the crosshair, and reuses the shared tooltip rows,
+  keyboard navigation (Left/Right along the series, Up/Down between series, the whole spoke
+  announced) and point clicks. `ShowTooltipAsync` (an x value) does nothing on radar charts.
+- **Not yet:** data labels, a circular grid option, a sqrt scale (polar area), and per-spoke scales.
+
 ## Horizontal bars
 
 - **A chart option, not a series type** (`ChartSpec.Horizontal`): orientation is a property of the

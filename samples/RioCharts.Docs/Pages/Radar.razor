@@ -1,0 +1,80 @@
+@page "/radar"
+
+<PageTitle>Radar · RioCharts</PageTitle>
+
+<h1>Radar</h1>
+<p class="lead">
+    A radar chart compares several measures at once: each measure is a spoke, and each series a shape through its values. Products
+    against each other, or a day's rhythm around the clock.
+</p>
+
+<Example Title="Against the average" Code="@CompareCode">
+    <Description>
+        <p>
+            One <code>RadarSeries</code> per laptop, with the measures as <code>XValue</code>. Spokes start at the top and go clockwise;
+            the radius is a value scale from zero shared by all spokes, fixed here with the y axis <code>Max</code>. Hover a spoke to compare
+            every laptop's score on it. The older laptop's display was not tested, so its shape is open there instead of dropping to the
+            center.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="LaptopScore" Items="LaptopScores" YAxis="Scores" Height="360">
+            <RadarSeries Name="New laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
+            <RadarSeries Name="Old laptop" XValue="s => s.Measure" YValue="s => s.OldLaptop" />
+            <RadarSeries Name="Class average" XValue="s => s.Measure" YValue="s => s.Average" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Around the clock" Code="@ClockCode">
+    <Description>
+        <p>
+            Hours as spokes make a 24-hour clock: here a website's visits per hour on weekdays and at the weekend. Weekdays peak in office
+            hours, weekends in the afternoon. (Set the y axis <code>Min</code> to start the scale above zero when the values sit in a narrow
+            band.)
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="HourVisits" Items="HourlyVisits" Height="340">
+            <RadarSeries Name="Weekday" XValue="h => h.Hour" YValue="h => h.Weekday" Format="N0" />
+            <RadarSeries Name="Weekend" XValue="h => h.Hour" YValue="h => h.Weekend" Format="N0" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>Good to know</h2>
+<ul>
+    <li>Radar series cannot be mixed with other series types; the others are skipped with a warning.</li>
+    <li>With fewer than three categories there is no shape: two values are a line, one a dot.</li>
+    <li>Long category names are shortened with "…" (the tooltip shows them in full); names that would overlap are left out.</li>
+    <li>Clicks, selection, the legend, highlighting and keyboard navigation work as for line charts.</li>
+</ul>
+
+<h2>In JSON specs</h2>
+<p>
+    <code>"type": "radar"</code> (also <code>"spider"</code>) with the measure as <code>x</code> and the value as <code>y</code>; use
+    <code>groupBy</code> for one shape per product.
+</p>
+
+@code {
+    private static readonly AxisSpec Scores = new() { Max = 100 };
+
+    private const string CompareCode = """
+        <RioChart TItem="LaptopScore" Items="scores" YAxis="new AxisSpec { Max = 100 }">
+            <RadarSeries Name="New laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
+            <RadarSeries Name="Old laptop" XValue="s => s.Measure" YValue="s => s.OldLaptop" />
+            <RadarSeries Name="Class average" XValue="s => s.Measure" YValue="s => s.Average" />
+        </RioChart>
+
+        @code {
+            record LaptopScore(string Measure, double Laptop, double OldLaptop, double Average); // NaN: not tested
+        }
+        """;
+
+    private const string ClockCode = """
+        <RioChart TItem="HourVisits" Items="hours">
+            <RadarSeries Name="Weekday" XValue="h => h.Hour" YValue="h => h.Weekday" Format="N0" />
+            <RadarSeries Name="Weekend" XValue="h => h.Hour" YValue="h => h.Weekend" Format="N0" />
+        </RioChart>
+        """;
+}

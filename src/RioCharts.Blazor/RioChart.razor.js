@@ -270,7 +270,7 @@ export function hideTooltip(container) {
 
 function showShown(state) {
     const m = state.model, px = state.shown;
-    if (px === null || px === undefined || !m || !m.series || !state.svg || (m.slices && m.slices.length > 0)) {
+    if (px === null || px === undefined || !m || !m.series || !state.svg || (m.slices && m.slices.length > 0) || m.radar) {
         return;
     }
 
@@ -905,7 +905,33 @@ function findSingle(m, px, py) {
 }
 
 function find(m, pos) {
-    return m.shared ? findShared(m, pos.x) : findSingle(m, pos.x, pos.y);
+    return m.radar ? findRadar(m, pos) : m.shared ? findShared(m, pos.x) : findSingle(m, pos.x, pos.y);
+}
+
+// Radar: the spoke nearest the pointer by angle (within reach of the shape), and each series'
+// point on it. rows.spoke is the spoke.
+function findRadar(m, pos) {
+    const r = m.radar;
+    const dx = pos.x - r.cx, dy = pos.y - r.cy;
+    if (r.n < 1 || Math.hypot(dx, dy) > r.r + 24) {
+        return [];
+    }
+
+    const angle = ((Math.atan2(dx, -dy) % TAU) + TAU) % TAU;
+    return radarRows(m, Math.round(angle / (TAU / r.n)) % r.n);
+}
+
+function radarRows(m, k) {
+    const rows = [];
+    for (const s of m.series) {
+        const i = s.sp ? s.sp.indexOf(k) : -1;
+        if (i >= 0) {
+            rows.push({ s, i });
+        }
+    }
+
+    rows.spoke = k;
+    return rows;
 }
 
 // ---------- Hover drawing ----------
@@ -1057,7 +1083,12 @@ function drawHover(state, rows, m) {
     const p = m.plot;
     const first = rows[0];
     const x = rows.anchor !== undefined ? rows.anchor : first.x !== undefined ? first.x : first.s.x[first.i];
-    if (first.s.ch > 0) {
+    if (m.radar && rows.spoke !== undefined) {
+        // Radar: the hovered spoke.
+        const r = m.radar, a = rows.spoke * TAU / r.n;
+        const [ex, ey] = arcPoint(r.cx, r.cy, r.r, a);
+        g.appendChild(el('line', { class: 'rio-crosshair', x1: r.cx, y1: r.cy, x2: ex, y2: ey }));
+    } else if (first.s.ch > 0) {
         // Heatmap: outline the cell.
         const w = first.s.cw ? first.s.cw[first.i] : first.s.barWidth, h = first.s.ch, cx = first.s.x[first.i], cy = first.s.y[first.i];
         g.appendChild(el('rect', { class: 'rio-hover-cell', x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 2 }));
@@ -1444,7 +1475,7 @@ function showKey(state, announce) {
     kb.s = Math.max(0, Math.min(series.length - 1, kb.s));
     const s = series[kb.s];
     kb.i = Math.max(0, Math.min(s.x.length - 1, kb.i));
-    const rows = m.shared ? findShared(m, s.x[kb.i]) : [{ s, i: kb.i }];
+    const rows = m.radar && s.sp ? radarRows(m, s.sp[kb.i]) : m.shared ? findShared(m, s.x[kb.i]) : [{ s, i: kb.i }];
     if (!rows.some(r => r.s === s)) {
         rows.unshift({ s, i: kb.i });
     }

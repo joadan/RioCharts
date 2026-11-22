@@ -90,9 +90,12 @@ public static partial class ChartLayout
     private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles)
     {
         var cy = y + height / 2;
-        var swatchStyle = styles.Add("swatch-" + entry.SeriesId, entry.Type == SeriesType.RangeArea
-            ? new Style { Fill = entry.Color, FillOpacity = 0.35f } // like the band
-            : new Style { Fill = entry.Color, Stroke = entry.Color, StrokeWidth = 2 });
+        var swatchStyle = styles.Add("swatch-" + entry.SeriesId, entry.Type switch
+        {
+            SeriesType.RangeArea => new Style { Fill = entry.Color, FillOpacity = 0.35f }, // like the band
+            SeriesType.Radar => new Style { Fill = entry.Color, FillOpacity = 0.25f, Stroke = entry.Color, StrokeWidth = 1.5f }, // like the shape
+            _ => new Style { Fill = entry.Color, Stroke = entry.Color, StrokeWidth = 2 },
+        });
         Node swatch = entry.Type == SeriesType.Line
             ? new PathNode(new PathBuilder().MoveTo(x, cy).LineTo(x + SwatchWidth, cy).Build(), swatchStyle) { Class = "rio-swatch rio-swatch-line" }
             : entry.Type == SeriesType.Scatter

@@ -43,7 +43,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Canvas series layer for large data (`SeriesLayer="SeriesLayer.Canvas"`)
 - Compact charts and sparklines (`Compact`), auto-compact for small charts, highlight dots, and plain SVG without JS (`Interactive="false"`)
 - Works with static server rendering, prerendering, trimming and native AOT
-- Scatter charts with trend lines, heatmaps, range areas, box plots, candlesticks and horizontal bars
+- Scatter charts with trend lines, heatmaps, range areas, box plots, candlesticks, radar charts and horizontal bars
 - Built-in texts in eight languages (`ChartTexts`), with your own wording or languages from code, resx or `IStringLocalizer`
 - Download as PNG, SVG or CSV from the browser (`Exportable`, `DownloadPngAsync`, `ExportCsv`, ...)
 - Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes
@@ -122,6 +122,15 @@ Pie, donut and radial bar (the x value names each slice; the legend lists slices
 
 <RioChart Items="targets">
     <RadialBarSeries XValue="t => t.Category" YValue="t => t.Percent" Max="100" Format="0'%'" />
+</RioChart>
+```
+
+Radar (a spoke per measure, a shape per series; the legend lists series):
+
+```razor
+<RioChart Items="scores" YAxis="new AxisSpec { Max = 100 }">
+    <RadarSeries Name="New laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
+    <RadarSeries Name="Class average" XValue="s => s.Measure" YValue="s => s.Average" />
 </RioChart>
 ```
 

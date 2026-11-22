@@ -623,6 +623,19 @@ public sealed class DonutSeries<TItem> : PieSeries<TItem>
     public DonutSeries() => InnerRadius = 0.6;
 }
 
+/// <summary>
+/// Radar: one spoke per category (x), clockwise from 12 o'clock, and a closed shape per series
+/// through its values. The radius is a linear scale from zero shared by all spokes; set the
+/// chart's <c>YAxis</c> Min and Max to fix it (e.g. 0 to 100 for percentages). Several radar
+/// series compare, e.g. two products' test scores against their class average. Cannot be mixed with other
+/// series types.
+/// </summary>
+public sealed class RadarSeries<TItem> : SeriesBase<TItem>
+{
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Radar;
+}
+
 /// <summary>Radial bars: one circular track per category, filled up to its value.</summary>
 public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
 {

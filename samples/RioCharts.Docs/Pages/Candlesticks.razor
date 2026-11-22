@@ -5,7 +5,7 @@
 <h1>Candlesticks</h1>
 <p class="lead">
     A candlestick shows how a value moved within each period: where it started, how high and low it went, and where it ended. Prices,
-    but also sensor data: the first, highest, lowest and last temperature per hour or day.
+    but also measurements: the first, highest, lowest and last temperature per hour or day.
 </p>
 
 <Example Title="From readings" Code="@ReadingsCode">
@@ -14,13 +14,13 @@
             Give <code>CandlestickSeries</code> the raw readings and a <code>Bucket</code>: the readings of each hour (or day, week, …) become
             one candle. A rising period is lightly filled, a falling one solid (<code>--rio-positive</code> and <code>--rio-negative</code>). Three
             weeks of hourly candles are too narrow to see, so they merge into longer periods of the clock and calendar (6 or 12 hours, days,
-            depending on the width) that keep the highs and lows; drag to zoom in and the hours come back. Note the cooling fault on the
-            tenth day.
+            depending on the width) that keep the highs and lows; drag to zoom in and the hours come back. Note the thunderstorm on the
+            tenth afternoon.
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" Items="ServerRoom" YAxis="Celsius" Height="280" Zoomable="true">
-            <CandlestickSeries Name="Server room" XValue="r => r.Time" YValue="r => r.Value" Bucket="TimeBucket.Hour" Format="0.0 °C" />
+        <RioChart TItem="Reading" Items="Outdoor" YAxis="Celsius" Height="280" Zoomable="true">
+            <CandlestickSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value" Bucket="TimeBucket.Hour" Format="0.0 °C" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -54,7 +54,7 @@
 
     private const string ReadingsCode = """
         <RioChart TItem="Reading" Items="readings" Zoomable="true">
-            <CandlestickSeries Name="Server room" XValue="r => r.Time" YValue="r => r.Value"
+            <CandlestickSeries Name="Outdoor" XValue="r => r.Time" YValue="r => r.Value"
                                Bucket="TimeBucket.Hour" Format="0.0 °C" />
         </RioChart>
 

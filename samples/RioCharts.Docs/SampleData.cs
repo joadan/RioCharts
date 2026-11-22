@@ -157,15 +157,15 @@ public static class SampleData
     }).ToList();
 
     /// <summary>
-    /// Server room temperature in °C every 15 minutes for three weeks: a daily rhythm, a slow drift,
-    /// and a cooling fault on the tenth day.
+    /// Outdoor temperature in °C at a weather station every 15 minutes for three weeks: warm
+    /// afternoons, cool nights, a slow drift, and a thunderstorm on the tenth afternoon.
     /// </summary>
-    public static readonly List<Reading> ServerRoom = Enumerable.Range(0, 21 * 96).Select(i =>
+    public static readonly List<Reading> Outdoor = Enumerable.Range(0, 21 * 96).Select(i =>
     {
         var t = Start.AddDays(-21).AddMinutes(15 * i);
-        var day = Math.Sin((t.Hour + t.Minute / 60.0 - 9) / 24 * 2 * Math.PI) * 0.9;
-        var fault = i / 96 == 9 && t.Hour is >= 13 and < 17 ? 3.5 * Math.Sin((t.Hour - 13 + t.Minute / 60.0) / 4 * Math.PI) : 0;
-        return new Reading(t, Math.Round(21 + day + Drift(i, 81, 24) * 1.2 + Noise(i, 82) * 0.4 + fault, 1));
+        var day = Math.Sin((t.Hour + t.Minute / 60.0 - 9) / 24 * 2 * Math.PI) * 4.5;
+        var storm = i / 96 == 9 && t.Hour is >= 13 and < 17 ? -7 * Math.Sin((t.Hour - 13 + t.Minute / 60.0) / 4 * Math.PI) : 0;
+        return new Reading(t, Math.Round(14 + day + Drift(i, 81, 24) * 3 + Noise(i, 82) * 0.6 + storm, 1));
     }).ToList();
 
     /// <summary>A day of electricity prices, €/MWh: the first and last hour, the highest and the lowest.</summary>
@@ -178,6 +178,31 @@ public static class SampleData
         var first = Math.Round(level + Noise(d, 91) * 26, 1);
         var last = Math.Round(level + Noise(d, 92) * 26, 1);
         return new PriceDay(date, first, Math.Round(Math.Max(first, last) + 3 + (Noise(d, 93) + 0.5) * 14, 1), Math.Round(Math.Min(first, last) - 2 - (Noise(d, 94) + 0.5) * 8, 1), last);
+    }).ToList();
+
+    /// <summary>One test score (0-100, higher is better) of two laptops and the class average.</summary>
+    public sealed record LaptopScore(string Measure, double Laptop, double OldLaptop, double Average);
+
+    /// <summary>Two laptops' review scores against the average of their class; the older one's display was not tested.</summary>
+    public static readonly List<LaptopScore> LaptopScores =
+    [
+        new("Performance", 82, 60, 75),
+        new("Battery", 64, 48, 75),
+        new("Display", 71, double.NaN, 75),
+        new("Keyboard", 90, 70, 75),
+        new("Weight", 55, 40, 75),
+        new("Price", 77, 52, 75),
+    ];
+
+    /// <summary>A website's average visits per hour of the day, every other hour.</summary>
+    public sealed record HourVisits(string Hour, double Weekday, double Weekend);
+
+    public static readonly List<HourVisits> HourlyVisits = Enumerable.Range(0, 12).Select(i =>
+    {
+        var h = i * 2;
+        var work = h is >= 8 and <= 16 ? 380 : 0;
+        return new HourVisits(h.ToString("00") + ":00", Math.Round(420 + work + Math.Sin((h - 9) / 24.0 * 2 * Math.PI) * 300),
+            Math.Round(520 + Math.Sin((h - 14) / 24.0 * 2 * Math.PI) * 330));
     }).ToList();
 
     /// <summary>One order: the weekday, the channel and its value in €.</summary>
