@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for Blazor in pure .NET (line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick, treemap), with server-side PNG/SVG export and JSON chart specs for AI agents. Preview packages for .NET 10 and .NET 11.
+> Charts for .NET: one chart model (line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick, treemap), interactive in Blazor, PNG and SVG on the server (RioCharts.Skia), and created by AI agents from JSON specs. Preview packages for .NET 10 and .NET 11.
 
 Setup: `dotnet add package RioCharts.Blazor --prerelease`, then `@using RioCharts.Blazor` and `@using RioCharts.Core` in `_Imports.razor`. Nothing to register. A chart:
 

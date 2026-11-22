@@ -1107,6 +1107,65 @@ table.docs tr:last-child td {
     font-size: 14px;
 }
 
+/* The three outputs on the start page: Blazor, server, AI. */
+.outputs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.output {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding: 22px;
+    border: 1px solid var(--doc-border);
+    border-radius: var(--doc-radius);
+    background: var(--doc-surface);
+}
+
+.output h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.output p {
+    margin: 0;
+    color: var(--doc-muted);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.output .code-block {
+    margin: 0;
+}
+
+.output .code-block pre {
+    font-size: 12.5px;
+}
+
+.site .output-package {
+    align-self: flex-start;
+    text-decoration: none;
+}
+
+.output-package code {
+    font-size: 13px;
+}
+
+.output > a {
+    margin-top: auto;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+@media (max-width: 900px) {
+    .outputs {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .packages {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));

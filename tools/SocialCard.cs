@@ -17,7 +17,7 @@ using RioCharts.Skia;
 using SkiaSharp;
 
 const int Width = 1200, Height = 630;
-const string Ink = "#1f2328", Blue = "#4269d0";
+const string Ink = "#1f2328", Blue = "#4269d0", Muted = "#5b6170";
 var output = Path.Combine("samples", "RioCharts.Docs", "wwwroot", "social-card.png");
 
 // A chart drawn by the library itself: web sessions over two weeks against a goal.
@@ -34,7 +34,7 @@ var spec = new ChartSpec
     Annotations = [new AnnotationSpec { Value = 1000.0, Label = "Goal" }],
 };
 var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(days, web), ["app"] = SeriesData.From(days, app) };
-const int ChartWidth = 700, ChartHeight = 250;
+const int ChartWidth = 700, ChartHeight = 236;
 var chartPng = ChartExport.ToPng(spec, data, new ExportOptions
 {
     Width = ChartWidth, Height = ChartHeight, Scale = 2, FontSize = 14, Culture = CultureInfo.GetCultureInfo("en-US"),
@@ -79,15 +79,19 @@ var baseline = RowTop + LogoSize / 2 + 34; // the name's capitals centered on th
 Text("Rio", rowLeft + LogoSize + Gap, baseline, nameRegular, Ink);
 Text("Charts", rowLeft + LogoSize + Gap + rio, baseline, nameBold, Ink);
 
-// Tagline, centered: "Charts for Blazor in pure .NET" with the last part in blue.
-using var tagline = Font(40, SKFontStyleWeight.SemiBold);
-const string First = "Charts for Blazor ", Second = "in pure .NET";
+// Tagline, centered: "Charts for .NET" with ".NET" in blue, and the three outputs under it.
+using var tagline = Font(42, SKFontStyleWeight.SemiBold);
+const string First = "Charts for ", Second = ".NET";
 var taglineLeft = (Width - tagline.MeasureText(First + Second)) / 2;
-Text(First, taglineLeft, 246, tagline, Ink);
-Text(Second, taglineLeft + tagline.MeasureText(First), 246, tagline, Blue);
+Text(First, taglineLeft, 240, tagline, Ink);
+Text(Second, taglineLeft + tagline.MeasureText(First), 240, tagline, Blue);
+
+using var outputs = Font(24, SKFontStyleWeight.Normal);
+const string Outputs = "Interactive in Blazor  ·  PNG and SVG on the server  ·  Made by AI agents";
+Text(Outputs, (Width - outputs.MeasureText(Outputs)) / 2, 282, outputs, Muted);
 
 // The chart on a white card with a soft shadow, centered below.
-var card = SKRect.Create((Width - ChartWidth - 40) / 2f, 292, ChartWidth + 40, ChartHeight + 40);
+var card = SKRect.Create((Width - ChartWidth - 40) / 2f, 314, ChartWidth + 40, ChartHeight + 40);
 using (var shadow = new SKPaint { Color = SKColor.Parse(Ink).WithAlpha(40), IsAntialias = true, MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 18) })
 {
     canvas.DrawRoundRect(new SKRect(card.Left, card.Top + 10, card.Right, card.Bottom + 10), 24, 24, shadow);

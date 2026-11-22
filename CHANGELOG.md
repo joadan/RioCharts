@@ -3,6 +3,12 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
+## Unreleased
+
+- RioCharts is presented as charts for .NET, not only Blazor: one chart model, interactive in
+  Blazor, PNG and SVG on the server, and created by AI agents. The docs start page shows the three
+  outputs side by side; the title, link preview card, READMEs and llms.txt follow.
+
 ## 0.2.1-preview (2026-11-22)
 
 The packages now target .NET 10 (LTS) and .NET 11. New chart types (radar, treemap with

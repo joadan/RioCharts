@@ -1,7 +1,8 @@
 # RioCharts
 
-A pure .NET chart library, with Blazor as the first target. C# does the math and layout, Razor
-renders SVG, and a tiny JS module only measures the container and the font.
+Charts for .NET. One chart model, drawn everywhere: interactive in Blazor, PNG and SVG on the
+server, and created by AI agents from JSON. C# does the math and layout; in Blazor, Razor renders
+SVG and a tiny JS module only measures the container and follows the pointer.
 
 **Docs and live examples:** https://riocharts.com/
 
