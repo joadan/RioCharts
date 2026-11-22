@@ -9,7 +9,7 @@
 A pure .NET chart library, with Blazor as the first target. C# does the math and layout,
 Razor renders SVG, and a tiny JS module only measures the container and the font.
 
-**Docs and live examples:** https://joadan.github.io/RioCharts/ (Blazor WebAssembly, runs in your browser).
+**Docs and live examples:** https://riocharts.com/ (Blazor WebAssembly, runs in your browser).
 
 > **Status: early preview.** APIs will change without notice before 1.0. It is built for our
 > own teams' needs; issues are welcome, but there is no roadmap promise.
@@ -64,7 +64,7 @@ AOT support, built-in languages and a WASM docs site.
 The concepts map closely: items with `XValue`/`YValue` selectors, `YAggregate`, series as child
 components (one component per type instead of `SeriesType`), typed parameters instead of an options
 object, and no `UpdateSeriesAsync`: change `Items` and the chart draws again. See
-[Coming from Blazor-ApexCharts](https://joadan.github.io/RioCharts/from-apexcharts) for the full
+[Coming from Blazor-ApexCharts](https://riocharts.com/from-apexcharts) for the full
 mapping.
 
 ## Install
@@ -182,7 +182,7 @@ To try it, open [samples/RioCharts.Mcp.Sample](samples/RioCharts.Mcp.Sample) in 
 sample data, the agent configuration and example prompts.
 
 **Coding agents** that add charts to your app: point them at
-[llms-full.txt](https://joadan.github.io/RioCharts/llms-full.txt), one Markdown file with setup, rules,
+[llms-full.txt](https://riocharts.com/llms-full.txt), one Markdown file with setup, rules,
 examples (compiled by the tests) and every component parameter, generated from the code. `riocharts-mcp`
 serves the same guide (`get_usage`) and turns a spec into `<RioChart>` markup with a record for the rows
 (`get_razor`), so an agent can design a chart with `render_chart`, look at it, then put it in the app.
@@ -192,7 +192,7 @@ Paste this into your repository's `AGENTS.md` (or `CLAUDE.md`, `.github/copilot-
 ## Charts
 
 Charts use RioCharts.Blazor (preview, .NET 10 and 11). Before writing chart code, read
-https://joadan.github.io/RioCharts/llms-full.txt, or call get_usage if the riocharts MCP server is set up.
+https://riocharts.com/llms-full.txt, or call get_usage if the riocharts MCP server is set up.
 
 - Setup: the RioCharts.Blazor package, and `@using RioCharts.Blazor` and `@using RioCharts.Core` in `_Imports.razor`. Nothing to register.
 - Set `TItem` on `<RioChart>` when it has event handlers (`OnPointClick`, ...).

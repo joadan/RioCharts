@@ -14,36 +14,36 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 
 ## Guide for coding agents
 
-- [llms-full.txt](https://joadan.github.io/RioCharts/llms-full.txt): setup, rules, compiled examples and every component parameter in one file. Read this before writing RioCharts code.
+- [llms-full.txt](https://riocharts.com/llms-full.txt): setup, rules, compiled examples and every component parameter in one file. Read this before writing RioCharts code.
 
 ## Docs
 
-- [Getting started](https://joadan.github.io/RioCharts/getting-started): install, first chart, how updates work, render modes
-- [Coming from Blazor-ApexCharts](https://joadan.github.io/RioCharts/from-apexcharts): how the concepts map
-- [Lines and areas](https://joadan.github.io/RioCharts/lines-and-areas)
-- [Bars and stacking](https://joadan.github.io/RioCharts/bars)
-- [Scatter](https://joadan.github.io/RioCharts/scatter)
-- [Heatmap](https://joadan.github.io/RioCharts/heatmap)
-- [Box plots](https://joadan.github.io/RioCharts/box-plots)
-- [Candlesticks](https://joadan.github.io/RioCharts/candlesticks)
-- [Radar](https://joadan.github.io/RioCharts/radar)
-- [Treemap](https://joadan.github.io/RioCharts/treemap)
-- [Pie, donut and radial](https://joadan.github.io/RioCharts/pies)
-- [Compact charts](https://joadan.github.io/RioCharts/compact): sparklines
-- [Axes and time](https://joadan.github.io/RioCharts/axes)
-- [Annotations](https://joadan.github.io/RioCharts/annotations)
-- [Tooltips, clicks and zoom](https://joadan.github.io/RioCharts/interaction)
-- [Live data](https://joadan.github.io/RioCharts/live-data)
-- [Large data](https://joadan.github.io/RioCharts/large-data)
-- [Theming](https://joadan.github.io/RioCharts/theming)
-- [Languages and texts](https://joadan.github.io/RioCharts/languages)
-- [Export and download](https://joadan.github.io/RioCharts/export)
+- [Getting started](https://riocharts.com/getting-started): install, first chart, how updates work, render modes
+- [Coming from Blazor-ApexCharts](https://riocharts.com/from-apexcharts): how the concepts map
+- [Lines and areas](https://riocharts.com/lines-and-areas)
+- [Bars and stacking](https://riocharts.com/bars)
+- [Scatter](https://riocharts.com/scatter)
+- [Heatmap](https://riocharts.com/heatmap)
+- [Box plots](https://riocharts.com/box-plots)
+- [Candlesticks](https://riocharts.com/candlesticks)
+- [Radar](https://riocharts.com/radar)
+- [Treemap](https://riocharts.com/treemap)
+- [Pie, donut and radial](https://riocharts.com/pies)
+- [Compact charts](https://riocharts.com/compact): sparklines
+- [Axes and time](https://riocharts.com/axes)
+- [Annotations](https://riocharts.com/annotations)
+- [Tooltips, clicks and zoom](https://riocharts.com/interaction)
+- [Live data](https://riocharts.com/live-data)
+- [Large data](https://riocharts.com/large-data)
+- [Theming](https://riocharts.com/theming)
+- [Languages and texts](https://riocharts.com/languages)
+- [Export and download](https://riocharts.com/export)
 
 ## Beyond Blazor
 
-- [JSON specs](https://joadan.github.io/RioCharts/specs): the chart model as JSON, with a playground
-- [Server-side export](https://joadan.github.io/RioCharts/server-export): PNG and SVG with RioCharts.Skia
-- [AI agents and MCP](https://joadan.github.io/RioCharts/ai): create_chart for agents in your app, and `riocharts-mcp`, a local MCP server that renders charts and turns specs into Razor
+- [JSON specs](https://riocharts.com/specs): the chart model as JSON, with a playground
+- [Server-side export](https://riocharts.com/server-export): PNG and SVG with RioCharts.Skia
+- [AI agents and MCP](https://riocharts.com/ai): create_chart for agents in your app, and `riocharts-mcp`, a local MCP server that renders charts and turns specs into Razor
 
 ## Optional
 

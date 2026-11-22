@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- The docs site moved to https://riocharts.com (old joadan.github.io/RioCharts links redirect).
+  Links in the READMEs, llms.txt, llms-full.txt and the AGENTS.md block point there, and so does
+  the packages' project URL.
 - Docs site: the `#` links on example headings stay on their page (they went to the start page).
 - .NET 11: the packages target .NET 10 (LTS) and .NET 11; RioCharts.Blazor builds against
   ASP.NET Core 11 on .NET 11. riocharts-mcp runs on .NET 10 or, when only that is installed, .NET 11

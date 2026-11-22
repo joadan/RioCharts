@@ -8,7 +8,7 @@
 
     <!-- Versions come from version.json and the git height (Nerdbank.GitVersioning).
          Pre-1.0: APIs change freely; packages are published as previews. -->
-    <PackageProjectUrl>https://github.com/joadan/RioCharts</PackageProjectUrl>
+    <PackageProjectUrl>https://riocharts.com/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/joadan/RioCharts</RepositoryUrl>
     <PackageTags>charts;blazor;svg</PackageTags>
     <Authors>Joakim Dangården</Authors>
