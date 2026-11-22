@@ -5,6 +5,8 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Docs site: every page answers with status 200 at its own address (it was served by 404.html),
+  so direct links, link previews and search engines see the pages.
 - The docs site moved to https://riocharts.com (old joadan.github.io/RioCharts links redirect).
   Links in the READMEs, llms.txt, llms-full.txt and the AGENTS.md block point there, and so does
   the packages' project URL.

@@ -44,7 +44,13 @@ jobs:
         run: |
           # The site is at the root of https://riocharts.com (custom domain in the repo's Pages
           # settings), so <base href="/"> stays as it is.
-          # Deep links (e.g. /pies) are served by 404.html: let the app route them.
+          # Every page gets its own copy of index.html (/pies is served from pies.html), so direct
+          # links and search engines get status 200, not 404. The routes are the docs' @page
+          # directives, so a new page is included without changing this.
+          for route in $(grep -ho '@page "/[a-z0-9-]\+"' samples/RioCharts.Docs/Pages/*.razor | sed 's|@page "/||; s|"||' | grep -vx 'not-found'); do
+            cp publish/wwwroot/index.html "publish/wwwroot/$route.html"
+          done
+          # Anything else (an old or mistyped link) is served by 404.html: the app shows its not-found page.
           cp publish/wwwroot/index.html publish/wwwroot/404.html
           # Serve _framework and _content as they are.
           touch publish/wwwroot/.nojekyll
