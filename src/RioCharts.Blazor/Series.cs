@@ -15,7 +15,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     private object? _lastItems;
     private SeriesData? _lastData;
     private object? _lastVersion;
-    private (Aggregate?, bool) _lastAggregate;
+    private (Aggregate?, bool, TimeBucket?) _lastAggregate;
     private IReadOnlyList<int[]>? _groups;
     private bool _registered;
     private bool _hadTooltipValue;
@@ -127,6 +127,12 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// </summary>
     private protected virtual SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups) => data;
 
+    /// <summary>
+    /// The time bucket items are grouped into (one point per bucket), or null to group only items
+    /// with the same x. Series types with a <c>Bucket</c> parameter return it.
+    /// </summary>
+    private protected virtual TimeBucket? XBucket => null;
+
     /// <summary>Settings of a series type that change how its data is built (e.g. a candle bucket): a change rebuilds it.</summary>
     private protected virtual object? DataSettings => null;
 
@@ -233,7 +239,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         }
 
         var items = Items ?? Chart.DefaultItems as IEnumerable<TItem>;
-        var aggregateKey = (Aggregate, YAggregate is not null);
+        var aggregateKey = (Aggregate, YAggregate is not null, XBucket);
         if (_buffer is null && (!ReferenceEquals(items, _lastItems) || aggregateKey != _lastAggregate || !Equals(DataSettings, _lastDataSettings)
                 || (ColorValue is not null) != _hadColorValue)
             || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
@@ -245,7 +251,10 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             _lastVersion = DataVersion;
             _lastAggregate = aggregateKey;
             _groups = null;
-            var aggregate = YAggregate ?? (Aggregate is { } a ? Aggregation.For(a, YValue) : null);
+            var bucket = XBucket;
+            // Per bucket without an aggregate: the average, as in JSON specs.
+            var aggregate = YAggregate ?? (Aggregate is { } a ? Aggregation.For(a, YValue)
+                : bucket is not null && YValue is not null ? Aggregation.For(Core.Aggregate.Average, YValue) : null);
             if (Data is not null)
             {
                 _data = Data;
@@ -254,7 +263,9 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             else if (items is not null && XValue is not null && aggregate is not null)
             {
                 ItemList = items as IReadOnlyList<TItem> ?? items.ToList();
-                _data = SeriesData.FromGroups(ItemList, XValue, aggregate, out var groups);
+                _data = bucket is { } perBucket
+                    ? SeriesData.FromTimeBuckets(ItemList, XValue, perBucket, aggregate, out var groups)
+                    : SeriesData.FromGroups(ItemList, XValue, aggregate, out groups);
                 _groups = groups;
                 _data = Complete(_data, ItemList, groups);
             }
@@ -320,6 +331,14 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 /// <summary>Line series.</summary>
 public sealed class LineSeries<TItem> : SeriesBase<TItem>
 {
+    /// <summary>
+    /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
+    /// items' wall-clock time) at the bucket's start, combining its items with <c>Aggregate</c>
+    /// (average when not set) or <c>YAggregate</c>. <c>TimeBucket.Auto</c> picks the bucket from the
+    /// data's time span (about 50 buckets).
+    /// </summary>
+    [Parameter] public TimeBucket? Bucket { get; set; }
+
     /// <summary>Line shape: Linear, Monotone (smooth, no overshoot) or Step.</summary>
     [Parameter] public CurveType Curve { get; set; } = CurveType.Linear;
 
@@ -332,6 +351,8 @@ public sealed class LineSeries<TItem> : SeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Line;
 
+    private protected override TimeBucket? XBucket => Bucket;
+
     /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
@@ -339,6 +360,14 @@ public sealed class LineSeries<TItem> : SeriesBase<TItem>
 /// <summary>Area series, filled down to zero.</summary>
 public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 {
+    /// <summary>
+    /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
+    /// items' wall-clock time) at the bucket's start, combining its items with <c>Aggregate</c>
+    /// (average when not set) or <c>YAggregate</c>. <c>TimeBucket.Auto</c> picks the bucket from the
+    /// data's time span (about 50 buckets).
+    /// </summary>
+    [Parameter] public TimeBucket? Bucket { get; set; }
+
     /// <summary>Shape of the top edge: Linear, Monotone (smooth, no overshoot) or Step.</summary>
     [Parameter] public CurveType Curve { get; set; } = CurveType.Linear;
 
@@ -350,6 +379,8 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Area;
+
+    private protected override TimeBucket? XBucket => Bucket;
 
     /// <inheritdoc />
     protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
@@ -538,11 +569,12 @@ public sealed class BoxPlotSeries<TItem> : SeriesBase<TItem>
 /// </summary>
 public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
 {
-    private Func<TItem, object?>? _time;
-    private Func<TItem, object?>? _bucketed;
     private Func<IReadOnlyList<TItem>, double?>? _group;
 
-    /// <summary>Raw readings: the period of each candle, e.g. <c>TimeBucket.Hour</c> (on the readings' wall-clock time).</summary>
+    /// <summary>
+    /// Raw readings: the period of each candle, e.g. <c>TimeBucket.Hour</c> (on the readings'
+    /// wall-clock time); <c>TimeBucket.Auto</c> picks it from the data's time span (about 50 candles).
+    /// </summary>
     [Parameter] public TimeBucket? Bucket { get; set; }
 
     /// <summary>Precomputed candles: the period's first value.</summary>
@@ -562,32 +594,22 @@ public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Candlestick;
 
-    private protected override object? DataSettings => (Precomputed, Bucket);
+    private protected override object? DataSettings => Precomputed;
+
+    private protected override TimeBucket? XBucket => Precomputed ? null : Bucket;
 
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
-        // XValue is wrapped to group readings per bucket; keep the caller's own selector.
-        if (!ReferenceEquals(XValue, _bucketed))
-        {
-            _time = XValue;
-        }
-
         if (Precomputed)
         {
-            XValue = _time;
             YValue = CloseValue ?? YValue;
             YAggregate = null;
         }
-        else if (Bucket is not null && _time is not null)
-        {
-            XValue = _bucketed ??= item => _time?.Invoke(item) is { } t && Bucket is { } b ? TimeBuckets.Floor(t, b) : _time?.Invoke(item);
-            YAggregate = _group ??= _ => 0; // group per bucket; the candles replace the values in Complete
-        }
         else
         {
-            XValue = _time;
-            YAggregate = null;
+            // Group per bucket; the candles replace the values in Complete.
+            YAggregate = Bucket is null ? null : _group ??= _ => 0;
         }
 
         Aggregate = null;
@@ -596,7 +618,7 @@ public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
 
     private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
     {
-        if (groups is not null && YValue is { } value && _time is { } time)
+        if (groups is not null && YValue is { } value && XValue is { } time)
         {
             var candles = new CandleSummary[groups.Count];
             for (var g = 0; g < candles.Length; g++)
@@ -622,8 +644,18 @@ public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>
 public sealed class BarSeries<TItem> : SeriesBase<TItem>
 {
+    /// <summary>
+    /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
+    /// items' wall-clock time) at the bucket's start, combining its items with <c>Aggregate</c>
+    /// (average when not set) or <c>YAggregate</c>. <c>TimeBucket.Auto</c> picks the bucket from the
+    /// data's time span (about 50 buckets).
+    /// </summary>
+    [Parameter] public TimeBucket? Bucket { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Bar;
+
+    private protected override TimeBucket? XBucket => Bucket;
 }
 
 /// <summary>

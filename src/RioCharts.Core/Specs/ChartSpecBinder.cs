@@ -216,7 +216,14 @@ public static class ChartSpecBinder
             return;
         }
 
-        var candleBucket = s.Type == SeriesType.Candlestick && open is null ? s.TimeBucket ?? TimeBucket.Day : (TimeBucket?)null;
+        // Auto picks one bucket from all the series' rows, so groups (groupBy) share it.
+        var bucket = s.TimeBucket is { } requested ? TimeBuckets.Resolve(requested, rows.Select(r => x.Values[r])) : (TimeBucket?)null;
+        if (s.TimeBucket == TimeBucket.Auto)
+        {
+            warnings.Add($"{path}.timeBucket: auto chose {bucket.ToString()!.ToLowerInvariant()}.");
+        }
+
+        var candleBucket = s.Type == SeriesType.Candlestick && open is null ? bucket ?? TimeBucket.Day : (TimeBucket?)null;
         if (s.Type == SeriesType.Candlestick && open is null && s.TimeBucket is null)
         {
             warnings.Add($"{path}.timeBucket: not set for candles from raw values; using day.");
@@ -265,11 +272,11 @@ public static class ChartSpecBinder
                 var boxId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "values") : s.Id, key, usedIds);
                 var boxName = key is null ? s.Name ?? Humanize(y?.Name ?? "values") : s.Name is null ? key : $"{s.Name}: {key}";
                 output.Add(s with { Id = boxId, Name = boxName });
-                data[boxId] = Boxes(groupRows, x, y, s.TimeBucket, low, q1, q3, high);
+                data[boxId] = Boxes(groupRows, x, y, bucket, low, q1, q3, high);
                 continue;
             }
 
-            var points = Points(groupRows, x, y, s.TimeBucket, aggregate, low, colorField);
+            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -282,7 +289,7 @@ public static class ChartSpecBinder
                 points = points.Take(limit).ToList();
             }
 
-            var type = s.Type == SeriesType.Auto ? Recommend(x, points, groups.Count, s.TimeBucket) : s.Type;
+            var type = s.Type == SeriesType.Auto ? Recommend(x, points, groups.Count, bucket) : s.Type;
             var id = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "count") : s.Id, key, usedIds);
             var name = key is null ? s.Name ?? Humanize(y?.Name ?? "count") : s.Name is null ? key : $"{s.Name}: {key}";
             var bound = s with { Id = id, Name = name, Type = type };

@@ -9,8 +9,8 @@ namespace RioCharts.AI;
 /// <summary>
 /// Turns a spec (e.g. one an agent built) into Razor component markup, so a developer can move
 /// the chart into the codebase. Fields become properties of an item type (camelCase → PascalCase);
-/// transforms that components do not do (filter, timeBucket, groupBy...) become comments to
-/// implement in the query; an aggregate per x value becomes the series' <c>Aggregate</c>.
+/// transforms that components do not do (filter, groupBy...) become comments to implement in the
+/// query; an aggregate per x value or time bucket becomes the series' <c>Aggregate</c> and <c>Bucket</c>.
 /// </summary>
 public static class ChartRazor
 {
@@ -82,13 +82,15 @@ public static class ChartRazor
             }
 
             var candleBucket = s.Type == SeriesType.Candlestick && s.Open is null ? s.TimeBucket ?? TimeBucket.Day : (TimeBucket?)null;
-            if (s.TimeBucket is { } bucket && candleBucket is null)
+            // Line, area and bar components group per time bucket themselves; other types leave it to the query.
+            var componentBucket = s.Type is SeriesType.Line or SeriesType.Area or SeriesType.Bar or SeriesType.Auto ? s.TimeBucket : null;
+            if (s.TimeBucket is { } bucket && candleBucket is null && componentBucket is null)
             {
                 notes.Add($"per {bucket.ToString().ToLowerInvariant()}");
             }
 
-            // Components aggregate per x value; per time bucket stays a note.
-            var componentAggregate = s.TimeBucket is null ? s.Aggregate : null;
+            // Components aggregate per x value, or per bucket where they take one.
+            var componentAggregate = s.TimeBucket is null || componentBucket is not null ? s.Aggregate : null;
             if (s.Aggregate is { } aggregate && componentAggregate is null)
             {
                 notes.Add($"aggregate: {aggregate.ToString().ToLowerInvariant()}");
@@ -215,6 +217,12 @@ public static class ChartRazor
             {
                 sb.Append($" Aggregate=\"Aggregate.{a}\"");
             }
+
+            if (componentBucket is { } perPoint)
+            {
+                sb.Append($" Bucket=\"TimeBucket.{perPoint}\"");
+            }
+
             if (s.Curve != CurveType.Linear)
             {
                 sb.Append($" Curve=\"CurveType.{s.Curve}\"");

@@ -3,7 +3,7 @@
 <PageTitle>Bars and stacking · RioCharts</PageTitle>
 
 <h1>Bars and stacking</h1>
-<p class="lead">Bars start at zero, group side by side, stack by name, combine repeated x values, and can mix with lines.</p>
+<p class="lead">Bars start at zero, group side by side, stack by name, combine repeated x values or time buckets, and can mix with lines.</p>
 
 <Example Title="Grouped bars" Code="@GroupedCode">
     <Description><p>Several bar series share each category. Large numbers are compact (182k).</p></Description>
@@ -42,6 +42,29 @@
         </RioChart>
         <p class="note">
             Clicked: @(_tickets is null ? "nothing yet" : $"{_tickets.X}, {_tickets.SeriesName}: " + string.Join(", ", _tickets.Items.Select(t => $"{t.Subject} ({t.Minutes} min)")))
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="Bars per time bucket" Code="@BucketCode">
+    <Description>
+        <p>
+            <code>Bucket</code> groups items with a time x per minute, hour, day, week, month, quarter or year (on their wall-clock
+            time) and draws one bar at the start of each bucket, combined with <code>Aggregate</code> (the average when not set).
+            <code>TimeBucket.Auto</code> picks the bucket from the data's time span, aiming for about 50 bars: hours for these two
+            days of revenue, weeks for a year. Lines and areas take <code>Bucket</code> too. In JSON specs:
+            <code>"timeBucket": "auto"</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="Revenue" Title="Revenue, €" Height="260">
+            <BarSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Bucket="_bucket" Aggregate="Aggregate.Sum" Format="#,0 €" />
+        </RioChart>
+        <p class="note">
+            @foreach (var bucket in Buckets)
+            {
+                <label><input type="radio" name="bar-bucket" checked="@(_bucket == bucket)" @onchange="() => _bucket = bucket" /> @bucket</label>
+            }
         </p>
     </ChildContent>
 </Example>
@@ -125,6 +148,8 @@
     private static readonly TooltipSpec _single = new() { Shared = false };
     private static readonly List<Share> _ranking = [.. CategoryRevenue.OrderByDescending(s => s.Value)];
     private PointClickEventArgs<Ticket>? _tickets;
+    private static readonly TimeBucket[] Buckets = [TimeBucket.Hour, TimeBucket.Day, TimeBucket.Auto];
+    private TimeBucket _bucket = TimeBucket.Auto;
     private static readonly List<Reading> _average = DailyOrders
         .Select((r, i) => new Reading(r.Time, DailyOrders.Skip(Math.Max(0, i - 6)).Take(Math.Min(7, i + 1)).Average(x => x.Value)))
         .ToList();
@@ -149,6 +174,14 @@
         </RioChart>
 
         @* clicked.Items holds every ticket behind the bar *@
+        """;
+
+    private const string BucketCode = """
+        @* Revenue every 15 minutes for two days *@
+        <RioChart Items="revenue" Title="Revenue, €">
+            <BarSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value"
+                       Bucket="TimeBucket.Auto" Aggregate="Aggregate.Sum" Format="#,0 €" />
+        </RioChart>
         """;
 
     private const string MixedCode = """

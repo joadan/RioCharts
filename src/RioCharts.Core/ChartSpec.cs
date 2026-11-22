@@ -158,8 +158,8 @@ public sealed record SeriesSpec
     [Description("Keep only rows that match all of these conditions.")]
     public IReadOnlyList<FilterSpec>? Filter { get; init; }
 
-    /// <summary>Time x: group rows into buckets (hour, day, week, month, quarter, year) and aggregate y per bucket.</summary>
-    [Description("Time x: group rows into buckets (hour, day, week, month, quarter, year) and aggregate y per bucket.")]
+    /// <summary>Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span) and aggregate y per bucket.</summary>
+    [Description("Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span) and aggregate y per bucket.")]
     public TimeBucket? TimeBucket { get; init; }
 
     /// <summary>Combine rows with the same x (or time bucket): sum, average, min, max, count or last.</summary>
@@ -648,6 +648,12 @@ public enum TimeBucket
 
     /// <summary>One bucket per calendar year.</summary>
     Year,
+
+    /// <summary>
+    /// Picks one of the others from the data's time span: the one that gives closest to 50 buckets
+    /// (e.g. weeks for a year of data, hours for a day). Chosen once per data change.
+    /// </summary>
+    Auto,
 }
 
 /// <summary>How rows with the same x (or time bucket) are combined into one value.</summary>

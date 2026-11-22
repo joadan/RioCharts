@@ -338,7 +338,7 @@ public static class ChartSpecJson
     {
         ["minute"] = "minute", ["hour"] = "hour", ["hourly"] = "hour", ["day"] = "day", ["daily"] = "day", ["date"] = "day", ["week"] = "week",
         ["weekly"] = "week", ["month"] = "month", ["monthly"] = "month", ["quarter"] = "quarter", ["quarterly"] = "quarter", ["year"] = "year",
-        ["yearly"] = "year", ["annual"] = "year",
+        ["yearly"] = "year", ["annual"] = "year", ["auto"] = "auto", ["automatic"] = "auto",
     };
 
     private static readonly Dictionary<string, string> Sorts = new(StringComparer.Ordinal)

@@ -5,6 +5,22 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Time buckets on line, area and bar series: `Bucket="TimeBucket.Day"` (or Minute, Hour, Week,
+  Month, Quarter, Year) groups items with a time x into one point per bucket, at the bucket's
+  start, combined with `Aggregate` (average when not set, as in JSON specs) or `YAggregate`.
+  Before, only candlesticks and JSON specs had buckets; series components grouped only items with
+  exactly the same x. A click gives the bucket's items, as for other aggregated points.
+- `TimeBucket.Auto` picks the bucket from the data's time span: the one that gives closest to 50
+  buckets (weeks for a year of daily data, hours for a day). It works for line, area, bar and
+  candlestick series and in JSON specs (`"timeBucket": "auto"`, which adds a warning saying what
+  it chose). New in Core: `TimeBuckets.ForSpan`, `TimeBuckets.Resolve` and
+  `SeriesData.FromTimeBuckets`; `TimeBuckets.Floor` now also takes a `DateOnly` and throws for
+  `Auto` (resolve it first).
+- Spec → Razor writes `Bucket` and `Aggregate` for line, area and bar series with a `timeBucket`
+  instead of a comment to do it in the query.
+- Docs: a "Bars per time bucket" example on Bars and stacking, with a switch between hour, day and
+  auto; `docs/chart-types.md` lists supported and candidate chart types.
+
 - **Breaking:** `LinearScale` (RioCharts.Core.Scales) is renamed `ContinuousScale`: it now also
   does log axes, so the old name no longer fit. Only the name changes (`ChartLayoutResult.XScale`,
   `YScale` and `YScales` have the new type); code that names the type needs the new name.

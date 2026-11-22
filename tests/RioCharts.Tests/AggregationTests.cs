@@ -120,7 +120,6 @@ public class AggregationTests
 
         Assert.Contains("<BarSeries XValue=\"r => r.Store\" Aggregate=\"Aggregate.Count\" />", razor);
         Assert.Contains("<BarSeries XValue=\"r => r.Store\" YValue=\"r => r.Minutes\" Aggregate=\"Aggregate.Sum\" />", razor);
-        Assert.Contains("per day; aggregate: sum", razor);
-        Assert.Contains("<BarSeries XValue=\"r => r.Time\" YValue=\"r => r.Energy\" />", razor);
+        Assert.Contains("<BarSeries XValue=\"r => r.Time\" YValue=\"r => r.Energy\" Aggregate=\"Aggregate.Sum\" Bucket=\"TimeBucket.Day\" />", razor);
     }
 }

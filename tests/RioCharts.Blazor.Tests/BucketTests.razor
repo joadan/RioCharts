@@ -1,0 +1,82 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Order(DateTime Time, double Amount);
+
+    // An order every 6 hours for four days (from Monday 16 November 2026, midnight).
+    private static readonly Order[] Orders = Enumerable.Range(0, 16).Select(i => new Order(Start.AddHours(6 * i), 10 + i)).ToArray();
+
+    // An order a day for a year.
+    private static readonly Order[] Year = Enumerable.Range(0, 365).Select(i => new Order(Start.AddDays(i), i % 7)).ToArray();
+
+    private string[] Values(int series = 0) =>
+        [.. Payload(Calls("update")[^1]).GetProperty("series")[series].GetProperty("v").EnumerateArray().Select(v => v.GetString()!)];
+
+    [Fact]
+    public void Bars_combine_the_items_of_each_bucket()
+    {
+        Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <BarSeries Id="o" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Day" Aggregate="Aggregate.Sum" Format="0" />
+        </RioChart>);
+
+        Assert.Equal(["46", "62", "78", "94"], Values());
+    }
+
+    [Fact]
+    public void A_bucket_without_an_aggregate_takes_the_average()
+    {
+        Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <LineSeries Id="o" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Day" Format="0.0" />
+        </RioChart>);
+
+        Assert.Equal(["11.5", "15.5", "19.5", "23.5"], Values());
+    }
+
+    [Fact]
+    public void Auto_picks_the_bucket_from_the_time_span()
+    {
+        Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Year" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <AreaSeries Id="auto" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Auto" Aggregate="Aggregate.Sum" />
+            <AreaSeries Id="week" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Week" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        Assert.Equal(53, Values(0).Length); // a year of days: weeks
+        Assert.Equal(Values(1), Values(0));
+    }
+
+    [Fact]
+    public void Clicking_a_bucket_selects_its_items()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Selection="SelectionMode.Points">
+            <BarSeries Id="o" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Day" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("o", 1, false));
+
+        Assert.Equal(Orders.Skip(4).Take(4), cut.Instance.GetSelectedItems());
+    }
+
+    [Fact]
+    public void Changing_the_bucket_rebuilds_the_points()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders">
+            <LineSeries Id="o" XValue="o => o.Time" YValue="o => o.Amount" />
+        </RioChart>);
+        Assert.Equal(16, Values().Length);
+
+        cut.Render(p => p.Add(c => c.ChildContent, @<LineSeries TItem="Order" Id="o" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Day" />));
+
+        Assert.Equal(4, Values().Length);
+    }
+
+    [Fact]
+    public void Candles_take_an_auto_bucket()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders">
+            <CandlestickSeries Id="o" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Auto" />
+        </RioChart>);
+
+        // Four days of readings every 6 hours: hours (one reading each) are closer to 50 buckets than days.
+        Assert.Equal(16, cut.FindAll(".rio-candle").Count);
+    }
+}

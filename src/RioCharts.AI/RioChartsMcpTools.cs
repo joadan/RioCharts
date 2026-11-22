@@ -21,7 +21,7 @@ public sealed class RioChartsMcpTools(ChartTool tool)
         + "Call list_datasets first to see the datasets and fields. Minimal spec: "
         + "{\"dataset\":\"<id>\",\"series\":[{\"type\":\"line\",\"x\":\"<time field>\",\"y\":\"<numeric field>\"}]}. "
         + "Types: line, area, bar, pie, radialBar, auto. Series options: groupBy, aggregate (sum|average|min|max|count|last), "
-        + "timeBucket (hour|day|week|month|quarter|year), filter, sort, limit, stack. Inline \"data\" rows work instead of a dataset. "
+        + "timeBucket (minute|hour|day|week|month|quarter|year|auto), filter, sort, limit, stack. Inline \"data\" rows work instead of a dataset. "
         + "Call get_chart_schema for every option.")]
     public async Task<CallToolResult> CreateChart(
         [Description("The chart spec as a JSON object.")] JsonElement spec,

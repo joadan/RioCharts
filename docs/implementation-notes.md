@@ -274,9 +274,21 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   bucketing; two timestamps a millisecond apart are two points), numbers by value (1 and 1.0 are
   the same x). Items with a null x are left out. Categories keep first-appearance order.
 - Grouping runs in `SeriesData.FromGroups`, once per data change (new Items reference,
-  `DataVersion`, or a change of `Aggregate` or of whether `YAggregate` is set). Changing the
+  `DataVersion`, or a change of `Aggregate`, `Bucket` or of whether `YAggregate` is set). Changing the
   `YAggregate` function alone does not reprocess, the same as `YValue`. `Data` (columnar) and
   `Buffer` (live) are not aggregated.
+- **Time buckets on components:** Design.md has time buckets only as a spec transform (and for
+  candles). Line, area and bar series also take `Bucket`; the grouping lives in `SeriesBase`
+  (`XBucket`, `SeriesData.FromTimeBuckets`), and `CandlestickSeries` uses the same path instead of
+  wrapping `XValue`. A bucket without `Aggregate` or `YAggregate` averages, as JSON specs do. Other
+  series types (scatter, heatmap, range area, box plot, pies) don't take it yet.
+- **`TimeBucket.Auto`:** picked once per data change from the span of the x values (min to max),
+  never from the chart's width or zoom, so it stays in the data step and selectors still run once.
+  The pick is the calendar bucket whose approximate count (span ÷ its length; a month is 30.44
+  days) is closest to 50 on a log scale; an empty or zero span gives Day. In JSON specs it is
+  resolved over all of a series' filtered rows before `groupBy`, so every group gets the same
+  bucket, and a warning says which one. `TimeBuckets.Floor` throws for `Auto`, since one value
+  can't pick it.
 - A point's source index is its group's index; the series maps it back to the group's item
   indexes. `PointClickEventArgs.Item` and `Index` are the group's first item, `Items` the whole group.
 - Without an aggregate, duplicates are drawn as given. The layout warns about them for category

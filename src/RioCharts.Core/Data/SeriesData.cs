@@ -138,16 +138,54 @@ public sealed class SeriesData
         ArgumentNullException.ThrowIfNull(time);
         ArgumentNullException.ThrowIfNull(value);
         var list = items as IReadOnlyList<TItem> ?? items?.ToList() ?? throw new ArgumentNullException(nameof(items));
-        var data = FromGroups(list, item => time(item) is { } t ? TimeBuckets.Floor(t, bucket) : null, _ => 0, out groups);
+        var times = new object?[list.Count];
+        for (var i = 0; i < times.Length; i++)
+        {
+            times[i] = time(list[i]);
+        }
+
+        var data = FromTimeBuckets(times, bucket, _ => 0, out groups);
         var candles = new CandleSummary[groups.Count];
         for (var g = 0; g < candles.Length; g++)
         {
             // In time order within the bucket, whatever the input order.
-            var ordered = groups[g].OrderBy(i => ToX(time(list[i]))).ThenBy(i => i);
+            var ordered = groups[g].OrderBy(i => ToX(times[i])).ThenBy(i => i);
             candles[g] = CandleSummary.FromValues(ordered.Select(i => value(list[i]) ?? double.NaN));
         }
 
         return data.WithCandles(candles);
+    }
+
+    /// <summary>
+    /// Groups items per time bucket (e.g. per day or month, on their wall-clock time) and makes one
+    /// point per bucket at the bucket's start, with y from <paramref name="aggregate"/> (null is a
+    /// gap). <see cref="TimeBucket.Auto"/> picks the bucket from the span of the times. Items with a
+    /// null x are left out; x values that are not times group by value. Selectors and the
+    /// aggregate run once here, never per render.
+    /// </summary>
+    /// <param name="groups">Each bucket's item indexes; a point's source index is its group's index.</param>
+    public static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket,
+        Func<IReadOnlyList<TItem>, double?> aggregate, out IReadOnlyList<int[]> groups)
+    {
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(aggregate);
+        var list = items as IReadOnlyList<TItem> ?? items?.ToList() ?? throw new ArgumentNullException(nameof(items));
+        var times = new object?[list.Count];
+        for (var i = 0; i < times.Length; i++)
+        {
+            times[i] = time(list[i]);
+        }
+
+        return FromTimeBuckets(times, bucket, members => aggregate(Array.ConvertAll(members, i => list[i])), out groups);
+    }
+
+    // Groups item indexes by the bucket of their time; aggregate gets each group's item indexes.
+    private static SeriesData FromTimeBuckets(object?[] times, TimeBucket bucket, Func<int[], double?> aggregate, out IReadOnlyList<int[]> groups)
+    {
+        var resolved = TimeBuckets.Resolve(bucket, times);
+        return FromGroups(Enumerable.Range(0, times.Length).ToArray(),
+            i => times[i] is { } t ? TimeBuckets.Floor(t, resolved) : null,
+            members => aggregate([.. members]), out groups);
     }
 
     /// <summary>
