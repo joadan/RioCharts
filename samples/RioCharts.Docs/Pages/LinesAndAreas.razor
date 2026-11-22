@@ -83,6 +83,23 @@
     </ChildContent>
 </Example>
 
+<Example Title="Negative values" Code="@NegativeCode">
+    <Description>
+        <p>
+            Values below zero need nothing extra: the y axis takes in the lowest value and zero, and an area fills from zero up or down.
+            Here the net cash flow per day: sales bring money in every day, supplier invoices on the 1st and 15th and wages on the 25th
+            take it out. A <code>ColorBands</code> entry with <code>Below = 0</code> colors the outflow red, line and fill, exactly where
+            the line crosses zero.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="NetCashFlow" Height="240" YAxis="NetAxis">
+            <AreaSeries Name="Net cash flow" XValue="r => r.Time" YValue="r => r.Value" Format="+#,0.0 k€;−#,0.0 k€;0 k€"
+                        ColorBands="@([new ColorBand { Below = 0, Color = "--rio-negative" }])" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Colors by value" Code="@BandsCode">
     <Description>
         <p>
@@ -193,6 +210,15 @@
             <LineSeries Name="95th percentile" XValue="s => s.Users" YValue="s => s.P95Ms" Format="0 ms" Curve="CurveType.Monotone" />
             <ReferenceLine Value="120" Label="Limit" />
             <ReferenceLine Axis="AnnotationAxis.X" Value="300" Label="Expected peak" />
+        </RioChart>
+        """;
+
+    private static readonly AxisSpec NetAxis = new() { Title = "k€ per day" };
+
+    private const string NegativeCode = """
+        <RioChart Items="netCashFlow" YAxis="@(new AxisSpec { Title = "k€ per day" })">
+            <AreaSeries Name="Net cash flow" XValue="r => r.Time" YValue="r => r.Value" Format="+#,0.0 k€;−#,0.0 k€;0 k€"
+                        ColorBands="@([new ColorBand { Below = 0, Color = "--rio-negative" }])" />
         </RioChart>
         """;
 

@@ -22,6 +22,8 @@ changes are called out under **Breaking**.
   axis label after a moment (Safari needs `-webkit-user-select`), and no callout menu opens.
 - Docs: Lines and areas has a "Numbers on the x axis" example (response time against concurrent
   users in a load test, with an x reference line), so line charts are not shown only over time.
+- Docs: "Negative values" examples on Lines and areas (daily net cash flow as an area, red below
+  zero with `ColorBands`) and on Bars (result per month with loss months).
 
 ## 0.2.1-preview (2026-11-22)
 

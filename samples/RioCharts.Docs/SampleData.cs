@@ -324,6 +324,25 @@ public static class SampleData
         return new Delivery(km, Math.Round(Math.Max(4, 18 + km * 0.09 + Noise(i, 42) * 14), 1));
     }).ToList();
 
+    /// <summary>
+    /// Net cash flow per day for six weeks, k€: sales bring money in every day (more at weekends), supplier invoices paid on the
+    /// 1st and the 15th and wages on the 25th take it out.
+    /// </summary>
+    public static readonly List<Reading> NetCashFlow = Enumerable.Range(0, 42).Select(d =>
+    {
+        var date = new DateTime(2026, 10, 1).AddDays(d);
+        var sales = (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? 14 : 9) + Noise(d, 61) * 4;
+        var paid = date.Day switch { 1 => 48, 15 => 41, 25 => 56, _ => 2 + Noise(d, 62) * 2 };
+        return new Reading(date, Math.Round(sales - paid, 1));
+    }).ToList();
+
+    /// <summary>Result per month this year, k€: losses in the slow months after the holidays and in late summer.</summary>
+    public static readonly List<Share> MonthlyResult =
+    [
+        new("Jan", -12), new("Feb", -7), new("Mar", 12), new("Apr", 21), new("May", 26), new("Jun", 19),
+        new("Jul", 4), new("Aug", -11), new("Sep", 15), new("Oct", 24), new("Nov", 37), new("Dec", 52),
+    ];
+
     /// <summary>One step of a load test: concurrent users and the response times measured at that load.</summary>
     public sealed record LoadStep(double Users, double MedianMs, double P95Ms);
 

@@ -93,6 +93,22 @@
     </ChildContent>
 </Example>
 
+<Example Title="Negative values" Code="@NegativeCode">
+    <Description>
+        <p>
+            Bars grow from zero, so a negative value is a bar pointing down and the y axis takes in both sides. Here the result per
+            month, with the loss months in the falling color through <code>ColorValue</code>; data labels sit at the end of each bar,
+            below the negative ones.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="MonthlyResult" YAxis="KiloEuros" Height="240">
+            <BarSeries Name="Result" XValue="m => m.Name" YValue="m => m.Value" Format="0 k€" DataLabels="true"
+                       ColorValue="@(m => m.Value < 0 ? "--rio-negative" : null)" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Per-bar tooltip" Code="@SingleCode">
     <Description><p>Tooltips are shared per x by default; <code>Shared = false</code> shows only the bar under the pointer.</p></Description>
     <ChildContent>
@@ -153,6 +169,13 @@
             <BarSeries Name="Orders" XValue="d => d.Day" YValue="d => d.Orders"
                        ColorValue="@(d => d.Orders < 100 ? "--rio-negative" : d.Orders >= 150 ? "--rio-positive" : null)" />
             <ReferenceLine Value="100" Label="Target" />
+        </RioChart>
+        """;
+
+    private const string NegativeCode = """
+        <RioChart Items="monthlyResult" YAxis="@(new AxisSpec { Title = "k€" })">
+            <BarSeries Name="Result" XValue="m => m.Name" YValue="m => m.Value" Format="0 k€" DataLabels="true"
+                       ColorValue="@(m => m.Value < 0 ? "--rio-negative" : null)" />
         </RioChart>
         """;
 
