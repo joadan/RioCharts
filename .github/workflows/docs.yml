@@ -10,6 +10,7 @@ on:
       - "src/RioCharts.Blazor/**"
       - "samples/RioCharts.Docs/**"
       - "Directory.Build.props"
+      - "version.json"   # the header badge shows the version
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
