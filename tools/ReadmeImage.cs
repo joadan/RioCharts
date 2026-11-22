@@ -2,7 +2,8 @@
 #:property PublishAot=false
 
 // The picture at the top of README.md: four charts drawn by RioCharts.Skia on cards, in a light
-// and a dark version (the README picks one with prefers-color-scheme). Run from the repository root:
+// and a dark version (the README shows the one matching the reader's GitHub theme, with the
+// #gh-light-mode-only and #gh-dark-mode-only URL suffixes). Run from the repository root:
 //   dotnet run tools/ReadmeImage.cs
 // It writes assets/readme-charts-light.png and assets/readme-charts-dark.png. Uses Segoe UI (Windows).
 

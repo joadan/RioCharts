@@ -10,10 +10,8 @@
 server, and created by AI agents. C# does the math and layout; in Blazor, Razor renders SVG and a
 tiny JS module only measures text and follows the pointer.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme-charts-dark.png" />
-  <img src="assets/readme-charts-light.png" alt="Four charts made with RioCharts: sessions per day as an area and a line against a goal, orders per quarter as stacked bars, revenue by channel as a donut, and sessions per hour and weekday as a heatmap." />
-</picture>
+![Four charts made with RioCharts: sessions per day as an area and a line against a goal, orders per quarter as stacked bars, revenue by channel as a donut, and sessions per hour and weekday as a heatmap.](assets/readme-charts-light.png#gh-light-mode-only)
+![Four charts made with RioCharts: sessions per day as an area and a line against a goal, orders per quarter as stacked bars, revenue by channel as a donut, and sessions per hour and weekday as a heatmap.](assets/readme-charts-dark.png#gh-dark-mode-only)
 
 <sub>Drawn by RioCharts.Skia itself (<a href="tools/ReadmeImage.cs">tools/ReadmeImage.cs</a>).
 **[See them live, with tooltips and zoom →](https://riocharts.com/)**</sub>
