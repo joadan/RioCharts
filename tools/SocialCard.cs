@@ -5,6 +5,10 @@
 // and a chart drawn by RioCharts.Skia. Run from the repository root:
 //   dotnet run tools/SocialCard.cs
 // It writes samples/RioCharts.Docs/wwwroot/social-card.png. Uses Segoe UI (Windows).
+//
+// Everything is centered: Teams (and others) show a small, nearly square thumbnail cut from the
+// middle, while Slack, LinkedIn and X show the whole card. The logo and name sit in the middle
+// third so they survive the crop.
 
 using System.Globalization;
 using RioCharts.Core;
@@ -13,7 +17,7 @@ using RioCharts.Skia;
 using SkiaSharp;
 
 const int Width = 1200, Height = 630;
-const string Ink = "#1f2328", Blue = "#4269d0", Muted = "#5b6170";
+const string Ink = "#1f2328", Blue = "#4269d0";
 var output = Path.Combine("samples", "RioCharts.Docs", "wwwroot", "social-card.png");
 
 // A chart drawn by the library itself: web sessions over two weeks against a goal.
@@ -30,7 +34,7 @@ var spec = new ChartSpec
     Annotations = [new AnnotationSpec { Value = 1000.0, Label = "Goal" }],
 };
 var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(days, web), ["app"] = SeriesData.From(days, app) };
-const int ChartWidth = 500, ChartHeight = 360;
+const int ChartWidth = 700, ChartHeight = 250;
 var chartPng = ChartExport.ToPng(spec, data, new ExportOptions
 {
     Width = ChartWidth, Height = ChartHeight, Scale = 2, FontSize = 14, Culture = CultureInfo.GetCultureInfo("en-US"),
@@ -48,14 +52,6 @@ using (var paint = new SKPaint())
     canvas.DrawRect(0, 0, Width, Height, paint);
 }
 
-// The logo (assets/icon.svg, 256 × 256), drawn at 128 px.
-canvas.Save();
-canvas.Translate(80, 92);
-canvas.Scale(128f / 256);
-DrawLogo(canvas);
-canvas.Restore();
-
-// Name and tagline.
 static SKFont Font(int size, SKFontStyleWeight weight) =>
     new(SKTypeface.FromFamilyName("Segoe UI", weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright), size);
 
@@ -65,24 +61,34 @@ void Text(string text, float x, float y, SKFont font, string color)
     canvas.DrawText(text, x, y, SKTextAlign.Left, font, paint);
 }
 
-using var nameRegular = Font(84, SKFontStyleWeight.Medium);
-using var nameBold = Font(84, SKFontStyleWeight.ExtraBold);
-Text("Rio", 76, 330, nameRegular, Ink);
-Text("Charts", 76 + nameRegular.MeasureText("Rio"), 330, nameBold, Ink);
+// Logo and name on one centered row.
+const float LogoSize = 116, Gap = 26, RowTop = 56;
+using var nameRegular = Font(100, SKFontStyleWeight.Medium);
+using var nameBold = Font(100, SKFontStyleWeight.ExtraBold);
+var rio = nameRegular.MeasureText("Rio");
+var nameWidth = rio + nameBold.MeasureText("Charts");
+var rowLeft = (Width - (LogoSize + Gap + nameWidth)) / 2;
 
-using var tagline = Font(38, SKFontStyleWeight.SemiBold);
-Text("Charts for Blazor", 80, 398, tagline, Ink);
-Text("in pure .NET", 80, 446, tagline, Blue);
+canvas.Save();
+canvas.Translate(rowLeft, RowTop);
+canvas.Scale(LogoSize / 256);
+DrawLogo(canvas);
+canvas.Restore();
 
-using var small = Font(24, SKFontStyleWeight.Normal);
-Text("Line, bar, pie, radar, treemap and more", 80, 500, small, Muted);
+var baseline = RowTop + LogoSize / 2 + 34; // the name's capitals centered on the logo
+Text("Rio", rowLeft + LogoSize + Gap, baseline, nameRegular, Ink);
+Text("Charts", rowLeft + LogoSize + Gap + rio, baseline, nameBold, Ink);
 
-using var url = Font(28, SKFontStyleWeight.SemiBold);
-Text("riocharts.com", 80, 566, url, Blue);
+// Tagline, centered: "Charts for Blazor in pure .NET" with the last part in blue.
+using var tagline = Font(40, SKFontStyleWeight.SemiBold);
+const string First = "Charts for Blazor ", Second = "in pure .NET";
+var taglineLeft = (Width - tagline.MeasureText(First + Second)) / 2;
+Text(First, taglineLeft, 246, tagline, Ink);
+Text(Second, taglineLeft + tagline.MeasureText(First), 246, tagline, Blue);
 
-// The chart on a white card with a soft shadow.
-var card = new SKRect(610, 115, 610 + ChartWidth + 40, 115 + ChartHeight + 40);
-using (var shadow = new SKPaint { Color = SKColor.Parse("#1f2328").WithAlpha(40), IsAntialias = true, MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 18) })
+// The chart on a white card with a soft shadow, centered below.
+var card = SKRect.Create((Width - ChartWidth - 40) / 2f, 292, ChartWidth + 40, ChartHeight + 40);
+using (var shadow = new SKPaint { Color = SKColor.Parse(Ink).WithAlpha(40), IsAntialias = true, MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 18) })
 {
     canvas.DrawRoundRect(new SKRect(card.Left, card.Top + 10, card.Right, card.Bottom + 10), 24, 24, shadow);
 }
@@ -95,7 +101,7 @@ using (var white = new SKPaint { Color = SKColors.White, IsAntialias = true })
 using (var chart = SKImage.FromEncodedData(chartPng))
 using (var sampling = new SKPaint { IsAntialias = true })
 {
-    canvas.DrawImage(chart, new SKRect(card.Left + 20, card.Top + 20, card.Left + 20 + ChartWidth, card.Top + 20 + ChartHeight),
+    canvas.DrawImage(chart, SKRect.Create(card.Left + 20, card.Top + 20, ChartWidth, ChartHeight),
         new SKSamplingOptions(SKCubicResampler.Mitchell), sampling);
 }
 
@@ -134,7 +140,6 @@ static void DrawLogo(SKCanvas canvas)
     using (var eye = new SKPaint { Color = SKColors.White, IsAntialias = true })
     {
         canvas.DrawOval(new SKRect(164 - 26, 104 - 22, 164 + 26, 104 + 22), eye);
-        canvas.DrawCircle(170, 99, 2.5f, eye);
     }
 
     using (var pupil = new SKPaint { Color = SKColor.Parse("#1f2328"), IsAntialias = true })
