@@ -73,6 +73,26 @@
     </ChildContent>
 </Example>
 
+<Example Title="Colors from the data" Code="@ColorCode">
+    <Description>
+        <p>
+            <code>ColorValue</code> gives an item its own color: here the days under the target in the falling color and the best day in
+            the rising one. Return a theme token (<code>"--rio-negative"</code>, <code>"--rio-series-3"</code>: they follow light and dark
+            themes) or any CSS color, and <code>null</code> to keep the series color. It works on every series: bars, scatter markers, pie
+            slices, radial bars and treemap items take the color, lines and areas mark the point with a dot. Aggregated points take their
+            first item's color. In JSON specs, <code>"colorField"</code> names the field that holds the colors.
+        </p>
+        <p>Color should not be the only signal: here the target line and the tooltip say it too.</p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="DayOrders" Items="WeekOrders" YAxis="OrdersAxis" Height="240">
+            <BarSeries Name="Orders" XValue="d => d.Day" YValue="d => d.Orders"
+                       ColorValue="@(d => d.Orders < 100 ? "--rio-negative" : d.Orders >= 150 ? "--rio-positive" : null)" />
+            <ReferenceLine Value="100" Label="Target" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Per-bar tooltip" Code="@SingleCode">
     <Description><p>Tooltips are shared per x by default; <code>Shared = false</code> shows only the bar under the pointer.</p></Description>
     <ChildContent>
@@ -125,6 +145,14 @@
                   Title="Revenue per category, this year">
             <BarSeries Name="Revenue" XValue="c => c.Name" YValue="c => c.Revenue" Format="0 k€" DataLabels="true" />
             <ReferenceLine Value="200" Label="Target" />
+        </RioChart>
+        """;
+
+    private const string ColorCode = """
+        <RioChart TItem="DayOrders" Items="orders">
+            <BarSeries Name="Orders" XValue="d => d.Day" YValue="d => d.Orders"
+                       ColorValue="@(d => d.Orders < 100 ? "--rio-negative" : d.Orders >= 150 ? "--rio-positive" : null)" />
+            <ReferenceLine Value="100" Label="Target" />
         </RioChart>
         """;
 

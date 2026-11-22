@@ -84,6 +84,12 @@ changes are called out under **Breaking**.
   show as one cell with their total and open with a click (JSON: `"visibleLevels"`). Core: `LayoutOptions.TreemapPath` and `InteractiveTreemap`,
   `ChartLayoutResult.TreemapPath`, scene interactions of kind "treemap"; new `ChartTexts` keys
   `TreemapAll`, `TreemapShow` and `TreemapPathLabel`.
+- Colors per item: `ColorValue` on every series gives an item its own color, e.g.
+  `o => o.Late ? "--rio-negative" : null` (a CSS color or theme token; null keeps the series
+  color). Bars (also horizontal and stacked), scatter markers, pie slices (and their legend
+  swatch), radial bars and treemap items take it; lines and areas mark the point with a dot; the
+  tooltip dot follows. Aggregated points take their first item's color. JSON specs:
+  `"colorField"`. Core: `SeriesData.Colors`, `WithColors` and `ColorAt`, `SeriesSpec.ColorField`.
 - Radar: the scale values sit above the shapes on a light backing, so a shape crossing the first
   spoke no longer covers them, and `ShowTooltipAsync("Battery")` shows that spoke's tooltip
   (before, it did nothing on radar charts).

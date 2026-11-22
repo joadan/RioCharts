@@ -1148,6 +1148,8 @@ public static partial class ChartLayout
             Step = r.Spec.Curve == CurveType.Step && !r.Type.UsesSlots && kind != XKind.Category,
             PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : null,
             PartValues = boxParts ?? candleParts,
+            // Points with their own color show it in the tooltip too.
+            PointColors = r.Data.Colors is null ? null : [.. hits.Index.Select(j => r.Data.ColorAt(j, r.Color))],
         };
     }
 

@@ -153,8 +153,40 @@ internal sealed class LineSeriesType : ISeriesType
         c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), style) { Class = "rio-line" });
         AddLonePoints(c, xs, ys);
         AddHighlights(c);
+        AddColoredPoints(c, xs, ys, indices);
         c.Hits = Hits(c, xs, ys, indices);
         AddLabels(c, xs, ys, indices);
+    }
+
+    /// <summary>
+    /// Points with their own color (<see cref="SeriesData.Colors"/>): a dot in that color, ringed in
+    /// the surface color; the line keeps the series color.
+    /// </summary>
+    internal static void AddColoredPoints(SeriesBuildContext c, double[] xs, double[] ys, int[] indices)
+    {
+        if (c.Data.Colors is not { } colors)
+        {
+            return;
+        }
+
+        var radius = Math.Max(3, c.StrokeWidth * 1.75);
+        var paths = new Dictionary<string, PathBuilder>(StringComparer.Ordinal);
+        for (var k = 0; k < indices.Length; k++)
+        {
+            if (indices[k] < colors.Length && colors[indices[k]] is { } color && double.IsFinite(ys[k]))
+            {
+                var path = System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(paths, color, out _) ??= new PathBuilder();
+                path.MoveTo(xs[k], ys[k] - radius).Arc(xs[k], ys[k], radius, 0, Math.PI * 2).Close();
+            }
+        }
+
+        foreach (var (color, path) in paths)
+        {
+            c.Output.Add(new PathNode(path.Build(), c.Styles.Add($"point-{color}", new Style { Fill = color, Stroke = ThemeTokens.Surface, StrokeWidth = 1.5f }))
+            {
+                Class = "rio-point rio-point-colored",
+            });
+        }
     }
 
     /// <summary>
@@ -358,6 +390,7 @@ internal sealed class ScatterSeriesType : ISeriesType
         var ys = new List<double>();
         var indices = new List<int>();
         var builder = new PathBuilder();
+        var colored = c.Data.Colors is null ? null : new Dictionary<string, PathBuilder>(StringComparer.Ordinal);
 
         // Many points: at most MarkersPerCell markers in each square one radius wide. Three markers at
         // 0.75 opacity already cover about 98%, so the picture is the same while dense clouds draw far
@@ -383,7 +416,11 @@ internal sealed class ScatterSeriesType : ISeriesType
                 }
             }
 
-            builder.MoveTo(px, py - r).Arc(px, py, r, 0, Math.PI * 2).Close();
+            // A point with its own color goes in a path of that color.
+            var target = colored is not null && c.Data.Colors![i] is { } own
+                ? System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(colored, own, out _) ??= new PathBuilder()
+                : builder;
+            target.MoveTo(px, py - r).Arc(px, py, r, 0, Math.PI * 2).Close();
             xs.Add(px);
             ys.Add(py);
             indices.Add(i);
@@ -396,6 +433,11 @@ internal sealed class ScatterSeriesType : ISeriesType
 
         var style = c.Styles.Add($"series-{c.ColorIndex}-marker", new Style { Fill = c.Color, FillOpacity = 0.75f });
         c.Output.Add(new PathNode(builder.Build(), style) { Class = "rio-marker" });
+        foreach (var (color, path) in colored ?? [])
+        {
+            c.Output.Add(new PathNode(path.Build(), c.Styles.Add($"marker-{color}", new Style { Fill = color, FillOpacity = 0.75f })) { Class = "rio-marker" });
+        }
+
         c.Hits = LineSeriesType.Hits(c, [.. xs], [.. ys], [.. indices]);
         LineSeriesType.AddLabels(c, [.. xs], [.. ys], [.. indices]);
     }
@@ -472,6 +514,7 @@ internal sealed class AreaSeriesType : ISeriesType
         c.Output.Add(new PathNode(LineGenerator.Line(xs, ys, c.Spec.Curve), line) { Class = "rio-line" });
         LineSeriesType.AddLonePoints(c, xs, ys);
         LineSeriesType.AddHighlights(c);
+        LineSeriesType.AddColoredPoints(c, xs, ys, indices);
         c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
         LineSeriesType.AddLabels(c, xs, ys, indices);
     }
@@ -877,7 +920,8 @@ internal sealed class BarSeriesType : ISeriesType
                 }
             }
 
-            c.Output.Add(new RectNode(new RectF((float)left, (float)top, (float)width, (float)height), style)
+            var own = c.Data.Colors?[i] is { } color ? c.Styles.Add($"bar-{color}", new Style { Fill = color }) : style;
+            c.Output.Add(new RectNode(new RectF((float)left, (float)top, (float)width, (float)height), own)
             {
                 CornerRadius = radius,
                 Class = "rio-bar",

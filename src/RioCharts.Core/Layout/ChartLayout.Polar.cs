@@ -71,7 +71,21 @@ public static partial class ChartLayout
             return index;
         });
 
-        string ColorOf(string category) => ThemeTokens.Series(categoryIndex.TryGetValue(category, out var i) ? i : -1);
+        // A category's own color (SeriesData.Colors, the first one given in any ring), else its palette color.
+        var ownColors = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var r in polar.Where(r => r.Data.Colors is not null))
+        {
+            var labels = labelsPerSeries[r];
+            for (var i = 0; i < labels.Length; i++)
+            {
+                if (r.Data.Colors![i] is { } own)
+                {
+                    ownColors.TryAdd(labels[i], own);
+                }
+            }
+        }
+
+        string ColorOf(string category) => ownColors.TryGetValue(category, out var own) ? own : ThemeTokens.Series(categoryIndex.TryGetValue(category, out var i) ? i : -1);
         bool Hidden(string category) => options.HiddenSeries?.Contains(category) == true;
 
         // Pies: categories grouped into "Other" in every ring they appear in get one "Other" legend item.

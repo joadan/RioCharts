@@ -247,7 +247,8 @@ public static partial class ChartLayout
                 var top = band.Start(row) + slot * thickness + gap / 2.0;
                 var h = Math.Max(1, thickness - gap);
                 var (x0, x1) = (valueScale.Map(Math.Min(start, end)), valueScale.Map(Math.Max(start, end)));
-                nodes.Add(new RectNode(new RectF((float)x0, (float)top, (float)Math.Max(0.5, x1 - x0), (float)h), style)
+                var own = r.Data.Colors?[i] is { } color ? styles.Add($"bar-{color}", new Style { Fill = color }) : style;
+                nodes.Add(new RectNode(new RectF((float)x0, (float)top, (float)Math.Max(0.5, x1 - x0), (float)h), own)
                 {
                     CornerRadius = stacked ? 0 : (float)Math.Min(3, h / 4),
                 });
@@ -299,6 +300,7 @@ public static partial class ChartLayout
             {
                 CellHeight = (float)Math.Max(1, thickness - gap),
                 CellWidths = [.. points.Select(p => p.Width)],
+                PointColors = r.Data.Colors is null ? null : [.. points.Select(p => r.Data.ColorAt(p.Index, r.Color))],
             });
         }
 

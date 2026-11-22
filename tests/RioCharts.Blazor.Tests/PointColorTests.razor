@@ -1,0 +1,38 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Order(string Day, double Amount, bool Late);
+
+    // Orders, one item each; Thursday's first order was late.
+    private static readonly Order[] Orders =
+    [
+        new("Mon", 80, false), new("Tue", 95, false), new("Thu", 70, true), new("Thu", 60, false), new("Fri", 90, false),
+    ];
+
+    [Fact]
+    public void ColorValue_colors_each_bar_and_its_tooltip_dot()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders">
+            <BarSeries Id="o" XValue="o => o.Day" YValue="o => o.Amount" Aggregate="Aggregate.Sum"
+                       ColorValue="@(o => o.Late ? "--rio-negative" : null)" />
+        </RioChart>);
+
+        var fills = cut.FindAll(".rio-bar").Select(b => b.GetAttribute("fill")).ToList();
+        Assert.Equal(4, fills.Count); // Mon, Tue, Thu (summed), Fri
+        Assert.Equal("var(--rio-negative, var(--_rio-negative))", fills[2]); // the group's first item was late
+        Assert.Equal(1, fills.Count(f => f!.Contains("rio-negative", StringComparison.Ordinal)));
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal("var(--rio-negative, var(--_rio-negative))", series.GetProperty("pc")[2].GetString());
+    }
+
+    [Fact]
+    public void Without_ColorValue_nothing_changes()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders">
+            <BarSeries Id="o" XValue="o => o.Day" YValue="o => o.Amount" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        Assert.Single(cut.FindAll(".rio-bar").Select(b => b.GetAttribute("fill")).Distinct());
+        Assert.False(Payload(Calls("update")[^1]).GetProperty("series")[0].TryGetProperty("pc", out _));
+    }
+}

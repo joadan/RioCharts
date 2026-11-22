@@ -119,6 +119,7 @@
     <tr><td><code>dataset</code></td><td>Which dataset to read, on the chart or per series; leave it out when the spec has inline <code>data</code> rows.</td></tr>
     <tr><td><code>x</code>, <code>y</code></td><td>Field names in that dataset: x is the time, category or number along the axis, y the value.</td></tr>
     <tr><td><code>low</code>, <code>high</code>, <code>q1</code>, <code>q3</code>, <code>open</code>, <code>path</code></td><td>Extra fields some types read: a range area's low values; a box plot's precomputed quartiles and whiskers; a candlestick's open, high and low; a treemap's group fields (<code>"path": ["region", "country"]</code>).</td></tr>
+    <tr><td><code>colorField</code></td><td>A field with each row's own color (CSS color or theme token such as <code>"--rio-negative"</code>); empty keeps the series color.</td></tr>
     <tr><td><code>filter</code></td><td><code>[{ "field": "channel", "op": "eq", "value": "App" }]</code>, ops eq, ne, gt, gte, lt, lte, contains.</td></tr>
     <tr><td><code>timeBucket</code>, <code>aggregate</code></td><td>hour, day, week, month, quarter, year; sum, average, min, max, count, last.</td></tr>
     <tr><td><code>groupBy</code></td><td>One series per value of a field.</td></tr>

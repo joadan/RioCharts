@@ -110,6 +110,9 @@ public static partial class ChartLayout
 
         string ColorOf(int group) => groups.Count == 1 && !drilled && series.Spec.Color is { } own ? own : ThemeTokens.Series(group);
 
+        // An item's own color (SeriesData.Colors), else its group's; groups keep their group's color.
+        string NodeColor(TreeNode n) => n.Children.Count == 0 && n.Index >= 0 ? series.Data.ColorAt(n.Index, ColorOf(n.Group)) : ColorOf(n.Group);
+
         // ---------- Legend: the top-level groups ----------
         var depth = MaxDepth(root);
         var legendEntries = groups.Select(g => new LegendEntry(g.Name, g.Name, ColorOf(g.Group), SeriesType.Treemap, !Hidden(g.Name), false,
@@ -208,7 +211,7 @@ public static partial class ChartLayout
                 continue;
             }
 
-            var color = ColorOf(node.Group);
+            var color = NodeColor(node);
             if (!node.IsCell)
             {
                 parents.Add(node);
@@ -345,7 +348,7 @@ public static partial class ChartLayout
             {
                 CellWidths = [.. tips.Select(n => n.Rect.Width)],
                 CellHeights = [.. tips.Select(n => n.Rect.Height)],
-                PointColors = [.. tips.Select(n => ColorOf(n.Group))],
+                PointColors = [.. tips.Select(NodeColor)],
                 PartLabels = [texts.ShareOfGroup, texts.ShareOfTotal],
                 PartValues = [.. tips.Select(n => new[]
                 {

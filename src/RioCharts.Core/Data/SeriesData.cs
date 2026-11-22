@@ -53,6 +53,38 @@ public sealed class SeriesData
     public double[]? Low { get; private set; }
 
     /// <summary>
+    /// Each point's own color (a CSS color or theme token such as "--rio-negative"), null where the
+    /// point keeps its series color; null when no point has one. Set with <see cref="WithColors"/>.
+    /// </summary>
+    public string?[]? Colors { get; private set; }
+
+    /// <summary>
+    /// The same points with a color each (bars, scatter markers, slices, treemap items; a dot on
+    /// lines and areas). <paramref name="colors"/> is in input order like the y values: index i is
+    /// the color of input item (or group) i; null keeps the series color.
+    /// </summary>
+    public SeriesData WithColors(IReadOnlyList<string?> colors)
+    {
+        ArgumentNullException.ThrowIfNull(colors);
+        var values = new string?[Count];
+        var any = false;
+        for (var i = 0; i < values.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            values[i] = source < colors.Count && !string.IsNullOrWhiteSpace(colors[source]) ? colors[source] : null;
+            any |= values[i] is not null;
+        }
+
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex)
+        {
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Colors = any ? values : null,
+        };
+    }
+
+    /// <summary>The color of a point: its own, or <paramref name="fallback"/> (the series color).</summary>
+    public string ColorAt(int point, string fallback) => Colors is { } colors && point >= 0 && point < colors.Length && colors[point] is { } own ? own : fallback;
+
+    /// <summary>
     /// The same points with a low value each, for range series (<see cref="Y"/> is the high value).
     /// <paramref name="low"/> is in input order, like the y values given when creating the data:
     /// index i is the low of input item (or column entry) i.
@@ -66,7 +98,7 @@ public sealed class SeriesData
             values[i] = source < low.Length ? low[source] : double.NaN;
         }
 
-        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values };
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Colors = Colors };
     }
 
     /// <summary>
@@ -91,7 +123,7 @@ public sealed class SeriesData
             y[i] = ordered[i].Close;
         }
 
-        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Candles = CandleColumns.From(ordered) };
+        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Candles = CandleColumns.From(ordered), Colors = Colors };
     }
 
     /// <summary>
@@ -140,7 +172,7 @@ public sealed class SeriesData
             y[i] = ordered[i].HasBox ? ordered[i].Median : double.NaN;
         }
 
-        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = Low, Box = BoxColumns.From(ordered) };
+        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = Low, Box = BoxColumns.From(ordered), Colors = Colors };
     }
 
     /// <summary>
@@ -194,7 +226,7 @@ public sealed class SeriesData
     {
         if (IsSorted(x))
         {
-            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles };
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles, Colors = Colors };
         }
 
         var order = Enumerable.Range(0, x.Length).ToArray();
@@ -224,6 +256,11 @@ public sealed class SeriesData
         if (Candles is { } candles)
         {
             result.Candles = CandleColumns.From([.. order.Select(i => candles.At(i, Y[i]))]);
+        }
+
+        if (Colors is { } colors)
+        {
+            result.Colors = [.. order.Select(i => colors[i])];
         }
 
         return result;

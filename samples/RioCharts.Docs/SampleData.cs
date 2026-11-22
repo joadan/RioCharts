@@ -234,6 +234,14 @@ public static class SampleData
         new("System", null, null), new("Apps", "System", 85), new("Cache", "System", 22), new("Updates", "System", 9),
     ];
 
+    /// <summary>Orders per day of a week, against a target of 100 a day.</summary>
+    public sealed record DayOrders(string Day, double Orders);
+
+    public static readonly List<DayOrders> WeekOrders =
+    [
+        new("Mon", 132), new("Tue", 118), new("Wed", 96), new("Thu", 141), new("Fri", 88), new("Sat", 156), new("Sun", 104),
+    ];
+
     /// <summary>One order: the weekday, the channel and its value in €.</summary>
     public sealed record OrderValue(string Day, string Channel, double Value);
 

@@ -736,6 +736,24 @@ Design.md "Treemap" (milestone 7).
 - **Not yet:** color by a separate value on a sequential scale, and listing an "Other" item's parts
   in its tooltip.
 
+## Colors per item
+
+Not in Design.md; added on request ("a way to set a colour on a value").
+
+- **Data:** `SeriesData.Colors` (one string per point, null keeps the series color; the column is
+  dropped when no point has a color). `WithColors` takes input order like `WithLow`; every `With*`
+  and `WithX` carry it. Components: `ColorValue` on `SeriesBase`, applied after the type's own
+  data steps (treemap paths, candle buckets), a group's first item for aggregated points; a new
+  selector lambda each render does not rebuild, adding or removing one does. JSON: `colorField`
+  (a text field), first row per aggregated point.
+- **Drawing:** bars and horizontal bars get a style per color; scatter one marker path per color;
+  lines and areas keep their color and get a dot (ringed in the surface color) per colored point;
+  pies and radial bars use it as the category's color (the first one given in any ring), so the
+  legend swatch, slice and tooltip agree; treemap items use it, groups keep their group color.
+  Tooltip rows show the point's color (`TooltipSeries.PointColors`).
+- **Not yet:** heatmap, box plot, candlestick and radar (they have their own coloring), colored
+  line segments (above or below a limit), and rule-based colors in JSON (`colorRules`).
+
 ## Horizontal bars
 
 - **A chart option, not a series type** (`ChartSpec.Horizontal`): orientation is a property of the

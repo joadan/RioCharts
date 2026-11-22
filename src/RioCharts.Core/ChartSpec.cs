@@ -266,6 +266,10 @@ public sealed record SeriesSpec
     [Description("Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.")]
     public int? VisibleLevels { get; init; }
 
+    /// <summary>The field with each row's own color (a CSS color such as "#d6485a", or a theme token such as "--rio-negative"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.</summary>
+    [Description("The field with each row's own color (a CSS color such as \"#d6485a\", or a theme token such as \"--rio-negative\"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.")]
+    public string? ColorField { get; init; }
+
     /// <summary>Treemap: what separates the groups in an x path. Default "/".</summary>
     [Description("Treemap: what separates the groups in an x path. Default \"/\".")]
     public string? PathSeparator { get; init; }

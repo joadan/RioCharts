@@ -44,6 +44,7 @@ Named after Rio, and *río* means river: fitting for flowing lines and time seri
 - Compact charts and sparklines (`Compact`), auto-compact for small charts, highlight dots, and plain SVG without JS (`Interactive="false"`)
 - Works with static server rendering, prerendering, trimming and native AOT
 - Scatter charts with trend lines, heatmaps, range areas, box plots, candlesticks, radar charts, treemaps and horizontal bars
+- Colors per item from your data (`ColorValue`), e.g. bars under target in red
 - Built-in texts in eight languages (`ChartTexts`), with your own wording or languages from code, resx or `IStringLocalizer`
 - Download as PNG, SVG or CSV from the browser (`Exportable`, `DownloadPngAsync`, `ExportCsv`, ...)
 - Server-side export to SVG and PNG (`RioCharts.Skia`), with real font metrics and light/dark themes

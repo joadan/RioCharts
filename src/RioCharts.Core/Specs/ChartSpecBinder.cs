@@ -78,7 +78,7 @@ public static class ChartSpecBinder
         return new SpecBindResult(bound, data, errors, warnings);
     }
 
-    private readonly record struct Point(object X, double? Y, double? Low = null);
+    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null);
 
     private static void BindSeries(ChartSpec chart, SeriesSpec s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
         List<SeriesSpec> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<SpecError> errors, List<string> warnings)
@@ -179,6 +179,7 @@ public static class ChartSpecBinder
         }
 
         var groupBy = s.GroupBy is null ? null : Find(dataset, s.GroupBy, $"{path}.groupBy", null, errors);
+        var colorField = s.ColorField is null ? null : Find(dataset, s.ColorField, $"{path}.colorField", FieldType.Text, errors);
         var filters = new List<(FilterSpec Spec, DataField Field)>();
         for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
         {
@@ -268,7 +269,7 @@ public static class ChartSpecBinder
                 continue;
             }
 
-            var points = Points(groupRows, x, y, s.TimeBucket, aggregate, low);
+            var points = Points(groupRows, x, y, s.TimeBucket, aggregate, low, colorField);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -293,7 +294,8 @@ public static class ChartSpecBinder
 
             output.Add(bound);
             var series = SeriesData.FromItems(points, p => p.X, p => p.Y);
-            data[id] = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
+            series = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
+            data[id] = colorField is null ? series : series.WithColors([.. points.Select(p => p.Color)]);
         }
     }
 
@@ -332,9 +334,11 @@ public static class ChartSpecBinder
         return SeriesData.FromBoxGroups(kept, XAt, r => At(y, r) is var v && double.IsFinite(v) ? v : null, out _);
     }
 
-    private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null)
+    private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null,
+        DataField? color = null)
     {
         double? LowAt(int r) => low?.Values[r] is double d ? d : null;
+        string? ColorAt(int r) => color?.Values[r] is { } c ? Text(c) : null;
 
         object? XAt(int r)
         {
@@ -346,7 +350,7 @@ public static class ChartSpecBinder
 
         if (aggregate is null)
         {
-            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r))).ToList();
+            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r))).ToList();
         }
 
         // Group by x (or its bucket), keeping first-appearance order (categories) — times and numbers are sorted later anyway.
@@ -373,7 +377,8 @@ public static class ChartSpecBinder
             ? (Aggregate.Min, Aggregate.Max)
             : (aggregate.Value, aggregate.Value);
         return order.Select(key => new Point(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),
-            low is null ? null : Aggregation.Apply(lowAggregate, groups[key].Select(LowAt).ToList()))).ToList();
+            low is null ? null : Aggregation.Apply(lowAggregate, groups[key].Select(LowAt).ToList()),
+            ColorAt(groups[key][0]))).ToList(); // a group's color: its first row's
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>

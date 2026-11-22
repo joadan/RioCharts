@@ -62,6 +62,17 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>CSS color. Defaults to the next palette color.</summary>
     [Parameter] public string? Color { get; set; }
 
+    /// <summary>
+    /// A color per item, e.g. <c>o =&gt; o.Late ? "--rio-negative" : null</c>: a CSS color or a
+    /// theme token (tokens follow light and dark themes); null keeps the series color. Bars,
+    /// scatter markers, pie slices, radial bars and treemap items take the color; lines and areas
+    /// mark the point with a dot in it. Aggregated points take their first item's color. Runs once
+    /// per data change, like the other selectors.
+    /// </summary>
+    [Parameter] public Func<TItem, string?>? ColorValue { get; set; }
+
+    private bool _hadColorValue;
+
     /// <summary>Draw order override (default: areas, then bars, then lines).</summary>
     [Parameter] public int? ZIndex { get; set; }
 
@@ -200,10 +211,12 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
         var items = Items ?? Chart.DefaultItems as IEnumerable<TItem>;
         var aggregateKey = (Aggregate, YAggregate is not null);
-        if (_buffer is null && (!ReferenceEquals(items, _lastItems) || aggregateKey != _lastAggregate || !Equals(DataSettings, _lastDataSettings))
+        if (_buffer is null && (!ReferenceEquals(items, _lastItems) || aggregateKey != _lastAggregate || !Equals(DataSettings, _lastDataSettings)
+                || (ColorValue is not null) != _hadColorValue)
             || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
         {
             _lastDataSettings = DataSettings;
+            _hadColorValue = ColorValue is not null;
             _lastItems = items;
             _lastData = Data;
             _lastVersion = DataVersion;
@@ -231,6 +244,14 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             {
                 _data = SeriesData.Empty;
                 ItemList = [];
+            }
+
+            // Each point's color from its item (a group's first item), in input order like the y values.
+            if (ColorValue is { } colorOf && Data is null && ItemList.Count > 0)
+            {
+                _data = _data.WithColors(_groups is { } grouped
+                    ? [.. grouped.Select(g => g.Length > 0 ? colorOf(ItemList[g[0]]) : null)]
+                    : [.. ItemList.Select(colorOf)]);
             }
 
             changed = true;
