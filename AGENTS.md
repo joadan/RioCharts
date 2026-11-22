@@ -30,6 +30,7 @@ before adding or changing features. Record where the code differs from it in
 - `samples/RioCharts.Mcp.Sample/` — sample data (CSV/JSON) and agent config for trying `riocharts-mcp`; not a .NET project. Its `.mcp.json` applies only when an agent is opened in that folder.
 - `samples/RioCharts.Docs/` — docs site, Blazor WebAssembly (http://localhost:5031); `.github/workflows/docs.yml` publishes it to GitHub Pages. Add new features there with a live example.
 - `docs/` — implementation notes.
+- `tools/SocialCard.cs` — makes the docs site's link preview image (`social-card.png`): `dotnet run tools/SocialCard.cs` from the root.
 
 ## Build and test
 
