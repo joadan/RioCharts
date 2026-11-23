@@ -11,6 +11,10 @@ changes are called out under **Breaking**.
 - Fixed: a map zoomed into Antarctica (`TreemapPath="AQ"`) without a value for it drew no land.
 - Docs site: Microsoft Clarity usage analytics on https://riocharts.com (not on localhost), and a
   Privacy page (linked from the footer) that says what it records.
+- Docs site: every page is prerendered to static HTML when the site is published, so search engines
+  get its text, its own title and description and a canonical URL without running the app; Blazor
+  starts on top of it as before. Also `sitemap.xml` and `robots.txt`, and page titles end in
+  "RioCharts for Blazor and .NET".
 
 ## 0.4.1-preview (2026-11-23)
 

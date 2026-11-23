@@ -31,6 +31,7 @@ before adding or changing features. Record where the code differs from it in
 - `samples/RioCharts.Docs/` — docs site, Blazor WebAssembly (http://localhost:5031); `.github/workflows/docs.yml` publishes it to GitHub Pages. Add new features there with a live example.
 - `docs/` — implementation notes; `chart-types.md` lists supported and candidate chart types (status, effort, why or why not).
 - `tools/SocialCard.cs` — makes the docs site's link preview image (`social-card.png`): `dotnet run tools/SocialCard.cs` from the root.
+- `tools/prerender/` — the docs workflow's prerender step (Node + Playwright): opens every docs page in headless Chromium and saves it as static HTML (title, description from the page's `lead` paragraph, canonical URL), plus `sitemap.xml` and `robots.txt`. Locally: `npm install` and `npx playwright install chromium` in that folder, then `node tools/prerender/prerender.mjs <published wwwroot> samples/RioCharts.Docs/Pages`.
 - `tools/ReadmeImage.cs` — makes the README picture (`assets/readme-charts-light.png` and `-dark.png`): `dotnet run tools/ReadmeImage.cs` from the root.
 - `README.md` is the short front page (pitch, picture, one example per output, packages); details belong on the docs site. Contributor material (build, tests, project layout, releasing) is in `CONTRIBUTING.md`.
 

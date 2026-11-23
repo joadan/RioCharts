@@ -9,6 +9,7 @@ on:
       - "src/RioCharts.Core/**"
       - "src/RioCharts.Blazor/**"
       - "samples/RioCharts.Docs/**"
+      - "tools/prerender/**"
       - "Directory.Build.props"
       - "version.json"   # the header badge shows the version
       - ".github/workflows/docs.yml"
@@ -49,16 +50,21 @@ jobs:
           # card gets a new URL and shows at once.
           card=$(sha256sum publish/wwwroot/social-card.png | cut -c1-8)
           sed -i "s|social-card.png\"|social-card.png?v=$card\"|g" publish/wwwroot/index.html
-          # Every page gets its own copy of index.html (/pies is served from pies.html), so direct
-          # links and search engines get status 200, not 404. The routes are the docs' @page
-          # directives, so a new page is included without changing this.
-          for route in $(grep -ho '@page "/[a-z0-9-]\+"' samples/RioCharts.Docs/Pages/*.razor | sed 's|@page "/||; s|"||' | grep -vx 'not-found'); do
-            cp publish/wwwroot/index.html "publish/wwwroot/$route.html"
-          done
           # Anything else (an old or mistyped link) is served by 404.html: the app shows its not-found page.
           cp publish/wwwroot/index.html publish/wwwroot/404.html
           # Serve _framework and _content as they are.
           touch publish/wwwroot/.nojekyll
+
+      - name: Prerender pages
+        working-directory: tools/prerender
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          # Every page gets its own HTML file (/pies is served from pies.html) with its text, title,
+          # description and canonical URL already in it, so direct links get status 200 and search
+          # engines get the content without running the app. Also writes sitemap.xml and robots.txt.
+          # The routes are the docs' @page directives, so a new page is included without changing this.
+          node prerender.mjs ../../publish/wwwroot ../../samples/RioCharts.Docs/Pages https://riocharts.com
 
       - uses: actions/upload-pages-artifact@v5
         with:

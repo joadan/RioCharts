@@ -55,7 +55,7 @@ the diff before committing.
 | `samples/RioCharts.Demo` | Blazor Server demo. |
 | `samples/RioCharts.Docs` | The docs site at https://riocharts.com (Blazor WebAssembly). |
 | `samples/RioCharts.Mcp.Sample` | Sample data and agent configuration for trying `riocharts-mcp`. |
-| `tools/` | `SocialCard.cs` (the docs site's link preview) and `ReadmeImage.cs` (the README picture): `dotnet run tools/ReadmeImage.cs` from the root. |
+| `tools/` | `SocialCard.cs` (the docs site's link preview) and `ReadmeImage.cs` (the README picture): `dotnet run tools/ReadmeImage.cs` from the root. `prerender/` (Node + Playwright) saves each docs page as static HTML for search engines when the docs site is published. |
 
 ## Releasing
 
