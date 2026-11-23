@@ -14,6 +14,14 @@ changes are called out under **Breaking**.
   `bridge`) with `"total"` naming the field that marks total rows. New in Core:
   `SeriesType.Waterfall`, `SeriesOptions.Total`, `SeriesData.Totals` and `SeriesData.WithTotals`.
   Docs: a Waterfall page with two examples.
+- Histograms: `HistogramSeries` counts values in equal-width bins and draws them as bars that
+  touch, e.g. response times. Give one item per value with the value as `XValue`; the bins get
+  round edges, picked from the data, or set `BinWidth` or `BinCount`. The tooltip shows the bin's
+  range and count, a click gives its items, and several histograms overlay see-through. JSON
+  definitions: `"type": "histogram"` with a numeric `x` and optional `binWidth` or `binCount`;
+  with `groupBy` the groups share their bins. New in Core: `SeriesType.Histogram`, `Bins`,
+  `SeriesData.FromBins`, `SeriesOptions.BinWidth` and `BinCount`, `ChartTexts.HistogramPeak`.
+  Docs: a Histogram page.
 
 ## 0.3.1-preview (2026-11-23)
 

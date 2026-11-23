@@ -313,6 +313,9 @@ public static class ChartDefinitionJson
         ["ohlc"] = ("candlestick", null),
         ["stock"] = ("candlestick", null),
         ["waterfall"] = ("waterfall", null),
+        ["histogram"] = ("histogram", null),
+        ["hist"] = ("histogram", null),
+        ["distribution"] = ("histogram", null),
         ["bridge"] = ("waterfall", null),
         ["cascade"] = ("waterfall", null),
         ["box"] = ("boxPlot", null),
@@ -434,7 +437,7 @@ public static class ChartDefinitionJson
                     else
                     {
                         errors.Add(new DefinitionError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, waterfall, pie, radialBar, radar, treemap, auto (also column, donut, stackedBar, spline, gauge, points, spider)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, pie, radialBar, radar, treemap, auto (also column, donut, stackedBar, spline, gauge, points, spider)."));
                     }
                 }
 

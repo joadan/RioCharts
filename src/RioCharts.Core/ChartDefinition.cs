@@ -241,6 +241,14 @@ public sealed record SeriesOptions
     [Description("Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.")]
     public string? Total { get; init; }
 
+    /// <summary>Histogram: the width of each bin, in x units (e.g. 5 for bins of 5 ms). Null: a nice width picked from the data.</summary>
+    [Description("Histogram: the width of each bin, in x units (e.g. 5 for bins of 5 ms). Null: a nice width picked from the data.")]
+    public double? BinWidth { get; init; }
+
+    /// <summary>Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.</summary>
+    [Description("Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.")]
+    public int? BinCount { get; init; }
+
     /// <summary>Scatter: marker diameter in pixels. Default 5.</summary>
     [Description("Scatter: marker diameter in pixels. Default 5.")]
     public double? MarkerSize { get; init; }
@@ -426,6 +434,9 @@ public enum SeriesType
 
     /// <summary>How a start value becomes an end value: a floating bar per change (rising or falling from the running total), and total bars from zero.</summary>
     Waterfall,
+
+    /// <summary>The distribution of values: x values counted in equal-width bins, drawn as bars without gaps.</summary>
+    Histogram,
 
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

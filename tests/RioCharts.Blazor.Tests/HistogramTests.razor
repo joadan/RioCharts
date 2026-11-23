@@ -1,0 +1,50 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Request(string Path, double? Ms);
+
+    // Response times in ms.
+    private static readonly Request[] Requests =
+    [
+        new("/a", 112), new("/a", 118), new("/b", 131), new("/b", 137), new("/a", 141), new("/c", 149), new("/a", 163), new("/b", null),
+    ];
+
+    [Fact]
+    public void Items_are_counted_per_bin()
+    {
+        var cut = Render<RioChart<Request>>(@<RioChart TItem="Request" Items="Requests" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <HistogramSeries Id="h" Name="Response time" XValue="r => r.Ms" BinWidth="25" />
+        </RioChart>);
+
+        Assert.Equal(3, cut.FindAll(".rio-bin").Count);
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.True(series.GetProperty("bar").GetBoolean());
+        Assert.Equal("125 – 150", series.GetProperty("xl")[1].GetString());
+        Assert.Equal("4", series.GetProperty("v")[1].GetString());
+    }
+
+    [Fact]
+    public void Clicking_a_bin_gives_its_items()
+    {
+        IReadOnlyList<Request> clicked = [];
+        var cut = Render<RioChart<Request>>(@<RioChart TItem="Request" Items="Requests" OnPointClick="e => clicked = e.Items">
+            <HistogramSeries Id="h" XValue="r => r.Ms" BinWidth="25" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("h", 1, false));
+
+        Assert.Equal(Requests[2..6], clicked);
+    }
+
+    [Fact]
+    public void A_new_bin_width_bins_again()
+    {
+        var cut = Render<RioChart<Request>>(@<RioChart TItem="Request" Items="Requests">
+            <HistogramSeries Id="h" XValue="r => r.Ms" BinWidth="25" />
+        </RioChart>);
+
+        cut.Render(p => p.Add(c => c.ChildContent, @<HistogramSeries TItem="Request" Id="h" XValue="r => r.Ms" BinWidth="10" />));
+
+        Assert.Equal(4, cut.FindAll(".rio-bin").Count); // 110, 130, 140 and 160; 120 and 150 are empty
+    }
+}

@@ -820,7 +820,7 @@ public static partial class ChartLayout
     /// <summary>Selected points: a marker in the series color (ringed in the surface color), or an outline around a bar.</summary>
     private static IEnumerable<Node> SelectionMarks(Resolved r, SeriesBuildContext c, IReadOnlyCollection<int> picked, StyleTable styles)
     {
-        var bar = r.Spec.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall;
+        var bar = r.Spec.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram;
         if (c.CandleGroups is { } merged && merged.Any(g => g.First != g.Last))
         {
             yield break; // merged candles (zoomed out): a single period has no candle of its own to outline
@@ -884,8 +884,8 @@ public static partial class ChartLayout
             return named ?? (percent ? "" : null);
         }
 
-        var stackable = r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall);
-        if (percent && (named is null || !stackable) && r.Spec.Type is SeriesType.Scatter or SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall)
+        var stackable = r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram);
+        if (percent && (named is null || !stackable) && r.Spec.Type is SeriesType.Scatter or SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram)
         {
             warnings.Add($"series[{index}]: a percent axis stacks line, area and bar series; this {r.Spec.Type} series is drawn with its own values.");
         }
@@ -1177,7 +1177,11 @@ public static partial class ChartLayout
                 max = Math.Max(max, d.X[last]);
             }
 
-            if (r.Type.UsesSlots)
+            if (r.Spec.Type == SeriesType.Histogram && HistogramSeriesType.WidthOf(r.Spec, d) is > 0 and var binWidth)
+            {
+                spacing = Math.Min(spacing, binWidth); // the bins' edges, also for a single bin
+            }
+            else if (r.Type.UsesSlots)
             {
                 for (var i = 1; i < d.Count; i++)
                 {
@@ -1207,7 +1211,7 @@ public static partial class ChartLayout
             (min, max) = kind == XKind.Time ? (0, 86_400_000) : (0, 1);
         }
 
-        if (max == min)
+        if (max == min && !(hasBars && spacing > 0 && double.IsFinite(spacing)))
         {
             var pad = kind == XKind.Time ? 3_600_000 : (min == 0 ? 1 : Math.Abs(min) * 0.1);
             min -= pad;
@@ -1241,6 +1245,7 @@ public static partial class ChartLayout
         var candleParts = r.Spec.Type == SeriesType.Candlestick && r.Data.Candles is not null && context.CandleGroups is { } cg && cg.Count == n ? new string[n][] : null;
         var candleColors = candleParts is not null && r.Spec.DirectionColors ? new string[n] : null; // the tooltip dot as the candle
         var waterfall = r.Spec.Type == SeriesType.Waterfall;
+        var binWidth = r.Spec.Type == SeriesType.Histogram && kind != XKind.Category ? HistogramSeriesType.WidthOf(r.Spec, r.Data) : double.NaN;
         var waterfallParts = waterfall ? new string[n][] : null;
         var waterfallColors = waterfall ? new string[n] : null; // the tooltip dot as the bar
         for (var i = 0; i < n; i++)
@@ -1253,6 +1258,12 @@ public static partial class ChartLayout
             if (xTitle is not null)
             {
                 xLabels[i] = $"{xTitle}: {xLabels[i]}"; // scatter: say what the x value is
+            }
+
+            if (double.IsFinite(binWidth))
+            {
+                // A bin: from its lower to its upper edge.
+                xLabels[i] = $"{formatX(Scales.NiceTicks.Clean(x - binWidth / 2))} – {formatX(Scales.NiceTicks.Clean(x + binWidth / 2))}";
             }
             values[i] = r.Spec.Type == SeriesType.RangeArea && r.Data.Low is { } low
                 ? $"{ValueFormatter.Format(low[j], culture, format)} – {ValueFormatter.Format(r.Data.Y[j], culture, format)}"

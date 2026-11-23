@@ -48,7 +48,7 @@ parameters. Change `Items` and the chart draws again. It works on Server, WebAss
 static rendering and prerendering, trimmed and native AOT, and in .NET MAUI Blazor Hybrid apps.
 
 **Series:** line, area, range area, bar (grouped, stacked, horizontal), scatter with trend lines,
-heatmap, box plot, candlestick, waterfall, pie, donut, radial bar, radar and treemap.
+heatmap, box plot, histogram, candlestick, waterfall, pie, donut, radial bar, radar and treemap.
 
 **Also in the box:** tooltips and crosshair, zoom and pan, linked charts, annotations, data labels,
 click events, live data, large data (LTTB and a canvas layer), time zones, light and dark themes

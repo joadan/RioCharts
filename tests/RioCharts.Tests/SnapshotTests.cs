@@ -322,6 +322,25 @@ public class SnapshotTests
                 [420.0, -180, double.NaN, -120, -45, 15, double.NaN]).WithTotals([false, false, true, false, false, false, true]),
         }),
 
+        // Response times in ms before and after a release, 400 requests each, in bins of 10 ms (overlaid).
+        ["histogram"] = new(new ChartDefinition
+        {
+            Title = "Response time",
+            X = new AxisOptions { Title = "ms" },
+            Y = new AxisOptions { Title = "Requests" },
+            Series =
+            [
+                new SeriesOptions { Id = "before", Name = "Before", Type = SeriesType.Histogram, BinWidth = 10 },
+                new SeriesOptions { Id = "after", Name = "After", Type = SeriesType.Histogram, BinWidth = 10 },
+            ],
+        }, new()
+        {
+            ["before"] = SeriesData.FromBins(Enumerable.Range(0, 400).Select(i => 150 + 28 * (Math.Sin(i * 1.7) + Math.Sin(i * 0.37) + Math.Sin(i * 2.9)) / 3 * 1.6),
+                v => v, 10, null, out _, out _),
+            ["after"] = SeriesData.FromBins(Enumerable.Range(0, 400).Select(i => 120 + 20 * (Math.Sin(i * 1.3) + Math.Sin(i * 0.53) + Math.Sin(i * 3.1)) / 3 * 1.6),
+                v => v, 10, null, out _, out _),
+        }),
+
         ["bars-horizontal"] = new(new ChartDefinition
         {
             Horizontal = true,

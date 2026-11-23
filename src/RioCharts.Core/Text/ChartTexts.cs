@@ -123,6 +123,9 @@ public sealed record ChartTexts
     /// <summary>A compact chart's last value. {0}: the value.</summary>
     public string LastValue { get => Get(); init => Set(value); }
 
+    /// <summary>Description of a histogram. {0}: its name, {1}: the number of values (one|other), {2} and {3}: the edges of the fullest bin.</summary>
+    public string HistogramPeak { get => Get(); init => Set(value); }
+
     /// <summary>Box plot tooltip: the highest value.</summary>
     public string BoxMax { get => Get(); init => Set(value); }
 
@@ -380,6 +383,7 @@ public sealed record ChartTexts
         [nameof(Stable)] = "stable",
         [nameof(ValueRange)] = "{0} to {1}",
         [nameof(LastValue)] = "last {0}",
+        [nameof(HistogramPeak)] = "{0}: {1} value, most from {2} to {3}|{0}: {1} values, most from {2} to {3}",
         [nameof(NoDataShort)] = "No data.",
         [nameof(BoxMax)] = "Max",
         [nameof(BoxUpperQuartile)] = "Upper quartile",
@@ -463,6 +467,7 @@ public sealed record ChartTexts
         CandleClose = "Stängning",
         CandleChange = "Förändring",
         LastValue = "senast {0}",
+        HistogramPeak = "{0}: {1} värde, flest från {2} till {3}|{0}: {1} värden, flest från {2} till {3}",
         NoDataShort = "Inga data.",
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
@@ -528,6 +533,7 @@ public sealed record ChartTexts
         CandleClose = "Slutt",
         CandleChange = "Endring",
         LastValue = "sist {0}",
+        HistogramPeak = "{0}: {1} verdi, flest fra {2} til {3}|{0}: {1} verdier, flest fra {2} til {3}",
         NoDataShort = "Ingen data.",
         PieChart = "Sektordiagram",
         DonutChart = "Ringdiagram",
@@ -593,6 +599,7 @@ public sealed record ChartTexts
         CandleClose = "Lukning",
         CandleChange = "Ændring",
         LastValue = "senest {0}",
+        HistogramPeak = "{0}: {1} værdi, flest fra {2} til {3}|{0}: {1} værdier, flest fra {2} til {3}",
         NoDataShort = "Ingen data.",
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
@@ -658,6 +665,7 @@ public sealed record ChartTexts
         CandleClose = "Päätös",
         CandleChange = "Muutos",
         LastValue = "viimeisin {0}",
+        HistogramPeak = "{0}: {1} arvo, eniten välillä {2}–{3}|{0}: {1} arvoa, eniten välillä {2}–{3}",
         NoDataShort = "Ei tietoja.",
         PieChart = "Ympyräkaavio",
         DonutChart = "Rengaskaavio",
@@ -723,6 +731,7 @@ public sealed record ChartTexts
         CandleClose = "Schluss",
         CandleChange = "Änderung",
         LastValue = "zuletzt {0}",
+        HistogramPeak = "{0}: {1} Wert, die meisten von {2} bis {3}|{0}: {1} Werte, die meisten von {2} bis {3}",
         NoDataShort = "Keine Daten.",
         PieChart = "Kreisdiagramm",
         DonutChart = "Ringdiagramm",
@@ -788,6 +797,7 @@ public sealed record ChartTexts
         CandleClose = "Clôture",
         CandleChange = "Variation",
         LastValue = "dernière valeur {0}",
+        HistogramPeak = "{0} : {1} valeur, la plupart de {2} à {3}|{0} : {1} valeurs, la plupart de {2} à {3}",
         NoDataShort = "Aucune donnée.",
         PieChart = "Graphique en secteurs",
         DonutChart = "Graphique en anneau",
@@ -853,6 +863,7 @@ public sealed record ChartTexts
         CandleClose = "Cierre",
         CandleChange = "Variación",
         LastValue = "último {0}",
+        HistogramPeak = "{0}: {1} valor, la mayoría de {2} a {3}|{0}: {1} valores, la mayoría de {2} a {3}",
         NoDataShort = "Sin datos.",
         PieChart = "Gráfico circular",
         DonutChart = "Gráfico de anillo",

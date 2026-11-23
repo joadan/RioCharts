@@ -128,6 +128,16 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     private protected virtual SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups) => data;
 
     /// <summary>
+    /// Builds the data from Items in a way of the series type's own (e.g. a histogram's bins), with
+    /// each point's items in <paramref name="groups"/>; null builds it from <c>XValue</c> and <c>YValue</c> as usual.
+    /// </summary>
+    private protected virtual SeriesData? BuildData(IReadOnlyList<TItem> items, out IReadOnlyList<int[]>? groups)
+    {
+        groups = null;
+        return null;
+    }
+
+    /// <summary>
     /// The time bucket items are grouped into (one point per bucket), or null to group only items
     /// with the same x. Series types with a <c>Bucket</c> parameter return it.
     /// </summary>
@@ -259,6 +269,11 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             {
                 _data = Data;
                 ItemList = [];
+            }
+            else if (items is not null && BuildData(ItemList = items as IReadOnlyList<TItem> ?? items.ToList(), out var own) is { } built)
+            {
+                _data = built;
+                _groups = own;
             }
             else if (items is not null && XValue is not null && aggregate is not null)
             {
@@ -666,6 +681,47 @@ public sealed class BarSeries<TItem> : SeriesBase<TItem>
     protected override SeriesType Type => SeriesType.Bar;
 
     private protected override TimeBucket? XBucket => Bucket;
+}
+
+/// <summary>
+/// Histogram: how values are distributed, e.g. response times. Give one item per value:
+/// <c>XValue</c> is the value to count (a number). The values are counted in equal-width bins with
+/// round edges (<see cref="BinWidth"/> or <see cref="BinCount"/>, picked from the data when not set),
+/// drawn as bars that touch. The tooltip shows the bin's range and count; a click gives its items.
+/// Several histograms on one chart overlay, see-through.
+/// </summary>
+public sealed class HistogramSeries<TItem> : SeriesBase<TItem>
+{
+    private Bins _bins;
+
+    /// <summary>The width of each bin, in x units (e.g. 5 for bins of 5 ms). Default: a nice width picked from the data.</summary>
+    [Parameter] public double? BinWidth { get; set; }
+
+    /// <summary>About how many bins, when <see cref="BinWidth"/> is not set (the width is rounded to a nice number). Default: picked from the data.</summary>
+    [Parameter] public int? BinCount { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Histogram;
+
+    private protected override object? DataSettings => (BinWidth, BinCount);
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) =>
+        base.CreateOptions(id) with { BinWidth = _bins.Count > 0 ? _bins.Width : BinWidth, BinCount = BinCount };
+
+    private protected override SeriesData? BuildData(IReadOnlyList<TItem> items, out IReadOnlyList<int[]>? groups)
+    {
+        groups = null;
+        if (XValue is not { } value)
+        {
+            return null;
+        }
+
+        var data = SeriesData.FromBins(items, item => AxisValue.ToDouble(value(item), XKind.Numeric) is var v && double.IsFinite(v) ? v : null,
+            BinWidth, BinCount, out var bins, out _bins);
+        groups = bins;
+        return data;
+    }
 }
 
 /// <summary>

@@ -469,6 +469,53 @@ public sealed class SeriesData
         return kind == XKind.Time ? data.WithOffsets(Array.ConvertAll(rawX, TimeValue.OffsetOf)) : data;
     }
 
+    /// <summary>
+    /// A histogram: the items' values (<paramref name="value"/>; null and NaN are skipped) counted in
+    /// equal-width bins (<see cref="Bins.For"/>). One point per bin, empty bins included: x is the bin's
+    /// middle, y the number of values in it. Selectors run once here, never per render.
+    /// </summary>
+    /// <param name="width">The bin width; null picks a nice width from the data.</param>
+    /// <param name="count">About this many bins when <paramref name="width"/> is not set; null picks from the data.</param>
+    /// <param name="groups">Each bin's item indexes (into <paramref name="items"/>); a point's source index is its bin.</param>
+    /// <param name="bins">The bins used.</param>
+    public static SeriesData FromBins<TItem>(IEnumerable<TItem> items, Func<TItem, double?> value, double? width, int? count,
+        out IReadOnlyList<int[]> groups, out Bins bins)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(value);
+        var list = items as IReadOnlyList<TItem> ?? items.ToList();
+        var values = new double[list.Count];
+        for (var i = 0; i < values.Length; i++)
+        {
+            values[i] = value(list[i]) ?? double.NaN;
+        }
+
+        bins = Bins.For(values, width, count);
+        var members = new List<int>[bins.Count];
+        for (var b = 0; b < members.Length; b++)
+        {
+            members[b] = [];
+        }
+
+        for (var i = 0; i < values.Length; i++)
+        {
+            if (bins.IndexOf(values[i]) is >= 0 and var b)
+            {
+                members[b].Add(i);
+            }
+        }
+
+        groups = [.. members.Select(m => m.ToArray())];
+        var x = new double[bins.Count];
+        var y = new double[bins.Count];
+        for (var b = 0; b < x.Length; b++)
+        {
+            (x[b], y[b]) = (bins.Center(b), members[b].Count);
+        }
+
+        return Create(x, y, XKind.Numeric);
+    }
+
     /// <inheritdoc cref="FromGroups{TItem}(IEnumerable{TItem}, Func{TItem, object?}, Func{IReadOnlyList{TItem}, double?}, out IReadOnlyList{int[]})"/>
     public static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate) =>
         FromGroups(items, xValue, aggregate, out _);

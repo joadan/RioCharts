@@ -693,6 +693,35 @@ Design.md "Candlestick" (milestone 7).
 - **Not yet:** live data (`SeriesBuffer`) with candles, a hollow/filled option, a volume pane
   helper (use a bar series on a second axis), and `Horizontal` candles.
 
+## Histogram
+
+Not in Design.md; added from `docs/chart-types.md` (candidate, high popularity).
+
+- **Bins:** `Bins` (Core, Data) is a start, a width and a count; a bin holds values from its lower
+  edge up to its upper edge, the last bin also its upper edge (so 0–100 in bins of 10 is ten bins,
+  not eleven). `Bins.For` takes a width as given, or rounds a wanted count's width to 1, 2 or 5
+  times a power of ten (`NiceTicks.Step`); neither: Freedman–Diaconis (Sturges when the quartiles
+  are equal), at least 5 (or Sturges) and at most 100 bins. Edges are multiples of the width, so
+  they meet the axis ticks. All-equal values give one bin; at most 1000 bins (a narrower width is
+  widened). A value on an edge lands in the bin it starts (a 1e-9 tolerance for 0.3 / 0.1).
+- **Data:** `SeriesData.FromBins` makes one point per bin, empty bins included: x the bin's
+  middle, y the count, and each bin's items as groups (clicks give them). `HistogramSeries` bins
+  its `XValue` through a new `SeriesBase.BuildData` hook (data built the type's own way), and puts
+  the width it used into `SeriesOptions.BinWidth`, which the layout reads. Without `BinWidth`
+  (data given directly) the layout takes the smallest distance between bins.
+- **Drawing:** bars from edge to edge with a 1 px hairline between bins (no bar gap: x is
+  continuous). The x extent uses the bin width as the bar spacing, so it runs from the first lower
+  to the last upper edge, a single bin included. Several histograms overlay at 0.55 opacity
+  instead of sharing the slot; they should share a `BinWidth` (JSON `groupBy` does this itself).
+  Never stacked (a percent axis warns). Empty bins draw nothing but take hovers.
+- **Tooltip:** the bin's range ("125 – 150", in the x format) and its count. The describer says how
+  many values and the fullest bin ("Response time: 20 values, most from 125 to 150",
+  `ChartTexts.HistogramPeak`, all languages), in the legend and the chart description.
+- **JSON definitions:** `"type": "histogram"` (also `hist`, `distribution`), x a numeric field, no y
+  (a y without an x is read as x, with a warning). `binWidth`, `binCount`.
+- **Not yet:** density or percent instead of counts, cumulative histograms, uneven bins, a
+  `Horizontal` histogram and time x values (bins of hours or days: use `BarSeries` with `Bucket`).
+
 ## Waterfall
 
 Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high popularity, low complexity).

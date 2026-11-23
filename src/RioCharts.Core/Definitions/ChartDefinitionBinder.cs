@@ -103,6 +103,14 @@ public static class ChartDefinitionBinder
 
         // ---------- Fields ----------
         var count = s.Aggregate == Aggregate.Count;
+        var histogram = s.Type == SeriesType.Histogram;
+        if (histogram && s.X is null && s.Y is not null)
+        {
+            // The values to count belong on x; a histogram's y is the count.
+            s = s with { X = s.Y, Y = null };
+            warnings.Add($"{path}.x: a histogram counts the x values; using '{s.X}' (given as y).");
+        }
+
         var treePath = s.Type == SeriesType.Treemap && s.Path is { Count: > 0 } pathFields ? pathFields : null;
         var x = treePath is not null ? TreePath(dataset, treePath, s.PathSeparator, path, errors)
             : s.X is null ? InferX(dataset) : Find(dataset, s.X, $"{path}.x", null, errors);
@@ -118,8 +126,17 @@ public static class ChartDefinitionBinder
             }
         }
 
+        if (histogram && x is not null && x.Type != FieldType.Number)
+        {
+            errors.Add(new DefinitionError($"{path}.x", $"a histogram counts numbers; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()}. Numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
+        }
+
         DataField? y = null;
-        if (s.Y is not null)
+        if (histogram)
+        {
+            // No y: the count per bin.
+        }
+        else if (s.Y is not null)
         {
             y = Find(dataset, s.Y, $"{path}.y", FieldType.Number, errors);
         }
@@ -201,7 +218,7 @@ public static class ChartDefinitionBinder
             errors.Add(new DefinitionError($"{path}.timeBucket", $"needs a time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()}."));
         }
 
-        if (x is null || (y is null && !count) || errors.Count > errorsBefore)
+        if (x is null || (y is null && !count && !histogram) || errors.Count > errorsBefore)
         {
             return;
         }
@@ -257,8 +274,25 @@ public static class ChartDefinitionBinder
             warnings.Add($"{path}.aggregate: '{x.Name}' repeats; using sum per value (set aggregate to change).");
         }
 
+        // Histograms split by groupBy share one bin width, so their bins line up.
+        double? NumberAt(int r) => x.Values[r] is double v && double.IsFinite(v) ? v : null;
+        var binWidth = histogram ? s.BinWidth ?? Bins.For([.. rows.Select(r => NumberAt(r) ?? double.NaN)], null, s.BinCount) switch
+        {
+            { Count: > 0 } shared => shared.Width,
+            _ => (double?)null,
+        } : null;
+
         foreach (var (key, groupRows) in groups)
         {
+            if (histogram)
+            {
+                var binsId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(x.Name) : s.Id, key, usedIds);
+                var binsName = key is null ? s.Name ?? Humanize(x.Name) : s.Name is null ? key : $"{s.Name}: {key}";
+                data[binsId] = SeriesData.FromBins(groupRows, NumberAt, binWidth, s.BinCount, out _, out var bins);
+                output.Add(s with { Id = binsId, Name = binsName, BinWidth = bins.Count > 0 ? bins.Width : binWidth });
+                continue;
+            }
+
             if (s.Type == SeriesType.Candlestick)
             {
                 var candleId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "values") : s.Id, key, usedIds);

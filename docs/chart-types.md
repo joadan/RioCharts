@@ -49,6 +49,7 @@ Rules of thumb:
 | Radial bar | `RadialBarSeries` / `radialBar` | The definition parser also accepts `gauge` as an alias for this. |
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
+| Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
 | Waterfall | `WaterfallSeries` / `waterfall` | Changes from a running total, totals and subtotals, connectors. Also `bridge`. |
 | Sparkline | compact mode on any chart | Not a series type. |
 
@@ -56,7 +57,6 @@ Rules of thumb:
 
 | Type | Status | Popularity | Effort | Complexity | What it's for | Notes / why not yet |
 |---|---|---|---|---|---|---|
-| Histogram | Candidate | High | Medium | Medium | The distribution of raw values | Mostly a binning transform (Core and `ChartDefinitionBinder`) plus bars without gaps. Adds bin options and a numeric-bin axis concept. |
 | Bubble | Candidate | Medium | Small | Low | Scatter with a third measure | A size column on a sqrt scale on `ScatterSeries`; needs a size legend and overlap handling (draw large first). |
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
 | Gauge | In Design.md | High | Medium | Medium | A single value against a range or target | `gauge` is only an alias for radial bar today. A real gauge needs custom start/end angles, colored ranges, a target marker and a big center value: several new parameters. |

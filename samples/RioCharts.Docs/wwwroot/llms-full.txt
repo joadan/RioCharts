@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, pie, donut, radial bar, radar, heatmap, box plot, histogram, candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -57,6 +57,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Several measures per item | `RadarSeries` | one series per item |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
+| Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
 | From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
 | Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
@@ -452,6 +453,13 @@ Bar series. Several bar series in one chart are grouped side by side.
 
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 
+#### `<HistogramSeries>` (`HistogramSeries<TItem>`)
+
+Histogram: how values are distributed, e.g. response times. Give one item per value: `XValue` is the value to count (a number). The values are counted in equal-width bins with round edges (`HistogramSeries.BinWidth` or `HistogramSeries.BinCount`, picked from the data when not set), drawn as bars that touch. The tooltip shows the bin's range and count; a click gives its items. Several histograms on one chart overlay, see-through.
+
+- `BinWidth`: `double?` — The width of each bin, in x units (e.g. 5 for bins of 5 ms). Default: a nice width picked from the data.
+- `BinCount`: `int?` — About how many bins, when `HistogramSeries.BinWidth` is not set (the width is rounded to a nice number). Default: picked from the data.
+
 #### `<WaterfallSeries>` (`WaterfallSeries<TItem>`)
 
 Waterfall: how a start value becomes an end value, e.g. a month's result from revenue through costs. Each item is a change (`YValue`), drawn as a bar from the running total before it to the one after: in `--rio-positive` (green) when it rises and `--rio-negative` (red) when it falls. Items marked with `WaterfallSeries.IsTotal` are totals: a bar from zero to the running total, in the series color. Thin lines carry each bar's end over to the next. The tooltip shows the change and the running total after it.
@@ -671,7 +679,7 @@ How times without a zone (DateTime with Kind Unspecified, DateOnly, plain string
 
 The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
 
-70 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+71 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
 
 - `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
 - `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.
@@ -862,6 +870,7 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `static SeriesData From(ReadOnlyMemory<DateTimeOffset> x, ReadOnlyMemory<double> y)` — Time x and y columns (copied).
 - `static SeriesData FromCategories(IReadOnlyList<string> categories, ReadOnlySpan<double> y)` — Category data; order of first appearance is kept.
 - `static SeriesData FromItems<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> yValue)` — Builds columns from items. X may be a number, DateTime, DateTimeOffset, DateOnly or string (category); the first non-null value decides the kind. A null Y is a gap. Selectors run once here, never per render.
+- `static SeriesData FromBins<TItem>(IEnumerable<TItem> items, Func<TItem, double?> value, double? width, int? count, IReadOnlyList<int[]> groups, Bins bins)` — A histogram: the items' values (`value`; null and NaN are skipped) counted in equal-width bins (`Bins.For`). One point per bin, empty bins included: x is the bin's middle, y the number of values in it. Selectors run once here, never per render.
 - `static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate)`
 - `static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups)` — Groups items with the same x and makes one point per group, with y from `aggregate` (null is a gap). Categories keep the order of first appearance; numbers and times are sorted as usual. Items with a null x are left out. Selectors and the aggregate run once here, never per render.
 
@@ -1034,6 +1043,8 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `Q3`: `string?` — Box plot with precomputed boxes: the field with the upper quartile.
 - `High`: `string?` — Box plot with precomputed boxes: the field with the upper whisker end.
 - `Total`: `string?` — Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.
+- `BinWidth`: `double?` — Histogram: the width of each bin, in x units (e.g. 5 for bins of 5 ms). Null: a nice width picked from the data.
+- `BinCount`: `int?` — Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.
 - `MarkerSize`: `double?` — Scatter: marker diameter in pixels. Default 5.
 - `TrendLine`: `bool` — Scatter: draw a dashed least-squares trend line through the points.
 - `DirectionColors`: `bool` — Candlestick: color candles by direction, rising in the positive and falling in the negative theme color (green and red), with the change in percent in the tooltip, as for prices. Off: candles take the series color, and the fill alone shows the direction (light when rising, solid when falling).
@@ -1115,6 +1126,7 @@ How a series is drawn.
 - `Radar` — A closed shape per series across category spokes, for comparing several measures (e.g. products' test scores).
 - `Treemap` — Rectangles sized by value, nested by group (a path such as "Europe/Sweden/Stockholm"), for how a total splits into many parts.
 - `Waterfall` — How a start value becomes an end value: a floating bar per change (rising or falling from the running total), and total bars from zero.
+- `Histogram` — The distribution of values: x values counted in equal-width bins, drawn as bars without gaps.
 - `Auto` — JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
 
 #### `Filter` (record, RioCharts.Core)

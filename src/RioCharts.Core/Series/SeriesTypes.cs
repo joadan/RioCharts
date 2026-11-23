@@ -38,6 +38,7 @@ internal interface ISeriesType
         SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
         SeriesType.Candlestick => CandlestickSeriesType.Instance,
         SeriesType.Waterfall => WaterfallSeriesType.Instance,
+        SeriesType.Histogram => HistogramSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar or SeriesType.Radar => new PolarSeriesType(type),
         SeriesType.Treemap => new PolarSeriesType(type, CoordinateSystem.SpaceFilling),
         _ => LineSeriesType.Instance,
@@ -975,6 +976,88 @@ internal sealed class BarSeriesType : ISeriesType
             if (c.Spec.DataLabels == true)
             {
                 c.Labels.Add(new LabelAnchor(value, left + width / 2, y, y0, width, c.Stacked));
+            }
+        }
+
+        c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
+    }
+}
+
+/// <summary>
+/// Histogram: a bar per bin from its lower to its upper edge on a numeric x axis, with a hairline
+/// between bins instead of a gap (the bins touch: x is continuous). Several histograms overlay, more
+/// see-through, instead of sharing the slot like grouped bars. X is each bin's middle, y its count.
+/// </summary>
+internal sealed class HistogramSeriesType : ISeriesType
+{
+    public static HistogramSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.Histogram;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 1;
+    public bool IncludesZero => true;
+    public bool UsesSlots => true;
+
+    /// <summary>The bin width in x units: the series' <see cref="SeriesOptions.BinWidth"/>, else the smallest distance between bins; NaN when unknown.</summary>
+    internal static double WidthOf(SeriesOptions series, SeriesData data)
+    {
+        if (series.BinWidth is > 0 and var width && double.IsFinite(width))
+        {
+            return width;
+        }
+
+        var smallest = double.PositiveInfinity;
+        for (var i = 1; i < data.Count; i++)
+        {
+            if (data.X[i] - data.X[i - 1] is > 0 and var dx && dx < smallest)
+            {
+                smallest = dx;
+            }
+        }
+
+        return double.IsFinite(smallest) ? smallest : double.NaN;
+    }
+
+    public void Build(SeriesBuildContext c)
+    {
+        // The x axis keeps a bin width per slot (80 % of it, for bars): the full width is the bin.
+        var binPx = c.SlotWidth / 0.8;
+        var gap = binPx > 6 ? 1 : 0;
+        var width = Math.Max(1, binPx - gap);
+        c.BarWidth = width;
+        c.BarOffset = 0;
+        var overlaid = c.SlotCount > 1;
+        var style = c.Styles.Add($"series-{c.ColorIndex}-histogram", new Style { Fill = c.Color, FillOpacity = overlaid ? 0.55f : null });
+
+        var hx = new List<float>();
+        var hy = new List<float>();
+        var hi = new List<int>();
+        var hs = new List<int>();
+        for (var i = 0; i < c.Data.Count; i++)
+        {
+            var value = c.Upper[i];
+            var center = c.PixelX[i];
+            if (!double.IsFinite(value) || !double.IsFinite(center) || !c.InPlotX(center))
+            {
+                continue;
+            }
+
+            var y = c.MapY(value);
+            var top = Math.Min(y, c.ZeroY);
+            var height = Math.Abs(y - c.ZeroY);
+            if (height > 0)
+            {
+                var own = c.PointColor(i) is { } color ? c.Styles.Add($"histogram-{color}", new Style { Fill = color, FillOpacity = overlaid ? 0.55f : null }) : style;
+                c.Output.Add(new RectNode(new RectF((float)(center - width / 2), (float)top, (float)width, (float)height), own) { Class = "rio-bin" });
+            }
+
+            // Empty bins take hovers too: the tooltip says the range had no values.
+            hx.Add((float)center);
+            hy.Add((float)y);
+            hi.Add(i);
+            hs.Add(c.Data.ToSourceIndex(i));
+            if (c.Spec.DataLabels == true && value != 0)
+            {
+                c.Labels.Add(new LabelAnchor(value, center, y, c.ZeroY, width, false));
             }
         }
 

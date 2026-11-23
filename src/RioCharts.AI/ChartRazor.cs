@@ -133,6 +133,7 @@ public static class ChartRazor
                 SeriesType.BoxPlot => "BoxPlotSeries",
                 SeriesType.Candlestick => "CandlestickSeries",
                 SeriesType.Waterfall => "WaterfallSeries",
+                SeriesType.Histogram => "HistogramSeries",
                 _ => "LineSeries",
             };
 
@@ -154,7 +155,7 @@ public static class ChartRazor
             }
             else
             {
-                sb.Append($" XValue=\"r => r.{Property(s.X ?? "x")}\"");
+                sb.Append($" XValue=\"r => r.{Property(s.X ?? (s.Type == SeriesType.Histogram ? s.Y : null) ?? "x")}\""); // a histogram counts its x values
             }
 
             if (s.ColorBands is { Count: > 0 } bands)
@@ -178,6 +179,19 @@ public static class ChartRazor
             {
                 sb.Append($" VisibleLevels=\"{levels}\"");
             }
+            if (s.Type == SeriesType.Histogram)
+            {
+                if (s.BinWidth is { } width)
+                {
+                    sb.Append($" BinWidth=\"{width.ToString(System.Globalization.CultureInfo.InvariantCulture)}\"");
+                }
+
+                if (s.BinCount is { } bins)
+                {
+                    sb.Append($" BinCount=\"{bins}\"");
+                }
+            }
+
             if (s.Type == SeriesType.Waterfall && s.Total is { } totalField)
             {
                 sb.Append($" IsTotal=\"r => r.{Property(totalField)}\"");
@@ -221,7 +235,7 @@ public static class ChartRazor
                 }
             }
 
-            if (componentAggregate != Aggregate.Count || s.Y is not null)
+            if (s.Type != SeriesType.Histogram && (componentAggregate != Aggregate.Count || s.Y is not null))
             {
                 sb.Append($" YValue=\"r => r.{Property(s.Y ?? "value")}\"");
             }

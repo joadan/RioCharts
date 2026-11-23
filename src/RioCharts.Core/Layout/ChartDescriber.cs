@@ -56,6 +56,12 @@ public static class ChartDescriber
         foreach (var (s, d, _) in visible)
         {
             var stats = facts(d);
+            if (s.Type == SeriesType.Histogram && DescribeSeries(spec, s, d, xKind, culture, texts, stats) is { } bins)
+            {
+                sb.Append(' ').Append(bins).Append('.'); // its values and fullest bin, not the bins' counts
+                continue;
+            }
+
             sb.Append(' ').Append(texts.FillCount(nameof(ChartTexts.SeriesValues), stats.Count, culture, s.DisplayName, stats.Count));
             if (stats.Count == 0)
             {
@@ -148,6 +154,21 @@ public static class ChartDescriber
             }
 
             return sb.ToString();
+        }
+
+        if (s.Type == SeriesType.Histogram)
+        {
+            // How many values, and the fullest bin's range.
+            var width = Series.HistogramSeriesType.WidthOf(s, d);
+            var peak = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i])).MaxBy(i => d.Y[i]);
+            var total = (long)Math.Round(d.Y.Where(double.IsFinite).Sum());
+            if (!double.IsFinite(width) || total == 0)
+            {
+                return null;
+            }
+
+            string X(double v) => Formatting.ValueFormatter.Format(Scales.NiceTicks.Clean(v), culture, spec.X.Format);
+            return texts.FillCount(nameof(ChartTexts.HistogramPeak), total, culture, s.DisplayName, total, X(d.X[peak] - width / 2), X(d.X[peak] + width / 2));
         }
 
         if (s.Type == SeriesType.Waterfall)

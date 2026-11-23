@@ -1,0 +1,96 @@
+@page "/histogram"
+
+<PageTitle>Histogram · RioCharts</PageTitle>
+
+<h1>Histogram</h1>
+<p class="lead">
+    A histogram shows how values are distributed: how many requests took 100 to 110 ms, how many 110 to 120. The values are counted in
+    bins of equal width, drawn as bars that touch.
+</p>
+
+<Example Title="Response times" Code="@TimesCode">
+    <Description>
+        <p>
+            Give <code>HistogramSeries</code> one item per value, with the value as <code>XValue</code>. The bins get round edges: a width
+            of 1, 2 or 5 times a power of ten, picked from the data when <code>BinWidth</code> and <code>BinCount</code> are not set.
+            <code>BinCount</code> asks for about that many bins. The tooltip shows each bin's range and count, and a click gives the
+            bin's items.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Request" Items="Before" XAxis="Ms" YAxis="Requests" Height="260">
+            <HistogramSeries Name="Requests" XValue="r => r.Ms" BinWidth="_width" />
+        </RioChart>
+        <p class="note">
+            @foreach (var width in Widths)
+            {
+                <label><input type="radio" name="bin-width" checked="@(_width == width)" @onchange="() => _width = width" /> @(width is { } w ? $"{w} ms" : "Auto")</label>
+            }
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="Before and after" Code="@CompareCode">
+    <Description>
+        <p>
+            Several histograms on one chart overlay, see-through, so the shapes can be compared. Give them the same
+            <code>BinWidth</code>: each one picks its own width from its data otherwise, and the bins would not line up.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Request" XAxis="Ms" YAxis="Requests" Height="260">
+            <HistogramSeries Name="Before" Items="Before" XValue="r => r.Ms" BinWidth="10" />
+            <HistogramSeries Name="After" Items="After" XValue="r => r.Ms" BinWidth="10" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON definitions</h2>
+<p>
+    <code>"type": "histogram"</code> with the numeric field to count as <code>x</code> (no <code>y</code>: the count is the value), and
+    <code>"binWidth"</code> or <code>"binCount"</code> if wanted. With <code>groupBy</code>, every group gets the same bins.
+</p>
+
+@code {
+    private sealed record Request(double Ms);
+
+    private static readonly AxisOptions Ms = new() { Title = "ms" };
+    private static readonly AxisOptions Requests = new() { Title = "Requests" };
+    private static readonly double?[] Widths = [null, 5, 10, 25];
+    private double? _width;
+
+    // 600 response times each, before and after a release: a skewed bump with a long tail.
+    private static readonly Request[] Before = Times(seed: 3, typical: 150, spread: 40);
+    private static readonly Request[] After = Times(seed: 8, typical: 120, spread: 30);
+
+    private static Request[] Times(int seed, double typical, double spread)
+    {
+        var random = new Random(seed);
+        return [.. Enumerable.Range(0, 600).Select(_ =>
+        {
+            var normal = random.NextDouble() + random.NextDouble() + random.NextDouble() + random.NextDouble() - 2;
+            var tail = random.NextDouble() < 0.08 ? random.NextDouble() * 4 * spread : 0;
+            return new Request(Math.Round(typical + normal * spread + tail, 1));
+        })];
+    }
+
+    private const string TimesCode = """
+        <RioChart TItem="Request" Items="requests" XAxis="ms" YAxis="requests">
+            <HistogramSeries Name="Requests" XValue="r => r.Ms" />
+        </RioChart>
+
+        @code {
+            record Request(double Ms);
+
+            AxisOptions ms = new() { Title = "ms" };
+            AxisOptions requests = new() { Title = "Requests" };
+        }
+        """;
+
+    private const string CompareCode = """
+        <RioChart TItem="Request" XAxis="ms" YAxis="requests">
+            <HistogramSeries Name="Before" Items="before" XValue="r => r.Ms" BinWidth="10" />
+            <HistogramSeries Name="After" Items="after" XValue="r => r.Ms" BinWidth="10" />
+        </RioChart>
+        """;
+}

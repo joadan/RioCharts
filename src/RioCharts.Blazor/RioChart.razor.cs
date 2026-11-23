@@ -741,7 +741,7 @@ public partial class RioChart<TItem> : IChartContext
                 Zoomed: _layout.Zoomed,
                 Group: Group,
                 Xscale: scale is null ? null : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
-                Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall, s.Step, s.Snap,
+                Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram, s.Step, s.Snap,
                     s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight, s.CellWidths,
                     s.PartLabels, s.PartValues, s.Spokes, s.CellHeights,
                     s.PointColors is { } colors ? [.. colors.Select(SvgWriter.Color)] : null,
