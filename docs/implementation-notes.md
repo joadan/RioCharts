@@ -836,7 +836,10 @@ concept for a sessions-by-country map.
   codes, English name and continent, about 127 KB of text embedded in Core and parsed on first use
   (`WorldMap`). `tools/WorldMapData.cs` downloads and converts it. Very small countries (Singapore,
   Malta) are not at this scale; zooming into a country shows its outline, not regions within it.
-- **Projection:** Equal Earth, centered on the area shown. Rings are unwrapped along their length and
+- **Projection:** Equal Earth by default, or Mercator (`ChartDefinition.Projection`), centered on the
+  area shown. Mercator is cut at ±85.05° like web maps; its world view still fits the land (about 84° N
+  to 56° S), so it is taller than Equal Earth and leaves room at the sides of a wide chart. Antarctica
+  in Mercator (only drawn when it has a value) is a wide band at the bottom. Rings are unwrapped along their length and
   clamped at the far side of the world, so a country crossing it is cut instead of drawing a line
   across the map. A country zoom fits its main polygons (the largest and those of similar size near
   it: France without French Guiana); a continent zoom fits a hand-drawn area per continent (Europe

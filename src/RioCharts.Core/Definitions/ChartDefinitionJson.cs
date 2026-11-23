@@ -67,6 +67,7 @@ public static class ChartDefinitionJson
         options.Converters.Add(new JsonStringEnumConverter<AxisPosition>(camel));
         options.Converters.Add(new JsonStringEnumConverter<LegendMode>(camel));
         options.Converters.Add(new JsonStringEnumConverter<LegendPosition>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<MapProjection>(camel));
         options.Converters.Add(new JsonStringEnumConverter<AnnotationType>(camel));
         options.Converters.Add(new JsonStringEnumConverter<AnnotationAxis>(camel));
         options.Converters.Add(new JsonStringEnumConverter<LabelPosition>(camel));
@@ -388,6 +389,12 @@ public static class ChartDefinitionJson
         ["100"] = "percent", ["normalize"] = "percent", ["normalized"] = "percent", ["expand"] = "percent", ["relative"] = "percent",
     };
 
+    private static readonly Dictionary<string, string> Projections = new(StringComparer.Ordinal)
+    {
+        ["equalearth"] = "equalEarth", ["equalarea"] = "equalEarth", ["default"] = "equalEarth",
+        ["mercator"] = "mercator", ["webmercator"] = "mercator", ["web"] = "mercator", ["epsg3857"] = "mercator",
+    };
+
     private static readonly Dictionary<string, string> Curves = new(StringComparer.Ordinal)
     {
         ["linear"] = "linear", ["straight"] = "linear", ["monotone"] = "monotone", ["smooth"] = "monotone", ["spline"] = "monotone",
@@ -564,6 +571,7 @@ public static class ChartDefinitionJson
         CheckEnum<LegendMode>(root["legend"], "mode", "legend.mode", errors);
         CheckEnum<LegendPosition>(root["legend"], "position", "legend.position", errors);
         CheckEnum<UnspecifiedTimes>(root, "unspecifiedTimes", "unspecifiedTimes", errors);
+        Vocabulary(root, "projection", Projections, "projection", errors);
         if (root["annotations"] is JsonArray list)
         {
             for (var i = 0; i < list.Count; i++)

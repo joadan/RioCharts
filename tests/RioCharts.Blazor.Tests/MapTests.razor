@@ -37,4 +37,28 @@
         Assert.Equal("SE", region);
         Assert.Contains("Sweden", cut.Find(".rio-treemap-path").TextContent, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Projection_parameter_sets_the_map_projection_and_overrides_a_definition()
+    {
+        var cut = Render<RioChart<Place>>(@<RioChart TItem="Place" Projection="MapProjection.Mercator">
+            <MapSeries Items="Countries" Name="Users" XValue="c => c.Name" YValue="c => c.Users" />
+        </RioChart>);
+
+        Assert.Equal(MapProjection.Mercator, cut.Instance.GetDefinition().Projection);
+
+        var definition = new ChartDefinition
+        {
+            Data = [new Dictionary<string, object?> { ["country"] = "SE", ["users"] = 80.0 }],
+            Series = [new SeriesOptions { Id = "m", Type = SeriesType.Map, X = "country", Y = "users" }],
+        };
+        string Map(RenderFragment chart) => string.Join(" ", Render(chart).FindAll(".rio-series-map path").Select(p => p.GetAttribute("d")));
+        var equalEarth = Map(@<RioChart TItem="object" Definition="definition" />);
+        var overridden = Map(@<RioChart TItem="object" Definition="definition" Projection="MapProjection.Mercator" />);
+        var mercatorDefinition = definition with { Projection = MapProjection.Mercator };
+        var fromDefinition = Map(@<RioChart TItem="object" Definition="mercatorDefinition" />);
+
+        Assert.NotEqual(equalEarth, overridden);
+        Assert.Equal(overridden, fromDefinition);
+    }
 }

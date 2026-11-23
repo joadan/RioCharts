@@ -67,7 +67,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
 | From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
 | Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
-| Values per country, places on a world map | `MapSeries`, `MapBubbleSeries` | `MapSeries`: `XValue` the country code ("SE") or English name, `YValue` the value; `MapBubbleSeries`: `XValue` the place's name, `YValue` its size, `Latitude`, `Longitude` |
+| Values per country, places on a world map | `MapSeries`, `MapBubbleSeries` | `MapSeries`: `XValue` the country code ("SE") or English name, `YValue` the value; `MapBubbleSeries`: `XValue` the place's name, `YValue` its size, `Latitude`, `Longitude`; `Projection="MapProjection.Mercator"` on the chart for the web-map look |
 
 Check the parameters of each component in the reference below before using them.
 

@@ -59,6 +59,11 @@ public static class ChartRazor
             sb.Append(" Horizontal=\"true\"");
         }
 
+        if (spec.Projection != MapProjection.EqualEarth && spec.Series.Any(s => s.Type is SeriesType.Map or SeriesType.MapBubble))
+        {
+            sb.Append($" Projection=\"MapProjection.{spec.Projection}\"");
+        }
+
         if (!spec.AutoCompact)
         {
             sb.Append(" AutoCompact=\"false\"");

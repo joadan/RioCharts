@@ -15,7 +15,7 @@ public static partial class ChartLayout
     private readonly record struct MapBubble(Resolved Series, int Index, double Latitude, double Longitude, double Value, string Label);
 
     /// <summary>
-    /// The map pass: a world map in the Equal Earth projection. A map series colors each country by
+    /// The map pass: a world map in <see cref="ChartDefinition.Projection"/>. A map series colors each country by
     /// its value (one hue, more opaque for higher values, like a heatmap); map bubble series put a
     /// circle at each point's latitude and longitude, its area proportional to the value.
     /// <see cref="LayoutOptions.MapRegion"/> zooms into a country, with a path bar back to the world.
@@ -180,15 +180,16 @@ public static partial class ChartLayout
             : new RectF((float)PadLeft, (float)y0, (float)Math.Max(10, width - PadLeft - PadRight), (float)Math.Max(10, height - PadBottom - y0));
 
         // ---------- Projection: the world, a continent, or the country zoomed into ----------
+        var project = Projector(spec.Projection);
         var central = focus is not null ? Middle(focus.MainPolygons.Select(p => p.CenterLongitude)) : continent?.CenterLongitude ?? 0;
-        var showAntarctica = values.Keys.Any(r => r.Alpha2 == "AQ");
+        var showAntarctica = focus?.Alpha2 == "AQ" || values.Keys.Any(r => r.Alpha2 == "AQ");
         var fitTo = focus is not null ? focus.MainPolygons.Select(p => p.Rings[0])
             : continent is not null ? [Outline(continent)]
             : WorldMap.Countries.Where(r => showAntarctica || r.Alpha2 != "AQ").SelectMany(r => r.Polygons).Select(p => p.Rings[0]);
         double bx0 = double.MaxValue, by0 = double.MaxValue, bx1 = double.MinValue, by1 = double.MinValue;
         foreach (var outer in fitTo)
         {
-            var ring = ProjectRing(outer, central);
+            var ring = ProjectRing(outer, central, project);
             for (var i = 0; i < ring.Length; i += 2)
             {
                 bx0 = Math.Min(bx0, ring[i]);
@@ -225,7 +226,7 @@ public static partial class ChartLayout
             {
                 foreach (var ring in polygon.Rings)
                 {
-                    var pixels = ToPixels(ProjectRing(ring, central), scale, ox, oy);
+                    var pixels = ToPixels(ProjectRing(ring, central, project), scale, ox, oy);
                     if (!Overlaps(pixels, plot))
                     {
                         continue;
@@ -271,7 +272,7 @@ public static partial class ChartLayout
             land.Add(shape);
             if (hasValue)
             {
-                var main = ToPixels(ProjectRing(region.MainPolygons.MaxBy(p => p.Area)!.Rings[0], central), scale, ox, oy);
+                var main = ToPixels(ProjectRing(region.MainPolygons.MaxBy(p => p.Area)!.Rings[0], central, project), scale, ox, oy);
                 var xs = main.Where((_, i) => i % 2 == 0).ToList();
                 var ys = main.Where((_, i) => i % 2 == 1).ToList();
                 tips.Add((region, entry.Index, entry.Value, [.. rings], new PointF((xs.Min() + xs.Max()) / 2, (ys.Min() + ys.Max()) / 2)));
@@ -282,7 +283,7 @@ public static partial class ChartLayout
         {
             var outline = styles.Add("map-focus", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.2f });
             var path = new PathBuilder();
-            foreach (var ring in focus.Polygons.Select(p => ToPixels(ProjectRing(p.Rings[0], central), scale, ox, oy)).Where(r => Overlaps(r, plot)))
+            foreach (var ring in focus.Polygons.Select(p => ToPixels(ProjectRing(p.Rings[0], central, project), scale, ox, oy)).Where(r => Overlaps(r, plot)))
             {
                 path.MoveTo(ring[0], ring[1]);
                 for (var i = 2; i < ring.Length; i += 2)
@@ -307,7 +308,7 @@ public static partial class ChartLayout
         var maxRadius = resolved.FirstOrDefault(r => r.Spec.Type == SeriesType.MapBubble)?.Spec.MarkerSize / 2
             ?? Math.Clamp(Math.Min(plot.Width, plot.Height) / 24, 4, 20);
         var placed = bubbles
-            .Select(b => (Bubble: b, At: EqualEarth.Project(b.Longitude, b.Latitude, central), Radius: Math.Max(2, maxRadius * Math.Sqrt(b.Value / maxBubble))))
+            .Select(b => (Bubble: b, At: project(EqualEarth.Wrap(b.Longitude - central), b.Latitude), Radius: Math.Max(2, maxRadius * Math.Sqrt(b.Value / maxBubble))))
             .Select(p => (p.Bubble, X: ox + scale * p.At.X, Y: oy + scale * p.At.Y, p.Radius))
             .Where(p => p.X >= plot.X - p.Radius && p.X <= plot.Right + p.Radius && p.Y >= plot.Y - p.Radius && p.Y <= plot.Bottom + p.Radius)
             .ToList();
@@ -423,7 +424,7 @@ public static partial class ChartLayout
     /// and clamped to the map's edge, so a ring that crosses the far side of the world is cut there
     /// instead of drawing a line across the map.
     /// </summary>
-    private static double[] ProjectRing(double[] ring, double central)
+    private static double[] ProjectRing(double[] ring, double central, Func<double, double, (double X, double Y)> project)
     {
         var projected = new double[ring.Length];
         var relative = new double[ring.Length / 2];
@@ -439,13 +440,20 @@ public static partial class ChartLayout
         var shift = 360 * Math.Round(relative.Average() / 360);
         for (var i = 0; i < relative.Length; i++)
         {
-            var (x, y) = EqualEarth.ProjectRelative(Math.Clamp(relative[i] - shift, -180, 180), ring[i * 2 + 1]);
+            var (x, y) = project(Math.Clamp(relative[i] - shift, -180, 180), ring[i * 2 + 1]);
             projected[i * 2] = x;
             projected[i * 2 + 1] = y;
         }
 
         return projected;
     }
+
+    /// <summary>The projection of a longitude relative to the central meridian and a latitude, both in degrees.</summary>
+    private static Func<double, double, (double X, double Y)> Projector(MapProjection projection) => projection switch
+    {
+        MapProjection.Mercator => Mercator.ProjectRelative,
+        _ => EqualEarth.ProjectRelative,
+    };
 
     private static float[] ToPixels(double[] projected, double scale, double ox, double oy)
     {

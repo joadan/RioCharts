@@ -25,6 +25,10 @@ public sealed record ChartDefinition
     [Description("Bar charts: bars run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.")]
     public bool Horizontal { get; init; }
 
+    /// <summary>Maps: how the round world is drawn flat. EqualEarth (default) keeps every country's true relative size; Mercator is the projection of web maps, familiar shapes but areas that grow toward the poles.</summary>
+    [Description("Maps: how the round world is drawn flat. equalEarth (default) keeps every country's true relative size; mercator is the projection of web maps, familiar shapes but areas that grow toward the poles.")]
+    public MapProjection Projection { get; init; }
+
     /// <summary>Horizontal axis.</summary>
     [Description("Horizontal axis.")]
     public AxisOptions X { get; init; } = new();
@@ -617,6 +621,17 @@ public enum LegendMode
 
     /// <summary>Never.</summary>
     Hide,
+}
+
+/// <summary>How a map draws the round world flat.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<MapProjection>))]
+public enum MapProjection
+{
+    /// <summary>Equal Earth: equal-area, so every country keeps its true relative size; the outline of the world is rounded.</summary>
+    EqualEarth,
+
+    /// <summary>Mercator, as on web maps: familiar shapes on a rectangle, but areas grow toward the poles; cut at ±85° latitude.</summary>
+    Mercator,
 }
 
 /// <summary>Where the legend sits.</summary>

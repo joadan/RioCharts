@@ -5,7 +5,8 @@
 <h1>World maps</h1>
 <p class="lead">
     A world map shows where something happens: countries colored by a value, bubbles at places within them, and a click on a country
-    zooms into it. The map uses the Equal Earth projection, so countries keep their true relative size.
+    zooms into it. By default the map uses the Equal Earth projection, so countries keep their true relative size; the Mercator
+    projection of web maps is one parameter away.
 </p>
 
 <Example Title="Countries and cities" Code="@SessionsCode">
@@ -48,6 +49,31 @@
     </ChildContent>
 </Example>
 
+<Example Title="Projection" Code="@ProjectionCode">
+    <Description>
+        <p>
+            <code>Projection</code> on the chart sets how the round world is drawn flat. <code>MapProjection.EqualEarth</code>, the default,
+            is equal-area: a country's size on the map compares fairly with any other. <code>MapProjection.Mercator</code> is the projection
+            of web maps, the shapes most people know, but areas grow toward the poles (Greenland looks as large as Africa, which is
+            fourteen times larger), so use it when the map should look familiar rather than when sizes matter. It is cut at 85° north
+            and south, like web maps. In a JSON definition: <code>"projection": "mercator"</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Place" Height="420" Projection="_projection">
+            <MapSeries Items="Countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
+            <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
+                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+        </RioChart>
+        <p class="note">
+            @foreach (var projection in Enum.GetValues<MapProjection>())
+            {
+                <label><input type="radio" name="map-projection" checked="@(_projection == projection)" @onchange="() => _projection = projection" /> @projection</label>
+            }
+        </p>
+    </ChildContent>
+</Example>
+
 <h2>Data</h2>
 <p>
     The country outlines are Natural Earth's 1:110 million Admin 0 countries (public domain), built into <code>RioCharts.Core</code>.
@@ -57,6 +83,7 @@
 
 @code {
     private string? _region;
+    private MapProjection _projection = MapProjection.Mercator;
 
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
 
@@ -89,6 +116,14 @@
             string? region;
             record Place(string Name, double Sessions, double? Latitude = null, double? Longitude = null);
         }
+        """;
+
+    private const string ProjectionCode = """
+        <RioChart TItem="Place" Projection="MapProjection.Mercator">
+            <MapSeries Items="countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
+            <MapBubbleSeries Items="cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
+                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+        </RioChart>
         """;
 
     private const string BubblesCode = """
