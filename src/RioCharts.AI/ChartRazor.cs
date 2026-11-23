@@ -145,6 +145,7 @@ public static class ChartRazor
                 SeriesType.RangeBar => "RangeBarSeries",
                 SeriesType.Gauge => "GaugeSeries",
                 SeriesType.Bullet => "BulletSeries",
+                SeriesType.Dumbbell => "DumbbellSeries",
                 _ => "LineSeries",
             };
 
@@ -219,6 +220,11 @@ public static class ChartRazor
             if (s.Type == SeriesType.Waterfall && s.Total is { } totalField)
             {
                 sb.Append($" IsTotal=\"r => r.{Property(totalField)}\"");
+            }
+
+            if (s.Type == SeriesType.Dumbbell && (s.From ?? s.Low) is { } fromField)
+            {
+                sb.Append($" FromValue=\"r => r.{Property(fromField)}\"");
             }
 
             if (s.Type == SeriesType.RangeArea && s.Low is { } lowField)

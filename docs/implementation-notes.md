@@ -827,6 +827,29 @@ radial bar alias until then.
 - **Not yet:** a needle, ticks along the scale, a full-circle "progress ring" style with rounded
   ends, and gauges mixed with other polar series.
 
+## Dumbbell
+
+Not in Design.md; added from `docs/chart-types.md` (candidate). A slope chart is left to line series
+(one per category, two x values).
+
+- **Data:** the first value is the data's low column (`SeriesData.Low`, `WithLow`), as for range
+  areas; y is the second. `DumbbellSeries.FromValue` fills it; combined items take the same aggregate
+  as y (the average without one), not the range's lowest low. A point may miss either end: the other
+  dot is drawn alone (the tooltip says "7 →" for a first value alone).
+- **Layout:** a series type in the main pass (`DumbbellSeriesType`), upright on a category (or
+  number/time) x axis, and in the horizontal pass with `Horizontal` (rows, the usual layout). No
+  slots: several dumbbell series share the category's middle, and with bars the bars keep the row.
+  Not stacked (`Stack` is ignored), not forced to include zero. A 3 px line in the series color at 45 %
+  opacity, a hollow dot (surface fill, 2 px ring, radius 4) at the first value, a filled dot (radius 5)
+  at the second; `ColorValue` and color bands color the second dot. `DataLabels`: upright, the usual
+  point labels at both ends; horizontal, the lower value left of its dot and the higher right of it.
+  The legend swatch is a small dumbbell.
+- **Tooltip:** "58 → 66 (+8)". The description uses the second values (as for a line).
+- **JSON definitions:** `"type": "dumbbell"` (also `connectedDot`, `dotPlot`, `barbell`) with a new
+  `from` field (`SeriesOptions.From`; `low` is read too), an error naming the numeric fields when
+  neither is set; `from` on other types warns. `ChartRazor` writes `FromValue`.
+- **Not yet:** a separate legend entry for the first value, arrows, sorting rows by change.
+
 ## Error bars
 
 Not in Design.md; added from `docs/chart-types.md` (candidate). An option on bar, line and scatter

@@ -1,0 +1,22 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record City(string Name, double Then, double Now);
+
+    private static readonly City[] Cities = [new("Utrecht", 33, 41), new("Lyon", 6, 12), new("Utrecht", 35, 43)];
+
+    [Fact]
+    public void From_value_and_y_value_make_a_dumbbell_per_category()
+    {
+        var cut = Render<RioChart<City>>(@<RioChart TItem="City" Items="Cities" Horizontal="true" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <DumbbellSeries Name="2016 → 2026" XValue="c => c.Name" FromValue="c => c.Then" YValue="c => c.Now" Aggregate="Aggregate.Average" />
+        </RioChart>);
+
+        Assert.Single(cut.FindAll(".rio-dumbbell-from"));
+        Assert.Single(cut.FindAll(".rio-dumbbell-to"));
+        Assert.Equal(["Utrecht", "Lyon"], cut.FindAll(".rio-axis-y text").Select(t => t.TextContent));
+        var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
+        Assert.Equal("34 → 42 (+8)", values[0].GetString());
+        Assert.Equal("6 → 12 (+6)", values[1].GetString());
+    }
+}

@@ -101,6 +101,12 @@
         </RioChart>
         <span class="tile-label">Histogram <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="dumbbells">
+        <RioChart TItem="BikeShare" Items="BikeShares" Horizontal="true" Height="170" Legend="NoLegend">
+            <DumbbellSeries Name="2016 → 2026" XValue="c => c.City" FromValue="c => c.Then" YValue="c => c.Now" Format="0'%'" />
+        </RioChart>
+        <span class="tile-label">Dumbbell <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="range-bars">
         <RioChart TItem="Stage" Items="Schedule" Height="170" Legend="NoLegend">
             <RangeBarSeries Name="Schedule" RowValue="s => s.Name" StartValue="s => s.Start" EndValue="s => s.End" />
@@ -182,6 +188,10 @@
 
 @code {
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
+    private sealed record BikeShare(string City, double Then, double Now);
+
+    private static readonly BikeShare[] BikeShares = [new("Utrecht", 33, 41), new("Ghent", 22, 35), new("Bologna", 9, 18), new("Lyon", 6, 12)];
+
     private static readonly ColorBand[] RevenueBands = [new() { Below = 150, Color = "--rio-negative" }, new() { Above = 225, Color = "--rio-positive" }];
     private static readonly ColorBand[] Load = [new() { Above = 60, Color = "--rio-series-2" }, new() { Above = 85, Color = "--rio-negative" }];
 

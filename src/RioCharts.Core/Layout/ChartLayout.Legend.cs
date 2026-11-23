@@ -102,6 +102,25 @@ public static partial class ChartLayout
         };
     }
 
+    /// <summary>A small dumbbell: a hollow dot, a line and a filled dot, so the legend says which end is which.</summary>
+    private static GroupNode DumbbellSwatch(LegendEntry entry, double x, double cy, StyleTable styles)
+    {
+        var from = new PathBuilder();
+        Series.DumbbellSeriesType.Dot(from, x + 3.5, cy, 2.75);
+        var to = new PathBuilder();
+        Series.DumbbellSeriesType.Dot(to, x + SwatchWidth - 3.5, cy, 3.5);
+        return new GroupNode(
+        [
+            new PathNode(new PathBuilder().MoveTo(x + 6, cy).LineTo(x + SwatchWidth - 6, cy).Build(),
+                styles.Add("swatch-line-" + entry.SeriesId, new Style { Stroke = entry.Color, StrokeWidth = 2, Opacity = 0.45f })),
+            new PathNode(from.Build(), styles.Add("swatch-from-" + entry.SeriesId, new Style { Fill = ThemeTokens.Surface, Stroke = entry.Color, StrokeWidth = 1.5f })),
+            new PathNode(to.Build(), styles.Add("swatch-dot-" + entry.SeriesId, new Style { Fill = entry.Color })),
+        ])
+        {
+            Class = "rio-swatch rio-swatch-dumbbell",
+        };
+    }
+
     private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles)
     {
         var cy = y + height / 2;
@@ -118,6 +137,8 @@ public static partial class ChartLayout
                 styles.Add("swatch-dot-" + entry.SeriesId, new Style { Fill = entry.Color })) { Class = "rio-swatch rio-swatch-dot" }
             : entry.Type == SeriesType.Candlestick
             ? CandleSwatch(entry, x, cy, styles)
+            : entry.Type == SeriesType.Dumbbell
+            ? DumbbellSwatch(entry, x, cy, styles)
             : entry.Type == SeriesType.Waterfall
             ? WaterfallSwatch(x, cy, styles)
             : new RectNode(new RectF((float)x, (float)(cy - 5), (float)SwatchWidth, 10), swatchStyle) { CornerRadius = 2, Class = "rio-swatch" };

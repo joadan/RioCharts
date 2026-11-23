@@ -10,6 +10,78 @@ namespace RioCharts.Core.Layout;
 public static partial class ChartLayout
 {
     /// <summary>
+    /// Horizontal dumbbells: in the middle of each row, a line from the first value to the second, a
+    /// hollow dot at the first and a filled dot at the second; data labels outside the dots.
+    /// </summary>
+    private static void HorizontalDumbbells(Resolved r, (double From, double To, int Index)[] segments, Func<SeriesData, int, int> rowOf, BandScale band,
+        Scales.ContinuousScale valueScale, RectF plot, bool compact, Text.ITextMeasurer measure, double font, CultureInfo culture, string? format, StyleTable styles,
+        List<Node> nodes, List<Node> labelNodes, List<(float X, float Y, float Width, int Index, int Row, double Share)> points)
+    {
+        const double radius = Series.DumbbellSeriesType.Radius;
+        var connectors = new PathBuilder();
+        var froms = new PathBuilder();
+        var tos = new Dictionary<string, PathBuilder>(StringComparer.Ordinal);
+        foreach (var (from, to, i) in segments)
+        {
+            var row = rowOf(r.Data, i);
+            var cy = band.Center(row);
+            var (x0, x1) = (valueScale.Map(from), valueScale.Map(to));
+            if (double.IsFinite(from) && double.IsFinite(to))
+            {
+                connectors.MoveTo(x0, cy).LineTo(x1, cy);
+            }
+
+            if (double.IsFinite(from))
+            {
+                Series.DumbbellSeriesType.Dot(froms, x0, cy, radius - 1);
+            }
+
+            if (double.IsFinite(to))
+            {
+                var color = r.Data.Colors?[i] ?? Series.ColorBands.ColorOf(r.Spec.ColorBands, to) ?? r.Color;
+                Series.DumbbellSeriesType.Dot(tos.TryGetValue(color, out var path) ? path : tos[color] = new PathBuilder(), x1, cy, radius);
+            }
+
+            var ends = new[] { x0, x1 }.Where(double.IsFinite).ToList();
+            var (left, right) = (ends.Min(), ends.Max());
+            points.Add(((float)((left + right) / 2), (float)cy, (float)(right - left + radius * 2 + 6), i, row, 0));
+
+            if (r.Spec.DataLabels == true && !compact)
+            {
+                // The lower value left of its dot, the higher right of its dot.
+                foreach (var (value, x) in new[] { (from, x0), (to, x1) }.Where(e => double.IsFinite(e.Item1)))
+                {
+                    var leftSide = ends.Count == 2 && x == left && left < right;
+                    var text = ValueFormatter.Format(value, culture, format);
+                    var at = leftSide ? x - radius - 4 : x + radius + 4;
+                    var w = measure.Measure(text, font - 1);
+                    if (leftSide ? at - w >= plot.X - 4 : at + w <= plot.Right + 8)
+                    {
+                        labelNodes.Add(new TextNode(text, new PointF((float)at, (float)cy), new TextStyle("data-label"), leftSide ? Anchor.End : Anchor.Start)
+                        {
+                            Class = "rio-data-label",
+                        });
+                    }
+                }
+            }
+        }
+
+        nodes.Add(new PathNode(connectors.Build(), styles.Add($"series-{r.ColorIndex}-dumbbell", new Style { Stroke = r.Color, StrokeWidth = 3, Opacity = 0.45f }))
+        {
+            Class = "rio-dumbbell-line",
+        });
+        nodes.Add(new PathNode(froms.Build(), styles.Add($"series-{r.ColorIndex}-from", new Style { Fill = ThemeTokens.Surface, Stroke = r.Color, StrokeWidth = 2 }))
+        {
+            Class = "rio-dumbbell-from",
+        });
+        foreach (var (color, path) in tos)
+        {
+            var style = color == r.Color ? styles.Add($"series-{r.ColorIndex}-to", new Style { Fill = color }) : styles.Add($"dot-{color}", new Style { Fill = color });
+            nodes.Add(new PathNode(path.Build(), style) { Class = "rio-dumbbell-to" });
+        }
+    }
+
+    /// <summary>
     /// Horizontal bars (<see cref="ChartDefinition.Horizontal"/>): categories down the left side, first on
     /// top, values along the bottom (<see cref="ChartDefinition.Y"/> formats them). Several bar series are
     /// grouped side by side in each row, or stacked with <see cref="SeriesOptions.Stack"/>. Value lines and
@@ -28,12 +100,14 @@ public static partial class ChartLayout
         var lineHeight = font * 1.3;
         var chrome = FitChrome(spec.AutoCompact && !compact, width, height, font);
 
-        foreach (var r in resolved.Where(r => r.Spec.Type != SeriesType.Bar))
+        foreach (var r in resolved.Where(r => r.Spec.Type is not (SeriesType.Bar or SeriesType.Dumbbell)))
         {
             warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} series cannot be drawn in a horizontal bar chart; the series is skipped.");
         }
 
-        var bars = resolved.Where(r => r.Spec.Type == SeriesType.Bar).ToList();
+        // Bars and dumbbells; dumbbells sit in the middle of the row, bars share it in slots.
+        var bars = resolved.Where(r => r.Spec.Type is SeriesType.Bar or SeriesType.Dumbbell).ToList();
+        static bool IsDumbbell(Resolved r) => r.Spec.Type == SeriesType.Dumbbell;
         var xKind = ResolveXKind(spec.X.Scale, bars);
 
         // ---------- Rows: categories, or the distinct x values as labels ----------
@@ -59,19 +133,31 @@ public static partial class ChartLayout
 
         // ---------- Values, stacks and the value range ----------
         static string KeyOf(Resolved r) => r.StackGroup is { } s ? "stack|" + s : "series|" + r.Spec.Id;
-        var slotKeys = drawn.Select(KeyOf).Distinct().ToList();
+        var slotKeys = drawn.Where(r => !IsDumbbell(r)).Select(KeyOf).Distinct().ToList();
         var segments = new Dictionary<Resolved, (double Start, double End, int Index)[]>();
         var stacks = new Dictionary<(string Key, int Row, bool Positive), double>();
         var totals = new Dictionary<(string Key, int Row), double>(); // per stack and row, for percent
         foreach (var r in drawn)
         {
             var key = KeyOf(r);
-            var stacked = r.StackGroup is not null;
+            var stacked = r.StackGroup is not null && !IsDumbbell(r);
             var list = new List<(double, double, int)>();
             for (var i = 0; i < r.Data.Count; i++)
             {
                 var v = r.Data.Y[i];
                 var row = rowOf(r.Data, i);
+                if (IsDumbbell(r))
+                {
+                    // From its first value to its second; either may be missing.
+                    var from = r.Data.Low?[i] ?? double.NaN;
+                    if (row >= 0 && (double.IsFinite(v) || double.IsFinite(from)))
+                    {
+                        list.Add((from, v, i));
+                    }
+
+                    continue;
+                }
+
                 if (!double.IsFinite(v) || row < 0)
                 {
                     continue;
@@ -92,10 +178,25 @@ public static partial class ChartLayout
             segments[r] = [.. list];
         }
 
-        double vMin = 0, vMax = 0;
+        // Bars start at zero; dumbbells alone fit their values.
+        var withZero = drawn.Any(r => !IsDumbbell(r)) || drawn.Count == 0;
+        double vMin = withZero ? 0 : double.PositiveInfinity, vMax = withZero ? 0 : double.NegativeInfinity;
         foreach (var r in drawn)
         {
             var list = segments[r];
+            if (IsDumbbell(r))
+            {
+                foreach (var (from, to, _) in list)
+                {
+                    foreach (var v in new[] { from, to }.Where(double.IsFinite))
+                    {
+                        (vMin, vMax) = (Math.Min(vMin, v), Math.Max(vMax, v));
+                    }
+                }
+
+                continue;
+            }
+
             for (var n = 0; n < list.Length; n++)
             {
                 if (r.Percent && totals.TryGetValue((KeyOf(r), rowOf(r.Data, list[n].Index)), out var total))
@@ -145,6 +246,11 @@ public static partial class ChartLayout
                 vMin = Math.Min(vMin, first);
                 vMax = Math.Max(vMax, first);
             }
+        }
+
+        if (!double.IsFinite(vMin))
+        {
+            (vMin, vMax) = (0, 1);
         }
 
         if (vMax == vMin)
@@ -272,7 +378,12 @@ public static partial class ChartLayout
             var points = new List<(float X, float Y, float Width, int Index, int Row, double Share)>();
             var errors = HasErrors(r) ? new PathBuilder() : null;
             var anyError = false;
-            foreach (var (start, end, i) in segments[r])
+            if (IsDumbbell(r))
+            {
+                HorizontalDumbbells(r, segments[r], rowOf, band, valueScale, plot, compact, measure, font, culture, format, styles, nodes, labelNodes, points);
+            }
+
+            foreach (var (start, end, i) in IsDumbbell(r) ? [] : segments[r])
             {
                 var row = rowOf(r.Data, i);
                 var top = band.Start(row) + slot * thickness + gap / 2.0;
@@ -336,7 +447,7 @@ public static partial class ChartLayout
             seriesNodes.Add(new GroupNode(nodes)
             {
                 Key = "series:" + r.Spec.Id,
-                Class = "rio-series rio-series-bar",
+                Class = IsDumbbell(r) ? "rio-series rio-series-dumbbell" : "rio-series rio-series-bar",
                 AriaLabel = texts.FillCount(nameof(ChartTexts.SeriesPoints), points.Count, culture, r.Spec.DisplayName, points.Count),
             });
 
@@ -346,10 +457,12 @@ public static partial class ChartLayout
             hitTest.Add(hits);
             tooltipSeries.Add(new TooltipSeries(r.Spec.Id, r.Spec.DisplayName, r.Color, SeriesType.Bar, 0, 0, 0, hits.X, hits.Y, hits.Index,
                 [.. points.Select(p => rows[p.Row])],
-                [.. points.Select(p => ValueFormatter.Format(r.Data.Y[p.Index], culture, format) + (HasErrors(r) ? ErrorText(r, p.Index, culture, format) : "")
-                    + (r.Percent ? $" ({p.Share.ToString("P0", culture)})" : ""))])
+                [.. points.Select(p => IsDumbbell(r)
+                    ? Series.DumbbellSeriesType.Text(r.Data.Low?[p.Index] ?? double.NaN, r.Data.Y[p.Index], culture, format)
+                    : ValueFormatter.Format(r.Data.Y[p.Index], culture, format) + (HasErrors(r) ? ErrorText(r, p.Index, culture, format) : "")
+                        + (r.Percent ? $" ({p.Share.ToString("P0", culture)})" : ""))])
             {
-                CellHeight = (float)Math.Max(1, thickness - gap),
+                CellHeight = (float)(IsDumbbell(r) ? Series.DumbbellSeriesType.Radius * 2 + 6 : Math.Max(1, thickness - gap)),
                 CellWidths = [.. points.Select(p => p.Width)],
                 PointColors = r.Data.Colors is null && r.Spec.ColorBands is null
                     ? null

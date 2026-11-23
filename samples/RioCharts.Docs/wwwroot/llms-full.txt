@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, radar, heatmap, box plot, histogram, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, radar, heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -62,6 +62,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
+| Two values per category (before/after, plan/actual) | `DumbbellSeries` | `XValue` the category, `FromValue` the first value, `YValue` the second; `Horizontal="true"` on the chart for rows |
 | Periods per row on a time axis (schedule, states over time) | `RangeBarSeries` | `RowValue`, `StartValue`, `EndValue`; one series per state |
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
 | From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
@@ -548,6 +549,12 @@ Bullets: each value as a bar on a horizontal scale from `BulletSeries.Min` to `B
 - `Max`: `double?` — The value at the end of the scale. Default: a nice value above the largest value and target.
 - `Target`: `double?` — A target for every row, marked across it and given in the tooltip. `BulletSeries.TargetValue` gives one per item.
 - `TargetValue`: `Func<TItem, double?>?` — Each item's target, e.g. `k => k.Goal`; null for none (then `BulletSeries.Target`). Items combined into one row (`Aggregate`) get the same aggregate of their targets, or the average without one.
+
+#### `<DumbbellSeries>` (`DumbbellSeries<TItem>`)
+
+Dumbbells: two values per category joined by a line, e.g. before and after, or plan and actual. `DumbbellSeries.FromValue` is the first value (a hollow dot), `YValue` the second (a filled dot). `XValue` is the category; with `RioChart.Horizontal` the categories are rows, the classic layout. The tooltip shows "58 → 66 (+8)".
+
+- `FromValue`: `Func<TItem, double?>?` — Each item's first value (before, plan), e.g. `c => c.LastYear`; null for none. Items combined into one point (`Aggregate`) get the same aggregate of their first values, or the average without one.
 
 #### `<RadialBarSeries>` (`RadialBarSeries<TItem>`)
 
@@ -1128,6 +1135,7 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `Max`: `double?` — Radial bar, gauge and bullet: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
 - `Min`: `double?` — Gauge and bullet: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).
 - `Target`: `double?` — Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.
+- `From`: `string?` — Dumbbell: the field with each row's first value (before, plan), drawn as a hollow dot; y is the second (after, actual).
 - `Error`: `double?` — Error bars on bar, line and scatter series: the same plus-or-minus amount for every point, e.g. 2.5.
 - `ErrorField`: `string?` — Error bars: the field with each row's plus-or-minus amount (e.g. a standard deviation). Aggregated rows take the average.
 - `ErrorLow`: `string?` — Error bars: the field with the low end of each row's error bar (a value, e.g. a confidence interval's lower bound); use with errorHigh. Aggregated rows take the lowest.
@@ -1204,6 +1212,7 @@ How a series is drawn.
 - `RangeBar` — Bars from a start to an end on a time (or number) axis, in rows: schedules, or states over time such as running, idle and stopped.
 - `Gauge` — A single value on a scale from min to max, drawn as an arc with the value in the middle; colorBands color the scale's ranges and a target is marked. One gauge per data point.
 - `Bullet` — Bullets: a bar for each value on a horizontal scale, in a row of its own, over colored ranges (colorBands) with a target mark: a KPI against its target in little space. Each series has its own scale.
+- `Dumbbell` — Dumbbells: two values per category joined by a line, from a hollow dot (from: before, plan) to a filled dot (y: after, actual).
 - `Auto` — JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
 
 #### `Filter` (record, RioCharts.Core)

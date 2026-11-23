@@ -180,7 +180,24 @@ public static class ChartDefinitionBinder
         }
 
         DataField? low = null;
-        if (s.Low is not null)
+        if (s.From is not null && s.Type != SeriesType.Dumbbell)
+        {
+            warnings.Add($"{path}.from: only dumbbell series have a from field; ignored.");
+        }
+
+        if (s.Type == SeriesType.Dumbbell)
+        {
+            // A dumbbell's first value goes in the low column.
+            if ((s.From ?? s.Low) is { } fromField)
+            {
+                low = Find(dataset, fromField, $"{path}.{(s.From is null ? "low" : "from")}", FieldType.Number, errors);
+            }
+            else
+            {
+                errors.Add(new DefinitionError($"{path}.from", $"a dumbbell needs the field with its first values (before, plan; y is the second); numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
+            }
+        }
+        else if (s.Low is not null)
         {
             low = Find(dataset, s.Low, $"{path}.low", FieldType.Number, errors);
         }
@@ -378,7 +395,8 @@ public static class ChartDefinitionBinder
                 continue;
             }
 
-            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField, targetField, errorField, errorLow, errorHigh);
+            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField, targetField, errorField, errorLow, errorHigh,
+                lowLikeY: s.Type == SeriesType.Dumbbell);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -617,7 +635,7 @@ public static class ChartDefinitionBinder
 
     private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null,
         DataField? color = null, DataField? total = null, DataField? size = null, DataField? target = null, DataField? errorAmount = null,
-        DataField? errorLow = null, DataField? errorHigh = null)
+        DataField? errorLow = null, DataField? errorHigh = null, bool lowLikeY = false)
     {
         double? SizeAt(int r) => size?.Values[r] is double d ? d : null;
         double? TargetAt(int r) => target?.Values[r] is double d ? d : null;
@@ -669,7 +687,7 @@ public static class ChartDefinitionBinder
         }
 
         // A range keeps its extremes: the lowest low and the highest high (other aggregates apply to both ends).
-        var (lowAggregate, highAggregate) = low is not null && aggregate is Aggregate.Average or Aggregate.Sum
+        var (lowAggregate, highAggregate) = low is not null && !lowLikeY && aggregate is Aggregate.Average or Aggregate.Sum
             ? (Aggregate.Min, Aggregate.Max)
             : (aggregate.Value, aggregate.Value);
         return order.Select(key => Aggregated(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),

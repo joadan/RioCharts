@@ -1194,6 +1194,43 @@ public sealed class BulletSeries<TItem> : SeriesBase<TItem>
     };
 }
 
+/// <summary>
+/// Dumbbells: two values per category joined by a line, e.g. before and after, or plan and actual.
+/// <see cref="FromValue"/> is the first value (a hollow dot), <c>YValue</c> the second (a filled dot).
+/// <c>XValue</c> is the category; with <c>RioChart.Horizontal</c> the categories are rows, the classic
+/// layout. The tooltip shows "58 → 66 (+8)".
+/// </summary>
+public sealed class DumbbellSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>
+    /// Each item's first value (before, plan), e.g. <c>c =&gt; c.LastYear</c>; null for none. Items
+    /// combined into one point (<c>Aggregate</c>) get the same aggregate of their first values, or the
+    /// average without one.
+    /// </summary>
+    [Parameter] public Func<TItem, double?>? FromValue { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Dumbbell;
+
+    private protected override object? DataSettings => FromValue is not null;
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (FromValue is not { } from)
+        {
+            return data;
+        }
+
+        if (groups is null)
+        {
+            return data.WithLow([.. items.Select(item => from(item) ?? double.NaN)]);
+        }
+
+        var aggregate = Aggregate is { } a && a != Core.Aggregate.Count ? a : Core.Aggregate.Average;
+        return data.WithLow([.. groups.Select(g => Aggregation.Apply(aggregate, g.Select(i => from(items[i])).ToList()) ?? double.NaN)]);
+    }
+}
+
 /// <summary>Radial bars: one circular track per category, filled up to its value.</summary>
 public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
 {

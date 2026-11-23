@@ -345,6 +345,10 @@ public sealed record SeriesOptions
     [Description("Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.")]
     public double? Target { get; init; }
 
+    /// <summary>Dumbbell: the field with each row's first value (before, plan), drawn as a hollow dot; y is the second (after, actual).</summary>
+    [Description("Dumbbell: the field with each row's first value (before, plan), drawn as a hollow dot; y is the second (after, actual).")]
+    public string? From { get; init; }
+
     /// <summary>Error bars on bar, line and scatter series: the same plus-or-minus amount for every point, e.g. 2.5.</summary>
     [Description("Error bars on bar, line and scatter series: the same plus-or-minus amount for every point, e.g. 2.5.")]
     public double? Error { get; init; }
@@ -502,6 +506,9 @@ public enum SeriesType
 
     /// <summary>Bullets: a bar for each value on a horizontal scale, in a row of its own, over colored ranges (colorBands) with a target mark: a KPI against its target in little space. Each series has its own scale.</summary>
     Bullet,
+
+    /// <summary>Dumbbells: two values per category joined by a line, from a hollow dot (from: before, plan) to a filled dot (y: after, actual).</summary>
+    Dumbbell,
 
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

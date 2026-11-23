@@ -53,6 +53,7 @@ Rules of thumb:
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
+| Dumbbell | `DumbbellSeries` / `dumbbell` (also `connectedDot`, `dotPlot`) | Two values per category, hollow to filled dot; upright or `Horizontal` rows. A slope chart is a line per category with two x values. |
 | Range bar / timeline | `RangeBarSeries` / `rangeBar` (also `timeline`, `gantt`) | Start to end per row on a time axis; one series per state. Not a full Gantt (no dependencies or dragging). |
 | Waterfall | `WaterfallSeries` / `waterfall` | Changes from a running total, totals and subtotals, connectors. Also `bridge`. |
 | Error bars | an option on `BarSeries`, `LineSeries`, `ScatterSeries` / `errorField`, `errorLow` and `errorHigh`, `error` | Not a series type. Plus-or-minus or low/high ends; vertical and horizontal bars, stacks. |
@@ -64,7 +65,6 @@ Rules of thumb:
 |---|---|---|---|---|---|---|
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
 | Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |
-| Dumbbell / slope | Candidate | Low | Small–Medium | Low | Two values per category (before/after, min/max) | Two markers joined by a line on a band axis; a slope chart is the same with two x positions. |
 | Streamgraph | Candidate | Low | Small | Low | Shares over time, organic look | A centered ("wiggle") offset as another `StackMode` next to `Percent` (100 % stacked, added). Rarely asked for. |
 | Nested donut / sunburst | In Design.md | Medium | Medium–Large | Medium | Hierarchical shares | One ring per level; can reuse the treemap hierarchy. Labels on thin rings are the hard part. |
 | Funnel | Candidate | Medium | Small–Medium | Low | Stages narrowing down | Rarely the best choice (a bar chart is easier to read), but often asked for. |

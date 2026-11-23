@@ -149,6 +149,26 @@ public class SnapshotTests
             ],
         }, new() { ["cpu"] = Categories([""], 64) }, Width: 360, Height: 280),
 
+        // Share of trips made by bike per city, 2016 against 2026 (rows: the classic dumbbell).
+        ["dumbbell"] = new(new ChartDefinition
+        {
+            Title = "Trips by bike",
+            Horizontal = true,
+            Series = [new SeriesOptions { Id = "d", Name = "2016 → 2026", Type = SeriesType.Dumbbell, Format = "0'%'", DataLabels = true }],
+        }, new()
+        {
+            ["d"] = Categories(["Utrecht", "Malmö", "Freiburg", "Ghent", "Bologna", "Lyon"], 41, 33, 29, 35, 18, 12).WithLow([33.0, 30, 27, 22, 9, 6]),
+        }, Width: 520, Height: 300),
+
+        // Planned against actual hours per month, upright.
+        ["dumbbell-vertical"] = new(new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "h", Name = "Plan → actual", Type = SeriesType.Dumbbell, Format = "0 h" }],
+        }, new()
+        {
+            ["h"] = Categories(["Jan", "Feb", "Mar", "Apr", "May", "Jun"], 152, 148, 171, 160, 139, 166).WithLow([160.0, 150, 160, 160, 150, 150]),
+        }, Width: 480, Height: 260),
+
         // Average test scores per class in two years, with the standard deviation as error bars.
         ["error-bars"] = new(new ChartDefinition
         {

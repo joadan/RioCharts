@@ -257,11 +257,16 @@ public static partial class ChartLayout
                 Visible = options.HiddenSeries?.Contains(s.Id) != true,
                 Empty = !d.Y.Any(double.IsFinite),
                 Upper = d.Y,
-                Lower = s.Type == SeriesType.RangeArea ? d.Low : null,
+                Lower = s.Type is SeriesType.RangeArea or SeriesType.Dumbbell ? d.Low : null,
             };
             if (s.Type == SeriesType.Waterfall)
             {
                 (r.Upper, r.Lower) = WaterfallSeriesType.Steps(d); // each bar from the running total before it to the one after
+            }
+
+            if (s.Type == SeriesType.Dumbbell && d.Low is null && d.Count > 0)
+            {
+                warnings.Add($"series '{s.Id}': a dumbbell needs its first values (FromValue, or \"from\" in a definition); only the second are drawn.");
             }
 
             if (s.Type == SeriesType.RangeArea && d.Low is null && d.Count > 0)
@@ -299,7 +304,7 @@ public static partial class ChartLayout
             return ComputeRangeBars(spec, resolved, options, warnings, styles, time);
         }
 
-        if (spec.Horizontal && resolved.Any(r => r.Spec.Type == SeriesType.Bar) && !resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
+        if (spec.Horizontal && resolved.Any(r => r.Spec.Type is SeriesType.Bar or SeriesType.Dumbbell) && !resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
         {
             return ComputeHorizontal(spec, resolved, options, warnings, styles, time);
         }
@@ -937,8 +942,8 @@ public static partial class ChartLayout
             return named ?? (percent ? "" : null);
         }
 
-        var stackable = r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram);
-        if (percent && (named is null || !stackable) && r.Spec.Type is SeriesType.Scatter or SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram)
+        var stackable = r.Spec.Type is not (SeriesType.RangeArea or SeriesType.Dumbbell or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram);
+        if (percent && (named is null || !stackable) && r.Spec.Type is SeriesType.Scatter or SeriesType.RangeArea or SeriesType.Dumbbell or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram)
         {
             warnings.Add($"series[{index}]: a percent axis stacks line, area and bar series; this {r.Spec.Type} series is drawn with its own values.");
         }
@@ -982,7 +987,7 @@ public static partial class ChartLayout
         {
             var count = 0;
             r.Upper = Gaps(r.Upper);
-            if (r.Spec.Type is SeriesType.RangeArea or SeriesType.Waterfall && r.Lower is not null)
+            if (r.Spec.Type is SeriesType.RangeArea or SeriesType.Dumbbell or SeriesType.Waterfall && r.Lower is not null)
             {
                 r.Lower = Gaps(r.Lower); // the low values; stack bases (zero for the first series) stay
             }
@@ -1359,6 +1364,8 @@ public static partial class ChartLayout
             }
             values[i] = r.Spec.Type == SeriesType.RangeArea && r.Data.Low is { } low
                 ? $"{ValueFormatter.Format(low[j], culture, format)} – {ValueFormatter.Format(r.Data.Y[j], culture, format)}"
+                : r.Spec.Type == SeriesType.Dumbbell
+                ? DumbbellSeriesType.Text(r.Data.Low?[j] ?? double.NaN, r.Data.Y[j], culture, format)
                 : ValueFormatter.Format(r.Data.Y[j], culture, format);
             if (HasErrors(r))
             {

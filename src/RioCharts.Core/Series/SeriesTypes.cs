@@ -36,6 +36,7 @@ internal interface ISeriesType
         SeriesType.Heatmap => HeatmapSeriesType.Instance,
         SeriesType.RangeBar or SeriesType.Bullet => new PolarSeriesType(type, CoordinateSystem.Cartesian), // laid out by ChartLayout.ComputeRangeBars
         SeriesType.RangeArea => RangeAreaSeriesType.Instance,
+        SeriesType.Dumbbell => DumbbellSeriesType.Instance,
         SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
         SeriesType.Candlestick => CandlestickSeriesType.Instance,
         SeriesType.Waterfall => WaterfallSeriesType.Instance,
@@ -699,6 +700,116 @@ internal sealed class RangeAreaSeriesType : ISeriesType
         var fill = c.Styles.Add($"series-{c.ColorIndex}-range", new Style { Fill = c.Color, FillOpacity = 0.2f });
         c.Output.Add(new PathNode(LineGenerator.AreaBetween(xs, ys, y0, c.Spec.Curve), fill) { Class = "rio-range" });
         c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
+    }
+}
+
+/// <summary>
+/// Dumbbells: per point a line from its first value (<see cref="SeriesBuildContext.Lower"/>, the
+/// data's low column) to its second (<see cref="SeriesBuildContext.Upper"/>), a hollow dot at the first
+/// and a filled dot at the second. Several dumbbell series share the category's middle.
+/// </summary>
+internal sealed class DumbbellSeriesType : ISeriesType
+{
+    /// <summary>The dots' radius in pixels.</summary>
+    public const double Radius = 5;
+
+    public static DumbbellSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.Dumbbell;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 2;
+    public bool IncludesZero => false;
+    public bool UsesSlots => false;
+
+    public void Build(SeriesBuildContext c)
+    {
+        var connectors = new PathBuilder();
+        var froms = new PathBuilder();
+        var tos = new Dictionary<string, PathBuilder>(StringComparer.Ordinal);
+        var hx = new List<float>();
+        var hy = new List<float>();
+        var hi = new List<int>();
+        var hs = new List<int>();
+        for (var i = 0; i < c.Data.Count; i++)
+        {
+            var x = c.PixelX[i];
+            var to = c.Upper[i];
+            var from = c.Lower is { } lower ? lower[i] : double.NaN;
+            if (!double.IsFinite(x) || !c.InPlotX(x) || (!double.IsFinite(to) && !double.IsFinite(from)))
+            {
+                continue;
+            }
+
+            var (y0, y1) = (c.MapY(from), c.MapY(to));
+            if (double.IsFinite(from) && double.IsFinite(to))
+            {
+                connectors.MoveTo(x, y0).LineTo(x, y1);
+            }
+
+            if (double.IsFinite(from))
+            {
+                Dot(froms, x, y0, Radius - 1);
+            }
+
+            if (double.IsFinite(to))
+            {
+                var color = c.PointColor(i) ?? c.Color;
+                Dot(tos.TryGetValue(color, out var path) ? path : tos[color] = new PathBuilder(), x, y1, Radius);
+            }
+
+            hx.Add((float)x);
+            hy.Add((float)(double.IsFinite(to) ? y1 : y0));
+            hi.Add(i);
+            hs.Add(c.Data.ToSourceIndex(i));
+            if (c.Spec.DataLabels == true)
+            {
+                if (double.IsFinite(from))
+                {
+                    c.Labels.Add(new LabelAnchor(from, x, y0, double.NaN, 0, false));
+                }
+
+                if (double.IsFinite(to))
+                {
+                    c.Labels.Add(new LabelAnchor(to, x, y1, double.NaN, 0, false));
+                }
+            }
+        }
+
+        c.Output.Add(new PathNode(connectors.Build(), c.Styles.Add($"series-{c.ColorIndex}-dumbbell", new Style { Stroke = c.Color, StrokeWidth = 3, Opacity = 0.45f }))
+        {
+            Class = "rio-dumbbell-line",
+        });
+        c.Output.Add(new PathNode(froms.Build(), c.Styles.Add($"series-{c.ColorIndex}-from", new Style { Fill = ThemeTokens.Surface, Stroke = c.Color, StrokeWidth = 2 }))
+        {
+            Class = "rio-dumbbell-from",
+        });
+        foreach (var (color, path) in tos)
+        {
+            var style = color == c.Color ? c.Styles.Add($"series-{c.ColorIndex}-to", new Style { Fill = color }) : c.Styles.Add($"dot-{color}", new Style { Fill = color });
+            c.Output.Add(new PathNode(path.Build(), style) { Class = "rio-dumbbell-to" });
+        }
+
+        c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
+    }
+
+    /// <summary>A circle as a closed path.</summary>
+    internal static void Dot(PathBuilder path, double x, double y, double r) => path.MoveTo(x, y - r).Arc(x, y, r, 0, Math.PI * 2).Close();
+
+    /// <summary>The tooltip's value: "58 → 66 (+8)", or one end alone when the other is missing.</summary>
+    internal static string Text(double from, double to, System.Globalization.CultureInfo culture, string? format)
+    {
+        string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
+        if (!double.IsFinite(from))
+        {
+            return F(to);
+        }
+
+        if (!double.IsFinite(to))
+        {
+            return F(from) + " →";
+        }
+
+        var change = to - from;
+        return $"{F(from)} → {F(to)} ({(change > 0 ? "+" : "")}{F(change)})";
     }
 }
 

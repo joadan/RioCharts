@@ -5,6 +5,13 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Dumbbell charts: `DumbbellSeries` compares two values per category, e.g. before and after or plan
+  and actual: `FromValue` is the first (a hollow dot), `YValue` the second (a filled dot), joined by
+  a line. Upright, or as rows with `Horizontal="true"` on the chart; the value axis fits the values
+  instead of starting at zero. The tooltip shows "22 → 35 (+13)", `DataLabels` writes both values,
+  `ColorValue` colors the second dot, and the legend shows a small dumbbell. JSON definitions:
+  `"type": "dumbbell"` (also `connectedDot`, `dotPlot`) with a new `from` field. New in Core:
+  `SeriesType.Dumbbell`, `SeriesOptions.From`. Docs: a Dumbbell charts page and a gallery tile.
 - Error bars on bar, line and scatter series: `ErrorValue` gives each item's plus-or-minus amount
   (e.g. a standard deviation), `Error` one amount for every point, and `ErrorLowValue` with
   `ErrorHighValue` the ends of each error bar (e.g. a confidence interval). They are drawn as a capped

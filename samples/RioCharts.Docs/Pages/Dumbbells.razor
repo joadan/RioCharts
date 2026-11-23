@@ -1,0 +1,85 @@
+@page "/dumbbells"
+
+<PageTitle>Dumbbell charts · RioCharts</PageTitle>
+
+<h1>Dumbbell charts</h1>
+<p class="lead">
+    A dumbbell chart compares two values per category: before and after, last year and this year, plan and actual. A hollow dot marks
+    the first value, a filled dot the second, and the line between them shows how far and which way it moved.
+</p>
+
+<Example Title="Before and after" Code="@CitiesCode">
+    <Description>
+        <p>
+            <code>DumbbellSeries</code> takes the category in <code>XValue</code>, the first value in <code>FromValue</code> and the second
+            in <code>YValue</code>. With <code>Horizontal</code> the categories are rows, the usual layout; the value axis fits the values
+            instead of starting at zero. <code>DataLabels</code> writes each value outside its dot. The tooltip shows "22 → 35 (+13)".
+            Name the series after both ends, e.g. "2016 → 2026"; the legend shows a small dumbbell.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="City" Items="Cities" Title="Trips by bike" Horizontal="true" Height="280">
+            <DumbbellSeries Name="2016 → 2026" XValue="c => c.Name" FromValue="c => c.Then" YValue="c => c.Now" Format="0'%'" DataLabels="true" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Plan against actual" Code="@PlanCode">
+    <Description>
+        <p>
+            Upright, with the categories along the bottom, a dumbbell reads as a gap from a plan. <code>ColorValue</code> colors the second
+            dot, here red where the month fell short. With <code>Aggregate</code>, items in the same category make one dumbbell; both ends
+            are combined the same way.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Month" Items="Months" Title="Hours" Height="260">
+            <DumbbellSeries Name="Plan → actual" XValue="m => m.Name" FromValue="m => m.Plan" YValue="m => m.Actual" Format="0 h"
+                            ColorValue='m => m.Actual < m.Plan ? "--rio-negative" : null' />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON definitions</h2>
+<p>
+    <code>"type": "dumbbell"</code> (also <code>connectedDot</code>, <code>dotPlot</code>) with <code>x</code>, a <code>"from"</code> field with
+    the first values and <code>y</code> with the second. <code>"horizontal": true</code> on the chart makes rows.
+</p>
+<pre><code>{ "dataset": "trips", "horizontal": true, "series": [ { "type": "dumbbell", "x": "city", "from": "share2016", "y": "share2026" } ] }</code></pre>
+
+@code {
+    private sealed record City(string Name, double Then, double Now);
+    private sealed record Month(string Name, double Plan, double Actual);
+
+    private static readonly City[] Cities =
+    [
+        new("Utrecht", 33, 41), new("Malmö", 30, 33), new("Freiburg", 27, 29), new("Ghent", 22, 35), new("Bologna", 9, 18), new("Lyon", 6, 12),
+    ];
+
+    private static readonly Month[] Months =
+    [
+        new("Jan", 160, 152), new("Feb", 150, 148), new("Mar", 160, 171), new("Apr", 160, 160), new("May", 150, 139), new("Jun", 150, 166),
+    ];
+
+    private const string CitiesCode = """
+        <RioChart TItem="City" Items="cities" Title="Trips by bike" Horizontal="true">
+            <DumbbellSeries Name="2016 → 2026" XValue="c => c.Name" FromValue="c => c.Then" YValue="c => c.Now"
+                            Format="0'%'" DataLabels="true" />
+        </RioChart>
+
+        @code {
+            record City(string Name, double Then, double Now);
+        }
+        """;
+
+    private const string PlanCode = """
+        <RioChart TItem="Month" Items="months" Title="Hours">
+            <DumbbellSeries Name="Plan → actual" XValue="m => m.Name" FromValue="m => m.Plan" YValue="m => m.Actual" Format="0 h"
+                            ColorValue='m => m.Actual < m.Plan ? "--rio-negative" : null' />
+        </RioChart>
+
+        @code {
+            record Month(string Name, double Plan, double Actual);
+        }
+        """;
+}
