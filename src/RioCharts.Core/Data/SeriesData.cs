@@ -78,7 +78,7 @@ public sealed class SeriesData
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
             TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = any ? values : null,
-            Rows = Rows, EndOffsets = EndOffsets, Targets = Targets,
+            Rows = Rows, EndOffsets = EndOffsets, Targets = Targets, ErrorLow = ErrorLow, ErrorHigh = ErrorHigh,
         };
     }
 
@@ -99,7 +99,7 @@ public sealed class SeriesData
             values[i] = source < low.Length ? low[source] : double.NaN;
         }
 
-        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Totals = Totals, Sizes = Sizes, Colors = Colors, Targets = Targets };
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Totals = Totals, Sizes = Sizes, Colors = Colors, Targets = Targets, ErrorLow = ErrorLow, ErrorHigh = ErrorHigh };
     }
 
     /// <summary>
@@ -137,7 +137,7 @@ public sealed class SeriesData
 
         return new SeriesData(X, any ? y : Y, Kind, Categories, SourceIndex)
         {
-            TimeOffsets = TimeOffsets, Low = Low, Colors = Colors, Sizes = Sizes, Totals = any ? flags : null,
+            TimeOffsets = TimeOffsets, Low = Low, Colors = Colors, Sizes = Sizes, Totals = any ? flags : null, ErrorLow = ErrorLow, ErrorHigh = ErrorHigh,
         };
     }
 
@@ -163,7 +163,39 @@ public sealed class SeriesData
 
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
-            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = values, Targets = Targets,
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = values, Targets = Targets, ErrorLow = ErrorLow, ErrorHigh = ErrorHigh,
+        };
+    }
+
+    /// <summary>
+    /// Error bars: the low end of each point's error bar (a value, not a distance), NaN where it has
+    /// none; null when the series has no error bars. Set with <see cref="WithErrors"/>.
+    /// </summary>
+    public double[]? ErrorLow { get; private set; }
+
+    /// <summary>Error bars: the high end of each point's error bar, NaN where it has none; null without error bars.</summary>
+    public double[]? ErrorHigh { get; private set; }
+
+    /// <summary>
+    /// The same points with an error bar each, from <paramref name="low"/> to <paramref name="high"/>
+    /// (values on the y axis, e.g. y - sd and y + sd). Both are in input order, like the y values
+    /// given when creating the data: index i belongs to input item (or group) i; NaN for none.
+    /// </summary>
+    public SeriesData WithErrors(ReadOnlySpan<double> low, ReadOnlySpan<double> high)
+    {
+        var lows = new double[Count];
+        var highs = new double[Count];
+        for (var i = 0; i < lows.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            lows[i] = source < low.Length ? low[source] : double.NaN;
+            highs[i] = source < high.Length ? high[source] : double.NaN;
+        }
+
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex)
+        {
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = Sizes, Rows = Rows, Targets = Targets,
+            ErrorLow = lows, ErrorHigh = highs,
         };
     }
 
@@ -189,7 +221,7 @@ public sealed class SeriesData
 
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
-            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = Sizes, Rows = Rows, Targets = values,
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = Sizes, Rows = Rows, Targets = values, ErrorLow = ErrorLow, ErrorHigh = ErrorHigh,
         };
     }
 
@@ -358,7 +390,7 @@ public sealed class SeriesData
         {
             return new SeriesData(x, Y, Kind, Categories, SourceIndex)
             {
-                Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = Colors, Rows = Rows, Targets = Targets,
+                Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = Colors, Rows = Rows, Targets = Targets, ErrorLow = ErrorLow, ErrorHigh = ErrorHigh,
             };
         }
 
@@ -414,6 +446,12 @@ public sealed class SeriesData
         if (Targets is { } targets)
         {
             result.Targets = [.. order.Select(i => targets[i])];
+        }
+
+        if (ErrorLow is { } errorLow && ErrorHigh is { } errorHigh)
+        {
+            result.ErrorLow = [.. order.Select(i => errorLow[i])];
+            result.ErrorHigh = [.. order.Select(i => errorHigh[i])];
         }
 
         return result;

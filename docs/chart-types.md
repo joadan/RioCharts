@@ -55,6 +55,7 @@ Rules of thumb:
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
 | Range bar / timeline | `RangeBarSeries` / `rangeBar` (also `timeline`, `gantt`) | Start to end per row on a time axis; one series per state. Not a full Gantt (no dependencies or dragging). |
 | Waterfall | `WaterfallSeries` / `waterfall` | Changes from a running total, totals and subtotals, connectors. Also `bridge`. |
+| Error bars | an option on `BarSeries`, `LineSeries`, `ScatterSeries` / `errorField`, `errorLow` and `errorHigh`, `error` | Not a series type. Plus-or-minus or low/high ends; vertical and horizontal bars, stacks. |
 | Sparkline | compact mode on any chart | Not a series type. |
 
 ## Candidates
@@ -62,7 +63,6 @@ Rules of thumb:
 | Type | Status | Popularity | Effort | Complexity | What it's for | Notes / why not yet |
 |---|---|---|---|---|---|---|
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
-| Error bars | Candidate | Medium | Small | Medium | Uncertainty on points or bars | Cheap to draw, but as an option it spreads to bar, line and scatter (extent, tooltip, describer, spec). |
 | Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |
 | Dumbbell / slope | Candidate | Low | Small–Medium | Low | Two values per category (before/after, min/max) | Two markers joined by a line on a band axis; a slope chart is the same with two x positions. |
 | Streamgraph | Candidate | Low | Small | Low | Shares over time, organic look | A centered ("wiggle") offset as another `StackMode` next to `Percent` (100 % stacked, added). Rarely asked for. |

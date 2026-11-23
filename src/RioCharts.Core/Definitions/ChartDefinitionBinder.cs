@@ -78,7 +78,8 @@ public static class ChartDefinitionBinder
         return new DefinitionBindResult(bound, data, errors, warnings);
     }
 
-    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null, bool Total = false, double? Size = null, double? Target = null);
+    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null, bool Total = false, double? Size = null, double? Target = null,
+        double? ErrorLow = null, double? ErrorHigh = null);
 
     private static void BindSeries(ChartDefinition chart, SeriesOptions s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
         List<SeriesOptions> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
@@ -233,6 +234,31 @@ public static class ChartDefinitionBinder
             targetField = null;
         }
 
+        // Error bars: a plus-or-minus field, or the low and high ends.
+        var errorField = s.ErrorField is null ? null : Find(dataset, s.ErrorField, $"{path}.errorField", FieldType.Number, errors);
+        var errorLow = s.ErrorLow is null ? null : Find(dataset, s.ErrorLow, $"{path}.errorLow", FieldType.Number, errors);
+        var errorHigh = s.ErrorHigh is null ? null : Find(dataset, s.ErrorHigh, $"{path}.errorHigh", FieldType.Number, errors);
+        if ((errorLow is null) != (errorHigh is null) && errors.Count == errorsBefore)
+        {
+            warnings.Add($"{path}.{(errorLow is null ? "errorHigh" : "errorLow")}: error bars need both errorLow and errorHigh; ignored.");
+            (errorLow, errorHigh) = (null, null);
+        }
+
+        if ((errorField is not null || errorLow is not null || s.Error is not null) && s.Type is not (SeriesType.Bar or SeriesType.Line or SeriesType.Scatter or SeriesType.Auto))
+        {
+            warnings.Add($"{path}: only bar, line and scatter series draw error bars; error, errorField, errorLow and errorHigh are ignored.");
+            (errorField, errorLow, errorHigh) = (null, null, null);
+            s = s with { Error = null };
+        }
+
+        if (errorField is not null && errorLow is not null)
+        {
+            warnings.Add($"{path}.errorField: errorLow and errorHigh are used instead.");
+            errorField = null;
+        }
+
+        var hasErrorEnds = errorField is not null || errorLow is not null;
+
         var sizeField = s.Size is null ? null : Find(dataset, s.Size, $"{path}.size", FieldType.Number, errors);
         if (sizeField is not null && s.Type is not (SeriesType.Scatter or SeriesType.Auto))
         {
@@ -352,7 +378,7 @@ public static class ChartDefinitionBinder
                 continue;
             }
 
-            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField, targetField);
+            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField, targetField, errorField, errorLow, errorHigh);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -381,6 +407,8 @@ public static class ChartDefinitionBinder
             series = totalField is null ? series : series.WithTotals(points.Select(p => p.Total).ToArray());
             series = sizeField is null ? series : series.WithSizes(points.Select(p => p.Size ?? double.NaN).ToArray());
             series = targetField is null ? series : series.WithTargets(points.Select(p => p.Target ?? double.NaN).ToArray());
+            series = !hasErrorEnds ? series
+                : series.WithErrors(points.Select(p => p.ErrorLow ?? double.NaN).ToArray(), points.Select(p => p.ErrorHigh ?? double.NaN).ToArray());
             data[id] = colorField is null ? series : series.WithColors([.. points.Select(p => p.Color)]);
         }
     }
@@ -588,10 +616,18 @@ public static class ChartDefinitionBinder
     }
 
     private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null,
-        DataField? color = null, DataField? total = null, DataField? size = null, DataField? target = null)
+        DataField? color = null, DataField? total = null, DataField? size = null, DataField? target = null, DataField? errorAmount = null,
+        DataField? errorLow = null, DataField? errorHigh = null)
     {
         double? SizeAt(int r) => size?.Values[r] is double d ? d : null;
         double? TargetAt(int r) => target?.Values[r] is double d ? d : null;
+        double? AmountAt(int r) => errorAmount?.Values[r] is double d ? Math.Abs(d) : null;
+        double? ErrorLowAt(int r) => errorLow?.Values[r] is double d ? d : null;
+        double? ErrorHighAt(int r) => errorHigh?.Values[r] is double d ? d : null;
+
+        // A point's error bar ends: y plus and minus its amount, or the given ends.
+        (double? Low, double? High) Ends(double? y, double? amount, double? low, double? high) =>
+            errorAmount is not null ? (y - amount, y + amount) : errorLow is not null ? (low, high) : (null, null);
         double? LowAt(int r) => low?.Values[r] is double d ? d : null;
         string? ColorAt(int r) => color?.Values[r] is { } c ? Text(c) : null;
         bool TotalAt(int r) => total?.Values[r] is { } t && Text(t)?.Trim().ToLowerInvariant() is "true" or "yes" or "1";
@@ -606,7 +642,11 @@ public static class ChartDefinitionBinder
 
         if (aggregate is null)
         {
-            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r), TotalAt(r), SizeAt(r), TargetAt(r))).ToList();
+            return rows.Where(r => x.Values[r] is not null).Select(r =>
+            {
+                var (errorLowValue, errorHighValue) = Ends(YAt(r), AmountAt(r), ErrorLowAt(r), ErrorHighAt(r));
+                return new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r), TotalAt(r), SizeAt(r), TargetAt(r), errorLowValue, errorHighValue);
+            }).ToList();
         }
 
         // Group by x (or its bucket), keeping first-appearance order (categories) — times and numbers are sorted later anyway.
@@ -632,11 +672,19 @@ public static class ChartDefinitionBinder
         var (lowAggregate, highAggregate) = low is not null && aggregate is Aggregate.Average or Aggregate.Sum
             ? (Aggregate.Min, Aggregate.Max)
             : (aggregate.Value, aggregate.Value);
-        return order.Select(key => new Point(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),
+        return order.Select(key => Aggregated(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),
             low is null ? null : Aggregation.Apply(lowAggregate, groups[key].Select(LowAt).ToList()),
             ColorAt(groups[key][0]), TotalAt(groups[key][0]), // a group's color and total flag: its first row's
             size is null ? null : Aggregation.Apply(Aggregate.Sum, groups[key].Select(SizeAt).ToList()), // its size: the sum
             target is null ? null : Aggregation.Apply(aggregate == Aggregate.Count ? Aggregate.Average : aggregate.Value, groups[key].Select(TargetAt).ToList()))).ToList();
+
+        // An aggregated point's error bar: the average amount around its value, or the lowest low and highest high.
+        Point Aggregated(object key, double? y, double? lowValue, string? colorValue, bool totalValue, double? sizeValue, double? targetValue)
+        {
+            var (errorLowValue, errorHighValue) = Ends(y, Aggregation.Apply(Aggregate.Average, groups[key].Select(AmountAt).ToList()),
+                Aggregation.Apply(Aggregate.Min, groups[key].Select(ErrorLowAt).ToList()), Aggregation.Apply(Aggregate.Max, groups[key].Select(ErrorHighAt).ToList()));
+            return new Point(key, y, lowValue, colorValue, totalValue, sizeValue, targetValue, errorLowValue, errorHighValue);
+        }
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>

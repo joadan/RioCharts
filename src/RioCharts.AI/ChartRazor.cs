@@ -335,6 +335,20 @@ public static class ChartRazor
                 sb.Append($" Max=\"{Number(max)}\"");
             }
 
+            if (s.ErrorField is { } errorField)
+            {
+                sb.Append($" ErrorValue=\"r => r.{Property(errorField)}\"");
+            }
+            else if (s.ErrorLow is { } errorLowField && s.ErrorHigh is { } errorHighField)
+            {
+                sb.Append($" ErrorLowValue=\"r => r.{Property(errorLowField)}\" ErrorHighValue=\"r => r.{Property(errorHighField)}\"");
+            }
+
+            if (s.Error is { } error)
+            {
+                sb.Append($" Error=\"{Number(error)}\"");
+            }
+
             if (s.Type == SeriesType.Bullet && s.TargetField is { } targetField && !singleGauge)
             {
                 sb.Append($" TargetValue=\"r => r.{Property(targetField)}\"");

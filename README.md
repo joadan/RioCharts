@@ -50,7 +50,7 @@ static rendering and prerendering, trimmed and native AOT, and in .NET MAUI Blaz
 **Series:** line, area, range area, bar (grouped, stacked, horizontal), scatter with trend lines, bubble,
 heatmap, box plot, histogram, range bar (timeline), candlestick, waterfall, pie, donut, radial bar, gauge, bullet, radar and treemap.
 
-**Also in the box:** tooltips and crosshair, zoom and pan, linked charts, annotations, data labels,
+**Also in the box:** tooltips and crosshair, zoom and pan, linked charts, annotations, error bars, data labels,
 click events, live data, large data (LTTB and a canvas layer), time zones, light and dark themes
 through CSS variables, PNG/SVG/CSV download, keyboard navigation, screen reader descriptions and
 built-in texts in eight languages.

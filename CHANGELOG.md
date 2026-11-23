@@ -5,6 +5,15 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Error bars on bar, line and scatter series: `ErrorValue` gives each item's plus-or-minus amount
+  (e.g. a standard deviation), `Error` one amount for every point, and `ErrorLowValue` with
+  `ErrorHighValue` the ends of each error bar (e.g. a confidence interval). They are drawn as a capped
+  line from low to high, also across horizontal bars and on top of stacked segments; the axis makes
+  room for them and the tooltip shows "74 ± 6" or "74 (66 – 84)". JSON definitions: `error`,
+  `errorField`, `errorLow` and `errorHigh`. New in Core: `SeriesData.ErrorLow`, `ErrorHigh` and
+  `WithErrors`, `SeriesOptions.Error`, `ErrorField`, `ErrorLow` and `ErrorHigh`. In Blazor,
+  `LineSeries`, `BarSeries` and `ScatterSeries` now derive from the new `ErrorBarSeriesBase<TItem>`.
+  Docs: an Error bars page.
 - Bullet charts: `BulletSeries` shows each value as a bar against its target in a row of its own,
   over tinted ranges (`ColorBands`; the bar takes the color of the range it is in). Each series has
   its own scale from `Min` to `Max` with tick labels, so measures in different units can share a

@@ -345,6 +345,22 @@ public sealed record SeriesOptions
     [Description("Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.")]
     public double? Target { get; init; }
 
+    /// <summary>Error bars on bar, line and scatter series: the same plus-or-minus amount for every point, e.g. 2.5.</summary>
+    [Description("Error bars on bar, line and scatter series: the same plus-or-minus amount for every point, e.g. 2.5.")]
+    public double? Error { get; init; }
+
+    /// <summary>Error bars: the field with each row's plus-or-minus amount (e.g. a standard deviation). Aggregated rows take the average.</summary>
+    [Description("Error bars: the field with each row's plus-or-minus amount (e.g. a standard deviation). Aggregated rows take the average.")]
+    public string? ErrorField { get; init; }
+
+    /// <summary>Error bars: the field with the low end of each row's error bar (a value, e.g. a confidence interval's lower bound); use with errorHigh. Aggregated rows take the lowest.</summary>
+    [Description("Error bars: the field with the low end of each row's error bar (a value, e.g. a confidence interval's lower bound); use with errorHigh. Aggregated rows take the lowest.")]
+    public string? ErrorLow { get; init; }
+
+    /// <summary>Error bars: the field with the high end of each row's error bar; use with errorLow. Aggregated rows take the highest.</summary>
+    [Description("Error bars: the field with the high end of each row's error bar; use with errorLow. Aggregated rows take the highest.")]
+    public string? ErrorHigh { get; init; }
+
     /// <summary>Bullet: the field with each row's target value (numbers), aggregated like y.</summary>
     [Description("Bullet: the field with each row's target value (numbers), aggregated like y.")]
     public string? TargetField { get; init; }

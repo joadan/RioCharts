@@ -1,0 +1,91 @@
+@page "/error-bars"
+
+<PageTitle>Error bars · RioCharts</PageTitle>
+
+<h1>Error bars</h1>
+<p class="lead">
+    Error bars show how certain a value is: a standard deviation around an average, or the interval a measurement falls in. Bar, line
+    and scatter series draw them, as a line from the low end to the high end with a short cap at each.
+</p>
+
+<Example Title="Plus or minus an amount" Code="@AmountCode">
+    <Description>
+        <p>
+            <code>ErrorValue</code> gives each item's plus-or-minus amount, e.g. a standard deviation; <code>Error</code> gives one amount
+            for every point. Items combined into one point (<code>Aggregate</code>) take the average amount. The axis makes room for the
+            bars, and the tooltip shows "74 ± 6". On bars the error bar is drawn in the text color so it stands out; on lines and points
+            it takes the series color.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Score" Items="Scores" Title="Test scores" Height="280" YAxis="ScoreAxis">
+            <BarSeries Name="2025" Items="Scores2025" XValue="s => s.Class" YValue="s => s.Mean" ErrorValue="s => s.Sd" />
+            <BarSeries Name="2026" Items="Scores2026" XValue="s => s.Class" YValue="s => s.Mean" ErrorValue="s => s.Sd" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="A low and a high end" Code="@EndsCode">
+    <Description>
+        <p>
+            When the interval is not the same both ways, give its ends with <code>ErrorLowValue</code> and <code>ErrorHighValue</code>
+            (values, not distances). Here a median response time with the range most requests fall in, which reaches further up than
+            down. Combined items take the lowest low and the highest high. Stacked bars carry their error bars at the top of their
+            segment; bars stacked to 100 % draw none.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Day" Items="Days" Title="Response time" Height="260">
+            <LineSeries Name="Median" XValue="d => d.Date" YValue="d => d.Median" ErrorLowValue="d => d.Fast" ErrorHighValue="d => d.Slow" Format="0 ms" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON definitions</h2>
+<p>
+    On bar, line and scatter series: <code>"errorField"</code> with each row's plus-or-minus amount, <code>"errorLow"</code> and
+    <code>"errorHigh"</code> with the ends, or <code>"error"</code> with one amount for every point.
+</p>
+<pre><code>{ "dataset": "scores", "series": [ { "type": "bar", "x": "class", "y": "mean", "errorField": "sd" } ] }</code></pre>
+
+@code {
+    private sealed record Score(string Class, double Mean, double Sd);
+    private sealed record Day(DateOnly Date, double Median, double Fast, double Slow);
+
+    private static readonly AxisOptions ScoreAxis = new() { Title = "Score", Max = 100 };
+
+    private static readonly Score[] Scores2025 = [new("Class A", 72, 8), new("Class B", 65, 6), new("Class C", 80, 5), new("Class D", 58, 11)];
+    private static readonly Score[] Scores2026 = [new("Class A", 76, 6), new("Class B", 70, 9), new("Class C", 78, 4), new("Class D", 66, 8)];
+    private static readonly Score[] Scores = [.. Scores2025, .. Scores2026];
+
+    private static readonly Day[] Days =
+    [
+        .. new (double Median, double Fast, double Slow)[]
+        {
+            (120, 104, 158), (132, 115, 171), (118, 101, 149), (140, 118, 188), (151, 130, 206),
+            (129, 110, 166), (122, 106, 159), (135, 117, 180), (160, 133, 221), (141, 120, 190),
+        }.Select((d, i) => new Day(new DateOnly(2026, 3, 2).AddDays(i), d.Median, d.Fast, d.Slow)),
+    ];
+
+    private const string AmountCode = """
+        <RioChart TItem="Score" Title="Test scores">
+            <BarSeries Name="2025" Items="scores2025" XValue="s => s.Class" YValue="s => s.Mean" ErrorValue="s => s.Sd" />
+            <BarSeries Name="2026" Items="scores2026" XValue="s => s.Class" YValue="s => s.Mean" ErrorValue="s => s.Sd" />
+        </RioChart>
+
+        @code {
+            record Score(string Class, double Mean, double Sd);
+        }
+        """;
+
+    private const string EndsCode = """
+        <RioChart TItem="Day" Items="days" Title="Response time">
+            <LineSeries Name="Median" XValue="d => d.Date" YValue="d => d.Median"
+                        ErrorLowValue="d => d.Fast" ErrorHighValue="d => d.Slow" Format="0 ms" />
+        </RioChart>
+
+        @code {
+            record Day(DateOnly Date, double Median, double Fast, double Slow);
+        }
+        """;
+}

@@ -13,7 +13,7 @@ public static class DocsNav
         new("Charts", [new("gallery", "Gallery"), new("lines-and-areas", "Lines and areas"), new("bars", "Bars and stacking"), new("scatter", "Scatter and bubbles"), new("heatmap", "Heatmap"), new("box-plots", "Box plots"), new("histogram", "Histogram"), new("range-bars", "Range bars and timelines"), new("candlesticks", "Candlesticks"), new("waterfall", "Waterfall"), new("radar", "Radar"), new("treemap", "Treemap"), new("pies", "Pie, donut and radial"), new("gauges", "Gauges"), new("bullets", "Bullet charts")]),
         new("Features",
         [
-            new("axes", "Axes and time"), new("annotations", "Annotations"), new("tooltips", "Tooltips"),
+            new("axes", "Axes and time"), new("annotations", "Annotations"), new("error-bars", "Error bars"), new("tooltips", "Tooltips"),
             new("clicks-and-selection", "Clicks and selection"), new("zoom", "Zoom and pan"), new("keyboard", "Keyboard access"),
             new("live-data", "Live data"), new("large-data", "Large data"), new("compact", "Compact charts"), new("theming", "Theming"),
             new("languages", "Languages and texts"), new("export", "Export and download"),

@@ -827,6 +827,34 @@ radial bar alias until then.
 - **Not yet:** a needle, ticks along the scale, a full-circle "progress ring" style with rounded
   ends, and gauges mixed with other polar series.
 
+## Error bars
+
+Not in Design.md; added from `docs/chart-types.md` (candidate). An option on bar, line and scatter
+series, not a series type.
+
+- **Data:** two new columns, `SeriesData.ErrorLow` and `ErrorHigh`, the ends as values (not
+  distances); `WithErrors(low, high)` sets them, and they are carried through the other `With...`
+  methods and re-sorting. `SeriesOptions.Error` (new) is a plus-or-minus amount for points without
+  ends. The Blazor components share a new base, `ErrorBarSeriesBase<TItem>` (line, bar, scatter),
+  with `Error`, `ErrorValue` (plus or minus per item) and `ErrorLowValue`/`ErrorHighValue`; it turns
+  amounts into ends in `Complete`. Combined items: the average amount, or the lowest low and highest
+  high (as range areas do).
+- **Layout:** drawn after the series, from its hits (so a downsampled line gets error bars on its
+  drawn points only), as one path per series in the series group (it fades with the series on legend
+  hover). A line from low to high with a cap at each end: 4 px half-width for points, a fifth of the
+  bar (2 to 6 px) for bars. Bars: 1.25 px in the text color, so it shows on the bar; lines and
+  points: 1.5 px in the series color. A stacked segment's error bar moves with the segment (its ends
+  plus the stack below). The y extent includes the ends. Horizontal bars draw the same across the
+  bar. Not drawn: on series stacked to 100 % (warning), on other series types (warning), for ends
+  that are missing, and for a low end of zero or below on a log axis.
+- **Tooltip:** "74 ± 6" when the ends are the same distance from the value, else "74 (66 – 84)".
+- **JSON definitions:** `error` (amount), `errorField` (amount per row, averaged when aggregated),
+  `errorLow` and `errorHigh` (ends per row; lowest and highest when aggregated). One end alone, or
+  error options on other types, warn and are ignored; `errorLow`/`errorHigh` win over `errorField`.
+  `ChartRazor` writes `Error`, `ErrorValue` or `ErrorLowValue`/`ErrorHighValue`.
+- **Not yet:** error bars on x (horizontal error on scatter points), on areas and range areas, and in
+  the screen reader description.
+
 ## Bullet
 
 Not in Design.md; added from `docs/chart-types.md` (candidate). It reuses the gauge's ideas: a

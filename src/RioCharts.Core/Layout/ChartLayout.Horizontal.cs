@@ -105,6 +105,17 @@ public static partial class ChartLayout
 
                 vMin = Math.Min(vMin, Math.Min(list[n].Start, list[n].End));
                 vMax = Math.Max(vMax, Math.Max(list[n].Start, list[n].End));
+                if (HasErrors(r))
+                {
+                    // The error bars fit on the axis too, moved with their stack segment.
+                    var (low, high) = RawErrorAt(r, list[n].Index);
+                    var shift = list[n].End - r.Data.Y[list[n].Index];
+                    if (double.IsFinite(low))
+                    {
+                        vMin = Math.Min(vMin, low + shift);
+                        vMax = Math.Max(vMax, high + shift);
+                    }
+                }
             }
         }
 
@@ -259,6 +270,8 @@ public static partial class ChartLayout
             var format = r.Spec.Format ?? spec.Y.Format;
             var nodes = new List<Node>();
             var points = new List<(float X, float Y, float Width, int Index, int Row, double Share)>();
+            var errors = HasErrors(r) ? new PathBuilder() : null;
+            var anyError = false;
             foreach (var (start, end, i) in segments[r])
             {
                 var row = rowOf(r.Data, i);
@@ -271,6 +284,12 @@ public static partial class ChartLayout
                     CornerRadius = stacked ? 0 : (float)Math.Min(3, h / 4),
                 });
                 points.Add(((float)((x0 + x1) / 2), (float)(top + h / 2), (float)Math.Max(6, x1 - x0), i, row, end - start));
+                if (errors is not null && RawErrorAt(r, i) is var (low, high) && double.IsFinite(low))
+                {
+                    var shift = end - r.Data.Y[i];
+                    HorizontalErrorBar(errors, valueScale.Map(low + shift), valueScale.Map(high + shift), top + h / 2, h);
+                    anyError = true;
+                }
 
                 if (r.Spec.DataLabels == true && !compact)
                 {
@@ -302,6 +321,18 @@ public static partial class ChartLayout
                 }
             }
 
+            if (anyError)
+            {
+                nodes.Add(new PathNode(errors!.Build(), styles.Add("error-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.25f, Fill = "none" }))
+                {
+                    Class = "rio-error-bar",
+                });
+            }
+            else if (HasErrorData(r) && r.Percent)
+            {
+                warnings.Add($"series '{r.Spec.Id}': error bars are not drawn on series stacked to 100 %.");
+            }
+
             seriesNodes.Add(new GroupNode(nodes)
             {
                 Key = "series:" + r.Spec.Id,
@@ -315,7 +346,8 @@ public static partial class ChartLayout
             hitTest.Add(hits);
             tooltipSeries.Add(new TooltipSeries(r.Spec.Id, r.Spec.DisplayName, r.Color, SeriesType.Bar, 0, 0, 0, hits.X, hits.Y, hits.Index,
                 [.. points.Select(p => rows[p.Row])],
-                [.. points.Select(p => ValueFormatter.Format(r.Data.Y[p.Index], culture, format) + (r.Percent ? $" ({p.Share.ToString("P0", culture)})" : ""))])
+                [.. points.Select(p => ValueFormatter.Format(r.Data.Y[p.Index], culture, format) + (HasErrors(r) ? ErrorText(r, p.Index, culture, format) : "")
+                    + (r.Percent ? $" ({p.Share.ToString("P0", culture)})" : ""))])
             {
                 CellHeight = (float)Math.Max(1, thickness - gap),
                 CellWidths = [.. points.Select(p => p.Width)],

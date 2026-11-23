@@ -99,6 +99,20 @@ public static partial class ChartLayout
             // Compact charts fit the data; only bars keep zero (a bar's length is its value).
             includeZero |= r.Type.IncludesZero && (!compact || r.Type.UsesSlots) && !log;
             Include(r.Upper, r.Data.X);
+            if (HasErrors(r))
+            {
+                // The error bars fit on the axis too.
+                var lows = new double[r.Data.Count];
+                var highs = new double[r.Data.Count];
+                for (var i = 0; i < lows.Length; i++)
+                {
+                    (lows[i], highs[i]) = ErrorAt(r, i);
+                }
+
+                Include(lows, r.Data.X);
+                Include(highs, r.Data.X);
+            }
+
             if (!compact && r.Spec.DataLabels == true && r.Spec.Type == SeriesType.Bar && r.Lower is null)
             {
                 // Unstacked bars: the label sits above a positive bar and below a negative one.

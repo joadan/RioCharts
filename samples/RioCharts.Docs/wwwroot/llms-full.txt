@@ -35,6 +35,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
 - Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
+- Error bars (bar, line and scatter series): `ErrorValue="m => m.StdDev"` (plus or minus, per item), `Error="2.5"` (the same for every point), or `ErrorLowValue` and `ErrorHighValue` (the ends, as values). JSON: `errorField`, `error`, `errorLow` and `errorHigh`.
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). No need to group in the query.
 - Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
 - Size: the chart fills its container's width; `Height` is 300 px by default.
@@ -397,6 +398,10 @@ Line series.
 - `Curve`: `CurveType` — Line shape: Linear, Monotone (smooth, no overshoot) or Step.
 - `StrokeWidth`: `double` = `2` — Line width in pixels.
 - `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last | PointHighlight.Max`. Default none.
+- `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
+- `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
+- `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
+- `ErrorHighValue`: `Func<TItem, double?>?` — Error bars: the high end of each item's error bar; use with `ErrorBarSeriesBase.ErrorLowValue`. Items combined into one point take the highest.
 
 #### `<AreaSeries>` (`AreaSeries<TItem>`)
 
@@ -416,6 +421,10 @@ Scatter series: a marker per point, for how two measures relate, e.g. delivery d
 - `SizeValue`: `Func<TItem, double?>?` — Each item's size, e.g. `c => c.Population`, which makes a bubble chart: a bubble's area is proportional to its size, and all bubble series in a chart share one size scale. Sizes of zero or less, or null, are not drawn. Aggregated points take the sum of their items' sizes.
 - `SizeName`: `string?` — Bubbles: what the size is, shown with it in the tooltip, e.g. "Population". Default: "Size" in the chart's language.
 - `SizeFormat`: `string?` — Bubbles: .NET format string for the size in tooltips, e.g. "0 M".
+- `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
+- `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
+- `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
+- `ErrorHighValue`: `Func<TItem, double?>?` — Error bars: the high end of each item's error bar; use with `ErrorBarSeriesBase.ErrorLowValue`. Items combined into one point take the highest.
 
 #### `<HeatmapSeries>` (`HeatmapSeries<TItem>`)
 
@@ -459,6 +468,10 @@ Candlestick: how a value moved within each period: a wick from low to high and a
 Bar series. Several bar series in one chart are grouped side by side.
 
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
+- `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
+- `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
+- `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
+- `ErrorHighValue`: `Func<TItem, double?>?` — Error bars: the high end of each item's error bar; use with `ErrorBarSeriesBase.ErrorLowValue`. Items combined into one point take the highest.
 
 #### `<HistogramSeries>` (`HistogramSeries<TItem>`)
 
@@ -886,6 +899,8 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `Colors`: `string?[]?` (read-only) — Each point's own color (a CSS color or theme token such as "--rio-negative"), null where the point keeps its series color; null when no point has one. Set with `SeriesData.WithColors`.
 - `Totals`: `bool[]?` (read-only) — Waterfalls: true for each total point, whose y is the running total of the changes before it; null for other series (and for a waterfall without totals). Set with `SeriesData.WithTotals`.
 - `Sizes`: `double[]?` (read-only) — Bubbles (scatter with a size): each point's size, NaN where missing; null for other series. A bubble's area is proportional to its size. Set with `SeriesData.WithSizes`.
+- `ErrorLow`: `double[]?` (read-only) — Error bars: the low end of each point's error bar (a value, not a distance), NaN where it has none; null when the series has no error bars. Set with `SeriesData.WithErrors`.
+- `ErrorHigh`: `double[]?` (read-only) — Error bars: the high end of each point's error bar, NaN where it has none; null without error bars.
 - `Targets`: `double[]?` (read-only) — Bullets: each point's target value, NaN where it has none; null for other series. Set with `SeriesData.WithTargets`.
 - `Candles`: `CandleColumns?` (read-only) — Candlesticks: the open, high and low of each point (`SeriesData.Y` is the close); null for other series. Set with `SeriesData.WithCandles`.
 - `Box`: `BoxColumns?` (read-only) — Box plots: the quartiles, whiskers, extremes and outliers of each point (`SeriesData.Y` is the median); null for other series. Set with `SeriesData.WithBox`.
@@ -898,6 +913,7 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `SeriesData WithLow(ReadOnlySpan<double> low)` — The same points with a low value each, for range series (`SeriesData.Y` is the high value). `low` is in input order, like the y values given when creating the data: index i is the low of input item (or column entry) i.
 - `SeriesData WithTotals(ReadOnlySpan<bool> totals)` — The same points as a waterfall with totals: `totals` is in input order, like the y values given when creating the data (index i is true when input item or group i is a total). A total point's y becomes the running total of the changes before it (its own y is ignored); the other points are changes, and gaps (NaN) change nothing.
 - `SeriesData WithSizes(ReadOnlySpan<double> sizes)` — The same points with a size each, which makes a scatter series a bubble chart. `sizes` is in input order, like the y values given when creating the data: index i is the size of input item (or group) i.
+- `SeriesData WithErrors(ReadOnlySpan<double> low, ReadOnlySpan<double> high)` — The same points with an error bar each, from `low` to `high` (values on the y axis, e.g. y - sd and y + sd). Both are in input order, like the y values given when creating the data: index i belongs to input item (or group) i; NaN for none.
 - `SeriesData WithTargets(ReadOnlySpan<double> targets)` — The same points with a target each (bullet charts). `targets` is in input order, like the y values given when creating the data: index i is the target of input item (or group) i.
 - `SeriesData WithCandles(ReadOnlySpan<CandleSummary> candles)` — The same points as candles: `candles` is in input order (index i is the candle of input item or group i). Each point's y becomes its candle's close; an incomplete candle is a gap.
 - `static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value, TimeBucket bucket, IReadOnlyList<int[]> groups)` — Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on their wall-clock time) and each bucket gives the first, highest, lowest and last value in time order. Null values are skipped.
@@ -1112,6 +1128,10 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `Max`: `double?` — Radial bar, gauge and bullet: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
 - `Min`: `double?` — Gauge and bullet: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).
 - `Target`: `double?` — Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.
+- `Error`: `double?` — Error bars on bar, line and scatter series: the same plus-or-minus amount for every point, e.g. 2.5.
+- `ErrorField`: `string?` — Error bars: the field with each row's plus-or-minus amount (e.g. a standard deviation). Aggregated rows take the average.
+- `ErrorLow`: `string?` — Error bars: the field with the low end of each row's error bar (a value, e.g. a confidence interval's lower bound); use with errorHigh. Aggregated rows take the lowest.
+- `ErrorHigh`: `string?` — Error bars: the field with the high end of each row's error bar; use with errorLow. Aggregated rows take the highest.
 - `TargetField`: `string?` — Bullet: the field with each row's target value (numbers), aggregated like y.
 - `Format`: `string?` — .NET format string for values in tooltips and data labels, e.g. "0.0" or "P0". Null: the axis format, else automatic.
 - `DisplayName`: `string` (read-only) — The name shown in the legend and tooltips: `SeriesOptions.Name`, or the id when no name is set.

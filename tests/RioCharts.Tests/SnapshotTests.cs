@@ -149,6 +149,31 @@ public class SnapshotTests
             ],
         }, new() { ["cpu"] = Categories([""], 64) }, Width: 360, Height: 280),
 
+        // Average test scores per class in two years, with the standard deviation as error bars.
+        ["error-bars"] = new(new ChartDefinition
+        {
+            Y = new AxisOptions { Title = "Score" },
+            Series =
+            [
+                new SeriesOptions { Id = "a", Name = "2025", Type = SeriesType.Bar },
+                new SeriesOptions { Id = "b", Name = "2026", Type = SeriesType.Bar },
+            ],
+        }, new()
+        {
+            ["a"] = Categories(["Class A", "Class B", "Class C", "Class D"], 72, 65, 80, 58).WithErrors([64.0, 59, 75, 47], [80.0, 71, 85, 69]),
+            ["b"] = Categories(["Class A", "Class B", "Class C", "Class D"], 76, 70, 78, 66).WithErrors([70.0, 61, 74, 58], [82.0, 79, 82, 74]),
+        }, Width: 520, Height: 300),
+
+        // A median response time per day with its 90 % interval (uneven: the high end is further away).
+        ["error-bars-line"] = new(new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "m", Name = "Median", Format = "0 ms" }],
+        }, new()
+        {
+            ["m"] = SeriesData.From(Enumerable.Range(0, 10).Select(i => Start.AddDays(i)).ToArray(), [120.0, 132, 118, 140, 151, 129, 122, 135, 160, 141])
+                .WithErrors([104.0, 115, 101, 118, 130, 110, 106, 117, 133, 120], [158.0, 171, 149, 188, 206, 166, 159, 180, 221, 190]),
+        }, Width: 520, Height: 260),
+
         // A shop's month: three measures, each on its own scale, with poor/fair/good ranges and a target.
         ["bullet"] = new(new ChartDefinition
         {

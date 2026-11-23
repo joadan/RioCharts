@@ -37,6 +37,7 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 - [Bullet charts](https://riocharts.com/bullets)
 - [Axes and time](https://riocharts.com/axes)
 - [Annotations](https://riocharts.com/annotations)
+- [Error bars](https://riocharts.com/error-bars): on bar, line and scatter series
 - [Tooltips](https://riocharts.com/tooltips)
 - [Clicks and selection](https://riocharts.com/clicks-and-selection)
 - [Zoom and pan](https://riocharts.com/zoom)

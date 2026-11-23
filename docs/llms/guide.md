@@ -35,6 +35,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
 - Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
+- Error bars (bar, line and scatter series): `ErrorValue="m => m.StdDev"` (plus or minus, per item), `Error="2.5"` (the same for every point), or `ErrorLowValue` and `ErrorHighValue` (the ends, as values). JSON: `errorField`, `error`, `errorLow` and `errorHigh`.
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). No need to group in the query.
 - Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
 - Size: the chart fills its container's width; `Height` is 300 px by default.

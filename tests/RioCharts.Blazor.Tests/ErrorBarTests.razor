@@ -1,0 +1,42 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Score(string Class, double Mean, double Sd, double Low, double High);
+
+    private static readonly Score[] Scores = [new("A", 72, 8, 66, 84), new("B", 65, 6, 60, 70), new("A", 76, 4, 70, 80)];
+
+    [Fact]
+    public void An_amount_per_item_draws_error_bars_and_shows_in_the_tooltip()
+    {
+        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <BarSeries Id="s" XValue="s => s.Class" YValue="s => s.Mean" ErrorValue="s => s.Sd" Aggregate="Aggregate.Average" />
+        </RioChart>);
+
+        Assert.Single(cut.FindAll(".rio-error-bar"));
+        var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
+        Assert.Equal("74 ± 6", values[0].GetString()); // A: the average of 72 and 76, ± the average of 8 and 4
+        Assert.Equal("65 ± 6", values[1].GetString());
+    }
+
+    [Fact]
+    public void Ends_per_item_take_the_lowest_and_highest_when_combined()
+    {
+        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <LineSeries Id="s" XValue="s => s.Class" YValue="s => s.Mean" ErrorLowValue="s => s.Low" ErrorHighValue="s => s.High" Aggregate="Aggregate.Average" />
+        </RioChart>);
+
+        var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
+        Assert.Equal("74 (66 – 84)", values[0].GetString());
+    }
+
+    [Fact]
+    public void One_amount_for_all_points()
+    {
+        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <ScatterSeries Id="s" XValue="s => s.Sd" YValue="s => s.Mean" Error="2" />
+        </RioChart>);
+
+        Assert.Single(cut.FindAll(".rio-error-bar"));
+        Assert.Equal("72 ± 2", Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v")[2].GetString()); // sorted by x: 4, 6, 8
+    }
+}

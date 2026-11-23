@@ -722,6 +722,17 @@ public static partial class ChartLayout
                 Bubbles = bubbles,
             };
             r.Type.Build(context);
+            if (context.Hits is { } drawnHits && HasErrors(r) && ErrorBars(r, context, drawnHits, styles) is { } errorBars)
+            {
+                context.Output.Add(errorBars);
+            }
+            else if (HasErrorData(r) && !HasErrors(r))
+            {
+                warnings.Add(r.Percent
+                    ? $"series '{r.Spec.Id}': error bars are not drawn on series stacked to 100 %."
+                    : $"series '{r.Spec.Id}': only bar, line and scatter series draw error bars; they are ignored.");
+            }
+
             if (context.Hits is { } hits)
             {
                 hitTest.Add(hits);
@@ -1349,6 +1360,11 @@ public static partial class ChartLayout
             values[i] = r.Spec.Type == SeriesType.RangeArea && r.Data.Low is { } low
                 ? $"{ValueFormatter.Format(low[j], culture, format)} – {ValueFormatter.Format(r.Data.Y[j], culture, format)}"
                 : ValueFormatter.Format(r.Data.Y[j], culture, format);
+            if (HasErrors(r))
+            {
+                values[i] += ErrorText(r, j, culture, format);
+            }
+
             if (r.Percent && r.Lower is { } lower && double.IsFinite(r.Upper[j] - lower[j]))
             {
                 values[i] += $" ({(r.Upper[j] - lower[j]).ToString("P0", culture)})"; // the value and its share

@@ -351,8 +351,89 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     }
 }
 
+/// <summary>
+/// A series that can show error bars: <see cref="LineSeries{TItem}"/>, <see cref="BarSeries{TItem}"/>
+/// and <see cref="ScatterSeries{TItem}"/>. Give a plus-or-minus amount (<see cref="Error"/> for every
+/// point, or <see cref="ErrorValue"/> per item), or each error bar's ends
+/// (<see cref="ErrorLowValue"/> and <see cref="ErrorHighValue"/>).
+/// </summary>
+public abstract class ErrorBarSeriesBase<TItem> : SeriesBase<TItem>
+{
+    /// <summary>Error bars: the same plus-or-minus amount for every point, e.g. 2.5.</summary>
+    [Parameter] public double? Error { get; set; }
+
+    /// <summary>
+    /// Error bars: each item's plus-or-minus amount, e.g. <c>m =&gt; m.StdDev</c>; null for none.
+    /// Items combined into one point take the average.
+    /// </summary>
+    [Parameter] public Func<TItem, double?>? ErrorValue { get; set; }
+
+    /// <summary>
+    /// Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower
+    /// bound); use with <see cref="ErrorHighValue"/>. Items combined into one point take the lowest.
+    /// </summary>
+    [Parameter] public Func<TItem, double?>? ErrorLowValue { get; set; }
+
+    /// <summary>Error bars: the high end of each item's error bar; use with <see cref="ErrorLowValue"/>. Items combined into one point take the highest.</summary>
+    [Parameter] public Func<TItem, double?>? ErrorHighValue { get; set; }
+
+    /// <summary>Settings of the derived series that change how its data is built.</summary>
+    private protected virtual object? OwnDataSettings => null;
+
+    private protected sealed override object? DataSettings => (ErrorValue is not null, ErrorLowValue is not null, ErrorHighValue is not null, OwnDataSettings);
+
+    /// <summary>What the derived series adds to its data before the error bars.</summary>
+    private protected virtual SeriesData CompleteOwn(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups) => data;
+
+    private protected sealed override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        data = CompleteOwn(data, items, groups);
+        if (ErrorValue is null && (ErrorLowValue is null || ErrorHighValue is null))
+        {
+            return data;
+        }
+
+        // Each point's y in input order (index = input item or group), for the plus-or-minus amounts.
+        var count = groups?.Count ?? items.Count;
+        var y = new double[count];
+        Array.Fill(y, double.NaN);
+        for (var i = 0; i < data.Count; i++)
+        {
+            var source = data.ToSourceIndex(i);
+            if (source >= 0 && source < count)
+            {
+                y[source] = data.Y[i];
+            }
+        }
+
+        double Combine(Func<TItem, double?> value, int point, Core.Aggregate aggregate) => groups is null
+            ? value(items[point]) ?? double.NaN
+            : Aggregation.Apply(aggregate, groups[point].Select(i => value(items[i])).ToList()) ?? double.NaN;
+
+        var low = new double[count];
+        var high = new double[count];
+        for (var p = 0; p < count; p++)
+        {
+            if (ErrorValue is { } amount)
+            {
+                var e = Math.Abs(Combine(amount, p, Core.Aggregate.Average));
+                (low[p], high[p]) = (y[p] - e, y[p] + e);
+            }
+            else
+            {
+                (low[p], high[p]) = (Combine(ErrorLowValue!, p, Core.Aggregate.Min), Combine(ErrorHighValue!, p, Core.Aggregate.Max));
+            }
+        }
+
+        return data.WithErrors(low, high);
+    }
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Error = Error };
+}
+
 /// <summary>Line series.</summary>
-public sealed class LineSeries<TItem> : SeriesBase<TItem>
+public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
 {
     /// <summary>
     /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
@@ -414,7 +495,7 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 /// against delivery time. With <see cref="SizeValue"/> it is a bubble chart: a third measure sets
 /// each marker's size. The tooltip shows the point nearest the pointer.
 /// </summary>
-public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
+public sealed class ScatterSeries<TItem> : ErrorBarSeriesBase<TItem>
 {
     /// <summary>
     /// Marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default
@@ -441,9 +522,9 @@ public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Scatter;
 
-    private protected override object? DataSettings => SizeValue is not null;
+    private protected override object? OwnDataSettings => SizeValue is not null;
 
-    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    private protected override SeriesData CompleteOwn(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
     {
         if (SizeValue is not { } size)
         {
@@ -709,7 +790,7 @@ public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
 }
 
 /// <summary>Bar series. Several bar series in one chart are grouped side by side.</summary>
-public sealed class BarSeries<TItem> : SeriesBase<TItem>
+public sealed class BarSeries<TItem> : ErrorBarSeriesBase<TItem>
 {
     /// <summary>
     /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
