@@ -120,6 +120,15 @@ public class MapTests
     }
 
     [Fact]
+    public void Zoomed_into_antarctica_without_a_value_it_is_still_drawn()
+    {
+        var layout = Layout(cities: Cities, options: Options with { MapRegion = "AQ" });
+
+        Assert.Equal("AQ", layout.MapRegion);
+        Assert.Contains(All<PathNode>(layout.Scene.Series), p => p.Class == "rio-map-region rio-map-focus");
+    }
+
+    [Fact]
     public void Bubbles_kept_apart_with_group_by_country_off()
     {
         var layout = ChartLayout.Compute(new ChartDefinition
@@ -175,6 +184,63 @@ public class MapTests
     }
 
     [Fact]
+    public void Mercator_puts_the_equator_in_the_middle_and_cuts_at_85_degrees()
+    {
+        Assert.Equal(0, Mercator.Project(0, 0).X, 9);
+        Assert.Equal(0, Mercator.Project(0, 0).Y, 9);
+        Assert.Equal(Math.PI / 2, Mercator.Project(90, 0).X, 9);
+        Assert.Equal(-Math.PI, Mercator.Project(0, Mercator.MaxLatitude).Y, 6);
+        Assert.Equal(Mercator.Project(0, Mercator.MaxLatitude), Mercator.Project(0, 90));
+        Assert.Equal(-Math.PI / 2, Mercator.Project(-90, 0).X, 9);
+        Assert.Equal(Mercator.Project(10, 60, centralLongitude: 20).X, Mercator.Project(-10, 60).X, 9);
+    }
+
+    [Fact]
+    public void Mercator_draws_northern_countries_larger_than_equal_earth_does()
+    {
+        static double Ratio(MapProjection projection)
+        {
+            var layout = ChartLayout.Compute(new ChartDefinition
+            {
+                Projection = projection,
+                Series = [new SeriesOptions { Id = "m", Type = SeriesType.Map }],
+            }, new Dictionary<string, SeriesData> { ["m"] = SeriesData.FromCategories(["SE", "BR"], [1.0, 2]) }, Options);
+            var tips = Assert.Single(layout.Tooltip.Series);
+            double BoxArea(string name)
+            {
+                var points = tips.Shapes![Array.IndexOf(tips.XLabels, name)].SelectMany(r => r).ToArray();
+                var xs = points.Where((_, i) => i % 2 == 0).ToList();
+                var ys = points.Where((_, i) => i % 2 == 1).ToList();
+                return (xs.Max() - xs.Min()) * (ys.Max() - ys.Min());
+            }
+
+            return BoxArea("Sweden") / BoxArea("Brazil");
+        }
+
+        Assert.True(Ratio(MapProjection.Mercator) > 2 * Ratio(MapProjection.EqualEarth));
+    }
+
+    [Fact]
+    public void Mercator_bubbles_sit_on_their_country()
+    {
+        var layout = ChartLayout.Compute(new ChartDefinition
+        {
+            Projection = MapProjection.Mercator,
+            Series =
+            [
+                new SeriesOptions { Id = "m", Type = SeriesType.Map },
+                new SeriesOptions { Id = "b", Type = SeriesType.MapBubble, GroupByCountry = false },
+            ],
+        }, new Dictionary<string, SeriesData> { ["m"] = SeriesData.FromCategories(["SE"], [1.0]), ["b"] = Cities }, Options);
+
+        var sweden = layout.Tooltip.Series.Single(s => s.Type == SeriesType.Map).Shapes![0].SelectMany(r => r).ToArray();
+        var bubbles = layout.Tooltip.Series.Single(s => s.Type == SeriesType.MapBubble);
+        var stockholm = Array.IndexOf(bubbles.XLabels, "Stockholm");
+        Assert.InRange(bubbles.X[stockholm], sweden.Where((_, i) => i % 2 == 0).Min(), sweden.Where((_, i) => i % 2 == 0).Max());
+        Assert.InRange(bubbles.Y[stockholm], sweden.Where((_, i) => i % 2 == 1).Min(), sweden.Where((_, i) => i % 2 == 1).Max());
+    }
+
+    [Fact]
     public void An_empty_map_draws_the_world_without_throwing()
     {
         var layout = Layout(SeriesData.Empty);
@@ -222,6 +288,28 @@ public class MapTests
         Assert.DoesNotContain(bound.Warnings, w => w.StartsWith("series[1]", StringComparison.Ordinal)); // one bubble per row, not summed per name
     }
 
+    [Theory]
+    [InlineData("mercator", MapProjection.Mercator)]
+    [InlineData("Web Mercator", MapProjection.Mercator)]
+    [InlineData("equal-earth", MapProjection.EqualEarth)]
+    public void A_json_map_reads_its_projection(string projection, MapProjection expected)
+    {
+        var parsed = ChartDefinitionJson.Parse($$"""{ "projection": "{{projection}}", "series": [ { "type": "map" } ] }""");
+
+        Assert.True(parsed.Success, string.Join("; ", parsed.Errors.Select(e => e.Message)));
+        Assert.Equal(expected, parsed.Definition!.Projection);
+    }
+
+    [Fact]
+    public void An_unknown_json_projection_lists_the_valid_ones()
+    {
+        var parsed = ChartDefinitionJson.Parse("""{ "projection": "robinson", "series": [ { "type": "map" } ] }""");
+
+        var error = Assert.Single(parsed.Errors);
+        Assert.Equal("projection", error.Path);
+        Assert.Contains("equalEarth, mercator", error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_json_map_bubble_without_a_place_is_an_error()
     {
@@ -243,5 +331,16 @@ public class MapTests
         Assert.Contains("<MapBubbleSeries XValue=\"r => r.City\"", razor, StringComparison.Ordinal);
         Assert.Contains(" Latitude=\"r => r.Lat\" Longitude=\"r => r.Lon\"", razor, StringComparison.Ordinal);
         Assert.Contains(" GroupByCountry=\"false\"", razor, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Razor_for_a_mercator_map_sets_the_projection()
+    {
+        var razor = ChartRazor.FromDefinition(ChartDefinitionJson.Parse("""
+            { "projection": "mercator", "dataset": "places", "series": [ { "type": "map", "x": "country", "y": "users" } ] }
+            """).Definition!);
+
+        Assert.Contains(" Projection=\"MapProjection.Mercator\"", razor, StringComparison.Ordinal);
+        Assert.DoesNotContain("Projection", ChartRazor.FromDefinition(new ChartDefinition { Series = [new SeriesOptions { Id = "m", Type = SeriesType.Map }] }), StringComparison.Ordinal);
     }
 }

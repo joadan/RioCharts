@@ -208,6 +208,14 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public bool Horizontal { get; set; }
 
     /// <summary>
+    /// Maps: how the round world is drawn flat. <see cref="MapProjection.EqualEarth"/> (default) keeps
+    /// every country's true relative size; <see cref="MapProjection.Mercator"/> is the projection of
+    /// web maps, with familiar shapes but areas that grow toward the poles. Overrides a
+    /// <see cref="Definition"/>'s projection unless left at the default.
+    /// </summary>
+    [Parameter] public MapProjection Projection { get; set; }
+
+    /// <summary>
     /// False draws plain SVG without the JS module: no tooltip, hover, zoom, keyboard navigation,
     /// download button or width measuring. For many small charts (compact charts in a table) or static
     /// pages. Set <see cref="Width"/> for exact geometry; otherwise the chart is laid out at a default
@@ -259,11 +267,13 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>The definition being drawn: the bound <see cref="Definition"/>, or the one from parameters and child components.</summary>
     private ChartDefinition CurrentDefinition() => Definition is not null && _bound is not null
         ? (Compact && !_bound.Definition.Compact) || (!AutoCompact && _bound.Definition.AutoCompact) || (Horizontal && !_bound.Definition.Horizontal)
+            || (Projection != MapProjection.EqualEarth && Projection != _bound.Definition.Projection)
             ? _bound.Definition with
             {
                 Compact = Compact || _bound.Definition.Compact,
                 AutoCompact = AutoCompact && _bound.Definition.AutoCompact,
                 Horizontal = Horizontal || _bound.Definition.Horizontal,
+                Projection = Projection != MapProjection.EqualEarth ? Projection : _bound.Definition.Projection,
             }
             : _bound.Definition
         : BuildDefinition();
@@ -412,7 +422,7 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Definition, Datasets,
-            TooltipHeader is not null, TooltipTemplate is not null, Compact, AutoCompact, Horizontal, CurrentTexts);
+            TooltipHeader is not null, TooltipTemplate is not null, Compact, AutoCompact, Horizontal, Projection, CurrentTexts);
         if (!Equals(parameters, _lastParameters))
         {
             _lastParameters = parameters;
@@ -429,6 +439,7 @@ public partial class RioChart<TItem> : IChartContext
         Compact = Compact,
         AutoCompact = AutoCompact,
         Horizontal = Horizontal,
+        Projection = Projection,
         X = XAxis ?? new AxisOptions(),
         Y = YAxis ?? new AxisOptions(),
         YAxes = YAxes ?? [],

@@ -185,6 +185,22 @@ public class SnapshotTests
                 .WithLocations([59.33, 57.71, 40.71, 31.23], [18.07, 11.97, -74.01, 121.47]),
         }, Width: 640, Height: 340),
 
+        // The same countries in the Mercator projection of web maps, with each city as its own bubble.
+        ["map-mercator"] = new(new ChartDefinition
+        {
+            Projection = MapProjection.Mercator,
+            Series =
+            [
+                new SeriesOptions { Id = "m", Name = "Sessions", Type = SeriesType.Map },
+                new SeriesOptions { Id = "c", Name = "Cities", Type = SeriesType.MapBubble, GroupByCountry = false },
+            ],
+        }, new()
+        {
+            ["m"] = Categories(["SE", "NO", "FI", "DE", "GB", "US", "BR", "CN", "AU"], 1240, 310, 260, 420, 190, 210, 12, 75, 25),
+            ["c"] = Categories(["Stockholm", "Gothenburg", "New York", "Shanghai"], 420, 380, 120, 60)
+                .WithLocations([59.33, 57.71, 40.71, 31.23], [18.07, 11.97, -74.01, 121.47]),
+        }, Width: 640, Height: 400),
+
         // Average test scores per class in two years, with the standard deviation as error bars.
         ["error-bars"] = new(new ChartDefinition
         {

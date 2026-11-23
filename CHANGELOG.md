@@ -3,6 +3,13 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
+## Unreleased
+
+- Map projections: `Projection` on `RioChart` (and `ChartDefinition`, `"projection"` in JSON) picks
+  `MapProjection.EqualEarth` (default, equal-area) or `MapProjection.Mercator`, the projection of web
+  maps, cut at ±85°. New in Core: `MapProjection` and `RioCharts.Core.Geo.Mercator`.
+- Fixed: a map zoomed into Antarctica (`TreemapPath="AQ"`) without a value for it drew no land.
+
 ## 0.4.1-preview (2026-11-23)
 
 - World maps: `MapSeries` colors each country by its value (`XValue` an ISO 3166 code such as "SE" or
