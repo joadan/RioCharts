@@ -1035,8 +1035,7 @@ chart on its own. The JSON format did not change; the AI tools' argument is `def
 
 ## Motion
 
-Design.md "Visual design" asks for "short, subtle entry and update animations". The code
-has the entry fade only, on purpose:
+Design.md "Visual design": an entry fade only, no update animations. How it is done and why:
 
 - **Entry:** `.rio-series` fades in once (`--rio-enter-duration`, default 0.35 s). The tooltip,
   the hover buttons and series dimmed from the legend have short opacity fades. Nothing grows,

@@ -240,7 +240,7 @@ Charts should look calm, current and data-first. When in doubt, remove rather th
 - **Shapes**: line width around 2px, markers hidden until hover, subtle rounded corners on bars, a small gap between donut slices.
 - **Whitespace**: generous padding. Labels never touch the plot edges.
 - **Tooltip**: a clean card in the theme surface color, with series color dots, aligned values and no heavy borders.
-- **Motion**: short, subtle entry and update animations. Respect `prefers-reduced-motion`.
+- **Motion**: a short, subtle fade when the series first appear; no animation on data changes, zoom or streaming. Easy to turn off, and off when the user prefers reduced motion (`prefers-reduced-motion`).
 - **Theming**: everything is driven by CSS variables / theme tokens, with light and dark mode out of the box.
 
 ## Sensible defaults
