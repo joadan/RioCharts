@@ -88,7 +88,7 @@ public class CandlestickTests
         ChartLayout.Compute(new ChartDefinition { Series = series.Length > 0 ? series : [new SeriesOptions { Id = "t", Type = SeriesType.Candlestick }] }, data, options ?? Options);
 
     [Fact]
-    public void Rising_candles_are_light_and_falling_ones_solid()
+    public void Rising_candles_are_light_and_falling_ones_solid_in_the_series_color()
     {
         var layout = Layout(new() { ["t"] = Days(12) });
 
@@ -96,10 +96,38 @@ public class CandlestickTests
         Assert.Equal(12, bodies.Count);
         Assert.Equal(4, bodies.Count(b => b.Class == "rio-candle rio-candle-down")); // days 0, 3, 6, 9
         var up = layout.Scene.Styles.Get(bodies.First(b => b.Class == "rio-candle rio-candle-up").Style);
-        Assert.Equal((ThemeTokens.Positive, ThemeTokens.Positive, 0.22f), (up.Fill, up.Stroke, up.FillOpacity)); // see-through, so it differs by more than color
-        Assert.Equal(ThemeTokens.Negative, layout.Scene.Styles.Get(bodies.First(b => b.Class == "rio-candle rio-candle-down").Style).Fill);
+        var down = layout.Scene.Styles.Get(bodies.First(b => b.Class == "rio-candle rio-candle-down").Style);
+        Assert.Equal((ThemeTokens.Series(0), ThemeTokens.Series(0), 0.22f), (up.Fill, up.Stroke, up.FillOpacity)); // see-through: the fill shows the direction
+        Assert.Equal((ThemeTokens.Series(0), (float?)null), (down.Fill, down.FillOpacity));
         Assert.Contains(All<Node>(layout.Scene.Series), n => n.Class == "rio-wicks rio-wicks-up");
+        Assert.Null(layout.Tooltip.Series.Single().PointColors); // the tooltip dot is the series color
         Assert.Empty(layout.Warnings);
+    }
+
+    [Fact]
+    public void Direction_colors_make_rising_candles_green_and_falling_ones_red()
+    {
+        var layout = Layout(new() { ["t"] = Days(12) }, null, new SeriesOptions { Id = "t", Type = SeriesType.Candlestick, DirectionColors = true });
+
+        var bodies = All<RectNode>(layout.Scene.Series).Where(n => n.Class?.StartsWith("rio-candle", StringComparison.Ordinal) == true).ToList();
+        var up = layout.Scene.Styles.Get(bodies.First(b => b.Class == "rio-candle rio-candle-up").Style);
+        Assert.Equal((ThemeTokens.Positive, ThemeTokens.Positive, 0.22f), (up.Fill, up.Stroke, up.FillOpacity));
+        Assert.Equal(ThemeTokens.Negative, layout.Scene.Styles.Get(bodies.First(b => b.Class == "rio-candle rio-candle-down").Style).Fill);
+        var colors = layout.Tooltip.Series.Single().PointColors!; // the tooltip dot follows the candle
+        Assert.Equal(ThemeTokens.Negative, colors[0]);
+        Assert.Equal(ThemeTokens.Positive, colors[1]);
+    }
+
+    [Fact]
+    public void Two_candle_series_get_their_own_colors()
+    {
+        var layout = Layout(new() { ["a"] = Days(10), ["b"] = Days(10, 3) }, null,
+            new SeriesOptions { Id = "a", Type = SeriesType.Candlestick }, new SeriesOptions { Id = "b", Type = SeriesType.Candlestick });
+
+        string FillOf(string id) => layout.Scene.Styles.Get(All<GroupNode>(layout.Scene.Series).Single(g => g.Key == "series:" + id)
+            .Children.OfType<RectNode>().First().Style).Fill!;
+        Assert.Equal(ThemeTokens.Series(0), FillOf("a"));
+        Assert.Equal(ThemeTokens.Series(1), FillOf("b"));
     }
 
     [Fact]
@@ -153,7 +181,10 @@ public class CandlestickTests
 
         Assert.Equal("21.0", s.Values[0]);
         Assert.Equal(["Open", "High", "Low", "Close", "Change"], s.PartLabels!);
-        Assert.Equal(["20.0", "22.5", "19.5", "21.0", "+1.0 (+5.0%)"], s.PartValues![0]);
+        Assert.Equal(["20.0", "22.5", "19.5", "21.0", "+1.0"], s.PartValues![0]); // no percent: it means nothing for e.g. temperatures
+
+        var prices = Layout(new() { ["t"] = data }, null, new SeriesOptions { Id = "t", Type = SeriesType.Candlestick, Format = "0.0", DirectionColors = true });
+        Assert.Equal("+1.0 (+5.0%)", prices.Tooltip.Series.Single().PartValues![0][4]);
     }
 
     [Fact]
@@ -237,5 +268,15 @@ public class CandlestickTests
         var bound = ChartDefinitionBinder.Bind(parsed.Definition!, Readings(1));
 
         Assert.Equal(["series[0].low", "series[0].high"], bound.Errors.Select(e => e.Path).Order().Reverse());
+    }
+
+    [Fact]
+    public void Definitions_and_razor_export_carry_direction_colors()
+    {
+        var parsed = ChartDefinitionJson.Parse("""{ "series": [ { "type": "candlestick", "x": "time", "y": "price", "timeBucket": "day", "directionColors": true } ] }""");
+
+        Assert.True(parsed.Definition!.Series[0].DirectionColors);
+        Assert.Contains("DirectionColors=\"true\"", ChartRazor.FromDefinition(parsed.Definition, "Trade", "trades"));
+        Assert.DoesNotContain("DirectionColors", ChartRazor.FromDefinition(parsed.Definition with { Series = [parsed.Definition.Series[0] with { DirectionColors = false }] }));
     }
 }

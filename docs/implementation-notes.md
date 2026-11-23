@@ -661,11 +661,16 @@ Design.md "Candlestick" (milestone 7).
   floor it and keeps the caller's selector; a `DataSettings` hook in `SeriesBase` rebuilds the
   data when `Bucket` changes (before, only new `Items`, aggregates or `DataVersion` did).
 - **Drawing:** a band slot per series like bars (never stacked), bodies at most 32 px. Rising
-  (close ≥ open) is a light fill (0.22) with a 1 px `--rio-positive` outline (wicks 1 px too), falling is solid
-  `--rio-negative`, so the direction does not depend on color alone. The wick is drawn above and
+  (close ≥ open) is a light fill (0.22) with a 1 px outline (wicks 1 px too), falling is solid, so the
+  direction does not depend on color. Both are in the series color, like the legend and the tooltip
+  dot, so several candle series can be told apart. `DirectionColors` (`"directionColors"`) colors
+  rising candles `--rio-positive` and falling ones `--rio-negative` instead, as for prices; the
+  tooltip dot then takes each candle's color. (Green and red were the default at first: they did
+  not match the series' legend and tooltip colors, two candle series looked the same, and red and
+  green read as bad and good, which is wrong for e.g. temperatures.) The wick is drawn above and
   below the body, not through it. (Hollow bodies were tried first: when narrow they read as
   double lines.) New theme tokens with light and dark defaults in
-  the CSS and `ExportTheme`. The legend swatch is a small falling and rising body.
+  the CSS and `ExportTheme`. The legend swatch is a small falling and rising body, in the colors drawn.
 - **Zoomed out:** when a slot is under 5 px, candles merge into longer periods. On time axes the
   shortest period from a ladder (2, 5, 10, 15, 30 minutes; 1, 2, 3, 6, 12 hours; a day; a week from
   Monday; a month, quarter, year) whose width gives each series at least 12 px, aligned to the
@@ -675,8 +680,10 @@ Design.md "Candlestick" (milestone 7).
   merged candle keeps the first open, highest high, lowest low and last close; its tooltip says
   from when to when. Not for category axes. A selected candle is outlined from high to low, but
   not while merged.
-- **Tooltip:** the close as the row's value, then Open, High, Low, Close and Change ("+0.3 (+1.4%)")
-  as smaller rows (`ChartTexts`, all languages).
+- **Tooltip:** the close as the row's value, then Open, High, Low, Close and Change as smaller rows
+  (`ChartTexts`, all languages). The change is in the value's format ("+0.3"); with `DirectionColors`
+  also in percent ("+0.3 (+1.4%)"). A percentage only means something for values measured from a
+  true zero (prices), not for e.g. °C, so it comes with the price-style option.
 - **Not yet:** live data (`SeriesBuffer`) with candles, a hollow/filled option, a volume pane
   helper (use a bar series on a second axis), and `Horizontal` candles.
 

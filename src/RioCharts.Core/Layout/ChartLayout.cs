@@ -92,7 +92,11 @@ public sealed record LayoutOptions
 public readonly record struct PlotInsets(double Left, double Right);
 
 /// <summary>A legend item. <paramref name="Tooltip"/>: a summary shown on hover (lines separated by \n).</summary>
-public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty, string? Tooltip = null);
+public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty, string? Tooltip = null)
+{
+    /// <summary>Candlesticks colored by direction (<see cref="SeriesOptions.DirectionColors"/>): the swatch shows the rising and falling colors.</summary>
+    public bool DirectionColors { get; init; }
+}
 
 /// <summary>The output of <see cref="ChartLayout.Compute"/>: the scene plus what interaction needs.</summary>
 public sealed class ChartLayoutResult
@@ -378,7 +382,10 @@ public static partial class ChartLayout
 
         var legendEntries = resolved
             .Select(r => new LegendEntry(r.Spec.Id, r.Spec.DisplayName, r.Color, r.Spec.Type, r.Visible, r.Empty,
-                ChartDescriber.DescribeSeries(spec, r.Spec, r.Data, xKind, culture, texts, Facts(r.Data)) ?? $"{r.Spec.DisplayName}: {texts.NoData}"))
+                ChartDescriber.DescribeSeries(spec, r.Spec, r.Data, xKind, culture, texts, Facts(r.Data)) ?? $"{r.Spec.DisplayName}: {texts.NoData}")
+            {
+                DirectionColors = r.Spec.Type == SeriesType.Candlestick && r.Spec.DirectionColors,
+            })
             .ToList();
         var showLegend = !compact && spec.Legend.Mode switch
         {
@@ -1200,6 +1207,7 @@ public static partial class ChartLayout
         var xTitle = r.Spec.Type == SeriesType.Scatter && !string.IsNullOrWhiteSpace(xAxisTitle) ? xAxisTitle : null;
         var boxParts = r.Spec.Type == SeriesType.BoxPlot && r.Data.Box is not null ? new string[n][] : null;
         var candleParts = r.Spec.Type == SeriesType.Candlestick && r.Data.Candles is not null && context.CandleGroups is { } cg && cg.Count == n ? new string[n][] : null;
+        var candleColors = candleParts is not null && r.Spec.DirectionColors ? new string[n] : null; // the tooltip dot as the candle
         for (var i = 0; i < n; i++)
         {
             var j = hits.Index[i];
@@ -1236,7 +1244,11 @@ public static partial class ChartLayout
                 }
 
                 values[i] = ValueFormatter.Format(candle.Close, culture, format);
-                candleParts[i] = CandlePartValues(candle, culture, format);
+                candleParts[i] = CandlePartValues(candle, culture, format, percent: r.Spec.DirectionColors);
+                if (candleColors is not null)
+                {
+                    candleColors[i] = candle.Close >= candle.Open ? ThemeTokens.Positive : ThemeTokens.Negative;
+                }
             }
         }
 
@@ -1272,9 +1284,9 @@ public static partial class ChartLayout
             PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : null,
             PartValues = boxParts ?? candleParts,
             // Points with their own color show it in the tooltip too.
-            PointColors = r.Data.Colors is null && r.Spec.ColorBands is null
+            PointColors = candleColors ?? (r.Data.Colors is null && r.Spec.ColorBands is null
                 ? null
-                : [.. hits.Index.Select(j => r.Data.Colors?[j] ?? ColorBands.ColorOf(r.Spec.ColorBands, r.Data.Y[j]) ?? r.Color)],
+                : [.. hits.Index.Select(j => r.Data.Colors?[j] ?? ColorBands.ColorOf(r.Spec.ColorBands, r.Data.Y[j]) ?? r.Color)]),
         };
     }
 
@@ -1282,16 +1294,18 @@ public static partial class ChartLayout
     private static string[] CandlePartLabels(ChartTexts texts) =>
         [texts.CandleOpen, texts.CandleHigh, texts.CandleLow, texts.CandleClose, texts.CandleChange];
 
-    private static string[] CandlePartValues(CandleSummary c, CultureInfo culture, string? format)
+    // The change in percent only with direction colors (prices): for values such as temperatures, a percentage depends
+    // on where zero is and means nothing.
+    private static string[] CandlePartValues(CandleSummary c, CultureInfo culture, string? format, bool percent)
     {
         var change = c.Close - c.Open;
         var sign = change > 0 ? "+" : "";
-        var percent = c.Open != 0 ? $" ({sign}{(change / Math.Abs(c.Open)).ToString("0.0%", culture)})" : "";
+        var share = percent && c.Open != 0 ? $" ({sign}{(change / Math.Abs(c.Open)).ToString("0.0%", culture)})" : "";
         return
         [
             ValueFormatter.Format(c.Open, culture, format), ValueFormatter.Format(c.High, culture, format),
             ValueFormatter.Format(c.Low, culture, format), ValueFormatter.Format(c.Close, culture, format),
-            sign + ValueFormatter.Format(change, culture, format) + percent,
+            sign + ValueFormatter.Format(change, culture, format) + share,
         ];
     }
 

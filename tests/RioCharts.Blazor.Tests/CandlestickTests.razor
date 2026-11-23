@@ -19,7 +19,18 @@
         var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
         Assert.Equal("21.5", series.GetProperty("v")[0].GetString()); // the close
         Assert.Equal("Open", series.GetProperty("pl")[0].GetString());
-        Assert.Equal("+1.5 (+7.5%)", series.GetProperty("pv")[0][4].GetString());
+        Assert.Equal("+1.5", series.GetProperty("pv")[0][4].GetString());
+    }
+
+    [Fact]
+    public void Direction_colors_are_a_parameter()
+    {
+        var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <CandlestickSeries Id="t" XValue="t => t.Time" YValue="t => t.Value" Bucket="TimeBucket.Hour" Format="0.0" DirectionColors="true" />
+        </RioChart>);
+
+        Assert.True(cut.Instance.GetDefinition().Series[0].DirectionColors);
+        Assert.Equal("+1.5 (+7.5%)", Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("pv")[0][4].GetString());
     }
 
     [Fact]

@@ -248,6 +248,11 @@ public static class ChartRazor
                 }
             }
 
+            if (s.Type == SeriesType.Candlestick && s.DirectionColors)
+            {
+                sb.Append(" DirectionColors=\"true\"");
+            }
+
             Optional(sb, "Stack", s.Stack);
             Optional(sb, "YAxisId", s.YAxisId);
             Optional(sb, "Color", s.Color);

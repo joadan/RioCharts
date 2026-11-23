@@ -561,8 +561,8 @@ public sealed class BoxPlotSeries<TItem> : SeriesBase<TItem>
 
 /// <summary>
 /// Candlestick: how a value moved within each period: a wick from low to high and a body from open
-/// to close, lightly filled when it rose and solid when it fell (theme colors <c>--rio-positive</c> and
-/// <c>--rio-negative</c>). Give raw readings (<c>XValue</c> and <c>YValue</c>, one item per
+/// to close, lightly filled when it rose and solid when it fell, in the series color (or green and red with
+/// <see cref="DirectionColors"/>). Give raw readings (<c>XValue</c> and <c>YValue</c>, one item per
 /// reading) with a <see cref="Bucket"/> such as an hour or a day, or candles computed elsewhere
 /// (<see cref="OpenValue"/>, <see cref="HighValue"/>, <see cref="LowValue"/> and <see cref="CloseValue"/>,
 /// one item per period). When zoomed out, candles too narrow to see merge into wider ones.
@@ -576,6 +576,16 @@ public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
     /// wall-clock time); <c>TimeBucket.Auto</c> picks it from the data's time span (about 50 candles).
     /// </summary>
     [Parameter] public TimeBucket? Bucket { get; set; }
+
+    /// <summary>
+    /// Color candles by direction, rising in <c>--rio-positive</c> and falling in <c>--rio-negative</c> (green and red),
+    /// with the change in percent in the tooltip, as for prices. Off (default): the series color, with a light fill for
+    /// rising and a solid fill for falling candles.
+    /// </summary>
+    [Parameter] public bool DirectionColors { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { DirectionColors = DirectionColors };
 
     /// <summary>Precomputed candles: the period's first value.</summary>
     [Parameter] public Func<TItem, double?>? OpenValue { get; set; }

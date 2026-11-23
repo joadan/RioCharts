@@ -12,7 +12,7 @@
     <Description>
         <p>
             Give <code>CandlestickSeries</code> the raw readings and a <code>Bucket</code>: the readings of each hour (or day, week, …) become
-            one candle. A rising period is lightly filled, a falling one solid (<code>--rio-positive</code> and <code>--rio-negative</code>). Three
+            one candle, in the series color: a rising period is lightly filled, a falling one solid. Three
             weeks of hourly candles are too narrow to see, so they merge into longer periods of the clock and calendar (6 or 12 hours, days,
             depending on the width) that keep the highs and lows; drag to zoom in and the hours come back. Note the thunderstorm on the
             tenth afternoon.
@@ -29,13 +29,16 @@
     <Description>
         <p>
             With one item per period, pass <code>OpenValue</code>, <code>HighValue</code>, <code>LowValue</code> and <code>CloseValue</code>.
-            Here a line on the same chart shows the average of each day's first and last price.
+            For prices, <code>DirectionColors="true"</code> colors rising candles green and falling ones red (<code>--rio-positive</code> and
+            <code>--rio-negative</code>) and adds the change in percent to the tooltip. It is off by default: red and green read as good
+            and bad, and a percentage of, say, a temperature means nothing. Here a line on the same chart shows the average of each
+            day's first and last price.
         </p>
     </Description>
     <ChildContent>
         <RioChart TItem="PriceDay" Items="Prices" YAxis="PerMwh" Height="260">
             <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
-                               LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" />
+                               LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" DirectionColors="true" />
             <LineSeries Name="Midpoint" XValue="p => p.Date" YValue="p => (p.First + p.Last) / 2" Curve="CurveType.Monotone" Format="0.0 €" />
         </RioChart>
     </ChildContent>
@@ -45,7 +48,7 @@
 <p>
     <code>"type": "candlestick"</code> (also <code>"ohlc"</code>, <code>"candle"</code>) with a time <code>x</code>, <code>y</code> and a
     <code>timeBucket</code> makes candles from the rows' y values per bucket (a day when not set). With <code>open</code>, <code>high</code>
-    and <code>low</code>, each row is a candle and <code>y</code> its close.
+    and <code>low</code>, each row is a candle and <code>y</code> its close. <code>"directionColors": true</code> colors candles by direction.
 </p>
 
 @code {
@@ -66,7 +69,7 @@
     private const string PrecomputedCode = """
         <RioChart TItem="PriceDay" Items="prices">
             <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
-                               LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" />
+                               LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" DirectionColors="true" />
             <LineSeries Name="Midpoint" XValue="p => p.Date" YValue="p => (p.First + p.Last) / 2" />
         </RioChart>
         """;

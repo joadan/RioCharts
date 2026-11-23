@@ -434,9 +434,10 @@ Box plot: the spread of values per x, e.g. supply temperatures per unit. Give th
 
 #### `<CandlestickSeries>` (`CandlestickSeries<TItem>`)
 
-Candlestick: how a value moved within each period: a wick from low to high and a body from open to close, lightly filled when it rose and solid when it fell (theme colors `--rio-positive` and `--rio-negative`). Give raw readings (`XValue` and `YValue`, one item per reading) with a `CandlestickSeries.Bucket` such as an hour or a day, or candles computed elsewhere (`CandlestickSeries.OpenValue`, `CandlestickSeries.HighValue`, `CandlestickSeries.LowValue` and `CandlestickSeries.CloseValue`, one item per period). When zoomed out, candles too narrow to see merge into wider ones.
+Candlestick: how a value moved within each period: a wick from low to high and a body from open to close, lightly filled when it rose and solid when it fell, in the series color (or green and red with `CandlestickSeries.DirectionColors`). Give raw readings (`XValue` and `YValue`, one item per reading) with a `CandlestickSeries.Bucket` such as an hour or a day, or candles computed elsewhere (`CandlestickSeries.OpenValue`, `CandlestickSeries.HighValue`, `CandlestickSeries.LowValue` and `CandlestickSeries.CloseValue`, one item per period). When zoomed out, candles too narrow to see merge into wider ones.
 
 - `Bucket`: `TimeBucket?` — Raw readings: the period of each candle, e.g. `TimeBucket.Hour` (on the readings' wall-clock time); `TimeBucket.Auto` picks it from the data's time span (about 50 candles).
+- `DirectionColors`: `bool` — Color candles by direction, rising in `--rio-positive` and falling in `--rio-negative` (green and red), with the change in percent in the tooltip, as for prices. Off (default): the series color, with a light fill for rising and a solid fill for falling candles.
 - `OpenValue`: `Func<TItem, double?>?` — Precomputed candles: the period's first value.
 - `HighValue`: `Func<TItem, double?>?` — Precomputed candles: the highest value.
 - `LowValue`: `Func<TItem, double?>?` — Precomputed candles: the lowest value.
@@ -1023,6 +1024,7 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `High`: `string?` — Box plot with precomputed boxes: the field with the upper whisker end.
 - `MarkerSize`: `double?` — Scatter: marker diameter in pixels. Default 5.
 - `TrendLine`: `bool` — Scatter: draw a dashed least-squares trend line through the points.
+- `DirectionColors`: `bool` — Candlestick: color candles by direction, rising in the positive and falling in the negative theme color (green and red), with the change in percent in the tooltip, as for prices. Off: candles take the series color, and the fill alone shows the direction (light when rising, solid when falling).
 - `Highlight`: `PointHighlight` — Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. "last, max").
 - `InnerRadius`: `double?` — Pie, donut and radial bar: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut).
 - `StartAngle`: `double?` — Pie, donut and radial bar: start angle in degrees, clockwise from 12 o'clock. Default 0.

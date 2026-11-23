@@ -245,6 +245,14 @@ public sealed record SeriesOptions
     [Description("Scatter: draw a dashed least-squares trend line through the points.")]
     public bool TrendLine { get; init; }
 
+    /// <summary>
+    /// Candlestick: color candles by direction, rising in the positive and falling in the negative theme color (green
+    /// and red), with the change in percent in the tooltip, as for prices. Off: candles take the series color, and the
+    /// fill alone shows the direction (light when rising, solid when falling).
+    /// </summary>
+    [Description("Candlestick: color candles by direction (rising green, falling red) and show the change in percent, as for prices. Off (default): the series color, with a light fill for rising and a solid fill for falling candles.")]
+    public bool DirectionColors { get; init; }
+
     /// <summary>Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. "last, max").</summary>
     [Description("Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. \"last, max\").")]
     public PointHighlight Highlight { get; init; }

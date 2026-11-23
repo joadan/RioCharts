@@ -5,6 +5,13 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Candlesticks are drawn in the series color, matching the legend and the tooltip: rising candles
+  lightly filled, falling ones solid. Before, they were always green and red, so they did not match
+  the series color and two candle series looked the same. `DirectionColors="true"` on
+  `CandlestickSeries` (`"directionColors": true` in a chart definition) brings back green and red,
+  with the tooltip dot in each candle's color. The tooltip's change is in percent only with
+  `DirectionColors` (a percentage of a temperature means nothing).
+
 - **Breaking:** the chart model is now called a *chart definition*, and its parts are options.
   Renamed: `ChartSpec` → `ChartDefinition`, `AxisSpec` → `AxisOptions`, `SeriesSpec` →
   `SeriesOptions`, `LegendSpec` → `LegendOptions`, `TooltipSpec` → `TooltipOptions`,

@@ -706,8 +706,9 @@ internal sealed class BoxPlotSeriesType : ISeriesType
 }
 
 /// <summary>
-/// Candlesticks: a thin wick from low to high and a body from open to close, lightly filled in the
-/// rising color when the close is at or above the open, solid in the falling color below. Several
+/// Candlesticks: a thin wick from low to high and a body from open to close, lightly filled when the
+/// close is at or above the open and solid below, in the series color (or with
+/// <see cref="SeriesOptions.DirectionColors"/>, rising in the positive and falling in the negative color). Several
 /// series share the x band like grouped bars. When candles would be too narrow to see (zoomed out),
 /// they merge into longer periods: on time axes calendar periods (2, 3, 6 or 12 hours, a day, a
 /// week, a month, ...) aligned to the clock, otherwise groups of consecutive candles. A merged
@@ -739,11 +740,15 @@ internal sealed class CandlestickSeriesType : ISeriesType
     public bool IncludesZero => false;
     public bool UsesSlots => true;
 
-    /// <summary>A rising body: a light fill in the rising color with its outline (the wick does not cross it).</summary>
-    internal static Style UpStyle => new() { Fill = ThemeTokens.Positive, FillOpacity = 0.22f, Stroke = ThemeTokens.Positive, StrokeWidth = 1f };
+    /// <summary>A rising body: a light fill with its outline (the wick does not cross it).</summary>
+    internal static Style UpStyle(string color) => new() { Fill = color, FillOpacity = 0.22f, Stroke = color, StrokeWidth = 1f };
 
     /// <summary>A falling body: solid.</summary>
-    internal static Style DownStyle => new() { Fill = ThemeTokens.Negative, Stroke = ThemeTokens.Negative, StrokeWidth = 1f };
+    internal static Style DownStyle(string color) => new() { Fill = color, Stroke = color, StrokeWidth = 1f };
+
+    /// <summary>The rising and falling colors of a series: the theme's positive and negative colors, or its own.</summary>
+    internal static (string Up, string Down) Colors(SeriesOptions series, string color) =>
+        series.DirectionColors ? (ThemeTokens.Positive, ThemeTokens.Negative) : (color, color);
 
     public void Build(SeriesBuildContext c)
     {
@@ -762,10 +767,11 @@ internal sealed class CandlestickSeriesType : ISeriesType
         c.BarWidth = width;
         c.BarOffset = -band.Value / 2 + c.SlotIndex * span + span / 2;
 
-        var upBody = c.Styles.Add("candle-up", UpStyle);
-        var downBody = c.Styles.Add("candle-down", DownStyle);
-        var upWick = c.Styles.Add("candle-up-wick", new Style { Stroke = ThemeTokens.Positive, StrokeWidth = 1f, Fill = "none" });
-        var downWick = c.Styles.Add("candle-down-wick", new Style { Stroke = ThemeTokens.Negative, StrokeWidth = 1f, Fill = "none" });
+        var (upColor, downColor) = Colors(c.Spec, c.Color);
+        var upBody = c.Styles.Add($"candle-up-{upColor}", UpStyle(upColor));
+        var downBody = c.Styles.Add($"candle-down-{downColor}", DownStyle(downColor));
+        var upWick = c.Styles.Add($"candle-up-wick-{upColor}", new Style { Stroke = upColor, StrokeWidth = 1f, Fill = "none" });
+        var downWick = c.Styles.Add($"candle-down-wick-{downColor}", new Style { Stroke = downColor, StrokeWidth = 1f, Fill = "none" });
 
         var up = new PathBuilder();
         var down = new PathBuilder();
