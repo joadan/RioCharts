@@ -109,10 +109,13 @@ if (failures.length) {
 
 const escape = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-// Search results show about 155 characters; cut at a word.
+// Search results show about 155 characters: keep the whole sentences that fit, or cut at a word
+// when the first sentence alone is too long.
 function describe(lead) {
     if (!lead) return null;
     if (lead.length <= 160) return lead;
+    const sentences = lead.slice(0, 161).match(/^.*[.!?](?=\s)/);
+    if (sentences && sentences[0].length >= 50) return sentences[0];
     const cut = lead.slice(0, 157);
     return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:]$/, "") + "…";
 }

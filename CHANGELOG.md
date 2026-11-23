@@ -14,7 +14,8 @@ changes are called out under **Breaking**.
 - Docs site: every page is prerendered to static HTML when the site is published, so search engines
   get its text, its own title and description and a canonical URL without running the app; Blazor
   starts on top of it as before. Also `sitemap.xml` and `robots.txt`, and page titles end in
-  "RioCharts for Blazor and .NET".
+  "RioCharts for Blazor and .NET". A page's description is its intro paragraph (whole sentences),
+  and the intros now open with what the page is about.
 
 ## 0.4.1-preview (2026-11-23)
 

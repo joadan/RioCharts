@@ -4,8 +4,8 @@
 
 <h1>Large data</h1>
 <p class="lead">
-    Pass columns directly, let LTTB downsampling keep the shape at the plot's resolution, and draw the series on a canvas when the DOM gets heavy.
-    Zooming in downsamples only the visible points, so detail appears.
+    Charts with hundreds of thousands of points stay fast in Blazor: pass columns directly and let LTTB downsampling keep the shape at the
+    plot's resolution. Draw the series on a canvas when the DOM gets heavy; zooming in downsamples only the visible points, so detail appears.
 </p>
 
 <Example Title="200 000 points" Code="@BigCode">
