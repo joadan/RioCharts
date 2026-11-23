@@ -615,6 +615,7 @@ Legend settings: when to show it and where.
 
 - `Mode`: `LegendMode` — Auto shows the legend only when there is more than one series.
 - `Position`: `LegendPosition` — Where the legend sits. Default Top.
+- `Sizes`: `bool?` — Bubble charts: a size legend right of the plot, with circles for a few round sizes. Null: shown when the chart is at least 360 px wide and has room for a legend.
 
 #### `TooltipOptions` (record, RioCharts.Core)
 

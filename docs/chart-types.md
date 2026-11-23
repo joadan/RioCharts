@@ -41,7 +41,7 @@ Rules of thumb:
 | Area | `AreaSeries` / `area` | Stacking groups, 100 % stacked. |
 | Bar | `BarSeries` / `bar` | Grouped, stacked, 100 % stacked, horizontal. Also `column`, `stackedBar`, `stackedBar100`. |
 | Scatter | `ScatterSeries` / `scatter` | Also `points`. |
-| Bubble | `ScatterSeries` with `SizeValue` / `bubble` (scatter with `size`) | Area ∝ size, one scale per chart, largest drawn first. No size legend yet. |
+| Bubble | `ScatterSeries` with `SizeValue` / `bubble` (scatter with `size`) | Area ∝ size, one scale per chart, largest drawn first, a size legend. |
 | Heatmap | `HeatmapSeries` / `heatmap` | One row per series. |
 | Range area | `RangeAreaSeries` / `rangeArea` | Low/high band. |
 | Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. |

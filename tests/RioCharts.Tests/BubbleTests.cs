@@ -207,6 +207,67 @@ public class BubbleTests
         Assert.InRange(Circles(layout).Max(c => c.R), 2, 6);
     }
 
+    // ---------- Size legend ----------
+
+    private static GroupNode? SizeLegend(ChartLayoutResult layout) =>
+        All<GroupNode>(layout.Scene.Static).SingleOrDefault(g => g.Class == "rio-size-legend");
+
+    private static ChartLayoutResult WithLegend(LegendOptions legend, double width = 600) => ChartLayout.Compute(new ChartDefinition
+    {
+        Legend = legend,
+        Series = [new SeriesOptions { Id = "s", Type = SeriesType.Scatter, SizeName = "Visitors", SizeFormat = "#,0" }],
+    }, new Dictionary<string, SeriesData> { ["s"] = Stores() }, Options with { Width = width });
+
+    [Fact]
+    public void The_size_legend_shows_round_sizes_at_their_real_size()
+    {
+        var layout = Layout(Stores(), new SeriesOptions { Id = "s", Type = SeriesType.Scatter, SizeName = "Visitors", SizeFormat = "#,0" });
+
+        var legend = SizeLegend(layout)!;
+        Assert.Equal(["Visitors", "2,000", "500"], All<TextNode>(legend).Select(t => t.Text)); // 100 would sit on 500
+        Assert.Equal("Visitors: 500, 2,000", legend.AriaLabel);
+
+        // The circle for 2,000 is as large as a bubble of 2,000: √(2000 / 2500) of the largest bubble's radius.
+        var largest = Circles(layout).Max(c => c.R);
+        var circle = All<PathNode>(legend).First(n => n.Path.Commands.Contains(PathCommand.Arc));
+        Assert.Equal(largest * Math.Sqrt(2000 / 2500.0), circle.Path.Coords[4], 1); // MoveTo x, y, then Arc cx, cy, r
+
+        // The plot makes room for it on the right.
+        Assert.True(layout.Tooltip.Plot.Right < 600 - 70);
+    }
+
+    [Fact]
+    public void The_size_legend_can_be_turned_off_and_is_left_out_of_narrow_charts()
+    {
+        Assert.Null(SizeLegend(WithLegend(new LegendOptions { Sizes = false })));
+        Assert.Null(SizeLegend(WithLegend(new LegendOptions(), width: 340)));
+        Assert.NotNull(SizeLegend(WithLegend(new LegendOptions { Sizes = true }, width: 340)));
+        Assert.Null(SizeLegend(Layout(SeriesData.From(Area, Revenue)))); // no sizes, no size legend
+    }
+
+    [Fact]
+    public void The_size_legend_sits_under_a_right_legend()
+    {
+        var layout = ChartLayout.Compute(new ChartDefinition
+        {
+            Legend = new LegendOptions { Position = LegendPosition.Right },
+            Series = [new SeriesOptions { Id = "a", Name = "Lund", Type = SeriesType.Scatter }, new SeriesOptions { Id = "b", Name = "Malmö", Type = SeriesType.Scatter }],
+        }, new Dictionary<string, SeriesData> { ["a"] = Stores(), ["b"] = Stores() }, Options);
+
+        var title = All<TextNode>(SizeLegend(layout)!).First();
+        var items = All<TextNode>(All<GroupNode>(layout.Scene.Static).Single(g => g.Class == "rio-legend"));
+        Assert.True(title.At.Y > items.Max(t => t.At.Y));
+        Assert.Equal(items[0].At.X - 18, title.At.X, 1); // left-aligned with the swatches
+    }
+
+    [Fact]
+    public void The_json_legend_turns_the_size_legend_off()
+    {
+        var parsed = ChartDefinitionJson.Parse("""{ "legend": { "sizes": false }, "series": [ { "type": "bubble", "x": "a", "y": "b", "size": "c" } ] }""");
+
+        Assert.False(parsed.Definition!.Legend.Sizes);
+    }
+
     // ---------- JSON definitions ----------
 
     private static Dictionary<string, ChartDataset> Dataset() => new()

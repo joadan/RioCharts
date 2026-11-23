@@ -32,6 +32,10 @@ changes are called out under **Breaking**.
   with a size is a bubble chart. New in Core: `SeriesOptions.Size`, `SizeName` and `SizeFormat`,
   `SeriesData.Sizes` and `SeriesData.WithSizes`, `ChartTexts.Size`. Docs: a Bubbles example on
   the Scatter and bubbles page, and a gallery tile.
+- Size legend for bubble charts: nested circles for up to three round sizes (e.g. 100, 500 and
+  2,000) at their real size, with their values and the size name, right of the plot (under a
+  right legend). Shown when the chart is at least 360 px wide and has room for a legend;
+  `LegendOptions.Sizes` (`"legend": { "sizes": false }`) turns it off or on.
 - Docs: a chart gallery with a live tile per chart type; Compact charts moved to Features.
 - **Breaking:** `ScatterSeries.MarkerSize` is `double?` (null: 5 px for markers, automatic for
   bubbles).

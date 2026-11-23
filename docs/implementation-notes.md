@@ -606,7 +606,15 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   pointer is within its radius + 6 px, the best by distance relative to radius (a small bubble on
   a large one wins), and highlighted with a ring.
 - **Aggregation:** points combined per x get the sum of their sizes (Blazor and JSON alike).
-- **Not yet:** a size legend (the tooltip and the description give the sizes).
+- **Size legend** (`ChartLayout.SizeLegend.cs`): nested circles sharing their bottom, at their
+  real size on the first bubble series' scale, for the largest 1/2/5 × 10ⁿ at or below the
+  largest size and a quarter and a sixteenth of it (half and a quarter of its width). A circle
+  under 3 px, or whose value would overlap the one above, is left out. Values sit at each circle's
+  top with a dashed leader; the size name is the title. It takes a column right of the plot (the
+  right legend's, below its items), so the plot narrows; the bubble x padding uses the narrower
+  width. Auto (`LegendOptions.Sizes` null): when the chrome has room for a legend and the chart is
+  at least 360 px wide; never in compact charts. Not interactive. If it does not fit the plot's
+  height it is left out, with its column still reserved.
 
 
 ## Heatmap

@@ -122,6 +122,10 @@ public sealed record LegendOptions
 
     /// <summary>Where the legend sits. Default Top.</summary>
     public LegendPosition Position { get; init; } = LegendPosition.Top;
+
+    /// <summary>Bubble charts: a size legend right of the plot, with circles for a few round sizes. Null: shown when the chart is at least 360 px wide and has room for a legend.</summary>
+    [Description("Bubble charts: a size legend right of the plot, with circles for a few round sizes. Null: shown when the chart is at least 360 px wide and has room for a legend.")]
+    public bool? Sizes { get; init; }
 }
 
 /// <summary>Tooltip settings.</summary>

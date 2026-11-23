@@ -44,7 +44,8 @@
             <code>SizeValue</code> sizes each marker by a third measure: here a store's floor area against its revenue per m², with visitors
             per day as the size. A bubble's area, not its width, is proportional to the size, so a store with four times the visitors is
             twice as wide. All bubbles in a chart share one scale, so the cities compare. Large bubbles are drawn first and the axes leave
-            room for them at the edges. Hover a bubble: the tooltip shows its size under <code>SizeName</code>.
+            room for them at the edges. The size legend on the right shows circles for a few round sizes at their real size, so you can
+            read a bubble's size off the chart; hover a bubble for its exact size under <code>SizeName</code>.
         </p>
     </Description>
     <ChildContent>
@@ -68,6 +69,7 @@
         <tr><td><code>SizeValue</code></td><td></td><td>Each item's size; makes a bubble chart. Sizes of zero or less, or null, are not drawn; aggregated points add up their sizes.</td></tr>
         <tr><td><code>SizeName</code></td><td>"Size"</td><td>What the size is, shown with it in the tooltip.</td></tr>
         <tr><td><code>SizeFormat</code></td><td></td><td>.NET format string for the size, e.g. <code>"#,0"</code>.</td></tr>
+        <tr><td><code>Legend.Sizes</code></td><td>auto</td><td>On the chart's <code>LegendOptions</code>: the size legend right of the plot. Auto shows it when the chart is at least 360 px wide and has room for a legend; <code>false</code> hides it, <code>true</code> shows it at any width. JSON: <code>"legend": { "sizes": false }</code>.</td></tr>
         <tr><td>JSON</td><td></td><td><code>"type": "scatter"</code> (also <code>"points"</code>), with <code>"markerSize"</code> and <code>"trendLine"</code>; <code>"type": "bubble"</code> with <code>"size"</code> naming the size field, and <code>"sizeName"</code> and <code>"sizeFormat"</code>.</td></tr>
     </table>
 </div>

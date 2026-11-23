@@ -362,10 +362,12 @@ public static partial class ChartLayout
             : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.ExpandsDomain));
         var scatter = drawable.Where(r => r.Spec.Type == SeriesType.Scatter).ToList();
         var bubbles = BubbleScale.For(drawable.Select(r => (r.Spec, r.Data)), width, height);
+        var sizeLegend = MeasureSizeLegend(spec, drawable, bubbles, compact, chrome.Legend, width, culture, texts, measure, font, lineHeight);
         if (bubbles is { } bubbleScale && xKind != XKind.Category && options.XRange is null)
         {
             // Room for the bubbles at the ends, about as much as their radius on a plot of this size.
-            (xMin, xMax) = PadForBubbles(scatter, bubbleScale, r => r.Data.X, xMin, xMax, width * 0.85, spec.X.Min is null, spec.X.Max is null);
+            (xMin, xMax) = PadForBubbles(scatter, bubbleScale, r => r.Data.X, xMin, xMax, (width - (sizeLegend?.Width + 16 ?? 0)) * 0.85,
+                spec.X.Min is null, spec.X.Max is null);
         }
 
         if (scatter.Count > 0 && xKind == XKind.Numeric && options.XRange is null)
@@ -447,6 +449,12 @@ public static partial class ChartLayout
                     legendBottom = legendHeight + 8;
                 }
             }
+        }
+
+        // Bubbles: their size legend sits right of the plot, under a right legend.
+        if (sizeLegend is not null)
+        {
+            legendRight = Math.Max(legendRight, sizeLegend.Width + 16);
         }
 
         // ---------- Vertical layout ----------
@@ -647,6 +655,15 @@ public static partial class ChartLayout
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
                 plotBottom + xLabelHeight + xTitleHeight + 8, lineHeight, styles, texts.Legend));
+        }
+
+        if (sizeLegend is not null)
+        {
+            var sizeTop = plot.Y + (showLegend && legendPosition == LegendPosition.Right ? legendItems.Count * (lineHeight + 4) + 12 : 0);
+            if (sizeTop + sizeLegend.Height <= plot.Bottom + xLabelHeight)
+            {
+                statics.Add(BuildSizeLegend(sizeLegend, width - PadRight - legendRight + 16, sizeTop, styles));
+            }
         }
 
         // ---------- Series ----------
