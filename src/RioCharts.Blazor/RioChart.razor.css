@@ -307,6 +307,21 @@
     stroke-width: 1.5;
 }
 
+/* Maps: countries with data zoom on a click. */
+.rio-chart ::deep .rio-map-zoom {
+    cursor: pointer;
+    outline: none;
+}
+
+.rio-chart ::deep .rio-series-mapbubble {
+    pointer-events: none;
+}
+
+.rio-chart ::deep .rio-map-zoom:focus-visible > path {
+    stroke: var(--rio-focus, var(--_rio-focus));
+    stroke-width: 1.5;
+}
+
 .rio-chart ::deep .rio-treemap-crumb:hover text {
     text-decoration: underline;
 }

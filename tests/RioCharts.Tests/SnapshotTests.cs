@@ -169,6 +169,22 @@ public class SnapshotTests
             ["h"] = Categories(["Jan", "Feb", "Mar", "Apr", "May", "Jun"], 152, 148, 171, 160, 139, 166).WithLow([160.0, 150, 160, 160, 150, 150]),
         }, Width: 480, Height: 260),
 
+        // Sessions per country, and per city as bubbles that add up per country on the world map.
+        ["map"] = new(new ChartDefinition
+        {
+            Title = "Active sessions",
+            Series =
+            [
+                new SeriesOptions { Id = "m", Name = "Sessions", Type = SeriesType.Map },
+                new SeriesOptions { Id = "c", Name = "Cities", Type = SeriesType.MapBubble },
+            ],
+        }, new()
+        {
+            ["m"] = Categories(["SE", "NO", "FI", "DE", "GB", "US", "BR", "CN", "AU"], 1240, 310, 260, 420, 190, 210, 12, 75, 25),
+            ["c"] = Categories(["Stockholm", "Gothenburg", "New York", "Shanghai"], 420, 380, 120, 60)
+                .WithLocations([59.33, 57.71, 40.71, 31.23], [18.07, 11.97, -74.01, 121.47]),
+        }, Width: 640, Height: 340),
+
         // Average test scores per class in two years, with the standard deviation as error bars.
         ["error-bars"] = new(new ChartDefinition
         {

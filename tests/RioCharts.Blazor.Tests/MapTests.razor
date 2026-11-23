@@ -1,0 +1,40 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Place(string Name, double Users, double? Latitude = null, double? Longitude = null);
+
+    private static readonly Place[] Countries = [new("SE", 80), new("NO", 20)];
+
+    private static readonly Place[] Cities = [new("Stockholm", 50, 59.33, 18.07), new("Gothenburg", 30, 57.71, 11.97), new("Oslo", 20, 59.91, 10.75)];
+
+    [Fact]
+    public void Map_and_bubble_series_draw_countries_and_send_their_outlines_for_hover()
+    {
+        var cut = Render<RioChart<Place>>(@<RioChart TItem="Place" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <MapSeries Items="Countries" Name="Users" XValue="c => c.Name" YValue="c => c.Users" />
+            <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Users" Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+        </RioChart>);
+
+        Assert.True(cut.FindAll(".rio-map-region").Count > 100);
+        Assert.Equal(2, cut.FindAll(".rio-map-zoom[tabindex='0']").Count);
+        var series = Payload(Calls("update")[^1]).GetProperty("series");
+        Assert.True(series[0].GetProperty("dots").GetBoolean()); // bubbles first, hit-tested as bubbles
+        Assert.Equal(2, series[1].GetProperty("gs").GetArrayLength());
+    }
+
+    [Fact]
+    public void Clicking_a_country_zooms_to_its_continent_then_the_country()
+    {
+        string? region = null;
+        var cut = Render<RioChart<Place>>(@<RioChart TItem="Place" TreemapPath="@region" TreemapPathChanged="@(r => region = r)">
+            <MapSeries Items="Countries" Name="Users" XValue="c => c.Name" YValue="c => c.Users" />
+        </RioChart>);
+
+        cut.Find(".rio-map-zoom[aria-label='Show Europe'][tabindex='0']").Click();
+        Assert.Equal("Europe", region);
+
+        cut.Find(".rio-map-zoom[aria-label='Show Sweden']").Click();
+        Assert.Equal("SE", region);
+        Assert.Contains("Sweden", cut.Find(".rio-treemap-path").TextContent, StringComparison.Ordinal);
+    }
+}

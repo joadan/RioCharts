@@ -5,6 +5,20 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- World maps: `MapSeries` colors each country by its value (`XValue` an ISO 3166 code such as "SE" or
+  "SWE", or an English name), the color following each value's rank unless `Max` is set; a color scale
+  shows the range. `MapBubbleSeries` puts a bubble at each item's `Latitude` and `Longitude`, sized by
+  value; on the world map and a continent the places in one country add up to one bubble
+  (`GroupByCountry`). A click zooms in one level, from the world to the country's continent and on to
+  the country, with a path bar back ("World › Europe › Sweden"); `TreemapPath` binds the area shown
+  ("Europe" or "SE"), and countries outside the area fade. The Equal Earth projection and Natural
+  Earth's 1:110m country outlines (public domain, embedded in Core; `tools/WorldMapData.cs` makes the
+  file). JSON definitions: `"type": "map"` (also `choropleth`, `worldMap`) and `"mapBubble"` (also
+  `bubbleMap`) with new `latitude`, `longitude` and `groupByCountry` fields. New in Core: `SeriesType.Map`
+  and `MapBubble`, the `RioCharts.Core.Geo` namespace (`WorldMap`, `GeoRegion`, `GeoContinent`,
+  `EqualEarth`), `SeriesData.Latitudes`, `Longitudes` and `WithLocations`, `LayoutOptions.MapRegion` and
+  `InteractiveMap`, `ChartLayoutResult.MapRegion`, `TooltipSeries.Shapes`, `NodeInteraction.Focusable`,
+  `ChartTexts.Map` and `MapWorld`. Docs: a World maps page and a gallery tile.
 - Dumbbell charts: `DumbbellSeries` compares two values per category, e.g. before and after or plan
   and actual: `FromValue` is the first (a hollow dot), `YValue` the second (a filled dot), joined by
   a line. Upright, or as rows with `Horizontal="true"` on the chart; the value axis fits the values

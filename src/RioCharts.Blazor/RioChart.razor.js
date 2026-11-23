@@ -881,6 +881,21 @@ function headerOf(rows) {
 function findSingle(m, px, py) {
     let best = null;
     for (const s of m.series) {
+        if (s.gs) {
+            // Map countries: the one under the pointer, unless a bubble on top was found.
+            if (best) {
+                continue;
+            }
+
+            for (let j = 0; j < s.gs.length; j++) {
+                if (inShape(s.gs[j], px, py)) {
+                    return [{ s, i: j, d: 0 }];
+                }
+            }
+
+            continue;
+        }
+
         if (s.ch > 0 || s.chs) {
             // Heatmap cells, horizontal bars and treemap rectangles: the one under the pointer.
             for (let j = 0; j < s.x.length; j++) {
@@ -953,6 +968,21 @@ function findSingle(m, px, py) {
     }
 
     return best ? [best] : [];
+}
+
+// Even-odd point in polygon over all rings (flat x, y pairs), so holes and islands count right.
+function inShape(rings, px, py) {
+    let inside = false;
+    for (const r of rings) {
+        for (let k = 0, j = r.length - 2; k < r.length; j = k, k += 2) {
+            const xi = r[k], yi = r[k + 1], xj = r[j], yj = r[j + 1];
+            if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
+                inside = !inside;
+            }
+        }
+    }
+
+    return inside;
 }
 
 function find(m, pos) {
@@ -1139,6 +1169,10 @@ function drawHover(state, rows, m) {
         const r = m.radar, a = rows.spoke * TAU / r.n;
         const [ex, ey] = arcPoint(r.cx, r.cy, r.r, a);
         g.appendChild(el('line', { class: 'rio-crosshair', x1: r.cx, y1: r.cy, x2: ex, y2: ey }));
+    } else if (first.s.gs) {
+        // Map: outline the country.
+        g.appendChild(el('path', { class: 'rio-hover-cell', d: shapePath(first.s.gs[first.i]) }));
+        return;
     } else if (first.s.ch > 0 || first.s.chs) {
         // Heatmap and treemap: outline the cell.
         const w = first.s.cw ? first.s.cw[first.i] : first.s.barWidth, h = first.s.chs ? first.s.chs[first.i] : first.s.ch, cx = first.s.x[first.i], cy = first.s.y[first.i];
@@ -1170,6 +1204,20 @@ function drawHover(state, rows, m) {
             }));
         }
     }
+}
+
+function shapePath(rings) {
+    let d = '';
+    for (const r of rings) {
+        d += 'M' + r[0] + ' ' + r[1];
+        for (let k = 2; k < r.length; k += 2) {
+            d += 'L' + r[k] + ' ' + r[k + 1];
+        }
+
+        d += 'Z';
+    }
+
+    return d;
 }
 
 function drawTooltip(state, rows, pos) {
@@ -1211,7 +1259,7 @@ function drawTooltip(state, rows, pos) {
     }
 
     // Treemap rectangles can be large: beside the pointer, not their center.
-    placeTooltip(state, pos, rows.anchor !== undefined ? rows.anchor : first.s.chs ? pos.x : first.s.x[first.i], pos.y);
+    placeTooltip(state, pos, rows.anchor !== undefined ? rows.anchor : first.s.chs || first.s.gs ? pos.x : first.s.x[first.i], pos.y);
 }
 
 // Beside x (right, or left when there is no room), vertically centered on y (chart units).
@@ -1637,7 +1685,7 @@ function click(state, e) {
     const hits = find(m, pos)
         .map(r => {
             const s = r.s;
-            if (s.ch > 0 || s.chs) {
+            if (s.ch > 0 || s.chs || s.gs) {
                 return { ...r, d: 0 }; // the cell under the pointer
             }
 

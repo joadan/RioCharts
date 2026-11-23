@@ -491,6 +491,8 @@ public partial class RioChart<TItem> : IChartContext
             TreemapPath = _treemapPath,
             InteractiveTreemap = Live,
             TreemapDrillOnItems = !OnPointClick.HasDelegate && Selection != SelectionMode.Points,
+            MapRegion = _treemapPath,
+            InteractiveMap = Live && !OnPointClick.HasDelegate && Selection != SelectionMode.Points,
         });
         _dirty = false;
         return _layout;
@@ -507,7 +509,7 @@ public partial class RioChart<TItem> : IChartContext
             return;
         }
 
-        if (interaction.Kind == "treemap")
+        if (interaction.Kind is "treemap" or "map")
         {
             await DrillDownAsync(interaction.Id);
             return;
@@ -742,10 +744,10 @@ public partial class RioChart<TItem> : IChartContext
                 Group: Group,
                 Xscale: scale is null ? null : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
                 Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram, s.Step, s.Snap,
-                    s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight, s.CellWidths,
+                    s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type is SeriesType.Scatter or SeriesType.MapBubble, s.CellHeight, s.CellWidths,
                     s.PartLabels, s.PartValues, s.Spokes, s.CellHeights,
                     s.PointColors is { } colors ? [.. colors.Select(SvgWriter.Color)] : null,
-                    s.Type is SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall, s.Radii))],
+                    s.Type is SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall, s.Radii, s.Shapes))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd,
                     s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))],

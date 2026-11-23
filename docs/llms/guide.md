@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, radar, heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, radar, heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap and world map, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -67,6 +67,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
 | From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
 | Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
+| Values per country, places on a world map | `MapSeries`, `MapBubbleSeries` | `MapSeries`: `XValue` the country code ("SE") or English name, `YValue` the value; `MapBubbleSeries`: `XValue` the place's name, `YValue` its size, `Latitude`, `Longitude` |
 
 Check the parameters of each component in the reference below before using them.
 

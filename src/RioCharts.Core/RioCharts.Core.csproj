@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="RioCharts.Tests" />
+    <EmbeddedResource Include="Geo\WorldCountries.txt" LogicalName="RioCharts.Core.Geo.WorldCountries.txt" />
   </ItemGroup>
 
 </Project>

@@ -139,6 +139,12 @@
         </RioChart>
         <span class="tile-label">Treemap <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="maps">
+        <RioChart TItem="MapValue" Items="MapValues" Height="170" Legend="NoLegend">
+            <MapSeries Name="Sessions" XValue="c => c.Country" YValue="c => c.Value" />
+        </RioChart>
+        <span class="tile-label">World map <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="pies#pie">
         <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend">
             <PieSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" />
@@ -188,6 +194,10 @@
 
 @code {
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
+    private sealed record MapValue(string Country, double Value);
+
+    private static readonly MapValue[] MapValues = [new("SE", 90), new("NO", 40), new("FI", 35), new("DE", 60), new("FR", 30), new("GB", 35), new("US", 50), new("CA", 20), new("BR", 15), new("CN", 30), new("IN", 20), new("AU", 12), new("ZA", 8)];
+
     private sealed record BikeShare(string City, double Then, double Now);
 
     private static readonly BikeShare[] BikeShares = [new("Utrecht", 33, 41), new("Ghent", 22, 35), new("Bologna", 9, 18), new("Lyon", 6, 12)];

@@ -128,7 +128,7 @@ internal sealed class SvgSceneRenderer : ComponentBase
         if (g.Interaction is { } interaction)
         {
             b.AddAttribute(54, "role", "button");
-            b.AddAttribute(55, "tabindex", "0");
+            b.AddAttribute(55, "tabindex", interaction.Focusable ? "0" : "-1");
             if (interaction.Pressed is { } pressed)
             {
                 b.AddAttribute(56, "aria-pressed", pressed ? "true" : "false");

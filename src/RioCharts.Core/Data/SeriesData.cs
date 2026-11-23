@@ -79,7 +79,32 @@ public sealed class SeriesData
         {
             TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = any ? values : null,
             Rows = Rows, EndOffsets = EndOffsets, Targets = Targets, ErrorLow = ErrorLow, ErrorHigh = ErrorHigh,
+            Latitudes = Latitudes, Longitudes = Longitudes,
         };
+    }
+
+    /// <summary>Map bubbles: each point's latitude in degrees, NaN where missing; null for other series. Set with <see cref="WithLocations"/>.</summary>
+    public double[]? Latitudes { get; private set; }
+
+    /// <summary>Map bubbles: each point's longitude in degrees, NaN where missing; null for other series. Set with <see cref="WithLocations"/>.</summary>
+    public double[]? Longitudes { get; private set; }
+
+    /// <summary>
+    /// The same points with a place each, for bubbles on a map. Both are in input order, like the y
+    /// values given when creating the data: index i is the place of input item (or group) i.
+    /// </summary>
+    public SeriesData WithLocations(ReadOnlySpan<double> latitudes, ReadOnlySpan<double> longitudes)
+    {
+        var lat = new double[Count];
+        var lon = new double[Count];
+        for (var i = 0; i < lat.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            lat[i] = source < latitudes.Length ? latitudes[source] : double.NaN;
+            lon[i] = source < longitudes.Length ? longitudes[source] : double.NaN;
+        }
+
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Colors = Colors, Latitudes = lat, Longitudes = lon };
     }
 
     /// <summary>The color of a point: its own, or <paramref name="fallback"/> (the series color).</summary>

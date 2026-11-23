@@ -84,6 +84,15 @@ public sealed record LayoutOptions
     /// it. Off: only a group's header and frame drill (items keep their clicks).
     /// </summary>
     public bool TreemapDrillOnItems { get; init; }
+
+    /// <summary>
+    /// Maps: the area to zoom into: a continent by English name (e.g. "Europe"), or a country by ISO
+    /// alpha-2 or alpha-3 code or English name (e.g. "SE"). Null, or one that is not on the map: the whole world.
+    /// </summary>
+    public string? MapRegion { get; init; }
+
+    /// <summary>Maps: make countries and the path bar clickable (scene interactions of kind "map", with the continent's name or country's code to zoom to; "" for the world).</summary>
+    public bool InteractiveMap { get; init; }
 }
 
 /// <summary>The space between the chart's edges and its plot, in pixels.</summary>
@@ -166,6 +175,9 @@ public sealed class ChartLayoutResult
 
     /// <summary>Treemaps: the group shown (<see cref="LayoutOptions.TreemapPath"/>), or null when the whole tree is shown.</summary>
     public string? TreemapPath { get; init; }
+
+    /// <summary>Maps: the area zoomed into, a country's <see cref="Geo.GeoRegion.Code"/> or a continent's name; null when the whole world is shown.</summary>
+    public string? MapRegion { get; init; }
 }
 
 /// <summary>
@@ -286,7 +298,7 @@ public static partial class ChartLayout
 
             r.Axis = FindAxis(axes, s.YAxisId, $"series[{i}].yAxisId", warnings) ?? primary;
             r.StackGroup = StackGroupOf(r, i, warnings);
-            if ((d.Kind == XKind.Category || r.Type.UsesSlots) && s.Type != SeriesType.Treemap && RepeatsX(d) is { } repeated)
+            if ((d.Kind == XKind.Category || r.Type.UsesSlots) && s.Type is not (SeriesType.Treemap or SeriesType.Map or SeriesType.MapBubble) && RepeatsX(d) is { } repeated)
             {
                 warnings.Add($"series '{s.Id}': x value {repeated} appears more than once; the points are drawn on top of each other. Combine them with an aggregate (Aggregate or YAggregate on a series component, 'aggregate' in a definition).");
             }
@@ -312,6 +324,11 @@ public static partial class ChartLayout
         if (resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
         {
             return ComputeHeatmap(spec, resolved, options, warnings, styles, time);
+        }
+
+        if (resolved.Any(r => r.Spec.Type is SeriesType.Map or SeriesType.MapBubble))
+        {
+            return ComputeMap(spec, resolved, options, warnings, styles);
         }
 
         if (resolved.Any(r => r.Spec.Type == SeriesType.Treemap))

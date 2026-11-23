@@ -146,6 +146,8 @@ public static class ChartRazor
                 SeriesType.Gauge => "GaugeSeries",
                 SeriesType.Bullet => "BulletSeries",
                 SeriesType.Dumbbell => "DumbbellSeries",
+                SeriesType.Map => "MapSeries",
+                SeriesType.MapBubble => "MapBubbleSeries",
                 _ => "LineSeries",
             };
 
@@ -283,6 +285,24 @@ public static class ChartRazor
             if (s.Curve != CurveType.Linear)
             {
                 sb.Append($" Curve=\"CurveType.{s.Curve}\"");
+            }
+
+            if (s.Type == SeriesType.MapBubble)
+            {
+                if (s.Latitude is { } latitudeField && s.Longitude is { } longitudeField)
+                {
+                    sb.Append($" Latitude=\"r => r.{Property(latitudeField)}\" Longitude=\"r => r.{Property(longitudeField)}\"");
+                }
+
+                if (s.MarkerSize is { } bubbleSize)
+                {
+                    sb.Append($" MarkerSize=\"{Number(bubbleSize)}\"");
+                }
+
+                if (s.GroupByCountry == false)
+                {
+                    sb.Append(" GroupByCountry=\"false\"");
+                }
             }
 
             if (s.Type == SeriesType.Scatter)

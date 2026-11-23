@@ -1,0 +1,62 @@
+@page "/map"
+
+<PageTitle>RioCharts map demo</PageTitle>
+
+<header class="top">
+    <div>
+        <h1>World map</h1>
+        <p class="lead">Countries colored by value, bubbles at latitude and longitude, and a click on a country zooms into it. <a href="/">Dashboard</a></p>
+    </div>
+    <button class="theme" @onclick="() => _dark = !_dark">@(_dark ? "Light" : "Dark") theme</button>
+</header>
+
+<main class="@(_dark ? "rio-theme-dark dark-page" : "rio-theme-light")">
+    <div class="grid">
+        <section class="wide">
+            <h2>Active sessions by country and city</h2>
+            <p>Shown: @(_region ?? "the world")</p>
+            <RioChart TItem="Place" Height="460" Title="Active sessions" @bind-TreemapPath="_region">
+                <MapSeries Items="_countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
+                <MapBubbleSeries Items="_cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions" Latitude="c => c.Latitude" Longitude="c => c.Longitude" Color="#d63939" />
+            </RioChart>
+        </section>
+
+        <section>
+            <h2>Countries only</h2>
+            <RioChart TItem="Place" Height="300">
+                <MapSeries Items="_countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
+            </RioChart>
+        </section>
+
+        <section>
+            <h2>Bubbles only</h2>
+            <RioChart TItem="Place" Height="300">
+                <MapBubbleSeries Items="_cities" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+            </RioChart>
+        </section>
+    </div>
+</main>
+
+@code {
+    private bool _dark;
+    private string? _region;
+
+    private sealed record Place(string Name, double Sessions, double? Latitude = null, double? Longitude = null);
+
+    private readonly Place[] _countries =
+    [
+        new("SE", 1240), new("NO", 310), new("DK", 280), new("FI", 260), new("DE", 420), new("GB", 190), new("FR", 140),
+        new("PL", 120), new("NL", 95), new("US", 210), new("CA", 40), new("CN", 75), new("IN", 30), new("AU", 25),
+        new("BR", 12), new("ZA", 8), new("JP", 18), new("ES", 60), new("IT", 55), new("EE", 22), new("LT", 19), new("LV", 17),
+    ];
+
+    private readonly Place[] _cities =
+    [
+        new("Stockholm", 420, 59.33, 18.07), new("Gothenburg", 380, 57.71, 11.97), new("Kvänum", 160, 58.30, 13.18),
+        new("Malmö", 120, 55.60, 13.00), new("Umeå", 40, 63.83, 20.26), new("Luleå", 28, 65.58, 22.15),
+        new("Oslo", 210, 59.91, 10.75), new("Copenhagen", 190, 55.68, 12.57), new("Helsinki", 170, 60.17, 24.94),
+        new("Berlin", 150, 52.52, 13.40), new("Hamburg", 90, 53.55, 9.99), new("London", 160, 51.51, -0.13),
+        new("Paris", 110, 48.86, 2.35), new("Warsaw", 90, 52.23, 21.01), new("New York", 120, 40.71, -74.01),
+        new("Chicago", 50, 41.88, -87.63), new("Shanghai", 60, 31.23, 121.47), new("Sydney", 25, -33.87, 151.21),
+    ];
+}

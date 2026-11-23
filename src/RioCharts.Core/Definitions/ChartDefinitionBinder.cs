@@ -282,6 +282,23 @@ public static class ChartDefinitionBinder
             warnings.Add($"{path}.size: only scatter series have sizes (type \"bubble\"); ignored.");
             sizeField = null;
         }
+
+        DataField? latitudeField = null, longitudeField = null;
+        if (s.Type == SeriesType.MapBubble)
+        {
+            if (s.Latitude is null || s.Longitude is null)
+            {
+                errors.Add(new DefinitionError($"{path}.{(s.Latitude is null ? "latitude" : "longitude")}",
+                    $"map bubbles need latitude and longitude fields (degrees); numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
+            }
+
+            latitudeField = s.Latitude is null ? null : Find(dataset, s.Latitude, $"{path}.latitude", FieldType.Number, errors);
+            longitudeField = s.Longitude is null ? null : Find(dataset, s.Longitude, $"{path}.longitude", FieldType.Number, errors);
+        }
+        else if (s.Latitude is not null || s.Longitude is not null)
+        {
+            warnings.Add($"{path}.{(s.Latitude is null ? "longitude" : "latitude")}: only mapBubble series have a place; ignored.");
+        }
         var filters = new List<(Filter Spec, DataField Field)>();
         for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
         {
@@ -347,7 +364,7 @@ public static class ChartDefinitionBinder
             aggregate = Aggregate.Average;
             warnings.Add($"{path}.aggregate: not set with timeBucket; using average.");
         }
-        else if (aggregate is null && s.Type != SeriesType.BoxPlot && x.Type == FieldType.Text && groups.Any(g => g.Rows.Select(r => Text(x.Values[r])).Distinct().Count() < g.Rows.Count))
+        else if (aggregate is null && s.Type is not (SeriesType.BoxPlot or SeriesType.MapBubble) && x.Type == FieldType.Text && groups.Any(g => g.Rows.Select(r => Text(x.Values[r])).Distinct().Count() < g.Rows.Count))
         {
             aggregate = Aggregate.Sum;
             warnings.Add($"{path}.aggregate: '{x.Name}' repeats; using sum per value (set aggregate to change).");
@@ -392,6 +409,19 @@ public static class ChartDefinitionBinder
                 var boxName = key is null ? s.Name ?? Humanize(y?.Name ?? "values") : s.Name is null ? key : $"{s.Name}: {key}";
                 output.Add(s with { Id = boxId, Name = boxName });
                 data[boxId] = Boxes(groupRows, x, y, bucket, low, q1, q3, high);
+                continue;
+            }
+
+            if (s.Type == SeriesType.MapBubble && latitudeField is not null && longitudeField is not null)
+            {
+                // One bubble per row, at its place; on the world map the layout adds them up per country.
+                var placeId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "count") : s.Id, key, usedIds);
+                output.Add(s with { Id = placeId, Name = key is null ? s.Name ?? Humanize(y?.Name ?? "count") : s.Name is null ? key : $"{s.Name}: {key}" });
+                var places = groupRows.Where(r => x.Values[r] is not null).ToList();
+                double Number(DataField? field, int r) => field?.Values[r] is double d ? d : double.NaN;
+                double? Size(int r) => y is null ? 1 : Number(y, r) is var v && double.IsFinite(v) ? v : null;
+                data[placeId] = SeriesData.FromItems(places, r => x.Values[r], Size)
+                    .WithLocations([.. places.Select(r => Number(latitudeField, r))], [.. places.Select(r => Number(longitudeField, r))]);
                 continue;
             }
 
