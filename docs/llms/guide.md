@@ -60,12 +60,12 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
 | Several measures per item | `RadarSeries` | one series per item |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
-| Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
+| Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
 | Two values per category (before/after, plan/actual) | `DumbbellSeries` | `XValue` the category, `FromValue` the first value, `YValue` the second; `Horizontal="true"` on the chart for rows |
 | Periods per row on a time axis (schedule, states over time) | `RangeBarSeries` | `RowValue`, `StartValue`, `EndValue`; one series per state |
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
-| From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
+| From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals; `Horizontal="true"` on the chart for rows |
 | Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
 | Values per country, places on a world map | `MapSeries`, `MapBubbleSeries` | `MapSeries`: `XValue` the country code ("SE") or English name, `YValue` the value; `MapBubbleSeries`: `XValue` the place's name, `YValue` its size, `Latitude`, `Longitude`; `Projection="MapProjection.Mercator"` on the chart for the web-map look |
 

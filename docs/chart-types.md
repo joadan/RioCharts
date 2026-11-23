@@ -44,7 +44,7 @@ Rules of thumb:
 | Bubble | `ScatterSeries` with `SizeValue` / `bubble` (scatter with `size`) | Area ∝ size, one scale per chart, largest drawn first, a size legend. |
 | Heatmap | `HeatmapSeries` / `heatmap` | One row per series. |
 | Range area | `RangeAreaSeries` / `rangeArea` | Low/high band. |
-| Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. |
+| Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. Upright or `Horizontal`. |
 | Candlestick | `CandlestickSeries` / `candlestick` | OHLC. |
 | Pie / donut | `PieSeries`, `DonutSeries` / `pie` | A donut is a pie with an inner radius. |
 | Radial bar | `RadialBarSeries` / `radialBar` | Also `radial`. |
@@ -55,7 +55,7 @@ Rules of thumb:
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
 | Dumbbell | `DumbbellSeries` / `dumbbell` (also `connectedDot`, `dotPlot`) | Two values per category, hollow to filled dot; upright or `Horizontal` rows. A slope chart is a line per category with two x values. |
 | Range bar / timeline | `RangeBarSeries` / `rangeBar` (also `timeline`, `gantt`) | Start to end per row on a time axis; one series per state. Not a full Gantt (no dependencies or dragging). |
-| Waterfall | `WaterfallSeries` / `waterfall` | Changes from a running total, totals and subtotals, connectors. Also `bridge`. |
+| Waterfall | `WaterfallSeries` / `waterfall` | Changes from a running total, totals and subtotals, connectors. Upright or `Horizontal`. Also `bridge`. |
 | Error bars | an option on `BarSeries`, `LineSeries`, `ScatterSeries` / `errorField`, `errorLow` and `errorHigh`, `error` | Not a series type. Plus-or-minus or low/high ends; vertical and horizontal bars, stacks. |
 | Sparkline | compact mode on any chart | Not a series type. |
 

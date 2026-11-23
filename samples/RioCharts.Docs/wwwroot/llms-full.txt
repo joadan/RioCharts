@@ -60,12 +60,12 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
 | Several measures per item | `RadarSeries` | one series per item |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
-| Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
+| Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
 | Two values per category (before/after, plan/actual) | `DumbbellSeries` | `XValue` the category, `FromValue` the first value, `YValue` the second; `Horizontal="true"` on the chart for rows |
 | Periods per row on a time axis (schedule, states over time) | `RangeBarSeries` | `RowValue`, `StartValue`, `EndValue`; one series per state |
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
-| From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
+| From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals; `Horizontal="true"` on the chart for rows |
 | Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
 | Values per country, places on a world map | `MapSeries`, `MapBubbleSeries` | `MapSeries`: `XValue` the country code ("SE") or English name, `YValue` the value; `MapBubbleSeries`: `XValue` the place's name, `YValue` its size, `Latitude`, `Longitude`; `Projection="MapProjection.Mercator"` on the chart for the web-map look |
 
@@ -309,7 +309,7 @@ A chart. Series are added as child components: `<RioChart Items="readings"><Line
 - `RefreshInterval`: `int` = `100` — Live data (series with a `Buffer`): the shortest time between redraws, in milliseconds. Default 100.
 - `Compact`: `bool` — Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y range fits the data (bars keep zero). Set a small `RioChart.Height` too, e.g. 32. Keyboard navigation is off unless `RioChart.KeyboardNavigation` is set; the chart has a short text summary.
 - `AutoCompact`: `bool` = `true` — Default true: as the chart gets small (a narrow container, a low `RioChart.Height`), it leaves out axis titles first, then the legend, the title and the axis labels, so the plot keeps the space; the tooltip still shows the series and values. Below 120 × 60 px it becomes a compact chart. False keeps everything at any size.
-- `Horizontal`: `bool` — Bar charts: bars run left to right, with the categories down the side (first on top). For rankings and long category names. `RioChart.YAxis` (title, format, min, max) applies to the values.
+- `Horizontal`: `bool` — Bar, box plot, waterfall and dumbbell charts: they run left to right, with the categories down the side (first on top). For rankings and long category names. `RioChart.YAxis` (title, format, min, max) applies to the values.
 - `Projection`: `MapProjection` — Maps: how the round world is drawn flat. `MapProjection.EqualEarth` (default) keeps every country's true relative size; `MapProjection.Mercator` is the projection of web maps, with familiar shapes but areas that grow toward the poles. Overrides a `RioChart.Definition`'s projection unless left at the default.
 - `Interactive`: `bool` = `true` — False draws plain SVG without the JS module: no tooltip, hover, zoom, keyboard navigation, download button or width measuring. For many small charts (compact charts in a table) or static pages. Set `RioChart.Width` for exact geometry; otherwise the chart is laid out at a default width (640, compact 160) and scaled to fit. Read once, when the chart first renders.
 - `KeyboardNavigation`: `bool?` — Keyboard navigation (default on, off for compact charts): the chart is a tab stop, and with it focused the arrow keys move between points (Up/Down: between series; pies: between slices), showing the tooltip and announcing the point to screen readers; Enter clicks it, Escape leaves. With `RioChart.Zoomable`, + and - zoom around the focused point, Shift+Left/Right pans and 0 resets. Handled in the browser.
@@ -843,7 +843,7 @@ The chart model. Plain, serializable data: Razor components and (later) JSON def
 - `Title`: `string?` — Optional chart title.
 - `Compact`: `bool` — Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y range fits the data tightly (bars keep zero). For small charts in tables and tiles.
 - `AutoCompact`: `bool` = `true` — Default true: as the chart gets small, leave out axis titles, then the legend, title and axis labels; very small charts become compact. False keeps everything at any size.
-- `Horizontal`: `bool` — Bar charts: bars run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.
+- `Horizontal`: `bool` — Bar, box plot, waterfall and dumbbell charts: they run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.
 - `Projection`: `MapProjection` — Maps: how the round world is drawn flat. EqualEarth (default) keeps every country's true relative size; Mercator is the projection of web maps, familiar shapes but areas that grow toward the poles.
 - `X`: `AxisOptions` — Horizontal axis.
 - `Y`: `AxisOptions` — Primary vertical axis (id "y" unless set). Drawn on the left and owns the grid lines.
