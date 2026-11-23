@@ -33,7 +33,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - `Items` goes on the chart (shared by all series) or on each series. `TItem` is inferred from `Items`; set `TItem` on `<RioChart>` when only the series have `Items` or when the chart has event handlers (`OnPointClick`, ...).
 - `XValue` returns the x value: `DateTime`/`DateTimeOffset` give a time axis, numbers a linear axis, strings a category axis (categories keep the order of the items).
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
-- Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out.
+- Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out. The same on `XAxis` for numeric x under lines and scatter points (not bars), e.g. load time against page size, log on both axes.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
 - Error bars (bar, line and scatter series): `ErrorValue="m => m.StdDev"` (plus or minus, per item), `Error="2.5"` (the same for every point), or `ErrorLowValue` and `ErrorHighValue` (the ends, as values). JSON: `errorField`, `error`, `errorLow` and `errorHigh`.
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). No need to group in the query.
@@ -1068,7 +1068,7 @@ The scale of an axis.
 - `Linear` — A continuous numeric axis.
 - `Time` — A continuous time axis with calendar ticks.
 - `Band` — Evenly spaced categories.
-- `Log` — A logarithmic numeric axis (y axes only): equal ratios get equal distances, for data that spans several powers of ten. Ticks are powers of ten (with 2 and 5 between them for short ranges). Values of zero or below have no place on it: they are left out (gaps in lines) with a warning.
+- `Log` — A logarithmic numeric axis: equal ratios get equal distances, for data that spans several powers of ten. Ticks are powers of ten (with 2 and 5 between them for short ranges). Values of zero or below have no place on it: they are left out (gaps in lines) with a warning. On the x axis for numbers under lines, areas and scatter points, not bars.
 
 #### `AxisPosition` (enum, RioCharts.Core)
 

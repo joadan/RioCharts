@@ -342,6 +342,7 @@ public partial class RioChart<TItem>
     /// <summary>Called by JS at the end of a range drag (data units).</summary>
     internal Task OnRangeSelected(double min, double max)
     {
+        (min, max) = (FromScaleUnits(min), FromScaleUnits(max));
         if (Selection != SelectionMode.Range || !double.IsFinite(min) || !double.IsFinite(max) || max <= min)
         {
             return Task.CompletedTask;

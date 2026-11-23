@@ -569,6 +569,20 @@ public class SnapshotTests
                 Enumerable.Range(0, 60).Select(i => i % 9 == 4 ? 0 : Math.Round(2 + 0.4 * Math.Pow(1.15, i))).ToArray()),
         }),
 
+        // Page load time against page size, both over several powers of ten (log on both axes), with a line at 1 MB.
+        ["scatter-log-log"] = new(new ChartDefinition
+        {
+            Title = "Load time by page size",
+            X = new AxisOptions { Scale = ScaleType.Log, Title = "Page size, kB" },
+            Y = new AxisOptions { Scale = ScaleType.Log, Title = "Load time, ms" },
+            Series = [new SeriesOptions { Id = "p", Name = "Pages", Type = SeriesType.Scatter, Format = "#,0 'ms'" }],
+            Annotations = [new Annotation { Axis = AnnotationAxis.X, Value = 1000.0, Label = "1 MB" }],
+        }, new()
+        {
+            ["p"] = SeriesData.From(Enumerable.Range(0, 40).Select(i => Math.Round(Math.Pow(10, 1 + i * 0.075), 1)).ToArray(),
+                Enumerable.Range(0, 40).Select(i => Math.Round(60 * Math.Pow(10, (1 + i * 0.075) * 0.55) * (1 + 0.35 * Math.Sin(i * 2.3)))).ToArray()),
+        }),
+
         ["empty-swedish"] = new(new ChartDefinition { Title = "Utetemperatur", Series = [new SeriesOptions { Id = "s", Name = "Utetemperatur" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 

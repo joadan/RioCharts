@@ -152,6 +152,11 @@ public static partial class ChartLayout
                 continue; // zero or below is not on a log axis (warned in LeaveOutNonPositive)
             }
 
+            if ((a.IsX || a.IsPoint) && xScale is { IsLog: true } && (!(a.A > 0) || (a.IsBand && !(a.B > 0))))
+            {
+                continue; // nor on a log x axis
+            }
+
             var color = a.Spec.Color;
             var lineStyle = color is null ? new StyleRef("annotation-line")
                 : styles.Add($"annotation-{a.Index}-line", new Style { Stroke = color, StrokeWidth = 1.25f, DashArray = "4 3" });
@@ -214,7 +219,7 @@ public static partial class ChartLayout
                         nodes.Add(new PathNode(hit, new StyleRef("annotation-grip")) { Class = "rio-annotation-grip" });
                         var s = a.IsX ? xScale! : a.Axis!.Scale;
                         handles.Add(s.IsLog
-                            ? new DragHandle(a.Id, a.IsX, (float)y1, Math.Log10(s.DomainMin), Math.Log10(s.DomainMax), s.RangeStart, s.RangeEnd, Log: true)
+                            ? new DragHandle(a.Id, a.IsX, (float)(a.IsX ? x1 : y1), Math.Log10(s.DomainMin), Math.Log10(s.DomainMax), s.RangeStart, s.RangeEnd, Log: true)
                             : new DragHandle(a.Id, a.IsX, (float)(a.IsX ? x1 : y1), s.DomainMin, s.DomainMax, s.RangeStart, s.RangeEnd));
                     }
                 }

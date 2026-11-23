@@ -186,15 +186,115 @@ public class LogScaleTests
         Assert.Equal(1, zero.YScale.DomainMin);
     }
 
-    [Fact]
-    public void A_log_x_axis_is_linear_with_a_warning()
+    // ---------- Log x axis ----------
+
+    // Page load time in ms against page size in kB, which spans three powers of ten.
+    private static readonly SeriesData Pages = SeriesData.From([12.0, 40, 85, 300, 950, 2400, 8000], [110.0, 140, 160, 260, 480, 900, 2300]);
+
+    private static ChartDefinition LogX(params SeriesOptions[] series) => new()
     {
-        var spec = new ChartDefinition { X = new AxisOptions { Scale = ScaleType.Log }, Series = [new SeriesOptions { Id = "a" }] };
+        X = new AxisOptions { Scale = ScaleType.Log },
+        Series = series.Length > 0 ? series : [new SeriesOptions { Id = "a", Type = SeriesType.Scatter }],
+    };
 
-        var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Numbers(1, 2, 3) }, Options);
+    [Fact]
+    public void A_log_x_axis_rounds_out_to_powers_of_ten_and_spaces_ratios_evenly()
+    {
+        var result = ChartLayout.Compute(LogX(), new Dictionary<string, SeriesData> { ["a"] = Pages }, Options);
 
-        Assert.Contains(result.Warnings, w => w.StartsWith("x.scale", StringComparison.Ordinal));
-        Assert.False(result.XScale!.IsLog);
+        var x = result.XScale!;
+        Assert.True(x.IsLog);
+        Assert.Equal((10.0, 10_000.0), (x.DomainMin, x.DomainMax));
+        Assert.Equal(x.Map(100) - x.Map(10), x.Map(1000) - x.Map(100), 3); // each decade as wide
+        Assert.Empty(result.Warnings);
+        var labels = All(result.Scene.Static).OfType<GroupNode>().Single(g => g.Class == "rio-axis-x").Children.OfType<TextNode>().Select(t => t.Text).ToList();
+        Assert.Contains("100", labels);
+        Assert.Contains("1k", labels);
+        Assert.Contains("10k", labels);
+        AssertFinite(result);
+    }
+
+    [Fact]
+    public void A_log_x_axis_keeps_a_positive_min_and_max()
+    {
+        var spec = LogX() with { X = new AxisOptions { Scale = ScaleType.Log, Min = 5, Max = 20_000 } };
+
+        var x = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Pages }, Options).XScale!;
+
+        Assert.Equal((5.0, 20_000.0), (x.DomainMin, x.DomainMax));
+    }
+
+    [Fact]
+    public void Points_at_x_zero_or_below_are_left_out_with_a_warning()
+    {
+        var data = SeriesData.From([-5.0, 0, 10, 100, 1000], [1.0, 2, 3, 4, 5]);
+
+        var result = ChartLayout.Compute(LogX(new SeriesOptions { Id = "a" }), new Dictionary<string, SeriesData> { ["a"] = data }, Options);
+
+        Assert.Contains(result.Warnings, w => w.Contains("2 point(s) at x zero or below", StringComparison.Ordinal));
+        Assert.Equal(10, result.XScale!.DomainMin);
+        Assert.Equal(3, result.HitTest.Series.Single().X.Length);
+        AssertFinite(result);
+    }
+
+    [Fact]
+    public void Lines_on_a_log_x_axis_and_a_log_y_axis_make_a_log_log_chart()
+    {
+        var spec = LogX(new SeriesOptions { Id = "a" }) with { Y = new AxisOptions { Scale = ScaleType.Log } };
+
+        var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Pages }, Options);
+
+        Assert.True(result.XScale!.IsLog && result.YScale.IsLog);
+        var hits = result.HitTest.Series.Single();
+        Assert.Equal(result.XScale.Map(12), hits.X[0], 1);
+        Assert.Equal(result.YScale.Map(110), hits.Y[0], 1);
+    }
+
+    [Fact]
+    public void A_log_x_axis_is_linear_with_a_warning_for_bars_and_for_times()
+    {
+        var bars = ChartLayout.Compute(LogX(new SeriesOptions { Id = "a", Type = SeriesType.Bar }), new Dictionary<string, SeriesData> { ["a"] = Numbers(1, 2, 3) }, Options);
+        var times = ChartLayout.Compute(LogX(new SeriesOptions { Id = "a" }),
+            new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([new DateTime(2026, 3, 1), new DateTime(2026, 3, 2)], [1.0, 2]) }, Options);
+
+        Assert.Contains(bars.Warnings, w => w.StartsWith("x.scale: a log x axis cannot be used with bar-like series", StringComparison.Ordinal));
+        Assert.False(bars.XScale!.IsLog);
+        Assert.Contains(times.Warnings, w => w.StartsWith("x.scale: a log scale needs numbers", StringComparison.Ordinal));
+        Assert.False(times.XScale!.IsLog);
+    }
+
+    [Fact]
+    public void Annotations_on_a_log_x_axis_are_placed_by_ratio_and_left_out_at_zero()
+    {
+        var spec = LogX() with
+        {
+            Annotations =
+            [
+                new Annotation { Axis = AnnotationAxis.X, Value = 1000.0, Label = "1 MB", Draggable = true, Id = "mb" },
+                new Annotation { Axis = AnnotationAxis.X, Value = 0.0, Label = "Zero" },
+            ],
+        };
+
+        var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Pages }, Options);
+
+        var line = All(result.Scene).OfType<PathNode>().First(p => p.Class == "rio-annotation-line");
+        Assert.Equal(result.XScale!.Map(1000), line.Path.Coords[0], 1);
+        Assert.DoesNotContain(All(result.Scene), n => n is TextNode { Text: "Zero" });
+        Assert.Contains(result.Warnings, w => w.Contains("x value of zero or below", StringComparison.Ordinal));
+        var handle = Assert.Single(result.DragHandles);
+        Assert.True(handle.Log && handle.IsX);
+        Assert.Equal(result.XScale.Map(1000), handle.Pixel, 1); // at the line, not at the plot's top
+        Assert.Equal(3, handle.DomainMax - 1, 6); // log10 units: 1 to 4
+    }
+
+    [Fact]
+    public void A_zoomed_log_x_axis_shows_the_range_and_ignores_one_reaching_zero()
+    {
+        var zoomed = ChartLayout.Compute(LogX(), new Dictionary<string, SeriesData> { ["a"] = Pages }, Options with { XRange = (50, 500) });
+        var invalid = ChartLayout.Compute(LogX(), new Dictionary<string, SeriesData> { ["a"] = Pages }, Options with { XRange = (0, 500) });
+
+        Assert.Equal((50.0, 500.0), (zoomed.XScale!.DomainMin, zoomed.XScale.DomainMax));
+        Assert.Equal(10, invalid.XScale!.DomainMin);
     }
 
     [Fact]
