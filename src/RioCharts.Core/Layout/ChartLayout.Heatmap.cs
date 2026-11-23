@@ -273,7 +273,7 @@ public static partial class ChartLayout
 
     /// <summary>The color scale: lowest value, a few steps of the hue, highest value.</summary>
     private static GroupNode HeatLegend(double x, double y, double height, string color, string low, string high, Text.ITextMeasurer measure, double font,
-        StyleTable styles, string label)
+        StyleTable styles, string label, double minOpacity = HeatMinOpacity)
     {
         var cy = y + height / 2;
         var nodes = new List<Node>();
@@ -282,7 +282,7 @@ public static partial class ChartLayout
         const double step = 16;
         for (var i = 0; i < HeatLegendSteps; i++)
         {
-            var opacity = HeatMinOpacity + (1 - HeatMinOpacity) * i / (HeatLegendSteps - 1);
+            var opacity = minOpacity + (1 - minOpacity) * i / (HeatLegendSteps - 1);
             var style = styles.Add($"heat-{Math.Round(opacity, 2).ToString(CultureInfo.InvariantCulture)}", new Style { Fill = color, FillOpacity = (float)Math.Round(opacity, 2) });
             nodes.Add(new RectNode(new RectF((float)(sx + i * step), (float)(cy - 5), (float)(step - 2), 10), style) { CornerRadius = 2 });
         }

@@ -269,6 +269,18 @@ public sealed record SeriesOptions
     [Description("Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.")]
     public double? MarkerSize { get; init; }
 
+    /// <summary>Map bubbles: on the world map, one bubble per country with the sum of its places; zoomed into a country, each place. Default true.</summary>
+    [Description("Map bubbles: on the world map, one bubble per country with the sum of its places; zoomed into a country, each place. Default true.")]
+    public bool? GroupByCountry { get; init; }
+
+    /// <summary>Map bubbles: the field with each place's latitude in degrees north.</summary>
+    [Description("Map bubbles (type \"mapBubble\"): the field with each place's latitude in degrees north.")]
+    public string? Latitude { get; init; }
+
+    /// <summary>Map bubbles: the field with each place's longitude in degrees east.</summary>
+    [Description("Map bubbles (type \"mapBubble\"): the field with each place's longitude in degrees east.")]
+    public string? Longitude { get; init; }
+
     /// <summary>Scatter: the field with each point's size, which makes a bubble chart. A bubble's area is proportional to its size; sizes of zero or less, or missing, are not drawn. All bubble series in a chart share one size scale. Aggregated points: the sum.</summary>
     [Description("Scatter: the field with each point's size, which makes a bubble chart (type \"bubble\" is scatter with a size). A bubble's area is proportional to its size; sizes of zero or less, or missing, are not drawn. All bubble series in a chart share one size scale. Aggregated points: the sum.")]
     public string? Size { get; init; }
@@ -509,6 +521,12 @@ public enum SeriesType
 
     /// <summary>Dumbbells: two values per category joined by a line, from a hollow dot (from: before, plan) to a filled dot (y: after, actual).</summary>
     Dumbbell,
+
+    /// <summary>A world map with each country colored by its value (x: the country's ISO code or English name); a click zooms into a country.</summary>
+    Map,
+
+    /// <summary>Bubbles on a world map at each point's latitude and longitude, sized by value (e.g. users per city).</summary>
+    MapBubble,
 
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

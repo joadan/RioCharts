@@ -75,6 +75,5 @@ Rules of thumb:
 | Type | Why |
 |---|---|
 | 3D charts | Hard to read; against the visual design. |
-| Maps / choropleths | Need geo data and projections; a separate library's job. |
 | Network graphs | A graph layout engine, not a chart. |
 | Word clouds | Not a quantitative chart. |

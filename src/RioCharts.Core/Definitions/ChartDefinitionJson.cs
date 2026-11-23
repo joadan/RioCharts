@@ -345,6 +345,17 @@ public static class ChartDefinitionJson
         ["speedometer"] = ("gauge", null),
         ["kpigauge"] = ("gauge", null),
         ["bullet"] = ("bullet", null),
+        ["map"] = ("map", null),
+        ["worldmap"] = ("map", null),
+        ["choropleth"] = ("map", null),
+        ["choroplethmap"] = ("map", null),
+        ["geomap"] = ("map", null),
+        ["filledmap"] = ("map", null),
+        ["mapbubble"] = ("mapBubble", null),
+        ["bubblemap"] = ("mapBubble", null),
+        ["geobubble"] = ("mapBubble", null),
+        ["pointmap"] = ("mapBubble", null),
+        ["symbolmap"] = ("mapBubble", null),
         ["dumbbell"] = ("dumbbell", null),
         ["dumbbellchart"] = ("dumbbell", null),
         ["dumbbelldot"] = ("dumbbell", null),
@@ -462,7 +473,7 @@ public static class ChartDefinitionJson
                     else
                     {
                         errors.Add(new DefinitionError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, bullet, dumbbell, radar, treemap, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, bullet, dumbbell, radar, treemap, map, mapBubble, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt)."));
                     }
                 }
 

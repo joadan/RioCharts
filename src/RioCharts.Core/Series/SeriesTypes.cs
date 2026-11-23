@@ -43,6 +43,7 @@ internal interface ISeriesType
         SeriesType.Histogram => HistogramSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar or SeriesType.Radar or SeriesType.Gauge => new PolarSeriesType(type),
         SeriesType.Treemap => new PolarSeriesType(type, CoordinateSystem.SpaceFilling),
+        SeriesType.Map or SeriesType.MapBubble => new PolarSeriesType(type, CoordinateSystem.SpaceFilling),
         _ => LineSeriesType.Instance,
     };
 }

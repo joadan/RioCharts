@@ -90,6 +90,12 @@ public sealed record NodeInteraction(string Kind, string Id)
 {
     /// <summary>Toggle state for toggle buttons (legend items): true when the series is shown.</summary>
     public bool? Pressed { get; init; }
+
+    /// <summary>
+    /// False for buttons that take clicks but no keyboard focus (e.g. the countries without data on a
+    /// map, so the keyboard does not stop at every one of them). Default true.
+    /// </summary>
+    public bool Focusable { get; init; } = true;
 }
 
 /// <summary>

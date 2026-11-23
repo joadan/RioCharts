@@ -71,6 +71,12 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
 
     /// <summary>Horizontal bars: each bar's length (with <see cref="CellHeight"/> its hover area); null when all cells are <see cref="BarWidth"/> wide.</summary>
     public float[]? CellWidths { get; init; }
+
+    /// <summary>
+    /// Maps: each point's outline in pixels, as rings of x, y pairs; the pointer is over a country
+    /// when it is inside an odd number of its rings. Null for other series.
+    /// </summary>
+    public float[][][]? Shapes { get; init; }
 }
 
 /// <summary>

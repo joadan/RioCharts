@@ -132,7 +132,7 @@ public static partial class ChartLayout
         });
         Node swatch = entry.Type == SeriesType.Line
             ? new PathNode(new PathBuilder().MoveTo(x, cy).LineTo(x + SwatchWidth, cy).Build(), swatchStyle) { Class = "rio-swatch rio-swatch-line" }
-            : entry.Type == SeriesType.Scatter
+            : entry.Type is SeriesType.Scatter or SeriesType.MapBubble
             ? new PathNode(new PathBuilder().MoveTo(x + SwatchWidth / 2, cy - 4.5).Arc(x + SwatchWidth / 2, cy, 4.5, 0, Math.PI * 2).Close().Build(),
                 styles.Add("swatch-dot-" + entry.SeriesId, new Style { Fill = entry.Color })) { Class = "rio-swatch rio-swatch-dot" }
             : entry.Type == SeriesType.Candlestick

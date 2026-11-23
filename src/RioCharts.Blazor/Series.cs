@@ -1258,3 +1258,66 @@ public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
         EndAngle = EndAngle,
     };
 }
+
+/// <summary>
+/// A world map: each country colored by its value, one hue that gets stronger with the value (a
+/// choropleth). <c>XValue</c> is the country: an ISO 3166 alpha-2 or alpha-3 code (<c>"SE"</c>,
+/// <c>"SWE"</c>) or English name; <c>YValue</c> its value. Several items for one country add up.
+/// Clicking a country zooms into it (see <c>RioChart.TreemapPath</c>), with a path bar back to the
+/// world. Combine with <see cref="MapBubbleSeries{TItem}"/> for places within the countries. Cannot
+/// be mixed with other series types.
+/// </summary>
+public sealed class MapSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>The value given the strongest color, e.g. 100 for percentages. Default: the largest value.</summary>
+    [Parameter] public double? Max { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Map;
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Max = Max };
+}
+
+/// <summary>
+/// Bubbles on a world map: a circle at each item's <see cref="Latitude"/> and <see cref="Longitude"/>,
+/// its area proportional to <c>YValue</c> (e.g. users per city). <c>XValue</c> names the place in
+/// the tooltip. Items without a place, and values of zero or less, are not drawn. Draws on its own
+/// or on top of a <see cref="MapSeries{TItem}"/>.
+/// </summary>
+public sealed class MapBubbleSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>Each item's latitude in degrees north, e.g. <c>c =&gt; c.Latitude</c>.</summary>
+    [Parameter] public Func<TItem, double?>? Latitude { get; set; }
+
+    /// <summary>Each item's longitude in degrees east, e.g. <c>c =&gt; c.Longitude</c>.</summary>
+    [Parameter] public Func<TItem, double?>? Longitude { get; set; }
+
+    /// <summary>The diameter of the largest bubble in pixels. Default: from the map's size.</summary>
+    [Parameter] public double? MarkerSize { get; set; }
+
+    /// <summary>
+    /// On the world map, one bubble per country with the sum of its places, so cities close together
+    /// do not pile up; zoomed into a country, each place. Default true.
+    /// </summary>
+    [Parameter] public bool? GroupByCountry { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.MapBubble;
+
+    private protected override object? DataSettings => (Latitude is not null, Longitude is not null);
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { MarkerSize = MarkerSize, GroupByCountry = GroupByCountry };
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (Latitude is not { } latitude || Longitude is not { } longitude)
+        {
+            return data;
+        }
+
+        var first = groups is null ? [.. items] : groups.Select(g => items[g[0]]).ToList();
+        return data.WithLocations([.. first.Select(item => latitude(item) ?? double.NaN)], [.. first.Select(item => longitude(item) ?? double.NaN)]);
+    }
+}

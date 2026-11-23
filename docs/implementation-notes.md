@@ -827,6 +827,37 @@ radial bar alias until then.
 - **Not yet:** a needle, ticks along the scale, a full-circle "progress ring" style with rounded
   ends, and gauges mixed with other polar series.
 
+## World map
+
+Not in Design.md, and listed as out of scope in `docs/chart-types.md` before; added as a proof of
+concept for a sessions-by-country map.
+
+- **Data:** Natural Earth's 1:110m Admin 0 countries (public domain), 177 countries with their ISO
+  codes, English name and continent, about 127 KB of text embedded in Core and parsed on first use
+  (`WorldMap`). `tools/WorldMapData.cs` downloads and converts it. Very small countries (Singapore,
+  Malta) are not at this scale; zooming into a country shows its outline, not regions within it.
+- **Projection:** Equal Earth, centered on the area shown. Rings are unwrapped along their length and
+  clamped at the far side of the world, so a country crossing it is cut instead of drawing a line
+  across the map. A country zoom fits its main polygons (the largest and those of similar size near
+  it: France without French Guiana); a continent zoom fits a hand-drawn area per continent (Europe
+  ends at the Urals, though Natural Earth puts all of Russia in Europe).
+- **Layout:** its own pass (`ComputeMap`), like the treemap's: title, path bar, color scale, legend
+  of the series, then the map clipped to the plot. Colors follow each value's rank (a linear scale
+  with `Max`), as opacity of one hue over a gray land, so a few large values do not wash out the rest.
+  Countries outside the continent shown fade to 35 %.
+- **Zoom:** `LayoutOptions.MapRegion` (a continent name or a country) and the Blazor `TreemapPath`
+  state, so `DrillDownAsync` and `@bind-TreemapPath` work as for treemaps. Every country is a button
+  (kind "map") one level down; only countries with data are tab stops (`NodeInteraction.Focusable`).
+  The countries are keyed "map:", not "series:", so a canvas series layer leaves them in the SVG.
+- **Bubbles:** `SeriesData.Latitudes`/`Longitudes`. On the world and continent views a series' places
+  add up per country (`WorldMap.Locate`, with the nearest country within about 150 km for harbor
+  cities off the coarse coast), at their value-weighted middle; such combined points, and countries
+  with several items, have index -1, so point clicks and custom tooltips skip them.
+- **Tooltip:** countries carry their outlines in pixels (`TooltipSeries.Shapes`); the JS module
+  hit-tests them even-odd and outlines the hovered one. Bubbles come first, so one on top wins.
+- **Not yet:** regions within countries, finer outlines, localized country and continent names, a
+  name for `TreemapPath` that fits maps.
+
 ## Dumbbell
 
 Not in Design.md; added from `docs/chart-types.md` (candidate). A slope chart is left to line series

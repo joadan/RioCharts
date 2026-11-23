@@ -26,7 +26,8 @@ public partial class RioChart<TItem>
 
     /// <summary>
     /// Treemaps: the group shown (drill-down), as a path with the series' separator, e.g.
-    /// <c>"Asia"</c> or <c>"Asia/India"</c>; null shows the whole tree. Two-way bindable with
+    /// <c>"Asia"</c> or <c>"Asia/India"</c>; null shows the whole tree. Maps: the area zoomed
+    /// into, a continent (<c>"Europe"</c>) or a country (<c>"SE"</c>); null shows the world. Two-way bindable with
     /// <c>@bind-TreemapPath</c>, e.g. to keep it in the page's URL.
     /// </summary>
     [Parameter] public string? TreemapPath { get; set; }
@@ -41,7 +42,7 @@ public partial class RioChart<TItem>
     [Parameter] public EventCallback<string?> OnDrillDown { get; set; }
 
     /// <summary>Treemaps: the group shown, as a path with the series' separator; null when the whole tree is shown (or the path is not there).</summary>
-    public string? GetTreemapPath() => _layout is { } layout && !_dirty ? layout.TreemapPath : _treemapPath;
+    public string? GetTreemapPath() => _layout is { } layout && !_dirty ? layout.TreemapPath ?? layout.MapRegion : _treemapPath;
 
     // TreemapPath set by the parent: shown on the next layout.
     private void TreemapParametersSet()

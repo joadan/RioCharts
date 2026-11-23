@@ -213,6 +213,12 @@ public sealed record ChartTexts
     /// <summary>Treemap: the path bar's name for screen readers.</summary>
     public string TreemapPathLabel { get => Get(); init => Set(value); }
 
+    /// <summary>A world map (chart kind in descriptions).</summary>
+    public string Map { get => Get(); init => Set(value); }
+
+    /// <summary>Map path bar: the step that shows the whole world.</summary>
+    public string MapWorld { get => Get(); init => Set(value); }
+
     /// <summary>Treemap description: items left out. {0}: how many (one|other).</summary>
     public string TreemapLeftOut { get => Get(); init => Set(value); }
 
@@ -431,6 +437,8 @@ public sealed record ChartTexts
         [nameof(TreemapAll)] = "All",
         [nameof(TreemapShow)] = "Show {0}",
         [nameof(TreemapPathLabel)] = "Path",
+        [nameof(Map)] = "Map",
+        [nameof(MapWorld)] = "World",
         [nameof(TreemapLeftOut)] = "{0} item with zero or negative value left out|{0} items with zero or negative values left out",
         [nameof(PolarItems)] = "{0} with {1} item: {2}|{0} with {1} items: {2}",
         [nameof(PolarNoData)] = "{0}, no data.",
@@ -509,6 +517,8 @@ public sealed record ChartTexts
         TreemapAll = "Alla",
         TreemapShow = "Visa {0}",
         TreemapPathLabel = "Sökväg",
+        Map = "Karta",
+        MapWorld = "Världen",
         TreemapLeftOut = "{0} post med noll eller negativt värde utelämnad|{0} poster med noll eller negativa värden utelämnade",
         PolarItems = "{0} med {1} post: {2}|{0} med {1} poster: {2}",
         PolarNoData = "{0}, inga data.",
@@ -581,6 +591,8 @@ public sealed record ChartTexts
         TreemapAll = "Alle",
         TreemapShow = "Vis {0}",
         TreemapPathLabel = "Sti",
+        Map = "Kart",
+        MapWorld = "Verden",
         TreemapLeftOut = "{0} post med null eller negativ verdi utelatt|{0} poster med null eller negative verdier utelatt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
@@ -653,6 +665,8 @@ public sealed record ChartTexts
         TreemapAll = "Alle",
         TreemapShow = "Vis {0}",
         TreemapPathLabel = "Sti",
+        Map = "Kort",
+        MapWorld = "Verden",
         TreemapLeftOut = "{0} post med nul eller negativ værdi udeladt|{0} poster med nul eller negative værdier udeladt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
@@ -725,6 +739,8 @@ public sealed record ChartTexts
         TreemapAll = "Kaikki",
         TreemapShow = "Näytä {0}",
         TreemapPathLabel = "Polku",
+        Map = "Kartta",
+        MapWorld = "Maailma",
         TreemapLeftOut = "{0} kohde, jonka arvo on nolla tai negatiivinen, jätetty pois|{0} kohdetta, joiden arvo on nolla tai negatiivinen, jätetty pois",
         PolarItems = "{0}, {1} kohde: {2}|{0}, {1} kohdetta: {2}",
         PolarNoData = "{0}, ei tietoja.",
@@ -797,6 +813,8 @@ public sealed record ChartTexts
         TreemapAll = "Alle",
         TreemapShow = "{0} anzeigen",
         TreemapPathLabel = "Pfad",
+        Map = "Karte",
+        MapWorld = "Welt",
         TreemapLeftOut = "{0} Eintrag mit Wert null oder negativ ausgelassen|{0} Einträge mit Wert null oder negativ ausgelassen",
         PolarItems = "{0} mit {1} Eintrag: {2}|{0} mit {1} Einträgen: {2}",
         PolarNoData = "{0}, keine Daten.",
@@ -869,6 +887,8 @@ public sealed record ChartTexts
         TreemapAll = "Tout",
         TreemapShow = "Afficher {0}",
         TreemapPathLabel = "Chemin",
+        Map = "Carte",
+        MapWorld = "Monde",
         TreemapLeftOut = "{0} élément de valeur nulle ou négative omis|{0} éléments de valeur nulle ou négative omis",
         PolarItems = "{0} avec {1} élément : {2}|{0} avec {1} éléments : {2}",
         PolarNoData = "{0}, aucune donnée.",
@@ -941,6 +961,8 @@ public sealed record ChartTexts
         TreemapAll = "Todo",
         TreemapShow = "Mostrar {0}",
         TreemapPathLabel = "Ruta",
+        Map = "Mapa",
+        MapWorld = "Mundo",
         TreemapLeftOut = "{0} elemento con valor cero o negativo omitido|{0} elementos con valor cero o negativo omitidos",
         PolarItems = "{0} con {1} elemento: {2}|{0} con {1} elementos: {2}",
         PolarNoData = "{0}, sin datos.",

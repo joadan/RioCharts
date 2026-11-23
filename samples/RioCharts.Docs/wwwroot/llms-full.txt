@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, radar, heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, radar, heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap and world map, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -67,6 +67,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
 | From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
 | Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
+| Values per country, places on a world map | `MapSeries`, `MapBubbleSeries` | `MapSeries`: `XValue` the country code ("SE") or English name, `YValue` the value; `MapBubbleSeries`: `XValue` the place's name, `YValue` its size, `Latitude`, `Longitude` |
 
 Check the parameters of each component in the reference below before using them.
 
@@ -283,7 +284,7 @@ A chart. Series are added as child components: `<RioChart Items="readings"><Line
 - `Title`: `string?` — Title shown above the chart.
 - `Height`: `double` = `300` — Height in pixels. Default 300.
 - `Width`: `double?` — Fixed width in pixels. Default: the container's width (responsive).
-- `TreemapPath`: `string?` — Treemaps: the group shown (drill-down), as a path with the series' separator, e.g. `"Asia"` or `"Asia/India"`; null shows the whole tree. Two-way bindable with `@bind-TreemapPath`, e.g. to keep it in the page's URL.
+- `TreemapPath`: `string?` — Treemaps: the group shown (drill-down), as a path with the series' separator, e.g. `"Asia"` or `"Asia/India"`; null shows the whole tree. Maps: the area zoomed into, a continent (`"Europe"`) or a country (`"SE"`); null shows the world. Two-way bindable with `@bind-TreemapPath`, e.g. to keep it in the page's URL.
 - `Exportable`: `bool` — Shows a download button in the chart's top-right corner (on hover or focus) with a menu for SVG, PNG and CSV. The same exports are available from code: `RioChart.DownloadPngAsync` etc.
 - `ExportFormats`: `ExportFormats` = `ExportFormats.All` — The formats in the download menu. Default all. With a single format the button saves it directly, without a menu; with none there is no button.
 - `ExportFileName`: `string?` — File name without extension for downloads. Default: the title, else "chart".
@@ -565,6 +566,21 @@ Radial bars: one circular track per category, filled up to its value.
 - `StartAngle`: `double?` — Start angle in degrees, clockwise from 12 o'clock. Default 0.
 - `EndAngle`: `double?` — End angle in degrees. Default 270.
 
+#### `<MapSeries>` (`MapSeries<TItem>`)
+
+A world map: each country colored by its value, one hue that gets stronger with the value (a choropleth). `XValue` is the country: an ISO 3166 alpha-2 or alpha-3 code (`"SE"`, `"SWE"`) or English name; `YValue` its value. Several items for one country add up. Clicking a country zooms into it (see `RioChart.TreemapPath`), with a path bar back to the world. Combine with `MapBubbleSeries` for places within the countries. Cannot be mixed with other series types.
+
+- `Max`: `double?` — The value given the strongest color, e.g. 100 for percentages. Default: the largest value.
+
+#### `<MapBubbleSeries>` (`MapBubbleSeries<TItem>`)
+
+Bubbles on a world map: a circle at each item's `MapBubbleSeries.Latitude` and `MapBubbleSeries.Longitude`, its area proportional to `YValue` (e.g. users per city). `XValue` names the place in the tooltip. Items without a place, and values of zero or less, are not drawn. Draws on its own or on top of a `MapSeries`.
+
+- `Latitude`: `Func<TItem, double?>?` — Each item's latitude in degrees north, e.g. `c => c.Latitude`.
+- `Longitude`: `Func<TItem, double?>?` — Each item's longitude in degrees east, e.g. `c => c.Longitude`.
+- `MarkerSize`: `double?` — The diameter of the largest bubble in pixels. Default: from the map's size.
+- `GroupByCountry`: `bool?` — On the world map, one bubble per country with the sum of its places, so cities close together do not pile up; zoomed into a country, each place. Default true.
+
 #### Parameters of every annotation (`AnnotationBase`)
 
 Every annotation component below takes these, plus its own.
@@ -737,7 +753,7 @@ How times without a zone (DateTime with Kind Unspecified, DateOnly, plain string
 
 The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
 
-77 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `BulletChart`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+79 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `BulletChart`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `Map`, `MapWorld`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
 
 - `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
 - `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.
@@ -904,6 +920,8 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `SourceIndex`: `int[]?` (read-only) — For each point, its index in the original input; null when the input order was kept.
 - `Low`: `double[]?` (read-only) — Range series: the low value of each point (`SeriesData.Y` is the high value), NaN where missing; null for other series. Set with `SeriesData.WithLow`.
 - `Colors`: `string?[]?` (read-only) — Each point's own color (a CSS color or theme token such as "--rio-negative"), null where the point keeps its series color; null when no point has one. Set with `SeriesData.WithColors`.
+- `Latitudes`: `double[]?` (read-only) — Map bubbles: each point's latitude in degrees, NaN where missing; null for other series. Set with `SeriesData.WithLocations`.
+- `Longitudes`: `double[]?` (read-only) — Map bubbles: each point's longitude in degrees, NaN where missing; null for other series. Set with `SeriesData.WithLocations`.
 - `Totals`: `bool[]?` (read-only) — Waterfalls: true for each total point, whose y is the running total of the changes before it; null for other series (and for a waterfall without totals). Set with `SeriesData.WithTotals`.
 - `Sizes`: `double[]?` (read-only) — Bubbles (scatter with a size): each point's size, NaN where missing; null for other series. A bubble's area is proportional to its size. Set with `SeriesData.WithSizes`.
 - `ErrorLow`: `double[]?` (read-only) — Error bars: the low end of each point's error bar (a value, not a distance), NaN where it has none; null when the series has no error bars. Set with `SeriesData.WithErrors`.
@@ -916,6 +934,7 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `Empty`: `SeriesData` (static) — A series with no points.
 
 - `SeriesData WithColors(IReadOnlyList<string?> colors)` — The same points with a color each (bars, scatter markers, slices, treemap items; a dot on lines and areas). `colors` is in input order like the y values: index i is the color of input item (or group) i; null keeps the series color.
+- `SeriesData WithLocations(ReadOnlySpan<double> latitudes, ReadOnlySpan<double> longitudes)` — The same points with a place each, for bubbles on a map. Both are in input order, like the y values given when creating the data: index i is the place of input item (or group) i.
 - `string ColorAt(int point, string fallback)` — The color of a point: its own, or `fallback` (the series color).
 - `SeriesData WithLow(ReadOnlySpan<double> low)` — The same points with a low value each, for range series (`SeriesData.Y` is the high value). `low` is in input order, like the y values given when creating the data: index i is the low of input item (or column entry) i.
 - `SeriesData WithTotals(ReadOnlySpan<bool> totals)` — The same points as a waterfall with totals: `totals` is in input order, like the y values given when creating the data (index i is true when input item or group i is a total). A total point's y becomes the running total of the changes before it (its own y is ignored); the other points are changes, and gaps (NaN) change nothing.
@@ -1117,6 +1136,9 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `BinWidth`: `double?` — Histogram: the width of each bin, in x units (e.g. 5 for bins of 5 ms). Null: a nice width picked from the data.
 - `BinCount`: `int?` — Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.
 - `MarkerSize`: `double?` — Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.
+- `GroupByCountry`: `bool?` — Map bubbles: on the world map, one bubble per country with the sum of its places; zoomed into a country, each place. Default true.
+- `Latitude`: `string?` — Map bubbles: the field with each place's latitude in degrees north.
+- `Longitude`: `string?` — Map bubbles: the field with each place's longitude in degrees east.
 - `Size`: `string?` — Scatter: the field with each point's size, which makes a bubble chart. A bubble's area is proportional to its size; sizes of zero or less, or missing, are not drawn. All bubble series in a chart share one size scale. Aggregated points: the sum.
 - `SizeName`: `string?` — Bubbles: what the size is, shown with it in the tooltip (e.g. "Population"). Null: the size field's name.
 - `SizeFormat`: `string?` — Bubbles: .NET format string for the size in tooltips, e.g. "0 M". Null: automatic.
@@ -1213,6 +1235,8 @@ How a series is drawn.
 - `Gauge` — A single value on a scale from min to max, drawn as an arc with the value in the middle; colorBands color the scale's ranges and a target is marked. One gauge per data point.
 - `Bullet` — Bullets: a bar for each value on a horizontal scale, in a row of its own, over colored ranges (colorBands) with a target mark: a KPI against its target in little space. Each series has its own scale.
 - `Dumbbell` — Dumbbells: two values per category joined by a line, from a hollow dot (from: before, plan) to a filled dot (y: after, actual).
+- `Map` — A world map with each country colored by its value (x: the country's ISO code or English name); a click zooms into a country.
+- `MapBubble` — Bubbles on a world map at each point's latitude and longitude, sized by value (e.g. users per city).
 - `Auto` — JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
 
 #### `Filter` (record, RioCharts.Core)
