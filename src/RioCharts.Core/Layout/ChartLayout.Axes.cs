@@ -20,6 +20,12 @@ public static partial class ChartLayout
         /// <summary>A logarithmic axis (<see cref="ScaleType.Log"/>).</summary>
         public bool Log => Spec.Scale == ScaleType.Log;
 
+        /// <summary>Series stacked to 100 % use the axis (<see cref="StackMode.Percent"/>): shares from -1 to 1, labeled as percentages.</summary>
+        public bool Percent { get; set; }
+
+        /// <summary>The label format: the axis' own, or percentages on a percent axis.</summary>
+        public string? Format => Spec.Format ?? (Percent ? "P0" : null);
+
         /// <summary>True when at least one drawable series uses the axis.</summary>
         public bool Visible { get; set; }
 
@@ -155,6 +161,13 @@ public static partial class ChartLayout
         {
             min = Math.Min(min, 0);
             max = Math.Max(max, 0);
+        }
+
+        // Shares stay within -1 and 1, whatever an annotation or rounding says.
+        axis.Percent = !log && axis.Series.Any(r => r.Percent);
+        if (axis.Percent)
+        {
+            (min, max) = (Math.Max(min, -1), Math.Min(max, 1));
         }
 
         // A log axis ignores a Min or Max of zero or below (they are not on it).
@@ -295,7 +308,7 @@ public static partial class ChartLayout
         axis.DomainMin = axis.Spec.Min ?? niceMin;
         axis.DomainMax = axis.Spec.Max ?? niceMax;
         axis.Ticks = NiceTicks.Ticks(axis.DomainMin, axis.DomainMax, step);
-        var format = NumberFormatter.ForTicks(axis.Ticks, step, culture, axis.Spec.Format);
+        var format = NumberFormatter.ForTicks(axis.Ticks, step, culture, axis.Format);
         axis.Labels = axis.Ticks.Select(format).ToList();
         axis.LabelWidth = axis.Visible ? axis.Labels.Select(l => measure.Measure(l, font)).DefaultIfEmpty(0).Max() : 0;
     }

@@ -49,6 +49,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Change over time, trends | `LineSeries` | `XValue`, `YValue`, `Curve` |
 | Volume over time, parts of a total over time | `AreaSeries` | `Stack` to stack |
 | Compare categories | `BarSeries` | `Aggregate`, `Stack`, `Horizontal="true"` on the chart |
+| Shares per x value (100 % stacked) | `BarSeries`, `AreaSeries` | `YAxis="@(new AxisSpec { Stacking = StackMode.Percent })"` on the chart |
 | Min to max band | `RangeAreaSeries` | `LowValue`, `YValue` |
 | Relation between two numbers | `ScatterSeries` | `XValue` and `YValue` numeric, `TrendLine` |
 | Shares of a whole | `PieSeries`, `DonutSeries` | `GroupSmallSlices` |

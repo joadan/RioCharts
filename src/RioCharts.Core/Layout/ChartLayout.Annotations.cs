@@ -338,7 +338,7 @@ public static partial class ChartLayout
             return TimeFormat(xKind, [v], culture, xFormat, time, null)(v);
         }
 
-        string FormatY(double v) => ValueFormatter.Format(v, culture, a.Axis!.Spec.Format);
+        string FormatY(double v) => ValueFormatter.Format(v, culture, a.Axis!.Format);
 
         var value = a.IsPoint ? $"{FormatX(a.A)}, {FormatY(a.B)}"
             : a.IsX ? (a.IsBand ? $"{FormatX(a.A)} – {FormatX(a.B)}" : FormatX(a.A))

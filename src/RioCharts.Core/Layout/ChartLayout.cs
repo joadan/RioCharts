@@ -183,6 +183,15 @@ public static partial class ChartLayout
 
         /// <summary>Stack bases; null when not stacked.</summary>
         public double[]? Lower { get; set; }
+
+        /// <summary>
+        /// The stack the series is in: its stack name, "" for series a percent axis stacks without a name, or null
+        /// when not stacked. Set once the axis is known.
+        /// </summary>
+        public string? StackGroup { get; set; }
+
+        /// <summary>Stacked to 100 % (<see cref="StackMode.Percent"/>): <see cref="Upper"/> and <see cref="Lower"/> are shares.</summary>
+        public bool Percent => StackGroup is not null && Axis.Spec.Stacking == StackMode.Percent;
     }
 
     /// <summary>Lays out a chart. Never throws for empty or odd data; it renders an empty state instead.</summary>
@@ -254,6 +263,7 @@ public static partial class ChartLayout
             }
 
             r.Axis = FindAxis(axes, s.YAxisId, $"series[{i}].yAxisId", warnings) ?? primary;
+            r.StackGroup = StackGroupOf(r, i, warnings);
             if ((d.Kind == XKind.Category || r.Type.UsesSlots) && s.Type != SeriesType.Treemap && RepeatsX(d) is { } repeated)
             {
                 warnings.Add($"series '{s.Id}': x value {repeated} appears more than once; the points are drawn on top of each other. Combine them with an aggregate (Aggregate or YAggregate on a series component, 'aggregate' in a spec).");
@@ -818,9 +828,31 @@ public static partial class ChartLayout
     }
 
     // Box plots and candlesticks are never stacked: each series gets its own slot even with a Stack name.
-    private static string SlotKey(Resolved r) => r.Spec.Stack is { Length: > 0 } stack && r.Spec.Type is not (SeriesType.BoxPlot or SeriesType.Candlestick)
+    private static string SlotKey(Resolved r) => r.StackGroup is { } stack
         ? $"stack|{r.Axis.Id}|{stack}"
         : "series|" + r.Spec.Id;
+
+    /// <summary>
+    /// The stack a series is in (see <see cref="Resolved.StackGroup"/>). Range areas, box plots and candlesticks are
+    /// never stacked; on a percent axis, lines, areas and bars without a stack name share one.
+    /// </summary>
+    private static string? StackGroupOf(Resolved r, int index, List<string> warnings)
+    {
+        var percent = r.Axis.Spec.Stacking == StackMode.Percent;
+        var named = r.Spec.Stack is { Length: > 0 } stack ? stack : null;
+        if (r.Spec.Type is SeriesType.Line or SeriesType.Area or SeriesType.Bar)
+        {
+            return named ?? (percent ? "" : null);
+        }
+
+        var stackable = r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick);
+        if (percent && (named is null || !stackable) && r.Spec.Type is SeriesType.Scatter or SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick)
+        {
+            warnings.Add($"series[{index}]: a percent axis stacks line, area and bar series; this {r.Spec.Type} series is drawn with its own values.");
+        }
+
+        return stackable ? named : null;
+    }
 
     // ---------- Styles ----------
 
@@ -963,14 +995,17 @@ public static partial class ChartLayout
     private static void ApplyStacking(List<Resolved> drawable, XKind kind, Dictionary<string, int> categoryIndex)
     {
         var groups = drawable
-            .Where(r => r.Spec.Stack is { Length: > 0 } && r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick))
-            .GroupBy(r => (r.Axis.Id, r.Spec.Stack, r.Type.UsesSlots));
+            .Where(r => r.StackGroup is not null)
+            .GroupBy(r => (r.Axis.Id, r.StackGroup, r.Type.UsesSlots));
         foreach (var group in groups)
         {
             if (kind != XKind.Category && StackByIndex(group.ToList()))
             {
                 continue;
             }
+
+            // Totals per x position for a percent axis: the positive sum plus the size of the negative one.
+            var totals = new Dictionary<double, double>();
 
             var positive = new Dictionary<double, double>();
             var negative = new Dictionary<double, double>();
@@ -996,13 +1031,31 @@ public static partial class ChartLayout
                     lower[i] = start;
                     upper[i] = start + v;
                     sums[key] = start + v;
+                    totals[key] = totals.GetValueOrDefault(key) + Math.Abs(v);
                 }
 
                 r.Upper = upper;
                 r.Lower = lower;
             }
+
+            foreach (var r in group.Where(r => r.Percent))
+            {
+                for (var i = 0; i < r.Data.Count; i++)
+                {
+                    var key = kind == XKind.Category
+                        ? (int)r.Data.X[i] is var local && local >= 0 && local < r.Data.Categories.Count && categoryIndex.TryGetValue(r.Data.Categories[local], out var g) ? g : double.NaN
+                        : r.Data.X[i];
+                    if (double.IsFinite(key) && totals.TryGetValue(key, out var total))
+                    {
+                        (r.Upper[i], r.Lower![i]) = (Share(r.Upper[i], total), Share(r.Lower![i], total));
+                    }
+                }
+            }
         }
     }
+
+    /// <summary>A stacked value as a share of its stack's total (0 when the total is 0), kept within -1 and 1.</summary>
+    private static double Share(double value, double total) => !double.IsFinite(value) ? value : total > 0 ? Math.Clamp(value / total, -1, 1) : 0;
 
     /// <summary>
     /// The usual case: every series in the stack has the same x values (one row per x with a column
@@ -1041,6 +1094,18 @@ public static partial class ChartLayout
 
             r.Upper = upper;
             r.Lower = lower;
+        }
+
+        if (group[0].Percent)
+        {
+            foreach (var r in group)
+            {
+                for (var i = 0; i < x.Length; i++)
+                {
+                    var total = positive[i] - negative[i];
+                    (r.Upper[i], r.Lower![i]) = (Share(r.Upper[i], total), Share(r.Lower![i], total));
+                }
+            }
         }
 
         return true;
@@ -1149,6 +1214,11 @@ public static partial class ChartLayout
             values[i] = r.Spec.Type == SeriesType.RangeArea && r.Data.Low is { } low
                 ? $"{ValueFormatter.Format(low[j], culture, format)} – {ValueFormatter.Format(r.Data.Y[j], culture, format)}"
                 : ValueFormatter.Format(r.Data.Y[j], culture, format);
+            if (r.Percent && r.Lower is { } lower && double.IsFinite(r.Upper[j] - lower[j]))
+            {
+                values[i] += $" ({(r.Upper[j] - lower[j]).ToString("P0", culture)})"; // the value and its share
+            }
+
             if (boxParts is not null && r.Data.Box is { } box)
             {
                 boxParts[i] = BoxPartValues(box, j, r.Data.Y[j], culture, format);

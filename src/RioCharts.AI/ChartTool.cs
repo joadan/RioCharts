@@ -479,7 +479,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         sb.AppendLine("    \"name\"?, \"groupBy\"?: \"<field: one series per value>\", \"aggregate\"?: \"sum|average|min|max|count|last\",");
         sb.AppendLine("    \"timeBucket\"?: \"minute|hour|day|week|month|quarter|year|auto\", \"filter\"?: [ { \"field\", \"op\": \"eq|ne|gt|gte|lt|lte|contains\", \"value\" } ],");
         sb.AppendLine("    \"sort\"?: \"ascending|descending\", \"limit\"?: n, \"stack\"?: \"<group>\", \"yAxisId\"?, \"innerRadius\"?: 0.6 (donut), \"dataLabels\"? } ],");
-        sb.AppendLine("  \"y\"?: { \"title\": \"Sessions\" }, \"yAxes\"?: [ { \"id\": \"eur\", \"title\": \"€\" } ],");
+        sb.AppendLine("  \"y\"?: { \"title\": \"Sessions\", \"stacking\"?: \"percent\" (100 % stacked: each series' share per x) }, \"yAxes\"?: [ { \"id\": \"eur\", \"title\": \"€\" } ],");
         sb.AppendLine("  \"annotations\"?: [ { \"type\": \"line|band|point|callout\", \"axis\": \"x|y\", \"value\" | \"from\"+\"to\" | \"x\"+\"y\", \"label\" } ],");
         sb.AppendLine("  \"data\"?: [ { ...small inline rows instead of a dataset... } ] }");
         sb.AppendLine();

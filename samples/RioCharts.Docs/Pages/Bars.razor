@@ -3,7 +3,7 @@
 <PageTitle>Bars and stacking · RioCharts</PageTitle>
 
 <h1>Bars and stacking</h1>
-<p class="lead">Bars start at zero, group side by side, stack by name, combine repeated x values or time buckets, and can mix with lines.</p>
+<p class="lead">Bars start at zero, group side by side, stack by name or to 100 %, combine repeated x values or time buckets, and can mix with lines.</p>
 
 <Example Title="Grouped bars" Code="@GroupedCode">
     <Description><p>Several bar series share each category. Large numbers are compact (182k).</p></Description>
@@ -22,6 +22,24 @@
             <BarSeries Items="Mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="mix" DataLabels="true" Format="0 k€" />
             <BarSeries Items="Mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Stack="mix" DataLabels="true" Format="0 k€" />
             <BarSeries Items="Mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Stack="mix" DataLabels="true" Format="0 k€" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="100 % stacked bars" Code="@PercentCode">
+    <Description>
+        <p>
+            <code>Stacking = StackMode.Percent</code> on the y axis stacks its bar, line and area series to 100 %, so each
+            month shows the product groups' shares. Series without a <code>Stack</code> name are stacked together. The tooltip
+            shows the value and its share; hide a series in the legend and the others fill its share. In JSON specs:
+            <code>"y": { "stacking": "percent" }</code> or the type <code>"stackedBar100"</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Monthly" Title="Share of revenue per product group" YAxis="PercentAxis">
+            <BarSeries Items="Mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Format="0 k€" />
+            <BarSeries Items="Mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Format="0 k€" />
+            <BarSeries Items="Mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Format="0 k€" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -145,6 +163,7 @@
 @code {
     private static readonly AxisSpec OrdersAxis = new() { Title = "Orders per day" };
     private static readonly AxisSpec KiloEuros = new() { Title = "k€" };
+    private static readonly AxisSpec PercentAxis = new() { Stacking = StackMode.Percent };
     private static readonly TooltipSpec _single = new() { Shared = false };
     private static readonly List<Share> _ranking = [.. CategoryRevenue.OrderByDescending(s => s.Value)];
     private PointClickEventArgs<Ticket>? _tickets;
@@ -165,6 +184,14 @@
         <BarSeries Items="mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="mix" DataLabels="true" Format="0 k€" />
         <BarSeries Items="mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Stack="mix" DataLabels="true" Format="0 k€" />
         <BarSeries Items="mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Stack="mix" DataLabels="true" Format="0 k€" />
+        """;
+
+    private const string PercentCode = """
+        <RioChart TItem="Monthly" YAxis="@(new AxisSpec { Stacking = StackMode.Percent })">
+            <BarSeries Items="mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Format="0 k€" />
+            <BarSeries Items="mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Format="0 k€" />
+            <BarSeries Items="mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Format="0 k€" />
+        </RioChart>
         """;
 
     private const string AggregateCode = """

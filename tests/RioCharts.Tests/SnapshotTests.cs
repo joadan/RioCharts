@@ -98,6 +98,18 @@ public class SnapshotTests
             ],
         }, new() { ["in"] = Categories(Quarters, 40, 25, 10, 35), ["out"] = Categories(Quarters, -5, -18, -30, -8) }),
 
+        ["bars-stacked-percent"] = new(new ChartSpec
+        {
+            Title = "Sales channels",
+            Y = new AxisSpec { Stacking = StackMode.Percent },
+            Series =
+            [
+                new SeriesSpec { Id = "w", Name = "Web", Type = SeriesType.Bar },
+                new SeriesSpec { Id = "s", Name = "Stores", Type = SeriesType.Bar },
+                new SeriesSpec { Id = "p", Name = "Partners", Type = SeriesType.Bar },
+            ],
+        }, new() { ["w"] = Categories(Quarters, 120, 150, 170, 210), ["s"] = Categories(Quarters, 200, 180, 160, 150), ["p"] = Categories(Quarters, 40, 60, 55, 80) }),
+
         ["bars-data-labels"] = new(new ChartSpec
         {
             Series = [new SeriesSpec { Id = "u", Name = "Energy", Type = SeriesType.Bar, DataLabels = true, Format = "0 MWh" }],

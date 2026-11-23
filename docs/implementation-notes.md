@@ -63,7 +63,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Stacking.** Series stack when they share `Stack`, axis and kind (bars, or lines/areas),
   matched by exact x value (or category). Positive values stack up and negative values down.
   Hidden series leave the stack. Stacked bars are square with a 1 px gap; stacked areas fill
-  between their base and top. No percent stacking yet.
+  between their base and top. Percent stacking: see "100 % stacking".
 - **Multiple Y axes.** `ChartSpec.YAxes` adds axes (right side by default, outward when there are
   several). The first axis with visible series owns the grid and the zero line; the others choose
   a domain with the same number of nice steps, so their labels sit on its grid lines. An axis whose
@@ -968,3 +968,28 @@ The rest of Design.md "Programmatic interaction".
   attributes need compile-time values.
 - **Missing XML docs** (CS1591) warn in the libraries; test and sample projects turn it off.
 
+## 100 % stacking
+
+Design.md has named stack groups but no percent stacking; `docs/chart-types.md` listed it as a
+candidate.
+
+- **On the axis, not the series.** `AxisSpec.Stacking = StackMode.Percent` (`"y": {"stacking":
+  "percent"}`). All stacks on an axis add up the same way, and the axis labels change with it, so
+  the setting lives there; a series-level setting could disagree within a stack. JSON specs also
+  take `"stacking"` on a series (moved to its axis, with a warning), at the top level (moved to
+  `y`), the values `100%`, `normalize`, `expand`, `relative`, and the types `stackedBar100`,
+  `percentStackedBar`, `100% stacked column`, `stackedArea100`.
+- **No stack name needed.** On a percent axis, line, area and bar series without `Stack` share one
+  stack (stacking to 100 % is the point); named stacks still stack separately, side by side for
+  bars. Scatter, range area, box plot and candlestick series on the axis keep their own values,
+  with a warning (scatter with a `Stack` name stacks as before).
+- **Shares.** Each stack's values are divided by the total of their absolute values per x value
+  (category, or exact x), so positive shares stack up and negative ones down and together they
+  span 100 %. A total of zero gives zero-height segments; gaps stay gaps. Shares are clamped to
+  -1…1 and the axis extent too, so rounding never adds a 120 % tick. Hidden series leave the
+  total: the others fill their share.
+- **Labels.** Axis ticks (and value annotations' labels) default to `P0` in the chart's culture
+  (`50 %` in Swedish, `50%` in English); the axis `Format` overrides it. The tooltip shows the
+  value in the series' format and its share: `10 (25 %)`. Data labels show the values, not shares.
+- Horizontal bars stack the same way on their value axis (`ChartSpec.Y`).
+- Spec → Razor writes `Stacking = StackMode.Percent` in the y axis' `AxisSpec`.

@@ -49,6 +49,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Change over time, trends | `LineSeries` | `XValue`, `YValue`, `Curve` |
 | Volume over time, parts of a total over time | `AreaSeries` | `Stack` to stack |
 | Compare categories | `BarSeries` | `Aggregate`, `Stack`, `Horizontal="true"` on the chart |
+| Shares per x value (100 % stacked) | `BarSeries`, `AreaSeries` | `YAxis="@(new AxisSpec { Stacking = StackMode.Percent })"` on the chart |
 | Min to max band | `RangeAreaSeries` | `LowValue`, `YValue` |
 | Relation between two numbers | `ScatterSeries` | `XValue` and `YValue` numeric, `TrendLine` |
 | Shares of a whole | `PieSeries`, `DonutSeries` | `GroupSmallSlices` |
@@ -584,6 +585,7 @@ Settings for one axis: title, range, scale, label format and grid lines.
 - `Format`: `string?` — .NET format string for labels, e.g. "P0", "C0" or "yyyy-MM-dd". Null for automatic formatting.
 - `GridLines`: `bool?` — Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.
 - `Position`: `AxisPosition` — Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.
+- `Stacking`: `StackMode` — How stacked series on a vertical axis add up. Percent: each stack fills the axis (0–100 %), so the series show their share per x value; line, area and bar series without a stack name are stacked together.
 
 #### `LegendSpec` (record, RioCharts.Core)
 
@@ -958,6 +960,13 @@ Side of a vertical axis.
 - `Auto` — The primary axis on the left, additional axes on the right.
 - `Left` — On the left of the plot.
 - `Right` — On the right of the plot.
+
+#### `StackMode` (enum, RioCharts.Core)
+
+How stacked series add up on their axis.
+
+- `Normal` — Values stack on each other: the top of a stack is the total.
+- `Percent` — Each stack fills the axis (100 %): the series show their share of the total per x value.
 
 #### `LegendMode` (enum, RioCharts.Core)
 

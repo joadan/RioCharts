@@ -38,8 +38,8 @@ Rules of thumb:
 | Type | Series / spec type | Notes |
 |---|---|---|
 | Line | `LineSeries` / `line` | Linear, monotone and step curves. Also `spline`. |
-| Area | `AreaSeries` / `area` | Stacking groups. |
-| Bar | `BarSeries` / `bar` | Grouped, stacked, horizontal. Also `column`, `stackedBar`. |
+| Area | `AreaSeries` / `area` | Stacking groups, 100 % stacked. |
+| Bar | `BarSeries` / `bar` | Grouped, stacked, 100 % stacked, horizontal. Also `column`, `stackedBar`, `stackedBar100`. |
 | Scatter | `ScatterSeries` / `scatter` | Also `points`. |
 | Heatmap | `HeatmapSeries` / `heatmap` | One row per series. |
 | Range area | `RangeAreaSeries` / `rangeArea` | Low/high band. |
@@ -65,7 +65,7 @@ Rules of thumb:
 | Error bars | Candidate | Medium | Small | Medium | Uncertainty on points or bars | Cheap to draw, but as an option it spreads to bar, line and scatter (extent, tooltip, describer, spec). |
 | Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |
 | Dumbbell / slope | Candidate | Low | Small–Medium | Low | Two values per category (before/after, min/max) | Two markers joined by a line on a band axis; a slope chart is the same with two x positions. |
-| 100% stacked / streamgraph | Candidate | High (100% stacked) / Low (stream) | Small | Low | Shares over time | One stack offset option (expand, wiggle) on the existing stacking. 100% stacked bars come along with it. |
+| Streamgraph | Candidate | Low | Small | Low | Shares over time, organic look | A centered ("wiggle") offset as another `StackMode` next to `Percent` (100 % stacked, added). Rarely asked for. |
 | Nested donut / sunburst | In Design.md | Medium | Medium–Large | Medium | Hierarchical shares | One ring per level; can reuse the treemap hierarchy. Labels on thin rings are the hard part. |
 | Funnel | Candidate | Medium | Small–Medium | Low | Stages narrowing down | Rarely the best choice (a bar chart is easier to read), but often asked for. |
 | Sankey | "Later, if ever" in Design.md | Medium | Large | High | Flows between nodes | Needs a node/link data model, a node ordering layout and curved links; touches tooltips, keyboard navigation and the describer in new ways. |

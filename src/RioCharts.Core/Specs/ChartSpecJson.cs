@@ -265,6 +265,10 @@ public static class ChartSpecJson
         ["area"] = ("area", null),
         ["areachart"] = ("area", null),
         ["stackedarea"] = ("area", s => s.TryAdd("stack", "stack")),
+        ["stackedarea100"] = ("area", PercentStack),
+        ["percentstackedarea"] = ("area", PercentStack),
+        ["100stackedarea"] = ("area", PercentStack),
+        ["percentarea"] = ("area", PercentStack),
         ["bar"] = ("bar", null),
         ["horizontalbar"] = ("bar", s => s["horizontal"] = true),
         ["horizontalbars"] = ("bar", s => s["horizontal"] = true),
@@ -278,6 +282,13 @@ public static class ChartSpecJson
         ["columnchart"] = ("bar", null),
         ["stackedbar"] = ("bar", s => s.TryAdd("stack", "stack")),
         ["stackedcolumn"] = ("bar", s => s.TryAdd("stack", "stack")),
+        ["stackedbar100"] = ("bar", PercentStack),
+        ["stackedcolumn100"] = ("bar", PercentStack),
+        ["percentstackedbar"] = ("bar", PercentStack),
+        ["percentstackedcolumn"] = ("bar", PercentStack),
+        ["100stackedbar"] = ("bar", PercentStack),
+        ["100stackedcolumn"] = ("bar", PercentStack),
+        ["percentbar"] = ("bar", PercentStack),
         ["pie"] = ("pie", null),
         ["piechart"] = ("pie", null),
         ["donut"] = ("pie", s => s.TryAdd("innerRadius", 0.6)),
@@ -320,6 +331,19 @@ public static class ChartSpecJson
         ["radial"] = ("radialBar", null),
         ["gauge"] = ("radialBar", null),
         ["auto"] = ("auto", null),
+    };
+
+    // "stackedBar100" and the like: stacked, on an axis that stacks to 100 % (moved there by Normalize).
+    private static void PercentStack(JsonObject series)
+    {
+        series.TryAdd("stack", "stack");
+        series.TryAdd("stacking", "percent");
+    }
+
+    private static readonly Dictionary<string, string> Stackings = new(StringComparer.Ordinal)
+    {
+        ["normal"] = "normal", ["stacked"] = "normal", ["absolute"] = "normal", ["percent"] = "percent", ["percentage"] = "percent",
+        ["100"] = "percent", ["normalize"] = "percent", ["normalized"] = "percent", ["expand"] = "percent", ["relative"] = "percent",
     };
 
     private static readonly Dictionary<string, string> Curves = new(StringComparer.Ordinal)
@@ -421,6 +445,13 @@ public static class ChartSpecJson
                     }
                 }
 
+                // "stacking" belongs on the series' axis (all stacks on an axis add up the same way).
+                if (s["stacking"] is { } stacking)
+                {
+                    s.Remove("stacking");
+                    MoveToAxis(root, s, "stacking", stacking, $"series[{i}].stacking", warnings);
+                }
+
                 Vocabulary(s, "curve", Curves, $"series[{i}].curve", errors);
                 Vocabulary(s, "aggregate", Aggregates, $"series[{i}].aggregate", errors);
                 Vocabulary(s, "timeBucket", Buckets, $"series[{i}].timeBucket", errors);
@@ -455,6 +486,26 @@ public static class ChartSpecJson
             errors.Add(new SpecError("annotations", $"at most {MaxAnnotations} annotations (got {annotations.Count})."));
         }
 
+        if (root["stacking"] is { } rootStacking)
+        {
+            root.Remove("stacking");
+            root["y"] ??= new JsonObject();
+            if (root["y"] is JsonObject y && !y.ContainsKey("stacking"))
+            {
+                y["stacking"] = rootStacking;
+                warnings.Add("stacking: moved to y.stacking.");
+            }
+        }
+
+        Vocabulary(root["y"] as JsonObject, "stacking", Stackings, "y.stacking", errors);
+        if (root["yAxes"] is JsonArray stackAxes)
+        {
+            for (var i = 0; i < stackAxes.Count; i++)
+            {
+                Vocabulary(stackAxes[i] as JsonObject, "stacking", Stackings, $"yAxes[{i}].stacking", errors);
+            }
+        }
+
         // Other enums: any letter case and separators; unknown values get the list of valid ones.
         CheckEnum<ScaleType>(root["x"], "scale", "x.scale", errors);
         CheckEnum<ScaleType>(root["y"], "scale", "y.scale", errors);
@@ -487,9 +538,31 @@ public static class ChartSpecJson
     private static string Key(string value) =>
         new string(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray()) is { Length: > 0 } k ? k : value.Trim();
 
-    private static void Vocabulary(JsonObject obj, string property, Dictionary<string, string> words, string path, List<SpecError> errors)
+    /// <summary>
+    /// Puts a series' axis setting on its axis: the yAxes entry its yAxisId names, or y. An axis that already has the
+    /// setting keeps its own.
+    /// </summary>
+    private static void MoveToAxis(JsonObject root, JsonObject series, string property, JsonNode value, string path, List<string> warnings)
     {
-        if (obj[property] is not JsonValue value || !value.TryGetValue<string>(out var text))
+        var id = series["yAxisId"] is JsonValue v && v.TryGetValue<string>(out var text) ? text : null;
+        var axis = id is null ? null : (root["yAxes"] as JsonArray)?.OfType<JsonObject>()
+            .FirstOrDefault(a => a["id"] is JsonValue aid && aid.TryGetValue<string>(out var t) && t == id);
+        if (axis is null)
+        {
+            root["y"] ??= new JsonObject();
+            axis = root["y"] as JsonObject;
+        }
+
+        if (axis is not null && !axis.ContainsKey(property))
+        {
+            axis[property] = value.DeepClone();
+            warnings.Add($"{path}: moved to the series' axis ({(axis == root["y"] ? "y" : id)}.{property}).");
+        }
+    }
+
+    private static void Vocabulary(JsonObject? obj, string property, Dictionary<string, string> words, string path, List<SpecError> errors)
+    {
+        if (obj?[property] is not JsonValue value || !value.TryGetValue<string>(out var text))
         {
             return;
         }

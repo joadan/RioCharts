@@ -58,14 +58,15 @@ public static partial class ChartLayout
         var hasData = drawn.Count > 0 && rows.Count > 0;
 
         // ---------- Values, stacks and the value range ----------
-        var slotKeys = drawn.Select(r => r.Spec.Stack is { Length: > 0 } s ? "stack|" + s : "series|" + r.Spec.Id).Distinct().ToList();
+        static string KeyOf(Resolved r) => r.StackGroup is { } s ? "stack|" + s : "series|" + r.Spec.Id;
+        var slotKeys = drawn.Select(KeyOf).Distinct().ToList();
         var segments = new Dictionary<Resolved, (double Start, double End, int Index)[]>();
         var stacks = new Dictionary<(string Key, int Row, bool Positive), double>();
-        double vMin = 0, vMax = 0;
+        var totals = new Dictionary<(string Key, int Row), double>(); // per stack and row, for percent
         foreach (var r in drawn)
         {
-            var key = r.Spec.Stack is { Length: > 0 } s ? "stack|" + s : "series|" + r.Spec.Id;
-            var stacked = r.Spec.Stack is { Length: > 0 };
+            var key = KeyOf(r);
+            var stacked = r.StackGroup is not null;
             var list = new List<(double, double, int)>();
             for (var i = 0; i < r.Data.Count; i++)
             {
@@ -82,15 +83,33 @@ public static partial class ChartLayout
                     var k = (key, row, v >= 0);
                     start = stacks.GetValueOrDefault(k);
                     stacks[k] = start + v;
+                    totals[(key, row)] = totals.GetValueOrDefault((key, row)) + Math.Abs(v);
                 }
 
                 list.Add((start, start + v, i));
-                vMin = Math.Min(vMin, Math.Min(start, start + v));
-                vMax = Math.Max(vMax, Math.Max(start, start + v));
             }
 
             segments[r] = [.. list];
         }
+
+        double vMin = 0, vMax = 0;
+        foreach (var r in drawn)
+        {
+            var list = segments[r];
+            for (var n = 0; n < list.Length; n++)
+            {
+                if (r.Percent && totals.TryGetValue((KeyOf(r), rowOf(r.Data, list[n].Index)), out var total))
+                {
+                    list[n] = (Share(list[n].Start, total), Share(list[n].End, total), list[n].Index);
+                }
+
+                vMin = Math.Min(vMin, Math.Min(list[n].Start, list[n].End));
+                vMax = Math.Max(vMax, Math.Max(list[n].Start, list[n].End));
+            }
+        }
+
+        var percent = drawn.Any(r => r.Percent);
+        var valueFormat = spec.Y.Format ?? (percent ? "P0" : null);
 
         var lines = new List<(AnnotationSpec Spec, double A, double B)>();
         foreach (var (a, i) in spec.Annotations.Select((a, i) => (a, i)))
@@ -176,7 +195,7 @@ public static partial class ChartLayout
         var (niceMin, niceMax, step) = NiceTicks.NiceDomain(vMin, vMax, Math.Clamp((int)(plot.Width / 90), 2, 10));
         var valueScale = new ContinuousScale(spec.Y.Min ?? niceMin, spec.Y.Max ?? niceMax, plot.X, plot.Right);
         var ticks = NiceTicks.Ticks(valueScale.DomainMin, valueScale.DomainMax, step);
-        var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, spec.Y.Format);
+        var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, valueFormat);
         var band = new BandScale(rows, plot.Y, plot.Bottom, 0.25, 0.1);
         var slotCount = Math.Max(1, slotKeys.Count);
         var thickness = band.Bandwidth / slotCount;
@@ -234,13 +253,12 @@ public static partial class ChartLayout
         var tooltipSeries = new List<TooltipSeries>();
         foreach (var r in drawn)
         {
-            var key = r.Spec.Stack is { Length: > 0 } s ? "stack|" + s : "series|" + r.Spec.Id;
-            var slot = slotKeys.IndexOf(key);
-            var stacked = r.Spec.Stack is { Length: > 0 };
+            var slot = slotKeys.IndexOf(KeyOf(r));
+            var stacked = r.StackGroup is not null;
             var style = styles.Add($"series-{r.ColorIndex}-bar", new Style { Fill = r.Color });
             var format = r.Spec.Format ?? spec.Y.Format;
             var nodes = new List<Node>();
-            var points = new List<(float X, float Y, float Width, int Index, int Row)>();
+            var points = new List<(float X, float Y, float Width, int Index, int Row, double Share)>();
             foreach (var (start, end, i) in segments[r])
             {
                 var row = rowOf(r.Data, i);
@@ -252,7 +270,7 @@ public static partial class ChartLayout
                 {
                     CornerRadius = stacked ? 0 : (float)Math.Min(3, h / 4),
                 });
-                points.Add(((float)((x0 + x1) / 2), (float)(top + h / 2), (float)Math.Max(6, x1 - x0), i, row));
+                points.Add(((float)((x0 + x1) / 2), (float)(top + h / 2), (float)Math.Max(6, x1 - x0), i, row, end - start));
 
                 if (r.Spec.DataLabels == true && !compact)
                 {
@@ -296,7 +314,8 @@ public static partial class ChartLayout
                 [.. points.Select(p => r.Data.ToSourceIndex(p.Index))]);
             hitTest.Add(hits);
             tooltipSeries.Add(new TooltipSeries(r.Spec.Id, r.Spec.DisplayName, r.Color, SeriesType.Bar, 0, 0, 0, hits.X, hits.Y, hits.Index,
-                [.. points.Select(p => rows[p.Row])], [.. points.Select(p => ValueFormatter.Format(r.Data.Y[p.Index], culture, format))])
+                [.. points.Select(p => rows[p.Row])],
+                [.. points.Select(p => ValueFormatter.Format(r.Data.Y[p.Index], culture, format) + (r.Percent ? $" ({p.Share.ToString("P0", culture)})" : ""))])
             {
                 CellHeight = (float)Math.Max(1, thickness - gap),
                 CellWidths = [.. points.Select(p => p.Width)],

@@ -14,6 +14,13 @@ namespace RioCharts.AI;
 /// </summary>
 public static class ChartRazor
 {
+    // The vertical axis settings the export writes: title and stacking.
+    private static string AxisProperties(AxisSpec axis) => string.Join(", ", new[]
+    {
+        axis.Title is { } title ? $"Title = {Str(title)}" : null,
+        axis.Stacking != StackMode.Normal ? $"Stacking = StackMode.{axis.Stacking}" : null,
+    }.OfType<string>());
+
     /// <param name="itemType">The C# type of the rows, e.g. "Reading".</param>
     /// <param name="itemsName">The expression that holds the rows, e.g. "readings".</param>
     public static string FromSpec(ChartSpec spec, string itemType = "Row", string itemsName = "rows")
@@ -26,9 +33,9 @@ public static class ChartRazor
             sb.Append($" Title=\"{Attr(title)}\"");
         }
 
-        if (spec.Y.Title is { } yTitle)
+        if (AxisProperties(spec.Y) is { Length: > 0 } yAxis)
         {
-            sb.Append($" YAxis=\"@(new AxisSpec {{ Title = {Str(yTitle)} }})\"");
+            sb.Append($" YAxis=\"@(new AxisSpec {{ {yAxis} }})\"");
         }
 
         if (spec.X.Title is { } xTitle)
@@ -39,7 +46,7 @@ public static class ChartRazor
         if (spec.YAxes.Count > 0)
         {
             sb.Append(" YAxes=\"@([").Append(string.Join(", ", spec.YAxes.Select(a =>
-                $"new AxisSpec {{ Id = {Str(a.Id ?? "")}{(a.Title is null ? "" : $", Title = {Str(a.Title)}")} }}"))).Append("])\"");
+                $"new AxisSpec {{ Id = {Str(a.Id ?? "")}{(AxisProperties(a) is { Length: > 0 } more ? ", " + more : "")} }}"))).Append("])\"");
         }
 
         if (spec.TimeZone is { } zone)

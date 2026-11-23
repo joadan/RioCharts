@@ -5,6 +5,11 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- 100 % stacked charts: `AxisSpec.Stacking = StackMode.Percent` on the y axis stacks its bar,
+  line and area series to 100 %, showing each series' share per x value (horizontal bars too).
+  Series without a `Stack` name are stacked together; the axis is labelled in percent and the
+  tooltip shows the value and its share. JSON specs: `"y": {"stacking": "percent"}`, or the types
+  `stackedBar100` and `stackedArea100`. Docs: a "100 % stacked bars" example on Bars and stacking.
 - Time buckets on line, area and bar series: `Bucket="TimeBucket.Day"` (or Minute, Hour, Week,
   Month, Quarter, Year) groups items with a time x into one point per bucket, at the bucket's
   start, combined with `Aggregate` (average when not set, as in JSON specs) or `YAggregate`.

@@ -104,6 +104,13 @@ public sealed record AxisSpec
     /// <summary>Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.</summary>
     [Description("Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.")]
     public AxisPosition Position { get; init; } = AxisPosition.Auto;
+
+    /// <summary>
+    /// How stacked series on a vertical axis add up. Percent: each stack fills the axis (0–100 %), so the series show
+    /// their share per x value; line, area and bar series without a stack name are stacked together.
+    /// </summary>
+    [Description("Vertical axes: normal, or percent to stack the line, area and bar series on the axis to 100 % (each series' share per x value). Series without a stack name are stacked together.")]
+    public StackMode Stacking { get; init; } = StackMode.Normal;
 }
 
 /// <summary>Legend settings: when to show it and where.</summary>
@@ -622,6 +629,17 @@ public enum FilterOp
 
     /// <summary>Text that contains the value, ignoring case.</summary>
     Contains,
+}
+
+/// <summary>How stacked series add up on their axis.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<StackMode>))]
+public enum StackMode
+{
+    /// <summary>Values stack on each other: the top of a stack is the total.</summary>
+    Normal,
+
+    /// <summary>Each stack fills the axis (100 %): the series show their share of the total per x value.</summary>
+    Percent,
 }
 
 /// <summary>Time interval that rows are grouped into before aggregating.</summary>
