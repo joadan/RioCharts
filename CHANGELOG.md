@@ -3,7 +3,12 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
-## Unreleased
+## 0.3.1-preview (2026-11-23)
+
+The chart model is renamed to *chart definition* (breaking; the JSON format is unchanged).
+Logarithmic y axes, 100 % stacked charts, time buckets on line, area and bar series, compact mode
+for every chart type, candlesticks in the series color, a Reset zoom icon in the top row, and a
+switch to turn motion off.
 
 - Motion can be turned off: `Animate="false"` on `RioChart` turns off the series' entry fade and
   the short fades of the tooltip, buttons and dimmed series. The CSS variable `--rio-enter-duration`
@@ -82,16 +87,6 @@ changes are called out under **Breaking**.
   `NiceTicks.LogTicks` and `NumberFormatter.ForLogTicks` are new in Core; `DragHandle` has a new
   `Log` parameter (optional, last).
 
-- RioCharts is presented as charts for .NET, not only Blazor: one chart model, interactive in
-  Blazor, PNG and SVG on the server, and created by AI agents. The docs start page shows the three
-  outputs side by side; the title, link preview card, READMEs and llms.txt follow.
-- README rewritten as a short front page: a picture of four charts drawn by RioCharts.Skia (light
-  and dark, made by `tools/ReadmeImage.cs`), one example each for Blazor, server images and AI
-  agents, and the packages. Building, tests, the project layout and releasing moved to
-  CONTRIBUTING.md. The package README on NuGet follows it (with the light picture, from GitHub).
-- Docs: Getting started notes that RioCharts.Blazor works in .NET MAUI Blazor Hybrid apps
-  (tested on Windows; Android and iOS not yet). The guide for coding agents (llms.txt, llms-full.txt,
-  get_usage) says the same.
 - README, NuGet README and CONTRIBUTING.md say how RioCharts is made: human-led, AI-built (the
   design is decided by people; most code is written by AI coding agents, then tested and
   snapshot-checked).
@@ -105,6 +100,19 @@ changes are called out under **Breaking**.
   top or bottom of the axis (e.g. −18 on an axis to −20) lost its label when the label did not fit
   inside the bar; the axis now gets one more tick step on that side. Charts with data labels on
   bars near the axis ends get a slightly larger y range (unless `Min`/`Max` is set).
+
+## 0.2.8-preview (2026-11-22)
+
+- RioCharts is presented as charts for .NET, not only Blazor: one chart model, interactive in
+  Blazor, PNG and SVG on the server, and created by AI agents. The docs start page shows the three
+  outputs side by side; the title, link preview card, READMEs and llms.txt follow.
+- README rewritten as a short front page: a picture of four charts drawn by RioCharts.Skia (light
+  and dark, made by `tools/ReadmeImage.cs`), one example each for Blazor, server images and AI
+  agents, and the packages. Building, tests, the project layout and releasing moved to
+  CONTRIBUTING.md. The package README on NuGet follows it (with the light picture, from GitHub).
+- Docs: Getting started notes that RioCharts.Blazor works in .NET MAUI Blazor Hybrid apps
+  (tested on Windows; Android and iOS not yet). The guide for coding agents (llms.txt, llms-full.txt,
+  get_usage) says the same.
 
 ## 0.2.1-preview (2026-11-22)
 
