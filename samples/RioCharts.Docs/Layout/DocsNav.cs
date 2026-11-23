@@ -10,13 +10,13 @@ public static class DocsNav
     public static readonly Group[] Groups =
     [
         new("Start", [new("", "Overview"), new("getting-started", "Getting started"), new("from-apexcharts", "Coming from ApexCharts")]),
-        new("Charts", [new("lines-and-areas", "Lines and areas"), new("bars", "Bars and stacking"), new("scatter", "Scatter"), new("heatmap", "Heatmap"), new("box-plots", "Box plots"), new("histogram", "Histogram"), new("candlesticks", "Candlesticks"), new("waterfall", "Waterfall"), new("radar", "Radar"), new("treemap", "Treemap"), new("pies", "Pie, donut and radial"), new("compact", "Compact charts")]),
+        new("Charts", [new("lines-and-areas", "Lines and areas"), new("bars", "Bars and stacking"), new("scatter", "Scatter"), new("heatmap", "Heatmap"), new("box-plots", "Box plots"), new("histogram", "Histogram"), new("candlesticks", "Candlesticks"), new("waterfall", "Waterfall"), new("radar", "Radar"), new("treemap", "Treemap"), new("pies", "Pie, donut and radial")]),
         new("Features",
         [
             new("axes", "Axes and time"), new("annotations", "Annotations"), new("tooltips", "Tooltips"),
             new("clicks-and-selection", "Clicks and selection"), new("zoom", "Zoom and pan"), new("keyboard", "Keyboard access"),
-            new("live-data", "Live data"), new("large-data", "Large data"), new("theming", "Theming"), new("languages", "Languages and texts"),
-            new("export", "Export and download"),
+            new("live-data", "Live data"), new("large-data", "Large data"), new("compact", "Compact charts"), new("theming", "Theming"),
+            new("languages", "Languages and texts"), new("export", "Export and download"),
         ]),
         new("Beyond Blazor", [new("definitions", "Chart definitions (playground)"), new("server-export", "Server-side export"), new("ai", "AI agents and MCP")]),
     ];

@@ -31,7 +31,6 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 - [Radar](https://riocharts.com/radar)
 - [Treemap](https://riocharts.com/treemap)
 - [Pie, donut and radial](https://riocharts.com/pies)
-- [Compact charts](https://riocharts.com/compact): sparklines
 - [Axes and time](https://riocharts.com/axes)
 - [Annotations](https://riocharts.com/annotations)
 - [Tooltips](https://riocharts.com/tooltips)
@@ -40,6 +39,7 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 - [Keyboard access](https://riocharts.com/keyboard)
 - [Live data](https://riocharts.com/live-data)
 - [Large data](https://riocharts.com/large-data)
+- [Compact charts](https://riocharts.com/compact): sparklines
 - [Theming](https://riocharts.com/theming)
 - [Languages and texts](https://riocharts.com/languages)
 - [Export and download](https://riocharts.com/export)
