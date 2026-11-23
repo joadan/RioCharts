@@ -98,6 +98,99 @@
     </ChildContent>
 </Example>
 
+<Example Title="Pies, donuts and radial bars" Code="@RoundCode">
+    <Description>
+        <p>
+            Round charts work too. Compact, they drop their labels, legend and the donut's center total and fill the box, so give them a
+            square size and put the number next to them. A single radial bar with <code>EndAngle="360"</code> is a progress ring. Hover a
+            slice or bar for its name and value.
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="compact-stats">
+            <div>
+                <RioChart Items="CategoryRevenue" Compact="true" Width="48" Height="48" Title="Revenue per category">
+                    <PieSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" InnerRadius="0.55" GroupSmallSlices="0.03" />
+                </RioChart>
+                <span>Shoes, of revenue<b>@($"{ShoesShare:0} %")</b></span>
+            </div>
+            <div>
+                <RioChart Items="WebVsApp" Compact="true" Width="48" Height="48" Title="Orders per channel">
+                    <PieSeries Name="Orders" XValue="s => s.Name" YValue="s => s.Value" Format="#,0 'orders'" />
+                </RioChart>
+                <span>Orders in the app<b>@($"{AppShare:0} %")</b></span>
+            </div>
+            <div>
+                <RioChart Items="RevenueGoal" Compact="true" Width="48" Height="48" Title="Revenue goal">
+                    <RadialBarSeries XValue="s => s.Name" YValue="s => s.Value" Max="100" EndAngle="360" InnerRadius="0.6" Format="0'%'" />
+                </RioChart>
+                <span>Revenue goal<b>@($"{RevenueGoal[0].Value:0} %")</b></span>
+            </div>
+            <div>
+                <RioChart Items="Goals" Compact="true" Width="48" Height="48" Title="This month's goals">
+                    <RadialBarSeries XValue="s => s.Name" YValue="s => s.Value" Max="100" Format="0'%'" />
+                </RioChart>
+                <span>Goals reached<b>@($"{Goals.Count(g => g.Value >= 75)} of {Goals.Count}")</b></span>
+            </div>
+        </div>
+    </ChildContent>
+</Example>
+
+<Example Title="More chart types" Code="@MoreCode">
+    <Description>
+        <p>
+            Every chart type has a compact form: candlesticks, heatmaps, box plots, horizontal bars, treemaps and radar charts lose their
+            axes, labels and legend the same way, and keep their tooltip.
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="compact-grid">
+            <div>
+                <span>Electricity price, €/MWh, 30 days</span>
+                <RioChart TItem="PriceDay" Items="Prices" Compact="true" Height="48">
+                    <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
+                                       LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" DirectionColors="true" />
+                </RioChart>
+            </div>
+            <div>
+                <span>Sessions per weekday and hour</span>
+                <RioChart TItem="HourCount" Compact="true" Height="48">
+                    @foreach (var (day, hours) in WeekTraffic)
+                    {
+                        <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" Format="#,0" />
+                    }
+                </RioChart>
+            </div>
+            <div>
+                <span>Response time per endpoint</span>
+                <RioChart TItem="Percentiles" Items="ResponseTimes" Compact="true" Height="48">
+                    <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint" LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
+                                   Q3Value="p => p.P75" HighValue="p => p.P95" Format="0 'ms'" />
+                </RioChart>
+            </div>
+            <div>
+                <span>Revenue per category, k€</span>
+                <RioChart Items="CategoryRevenue" Compact="true" Horizontal="true" Height="48">
+                    <BarSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" />
+                </RioChart>
+            </div>
+            <div>
+                <span>Disk usage</span>
+                <RioChart TItem="Folder" Items="Folders" Compact="true" Height="48">
+                    <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB" />
+                </RioChart>
+            </div>
+            <div>
+                <span>Laptop vs class average</span>
+                <RioChart TItem="LaptopScore" Items="LaptopScores" Compact="true" Height="48">
+                    <RadarSeries Name="Laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
+                    <RadarSeries Name="Class average" XValue="s => s.Measure" YValue="s => s.Average" />
+                </RioChart>
+            </div>
+        </div>
+    </ChildContent>
+</Example>
+
 <Example Title="Auto-compact" Code="@AutoCode">
     <Description>
         <p>
@@ -148,6 +241,44 @@
     private bool _autoCompact = true;
 
     private (string Label, double W, double H) Size => Sizes.First(s => s.Label == _size);
+
+    private static readonly List<Share> WebVsApp = [new("Web", 1840), new("App", 1160)];
+    private static readonly List<Share> RevenueGoal = [Goals[0]];
+    private static readonly double ShoesShare = 100 * CategoryRevenue[0].Value / CategoryRevenue.Sum(c => c.Value);
+    private static readonly double AppShare = 100 * WebVsApp[1].Value / WebVsApp.Sum(c => c.Value);
+
+    private const string RoundCode = """
+        <RioChart Items="categories" Compact="true" Width="48" Height="48" Title="Revenue per category">
+            <PieSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" InnerRadius="0.55" />
+        </RioChart>
+
+        @* A progress ring: one radial bar all the way round *@
+        <RioChart Items="revenueGoal" Compact="true" Width="48" Height="48" Title="Revenue goal">
+            <RadialBarSeries XValue="s => s.Name" YValue="s => s.Value" Max="100" EndAngle="360" InnerRadius="0.6" Format="0'%'" />
+        </RioChart>
+        """;
+
+    private const string MoreCode = """
+        <RioChart Items="prices" Compact="true" Height="48">
+            <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
+                               LowValue="p => p.Lowest" CloseValue="p => p.Last" Format="0.0 €" DirectionColors="true" />
+        </RioChart>
+
+        <RioChart TItem="HourCount" Compact="true" Height="48">
+            @foreach (var (day, hours) in week)
+            {
+                <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" Format="#,0" />
+            }
+        </RioChart>
+
+        <RioChart Items="categories" Compact="true" Horizontal="true" Height="48">
+            <BarSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" />
+        </RioChart>
+
+        <RioChart Items="folders" Compact="true" Height="48">
+            <TreemapSeries Name="Disk usage" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" Format="0 GB" />
+        </RioChart>
+        """;
 
     private const string AutoCode = """
         <RioChart Items="web" Height="130" Title="Store traffic"

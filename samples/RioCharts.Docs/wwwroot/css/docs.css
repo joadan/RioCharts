@@ -1615,6 +1615,34 @@ table.docs tr:last-child td {
     margin-bottom: 4px;
 }
 
+.compact-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px 20px;
+    font-size: 13px;
+}
+
+.compact-stats > div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.compact-stats > div > :first-child {
+    flex: none;
+}
+
+.compact-stats span {
+    color: var(--doc-muted);
+}
+
+.compact-stats b {
+    display: block;
+    color: var(--doc-text);
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+}
+
 table.sparkline-table td {
     vertical-align: middle;
     padding-top: 6px;

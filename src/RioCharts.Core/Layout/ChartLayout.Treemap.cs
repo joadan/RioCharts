@@ -57,12 +57,10 @@ public static partial class ChartLayout
         var culture = options.Culture;
         var texts = options.Texts ?? ChartTexts.For(culture);
         var measure = options.Measurer;
-        var width = Math.Max(50, options.Width);
-        var height = Math.Max(50, options.Height);
         var font = options.FontSize;
         var small = Math.Max(9, font - 1);
         var lineHeight = font * 1.3;
-        var chrome = FitChrome(spec.AutoCompact, width, height, font);
+        var chrome = FitChrome(spec, options, out var compact, out var width, out var height);
 
         foreach (var r in resolved.Where(r => r.Spec.Type != SeriesType.Treemap))
         {
@@ -101,7 +99,7 @@ public static partial class ChartLayout
         // Drilled into a group (LayoutOptions.TreemapPath): it fills the plot, its children pick the
         // colors, and a path bar above leads back up. A path that is not (or no longer) there shows all.
         var separator = string.IsNullOrEmpty(series.Spec.PathSeparator) ? "/" : series.Spec.PathSeparator;
-        var focus = hasData ? FindGroup(root, options.TreemapPath, separator) ?? root : root;
+        var focus = hasData && !compact ? FindGroup(root, options.TreemapPath, separator) ?? root : root; // compact: no path bar, the whole tree
         var drilled = focus != root;
         for (var g = 0; drilled && g < focus.Children.Count; g++)
         {
@@ -125,7 +123,7 @@ public static partial class ChartLayout
             return string.Join("\n", lines);
         }
 
-        var showLegend = spec.Legend.Mode switch
+        var showLegend = !compact && spec.Legend.Mode switch
         {
             LegendMode.Show => legendEntries.Count > 0,
             LegendMode.Hide => false,
@@ -179,7 +177,7 @@ public static partial class ChartLayout
         var plotTop = y0 + legendTop + 2;
         var plotBottom = height - PadBottom - legendBottom - 2;
         var plotRight = width - PadRight - legendRight;
-        var plot = new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
+        var plot = compact ? CompactPlot(width, height) : new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
@@ -187,13 +185,13 @@ public static partial class ChartLayout
         }
 
         // ---------- Rectangles ----------
-        var headerHeight = small * 1.25 + 6;
+        var headerHeight = compact ? double.PositiveInfinity : small * 1.25 + 6; // compact: no group headers
         if (hasData)
         {
             Place(focus, plot, headerHeight, focus, 0, series.Spec.VisibleLevels is > 0 and var levels ? levels : int.MaxValue);
         }
 
-        var showLabels = series.Spec.DataLabels ?? true;
+        var showLabels = !compact && (series.Spec.DataLabels ?? true);
         styles.Add("treemap-header", new TextStyleDef { FontSize = (float)small, FontWeight = 600, Fill = ThemeTokens.Text });
         styles.Add("treemap-header-value", new TextStyleDef { FontSize = (float)small, Fill = ThemeTokens.TextMuted });
         styles.Add("treemap-value", new TextStyleDef { FontSize = (float)small, FontWeight = 400, Fill = ThemeTokens.DataLabelInverse });
@@ -359,7 +357,7 @@ public static partial class ChartLayout
         }
 
         var overlay = new List<Node>();
-        if (!hasData)
+        if (!hasData && !compact)
         {
             var allHidden = groups.Count > 0 && groups.All(g => Hidden(g.Name));
             overlay.Add(new TextNode(allHidden ? texts.AllSlicesHidden : EmptyMessage(resolved, texts), new PointF(plot.CenterX, plot.CenterY),

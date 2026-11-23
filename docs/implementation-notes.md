@@ -419,6 +419,11 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **JSON:** `highlight` accepts "last", "last, max" or ["last", "max"] and is normalized to the
   enum's comma-separated form; unknown values get the list of valid ones.
 - **Auto-compact** (below) covers normal charts that get small.
+- **Pies, radial bars, radar charts and treemaps** have a compact layout too (`FitChrome(spec,
+  options, ...)`, `CompactPlot`): no title, legend, slice or bar labels, donut center total, radar
+  tick and spoke labels, treemap group headers or path bar (a compact treemap always shows the
+  whole tree), and no "No data" text. The plot is the box inset by 1 px; a pie or radial bar fills
+  its shorter side. Their description is the normal one (no `DescribeCompact`); the tooltip stays.
 
 
 
@@ -494,7 +499,8 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   30% of the chart is left out. `LegendMode.Show` always shows it (it was asked for).
 - **Still there when hidden:** the description keeps the title, the svg keeps its aria-label, and
   the tooltip names the series and values. Hidden y labels keep the grid lines.
-- **Polar charts** shed the legend and title by the same rules; they have no compact layout.
+- **Pies, radial bars, radar charts and treemaps** shed the legend and title by the same rules,
+  and below the size above are laid out compact like the other charts.
 - **Deterministic thresholds, no hysteresis:** a chart resized across a threshold switches at
   the same size both ways.
 

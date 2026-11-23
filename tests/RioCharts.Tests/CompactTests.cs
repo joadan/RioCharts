@@ -209,4 +209,65 @@ public class CompactTests
         Assert.Equal(320, bitmap.Width);
         Assert.Equal(64, bitmap.Height);
     }
+    public static TheoryData<SeriesType, double?> ChartsWithoutAxes => new()
+    {
+        { SeriesType.Pie, null },
+        { SeriesType.Pie, 0.6 },
+        { SeriesType.RadialBar, null },
+        { SeriesType.Radar, null },
+        { SeriesType.Treemap, null },
+    };
+
+    [Theory]
+    [MemberData(nameof(ChartsWithoutAxes))]
+    public void Pies_radial_bars_radars_and_treemaps_draw_only_the_shapes_when_compact(SeriesType type, double? innerRadius)
+    {
+        var spec = new ChartDefinition
+        {
+            Compact = true,
+            Title = "Sales",
+            Legend = new LegendOptions { Mode = LegendMode.Show },
+            Series = [new SeriesOptions { Id = "s", Name = "Sales", Type = type, InnerRadius = innerRadius }],
+        };
+        var data = type == SeriesType.Treemap
+            ? SeriesData.FromCategories(["Shoes/Running", "Shoes/Hiking", "Jackets/Rain", "Jackets/Down", "Hats/Wool"], [50, 30, 25, 20, 10])
+            : SeriesData.FromCategories(["Shoes", "Jackets", "Hats", "Bags", "Socks"], [50, 30, 20, 15, 10]);
+
+        var layout = Layout(spec, new() { ["s"] = data }, width: 40, height: 40);
+
+        var nodes = All(layout.Scene).ToList();
+        Assert.True(layout.HasData);
+        Assert.DoesNotContain(nodes, n => n is TextNode); // no title, legend, labels, center total or group headers
+        Assert.DoesNotContain(nodes, n => n.Class is "rio-legend" or "rio-title");
+        Assert.Equal(40, layout.Scene.Width); // not clamped to the normal 50 px minimum
+        Assert.Equal(1, layout.Plot.X);
+        Assert.Equal(38, layout.Plot.Width, 0.01);
+        Assert.False(string.IsNullOrEmpty(layout.Scene.Description));
+    }
+
+    [Fact]
+    public void A_compact_pie_fills_the_box_and_keeps_its_tooltip()
+    {
+        var spec = new ChartDefinition { Compact = true, Series = [new SeriesOptions { Id = "s", Type = SeriesType.Pie }] };
+
+        var layout = Layout(spec, new() { ["s"] = SeriesData.FromCategories(["Shoes", "Jackets"], [60, 40]) }, width: 60, height: 32);
+
+        var slices = layout.Tooltip.Slices;
+        Assert.Equal(2, slices.Count);
+        Assert.Equal(15, slices[0].R1, 0.01); // (32 - 2) / 2
+        Assert.Equal(30, slices[0].Cx, 0.01);
+        Assert.Equal(16, slices[0].Cy, 0.01);
+    }
+
+    [Fact]
+    public void Small_pies_become_compact_and_empty_compact_pies_draw_nothing()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "s", Type = SeriesType.Pie }] };
+        var small = Layout(spec, new() { ["s"] = SeriesData.FromCategories(["Shoes", "Jackets", "Hats"], [50, 30, 20]) }, width: 100, height: 100);
+        var empty = Layout(spec with { Compact = true }, new() { ["s"] = SeriesData.Empty }, width: 40, height: 40);
+
+        Assert.DoesNotContain(All(small.Scene), n => n is TextNode); // auto-compact below 120 px: no slice labels
+        Assert.False(empty.HasData);
+        Assert.DoesNotContain(All(empty.Scene), n => n is TextNode);
+    }
 }

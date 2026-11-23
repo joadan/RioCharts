@@ -19,12 +19,10 @@ public static partial class ChartLayout
         var culture = options.Culture;
         var texts = options.Texts ?? ChartTexts.For(culture);
         var measure = options.Measurer;
-        var width = Math.Max(50, options.Width);
-        var height = Math.Max(50, options.Height);
         var font = options.FontSize;
         var small = Math.Max(9, font - 1);
         var lineHeight = font * 1.3;
-        var chrome = FitChrome(spec.AutoCompact, width, height, font);
+        var chrome = FitChrome(spec, options, out var compact, out var width, out var height);
 
         foreach (var r in resolved.Where(r => r.Spec.Type != SeriesType.Radar))
         {
@@ -86,7 +84,7 @@ public static partial class ChartLayout
                     : string.Join("\n", Enumerable.Range(0, n).Where(k => double.IsFinite(values[r].Value[k]))
                         .Select(k => $"{spokes[k]}\t{ValueFormatter.Format(values[r].Value[k], culture, FormatOf(r))}"))))
             .ToList();
-        var showLegend = spec.Legend.Mode switch
+        var showLegend = !compact && spec.Legend.Mode switch
         {
             LegendMode.Show => legendEntries.Count > 0,
             LegendMode.Hide => false,
@@ -135,7 +133,7 @@ public static partial class ChartLayout
         var plotTop = y0 + legendTop + 4;
         var plotBottom = height - PadBottom - legendBottom - 4;
         var plotRight = width - PadRight - legendRight;
-        var plot = new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
+        var plot = compact ? CompactPlot(width, height) : new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
@@ -159,14 +157,14 @@ public static partial class ChartLayout
         var cx = (double)plot.CenterX;
         var cy = (double)plot.CenterY;
         var textHeight = small * 1.25;
-        var rMax = Math.Max(10, Math.Min(plot.Width, plot.Height) / 2.0 - 4);
+        var rMax = compact ? Math.Max(2, Math.Min(plot.Width, plot.Height) / 2.0 - 1) : Math.Max(10, Math.Min(plot.Width, plot.Height) / 2.0 - 4);
         var rMin = Math.Max(10, Math.Min(rMax, Math.Min(plot.Width, plot.Height) * 0.3));
         double Angle(int k) => n == 0 ? 0 : Math.PI * 2 * k / n;
         bool Side(int k) => Math.Abs(Math.Sin(Angle(k))) > 0.15;
         var labelCap = Math.Max(40, plot.Width * 0.22);
         var spokeText = spokes.Select(l => Shorten(l, labelCap, measure, small)).ToArray();
         var radius = rMax;
-        if (hasData)
+        if (hasData && !compact) // compact: no spoke labels to leave room for
         {
             for (var k = 0; k < n; k++)
             {
@@ -244,7 +242,7 @@ public static partial class ChartLayout
             // first spoke does not cover them.
             styles.Add("radar-tick", new TextStyleDef { FontSize = (float)small, Fill = ThemeTokens.TextMuted });
             var backing = styles.Add("radar-tick-bg", new Style { Fill = ThemeTokens.Surface, FillOpacity = 0.8f });
-            foreach (var t in ticks)
+            foreach (var t in compact ? [] : ticks)
             {
                 var label = tickFormat(t);
                 var ty = cy - R(t) + small * 0.6;
@@ -260,7 +258,7 @@ public static partial class ChartLayout
             styles.Add("radar-label", new TextStyleDef { FontSize = (float)small, Fill = ThemeTokens.Text });
             var placed = new List<RectF>();
             var chord = n > 1 ? 2 * (radius + LabelGap) * Math.Sin(Math.PI / n) - 6 : plot.Width;
-            for (var k = 0; k < n; k++)
+            for (var k = 0; k < (compact ? 0 : n); k++)
             {
                 var a = Angle(k);
                 var (sin, cos) = (Math.Sin(a), Math.Cos(a));
@@ -413,7 +411,7 @@ public static partial class ChartLayout
         }
 
         var overlay = new List<Node>();
-        if (!hasData)
+        if (!hasData && !compact)
         {
             overlay.Add(new TextNode(EmptyMessage(resolved, texts), new PointF(plot.CenterX, plot.CenterY), new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
         }

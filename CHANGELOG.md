@@ -5,6 +5,13 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Compact pies, donuts, radial bars, radar charts and treemaps: `Compact="true"` now works for
+  every chart type. Round charts and treemaps drop their labels, legend, title and the donut's
+  center total and fill the box, keeping the tooltip, so a 48 px donut or progress ring sits next to
+  a number. Before, these charts ignored `Compact`. They also turn compact when auto-compact makes a
+  chart compact (below 120 × 60 px), so a very small pie no longer tries to fit slice labels. The
+  docs' compact page has examples of every chart type.
+
 - Candlesticks are drawn in the series color, matching the legend and the tooltip: rising candles
   lightly filled, falling ones solid. Before, they were always green and red, so they did not match
   the series color and two candle series looked the same. `DirectionColors="true"` on

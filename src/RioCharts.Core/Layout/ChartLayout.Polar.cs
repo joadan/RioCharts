@@ -22,11 +22,9 @@ public static partial class ChartLayout
         var culture = options.Culture;
         var texts = options.Texts ?? ChartTexts.For(culture);
         var measure = options.Measurer;
-        var width = Math.Max(50, options.Width);
-        var height = Math.Max(50, options.Height);
         var font = options.FontSize;
         var lineHeight = font * 1.3;
-        var chrome = FitChrome(spec.AutoCompact, width, height, font);
+        var chrome = FitChrome(spec, options, out var compact, out var width, out var height);
 
         foreach (var r in resolved.Where(r => r.Type.CoordinateSystem != CoordinateSystem.Polar))
         {
@@ -140,7 +138,7 @@ public static partial class ChartLayout
         {
             legendEntries.Add(new LegendEntry(OtherSliceKey, texts.Other, OtherColor, type, !Hidden(OtherSliceKey), false, hasOther ? OtherTip() : null));
         }
-        var showLegend = spec.Legend.Mode switch
+        var showLegend = !compact && spec.Legend.Mode switch
         {
             LegendMode.Show => legendEntries.Count > 0,
             LegendMode.Hide => false,
@@ -189,7 +187,7 @@ public static partial class ChartLayout
         var plotTop = y0 + legendTop + 4;
         var plotBottom = height - PadBottom - legendBottom - 4;
         var plotRight = width - PadRight - legendRight;
-        var plot = new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
+        var plot = compact ? CompactPlot(width, height) : new RectF((float)PadLeft, (float)plotTop, (float)Math.Max(10, plotRight - PadLeft), (float)Math.Max(10, plotBottom - plotTop));
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
@@ -207,12 +205,12 @@ public static partial class ChartLayout
         var tooltipSlices = new List<TooltipSlice>();
         var described = new List<(string Label, double Value)>();
         var hasData = type == SeriesType.Pie
-            ? LayoutPies(polar, labelsPerSeries, plot, ColorOf, Hidden, culture, texts, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, described)
-            : LayoutRadialBars(polar[0], labelsPerSeries[polar[0]], plot, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes,
+            ? LayoutPies(polar, labelsPerSeries, plot, compact, ColorOf, Hidden, culture, texts, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, described)
+            : LayoutRadialBars(polar[0], labelsPerSeries[polar[0]], plot, compact, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes,
                 tooltipSlices, described);
 
         var overlay = new List<Node>();
-        if (!hasData)
+        if (!hasData && !compact)
         {
             var allHidden = categories.Count > 0 && categories.All(Hidden);
             overlay.Add(new TextNode(allHidden ? texts.AllSlicesHidden : texts.NoData, new PointF(plot.CenterX, plot.CenterY),
@@ -367,7 +365,7 @@ public static partial class ChartLayout
         return (slices, total, grouped);
     }
 
-    private static bool LayoutPies(List<Resolved> rings, Dictionary<Resolved, string[]> labels, RectF plot, Func<string, string> colorOf,
+    private static bool LayoutPies(List<Resolved> rings, Dictionary<Resolved, string[]> labels, RectF plot, bool compact, Func<string, string> colorOf,
         Func<string, bool> hidden, CultureInfo culture, ChartTexts texts, ITextMeasurer measure, double font, StyleTable styles, List<string> warnings,
         List<Node> seriesNodes, List<Node> labelNodes, List<TooltipSlice> tooltip, List<(string, double)> described)
     {
@@ -412,8 +410,8 @@ public static partial class ChartLayout
 
         // The radius leaves room for outside labels only when some slice needs one.
         var outer = slicesPerRing[0];
-        var showLabels = outer.Ring.Spec.DataLabels ?? true;
-        var full = Math.Max(10.0, Fit(plot.Width - 8, plot.Height - 8));
+        var showLabels = !compact && (outer.Ring.Spec.DataLabels ?? true); // compact: no labels, the pie fills the box
+        var full = compact ? Math.Max(2, Fit(plot.Width, plot.Height)) : Math.Max(10.0, Fit(plot.Width - 8, plot.Height - 8));
         string LabelText(Resolved ring, Slice s, double total) =>
             ring.Spec.Format is { } f ? ValueFormatter.Format(s.Value, culture, f) : Percent(s.Value / total, culture);
 
@@ -540,7 +538,7 @@ public static partial class ChartLayout
                     described.Add((s.Label, s.Value));
                 }
 
-                if (!(ring.Spec.DataLabels ?? true))
+                if (!showLabels)
                 {
                     continue;
                 }
@@ -571,7 +569,7 @@ public static partial class ChartLayout
             });
 
             // Donut center: the total, when there is room for it.
-            if (n == 1 && r0 >= 30)
+            if (n == 1 && r0 >= 30 && !compact)
             {
                 var totalText = ValueFormatter.Format(sum, culture, ring.Spec.Format, compactFrom: 1e5);
                 if (measure.Measure(totalText, font * 1.75) <= r0 * 1.6)
@@ -795,7 +793,7 @@ public static partial class ChartLayout
 
     // ---------- Radial bar ----------
 
-    private static bool LayoutRadialBars(Resolved series, string[] labels, RectF plot, Func<string, string> colorOf, Func<string, bool> hidden,
+    private static bool LayoutRadialBars(Resolved series, string[] labels, RectF plot, bool compact, Func<string, string> colorOf, Func<string, bool> hidden,
         CultureInfo culture, ITextMeasurer measure, double font, StyleTable styles, List<string> warnings,
         List<Node> seriesNodes, List<Node> labelNodes, List<TooltipSlice> tooltip, List<(string, double)> described)
     {
@@ -825,12 +823,12 @@ public static partial class ChartLayout
         var sweep = Math.Clamp(Radians((spec.EndAngle ?? 270) - (spec.StartAngle ?? 0)), -Math.PI * 2, Math.PI * 2);
         var cx = plot.CenterX;
         var cy = plot.CenterY;
-        var radius = Math.Max(10.0, Math.Min(plot.Width, plot.Height) / 2.0 - 4);
+        var radius = compact ? Math.Max(2, Math.Min(plot.Width, plot.Height) / 2.0) : Math.Max(10.0, Math.Min(plot.Width, plot.Height) / 2.0 - 4);
         var inner = radius * Math.Clamp(spec.InnerRadius ?? 0.3, 0, 0.9);
         var band = (radius - inner) / bars.Count;
         var thickness = Math.Max(2, Math.Min(band * 0.72, 28));
         var small = Math.Max(9, font - 1);
-        var showLabels = (spec.DataLabels ?? true) && band >= small * 1.1;
+        var showLabels = !compact && (spec.DataLabels ?? true) && band >= small * 1.1;
 
         var nodes = new List<Node>();
         for (var k = 0; k < bars.Count; k++)

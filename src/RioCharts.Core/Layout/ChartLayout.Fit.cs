@@ -1,3 +1,5 @@
+using RioCharts.Core.Scene;
+
 namespace RioCharts.Core.Layout;
 
 public static partial class ChartLayout
@@ -6,6 +8,9 @@ public static partial class ChartLayout
     private readonly record struct Chrome(bool Title, bool Legend, bool RightLegendToTop, bool XTitle, bool YTitles, bool XLabels, bool YLabels)
     {
         public static readonly Chrome All = new(true, true, false, true, true, true, true);
+
+        /// <summary>A compact chart: nothing but the plot.</summary>
+        public static readonly Chrome None = new(false, false, false, false, false, false, false);
     }
 
     // Sizes at the default 12 px font; they scale with the font size.
@@ -40,6 +45,22 @@ public static partial class ChartLayout
     private static bool AutoCompacts(ChartDefinition spec, LayoutOptions options) =>
         spec.AutoCompact && !spec.Compact
         && (options.Width < AutoCompactWidth * options.FontSize / 12 || options.Height < AutoCompactHeight * options.FontSize / 12);
+
+    /// <summary>
+    /// The chrome of a chart without axes (pie, radial bar, radar, treemap): none when compact
+    /// (set, or auto-compact below its size), else what auto-compact leaves room for.
+    /// </summary>
+    private static Chrome FitChrome(ChartDefinition spec, LayoutOptions options, out bool compact, out double width, out double height)
+    {
+        compact = spec.Compact || AutoCompacts(spec, options);
+        width = Math.Max(compact ? 8 : 50, options.Width);
+        height = Math.Max(compact ? 8 : 50, options.Height);
+        return compact ? Chrome.None : FitChrome(spec.AutoCompact, width, height, options.FontSize);
+    }
+
+    /// <summary>The plot of a compact chart without axes: the whole box, inset by a pixel.</summary>
+    private static RectF CompactPlot(double width, double height) =>
+        new(1, 1, (float)Math.Max(2, width - 2), (float)Math.Max(2, height - 2));
 
     /// <summary>The legend's position: a right legend moves to the top on narrow charts.</summary>
     private static LegendPosition FitLegendPosition(LegendPosition position, Chrome chrome) =>
