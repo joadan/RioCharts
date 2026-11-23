@@ -633,7 +633,12 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `ChartLayoutResult.Legend` is empty.
 - **Tooltip:** `TooltipSeries.CellHeight` marks heatmap rows; JS hit-tests the cell under the
   pointer and outlines it. Not shared.
-- **Not yet:** diverging scales (below/above a midpoint), custom color ranges, and calendar layouts
+- **Diverging** (`SeriesOptions.Midpoint`, the first row's): above the midpoint the row color, below it
+  `BelowColor` (default `--rio-negative`), both as opacity from 0.08 at the midpoint to 1 at the furthest value
+  on that side. Each side is scaled on its own (like d3's diverging scales), so both reach the full color; with
+  `Max`, the upper side ends at it. The legend becomes lowest · below steps · midpoint · above steps · highest
+  (`DivergingLegend`), leaving out a side without values. Tooltip dots take the cell's hue (`PointColors`).
+- **Not yet:** custom color ranges (more than one hue per side), and calendar layouts
   (weeks × weekdays from dates) beyond what grouping gives.
 
 
@@ -847,7 +852,8 @@ concept for a sessions-by-country map.
 - **Layout:** its own pass (`ComputeMap`), like the treemap's: title, path bar, color scale, legend
   of the series, then the map clipped to the plot. Colors follow each value's rank (a linear scale
   with `Max`), as opacity of one hue over a gray land, so a few large values do not wash out the rest.
-  Countries outside the continent shown fade to 35 %.
+  Countries outside the continent shown fade to 35 %. With a `Midpoint`, countries below it take `BelowColor`,
+  and each side is ranked on its own from the midpoint out (linear on each side with `Max`), as for heatmaps.
 - **Zoom:** `LayoutOptions.MapRegion` (a continent name or a country) and the Blazor `TreemapPath`
   state, so `DrillDownAsync` and `@bind-TreemapPath` work as for treemaps. Every country is a button
   (kind "map") one level down; only countries with data are tab stops (`NodeInteraction.Focusable`).

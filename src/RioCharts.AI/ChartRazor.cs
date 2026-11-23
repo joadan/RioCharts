@@ -366,6 +366,12 @@ public static class ChartRazor
                 sb.Append($" Max=\"{Number(max)}\"");
             }
 
+            if (s.Type is SeriesType.Heatmap or SeriesType.Map && s.Midpoint is { } midpoint)
+            {
+                sb.Append($" Midpoint=\"{Number(midpoint)}\"");
+                Optional(sb, "BelowColor", s.BelowColor);
+            }
+
             if (s.ErrorField is { } errorField)
             {
                 sb.Append($" ErrorValue=\"r => r.{Property(errorField)}\"");

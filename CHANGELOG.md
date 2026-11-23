@@ -5,6 +5,11 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Diverging colors on heatmaps and maps: `Midpoint` on `HeatmapSeries` and `MapSeries` (`"midpoint"` in JSON)
+  colors values above it in the series color and values below it in `BelowColor` (`"belowColor"`, default
+  `--rio-negative`), each stronger the further it is from the midpoint. For changes (0) or values around a normal
+  level. The color scale shows the lowest value, the midpoint and the highest. New in Core: `SeriesOptions.Midpoint`
+  and `BelowColor`. Docs: an example on the Heatmap and World maps pages.
 - Map projections: `Projection` on `RioChart` (and `ChartDefinition`, `"projection"` in JSON) picks
   `MapProjection.EqualEarth` (default, equal-area) or `MapProjection.Mercator`, the projection of web
   maps, cut at ±85°. New in Core: `MapProjection` and `RioCharts.Core.Geo.Mercator`.

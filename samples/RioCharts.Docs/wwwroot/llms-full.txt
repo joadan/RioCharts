@@ -59,7 +59,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | One value on a scale (load, how full), with ranges and a target | `GaugeSeries` | `Value` (or `YValue` per item, `XValue` its label), `Max`, `Target`, `ColorBands` |
 | Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
 | Several measures per item | `RadarSeries` | one series per item |
-| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
+| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors) |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
 | Two values per category (before/after, plan/actual) | `DumbbellSeries` | `XValue` the category, `FromValue` the first value, `YValue` the second; `Horizontal="true"` on the chart for rows |
@@ -431,9 +431,11 @@ Scatter series: a marker per point, for how two measures relate, e.g. delivery d
 
 #### `<HeatmapSeries>` (`HeatmapSeries<TItem>`)
 
-One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one color scale (the first row's Color, Format and Max).
+One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one color scale (the first row's Color, Format, Max, Midpoint and BelowColor).
 
 - `Max`: `double?` — The value that gets the full color (e.g. 100 for percentages). Default: the highest value.
+- `Midpoint`: `double?` — Colors diverge from this value, e.g. 0 for changes or 20 for °C: values above it take the series color, values below it `HeatmapSeries.BelowColor`, stronger the further they are from it. Default: one color, stronger for higher values.
+- `BelowColor`: `string?` — With a `HeatmapSeries.Midpoint`: the color of values below it. Default `--rio-negative`.
 
 #### `<RangeAreaSeries>` (`RangeAreaSeries<TItem>`)
 
@@ -572,6 +574,8 @@ Radial bars: one circular track per category, filled up to its value.
 A world map: each country colored by its value, one hue that gets stronger with the value (a choropleth). `XValue` is the country: an ISO 3166 alpha-2 or alpha-3 code (`"SE"`, `"SWE"`) or English name; `YValue` its value. Several items for one country add up. Clicking a country zooms into it (see `RioChart.TreemapPath`), with a path bar back to the world. Combine with `MapBubbleSeries` for places within the countries. Cannot be mixed with other series types.
 
 - `Max`: `double?` — The value given the strongest color, e.g. 100 for percentages. Default: the largest value.
+- `Midpoint`: `double?` — Colors diverge from this value, e.g. 0 for growth: countries above it take the series color, those below it `MapSeries.BelowColor`, stronger the further they are from it. Default: one color, stronger for higher values.
+- `BelowColor`: `string?` — With a `MapSeries.Midpoint`: the color of values below it. Default `--rio-negative`.
 
 #### `<MapBubbleSeries>` (`MapBubbleSeries<TItem>`)
 
@@ -1114,66 +1118,7 @@ Kind of annotation.
 
 One series: its type, where its data comes from (fields and transforms in JSON definitions) and how it looks.
 
-- `Id`: `string` — Unique id of the series. Optional in JSON definitions (generated from the y field).
-- `Type`: `SeriesType` — Chart type: line, area, bar, pie (donut with innerRadius), radialBar, or auto to pick from the data.
-- `Dataset`: `string?` — Dataset id to read fields from. Defaults to the chart's dataset (or its inline data).
-- `X`: `string?` — Field for the x axis: a time, number or text (category; the slice name for pies).
-- `Y`: `string?` — Numeric field for the y value. Optional with aggregate count.
-- `Filter`: `IReadOnlyList<Filter>?` — Keep only rows that match all of these conditions.
-- `TimeBucket`: `TimeBucket?` — Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span) and aggregate y per bucket.
-- `Aggregate`: `Aggregate?` — Combine rows with the same x (or time bucket): sum, average, min, max, count or last.
-- `GroupBy`: `string?` — Field to split by: one series per distinct value (e.g. one line per sales channel).
-- `Sort`: `SortOrder?` — Order points by y (for categories, e.g. a ranking): ascending or descending.
-- `Limit`: `int?` — Keep only the first N points after sorting (e.g. top 10).
-- `Name`: `string?` — Name shown in the legend and tooltips. Defaults to the id.
-- `Color`: `string?` — CSS color. Null uses the next palette color.
-- `Curve`: `CurveType` — Line shape for line and area series.
-- `StrokeWidth`: `double?` — Line width in pixels. Default 2.
-- `ZIndex`: `int?` — Draw order override. By default areas are drawn first, then bars, then lines.
-- `YAxisId`: `string?` — Id of the vertical axis this series uses. Null uses the primary axis.
-- `Stack`: `string?` — Stack group name. Series of the same type with the same stack name (and axis) are stacked on top of each other.
-- `DataLabels`: `bool?` — Show values on the chart. Null uses the default: on for pie, donut and radial bar, off otherwise.
-- `Low`: `string?` — Range area: the field with the low value of each point (y is the high value). Box plot with precomputed boxes: the lower whisker end.
-- `Open`: `string?` — Candlestick with precomputed candles: the field with each period's first value (y is the close, low and high the extremes). Leave it out to make candles from the raw y values per timeBucket.
-- `Q1`: `string?` — Box plot with precomputed boxes: the field with the lower quartile (y is the median). Leave out q1, q3, low and high to compute the boxes from the raw y values per x.
-- `Q3`: `string?` — Box plot with precomputed boxes: the field with the upper quartile.
-- `High`: `string?` — Box plot with precomputed boxes: the field with the upper whisker end.
-- `Row`: `string?` — Range bar: the field with the row of each bar (e.g. the machine or task); text. Null: one row per series.
-- `Start`: `string?` — Range bar: the field with each bar's start, a time (or a number).
-- `End`: `string?` — Range bar: the field with each bar's end, of the same kind as start.
-- `Total`: `string?` — Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.
-- `BinWidth`: `double?` — Histogram: the width of each bin, in x units (e.g. 5 for bins of 5 ms). Null: a nice width picked from the data.
-- `BinCount`: `int?` — Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.
-- `MarkerSize`: `double?` — Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.
-- `GroupByCountry`: `bool?` — Map bubbles: on the world map, one bubble per country with the sum of its places; zoomed into a country, each place. Default true.
-- `Latitude`: `string?` — Map bubbles: the field with each place's latitude in degrees north.
-- `Longitude`: `string?` — Map bubbles: the field with each place's longitude in degrees east.
-- `Size`: `string?` — Scatter: the field with each point's size, which makes a bubble chart. A bubble's area is proportional to its size; sizes of zero or less, or missing, are not drawn. All bubble series in a chart share one size scale. Aggregated points: the sum.
-- `SizeName`: `string?` — Bubbles: what the size is, shown with it in the tooltip (e.g. "Population"). Null: the size field's name.
-- `SizeFormat`: `string?` — Bubbles: .NET format string for the size in tooltips, e.g. "0 M". Null: automatic.
-- `TrendLine`: `bool` — Scatter: draw a dashed least-squares trend line through the points.
-- `DirectionColors`: `bool` — Candlestick: color candles by direction, rising in the positive and falling in the negative theme color (green and red), with the change in percent in the tooltip, as for prices. Off: candles take the series color, and the fill alone shows the direction (light when rising, solid when falling).
-- `Highlight`: `PointHighlight` — Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. "last, max").
-- `InnerRadius`: `double?` — Pie, donut, radial bar and gauge: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut). Gauge default 0.8.
-- `StartAngle`: `double?` — Pie, donut, radial bar and gauge: start angle in degrees, clockwise from 12 o'clock. Default 0 (gauge: -120).
-- `EndAngle`: `double?` — Pie, donut, radial bar and gauge: end angle in degrees. Default: start + 360 for pies, 270 for radial bars, 120 for gauges (-90 and 90 make a half circle).
-- `GroupSmallSlices`: `double?` — Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one "Other" slice. Treemap: items smaller than this share of their group, per group.
-- `Path`: `IReadOnlyList<string>?` — Treemap: the fields that name the groups, from the outermost to the item, e.g. ["region", "country", "city"]; used instead of x. Without it, x is the item's path, e.g. "Europe/Sweden/Stockholm".
-- `VisibleLevels`: `int?` — Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.
-- `ColorBands`: `IReadOnlyList<ColorBand>?` — Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.
-- `ColorField`: `string?` — The field with each row's own color (a CSS color such as "#d6485a", or a theme token such as "--rio-negative"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.
-- `PathSeparator`: `string?` — Treemap: what separates the groups in an x path. Default "/".
-- `Max`: `double?` — Radial bar, gauge and bullet: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
-- `Min`: `double?` — Gauge and bullet: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).
-- `Target`: `double?` — Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.
-- `From`: `string?` — Dumbbell: the field with each row's first value (before, plan), drawn as a hollow dot; y is the second (after, actual).
-- `Error`: `double?` — Error bars on bar, line and scatter series: the same plus-or-minus amount for every point, e.g. 2.5.
-- `ErrorField`: `string?` — Error bars: the field with each row's plus-or-minus amount (e.g. a standard deviation). Aggregated rows take the average.
-- `ErrorLow`: `string?` — Error bars: the field with the low end of each row's error bar (a value, e.g. a confidence interval's lower bound); use with errorHigh. Aggregated rows take the lowest.
-- `ErrorHigh`: `string?` — Error bars: the field with the high end of each row's error bar; use with errorLow. Aggregated rows take the highest.
-- `TargetField`: `string?` — Bullet: the field with each row's target value (numbers), aggregated like y.
-- `Format`: `string?` — .NET format string for values in tooltips and data labels, e.g. "0.0" or "P0". Null: the axis format, else automatic.
-- `DisplayName`: `string` (read-only) — The name shown in the legend and tooltips: `SeriesOptions.Name`, or the id when no name is set.
+62 properties: `Id`, `Type`, `Dataset`, `X`, `Y`, `Filter`, `TimeBucket`, `Aggregate`, `GroupBy`, `Sort`, `Limit`, `Name`, `Color`, `Curve`, `StrokeWidth`, `ZIndex`, `YAxisId`, `Stack`, `DataLabels`, `Low`, `Open`, `Q1`, `Q3`, `High`, `Row`, `Start`, `End`, `Total`, `BinWidth`, `BinCount`, `MarkerSize`, `GroupByCountry`, `Latitude`, `Longitude`, `Size`, `SizeName`, `SizeFormat`, `TrendLine`, `DirectionColors`, `Highlight`, `InnerRadius`, `StartAngle`, `EndAngle`, `GroupSmallSlices`, `Path`, `VisibleLevels`, `ColorBands`, `ColorField`, `PathSeparator`, `Max`, `Min`, `Midpoint`, `BelowColor`, `Target`, `From`, `Error`, `ErrorField`, `ErrorLow`, `ErrorHigh`, `TargetField`, `Format`, `DisplayName`.
 
 #### `DataField` (class, RioCharts.Core.Definitions)
 
@@ -1222,47 +1167,6 @@ The box plot columns of a `SeriesData`, one entry per point (in point order; the
 - `ReadOnlySpan<double> OutliersOf(int point)` — The outliers of one point.
 - `BoxSummary At(int point, double median)` — The summary of one point (its median is the series' y value).
 
-#### `SeriesType` (enum, RioCharts.Core)
-
-How a series is drawn.
-
-- `Line` — A line through the points, for trends over time or another continuous x.
-- `Area` — A line with the area below it filled.
-- `Bar` — A bar per point, for comparing categories (or time buckets).
-- `Pie` — Slices of a circle, for shares of a whole; a donut with `SeriesOptions.InnerRadius`.
-- `RadialBar` — A circular bar per category, each on its own track.
-- `Scatter` — A marker per point, for how two measures relate (e.g. delivery distance against delivery time).
-- `Heatmap` — A grid of colored cells: every heatmap series is a row, x the columns, y the color.
-- `RangeArea` — A band between a low and a high value per x (e.g. min to max around an average).
-- `BoxPlot` — The spread of values per x: a box from the lower to the upper quartile, the median, whiskers and outliers.
-- `Candlestick` — How a value moved within each period: open, high, low and close.
-- `Radar` — A closed shape per series across category spokes, for comparing several measures (e.g. products' test scores).
-- `Treemap` — Rectangles sized by value, nested by group (a path such as "Europe/Sweden/Stockholm"), for how a total splits into many parts.
-- `Waterfall` — How a start value becomes an end value: a floating bar per change (rising or falling from the running total), and total bars from zero.
-- `Histogram` — The distribution of values: x values counted in equal-width bins, drawn as bars without gaps.
-- `RangeBar` — Bars from a start to an end on a time (or number) axis, in rows: schedules, or states over time such as running, idle and stopped.
-- `Gauge` — A single value on a scale from min to max, drawn as an arc with the value in the middle; colorBands color the scale's ranges and a target is marked. One gauge per data point.
-- `Bullet` — Bullets: a bar for each value on a horizontal scale, in a row of its own, over colored ranges (colorBands) with a target mark: a KPI against its target in little space. Each series has its own scale.
-- `Dumbbell` — Dumbbells: two values per category joined by a line, from a hollow dot (from: before, plan) to a filled dot (y: after, actual).
-- `Map` — A world map with each country colored by its value (x: the country's ISO code or English name); a click zooms into a country.
-- `MapBubble` — Bubbles on a world map at each point's latitude and longitude, sized by value (e.g. users per city).
-- `Auto` — JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
-
-#### `Filter` (record, RioCharts.Core)
-
-A condition on a field, e.g. { "field": "channel", "op": "eq", "value": "Web" }.
-
-- `Field`: `string` — Field name.
-- `Op`: `FilterOp` — Comparison: eq, ne, gt, gte, lt, lte or contains (text).
-- `Value`: `object?` — Value to compare with: a number, a time (ISO 8601) or text.
-
-#### `SortOrder` (enum, RioCharts.Core)
-
-Order of points sorted by value.
-
-- `Ascending` — Smallest first.
-- `Descending` — Largest first.
-
 #### `FieldType` (enum, RioCharts.Core.Definitions)
 
 The kind of values in a dataset field.
@@ -1270,18 +1174,6 @@ The kind of values in a dataset field.
 - `Number` — Numbers (double).
 - `Time` — Times (DateTime or DateTimeOffset).
 - `Text` — Text (string).
-
-#### `FilterOp` (enum, RioCharts.Core)
-
-Comparison of a `Filter`.
-
-- `Eq` — Equal to the value.
-- `Ne` — Not equal to the value.
-- `Gt` — Greater than the value.
-- `Gte` — Greater than or equal to the value.
-- `Lt` — Less than the value.
-- `Lte` — Less than or equal to the value.
-- `Contains` — Text that contains the value, ignoring case.
 
 ## More
 

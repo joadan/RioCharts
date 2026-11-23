@@ -49,6 +49,21 @@
     </ChildContent>
 </Example>
 
+<Example Title="Growth and decline" Code="@GrowthCode">
+    <Description>
+        <p>
+            <code>Midpoint</code> splits the colors at a value: countries above it take the series color, countries below it
+            <code>BelowColor</code> (default <code>--rio-negative</code>). Each side is ranked on its own from the midpoint out, so the
+            largest growth and the deepest decline both get the full color. The color scale shows the lowest value, the midpoint and the highest.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Place" Title="Sessions against last year" Height="380">
+            <MapSeries Items="Growth" Name="Change" XValue="c => c.Name" YValue="c => c.Sessions" Format="+0'%';-0'%';0'%'" Midpoint="0" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Projection" Code="@ProjectionCode">
     <Description>
         <p>
@@ -116,6 +131,21 @@
             string? region;
             record Place(string Name, double Sessions, double? Latitude = null, double? Longitude = null);
         }
+        """;
+
+    // Change in sessions against last year, in %.
+    private static readonly Place[] Growth =
+    [
+        new("SE", 12), new("NO", -4), new("DK", 8), new("FI", -11), new("DE", 24), new("GB", -7), new("FR", 31), new("PL", 46),
+        new("NL", 5), new("ES", -18), new("IT", 3), new("US", 15), new("CA", -2), new("CN", 38), new("IN", 62), new("JP", -9),
+        new("AU", 7), new("BR", -25), new("ZA", 19),
+    ];
+
+    private const string GrowthCode = """
+        <RioChart TItem="Place" Title="Sessions against last year">
+            <MapSeries Items="growth" Name="Change" XValue="c => c.Name" YValue="c => c.Sessions"
+                       Format="+0'%';-0'%';0'%'" Midpoint="0" />
+        </RioChart>
         """;
 
     private const string ProjectionCode = """

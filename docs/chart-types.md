@@ -42,7 +42,7 @@ Rules of thumb:
 | Bar | `BarSeries` / `bar` | Grouped, stacked, 100 % stacked, horizontal. Also `column`, `stackedBar`, `stackedBar100`. |
 | Scatter | `ScatterSeries` / `scatter` | Also `points`. |
 | Bubble | `ScatterSeries` with `SizeValue` / `bubble` (scatter with `size`) | Area ∝ size, one scale per chart, largest drawn first, a size legend. |
-| Heatmap | `HeatmapSeries` / `heatmap` | One row per series. |
+| Heatmap | `HeatmapSeries` / `heatmap` | One row per series. One hue, or diverging from a `Midpoint`. |
 | Range area | `RangeAreaSeries` / `rangeArea` | Low/high band. |
 | Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. |
 | Candlestick | `CandlestickSeries` / `candlestick` | OHLC. |

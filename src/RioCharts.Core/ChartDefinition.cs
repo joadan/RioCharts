@@ -357,6 +357,14 @@ public sealed record SeriesOptions
     [Description("Gauge and bullet: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).")]
     public double? Min { get; init; }
 
+    /// <summary>Heatmap and map: colors diverge from this value, e.g. 0 for changes or 20 for °C. Values above it take the series color, values below it belowColor, stronger the further they are from it. Null: one color, stronger for higher values.</summary>
+    [Description("Heatmap and map: colors diverge from this value, e.g. 0 for changes or 20 for °C. Values above it take the series color, values below it belowColor, stronger the further they are from it. Null: one color, stronger for higher values.")]
+    public double? Midpoint { get; init; }
+
+    /// <summary>Heatmap and map with a midpoint: the color of values below it. Default the negative theme color (--rio-negative).</summary>
+    [Description("Heatmap and map with a midpoint: the color of values below it. Default the negative theme color (--rio-negative).")]
+    public string? BelowColor { get; init; }
+
     /// <summary>Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.</summary>
     [Description("Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.")]
     public double? Target { get; init; }
