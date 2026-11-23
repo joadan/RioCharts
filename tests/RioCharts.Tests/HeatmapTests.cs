@@ -182,4 +182,71 @@ public class HeatmapTests
 
         Assert.Equal(400, bitmap.Width);
     }
+
+    // ---------- Diverging colors ----------
+
+    /// <summary>Change in sessions against last week, in %: Mon −40 −10 0 20, Tue 5 10 −20 80.</summary>
+    private static Dictionary<string, SeriesData> Changes() => new()
+    {
+        ["Mon"] = SeriesData.FromCategories(Hours, [-40, -10, 0, 20]),
+        ["Tue"] = SeriesData.FromCategories(Hours, [5, 10, -20, 80]),
+    };
+
+    private static ChartDefinition Diverging(string? below = null, double midpoint = 0) => new()
+    {
+        Series =
+        [
+            new SeriesOptions { Id = "Mon", Type = SeriesType.Heatmap, Midpoint = midpoint, BelowColor = below, Color = "--rio-positive" },
+            new SeriesOptions { Id = "Tue", Type = SeriesType.Heatmap },
+        ],
+    };
+
+    [Fact]
+    public void A_midpoint_colors_values_below_it_in_the_below_color_and_each_side_grows_from_it()
+    {
+        var layout = ChartLayout.Compute(Diverging(), Changes(), Options);
+
+        var cells = Cells(layout);
+        var styles = layout.Scene.Styles;
+        string Fill(int i) => styles.Get(cells[i].Style).Fill!;
+        Assert.Equal(ThemeTokens.Negative, Fill(0)); // −40
+        Assert.Equal(ThemeTokens.Negative, Fill(1)); // −10
+        Assert.Equal("--rio-positive", Fill(2)); // the midpoint itself
+        Assert.Equal("--rio-positive", Fill(7)); // 80
+        Assert.Equal(1, Opacity(layout, cells[0]), 2); // the lowest: full
+        Assert.Equal(1, Opacity(layout, cells[7]), 2); // the highest: full
+        Assert.Equal(0.08, Opacity(layout, cells[2]), 2); // the midpoint: faint
+        Assert.True(Opacity(layout, cells[1]) < Opacity(layout, cells[6])); // −10 is a quarter of the way down, −20 half
+        Assert.Equal(ThemeTokens.Negative, layout.Tooltip.Series[0].PointColors![0]);
+
+        var legend = All(layout.Scene.Static).OfType<GroupNode>().Single(g => g.Class == "rio-legend rio-heat-legend");
+        Assert.Equal(["-40", "0", "80"], legend.Children.OfType<TextNode>().Select(t => t.Text.Replace('−', '-')));
+        Assert.Equal(8, legend.Children.OfType<RectNode>().Count());
+    }
+
+    [Fact]
+    public void A_diverging_scale_takes_its_below_color_and_leaves_out_an_empty_side()
+    {
+        var own = ChartLayout.Compute(Diverging("--rio-series-2"), Changes(), Options);
+        var allAbove = ChartLayout.Compute(Diverging(midpoint: -50), Changes(), Options);
+
+        Assert.Equal("--rio-series-2", own.Scene.Styles.Get(Cells(own)[0].Style).Fill);
+        var legend = All(allAbove.Scene.Static).OfType<GroupNode>().Single(g => g.Class == "rio-legend rio-heat-legend");
+        Assert.Equal(["-50", "80"], legend.Children.OfType<TextNode>().Select(t => t.Text.Replace('−', '-')));
+        Assert.Equal(4, legend.Children.OfType<RectNode>().Count());
+        Assert.All(Cells(allAbove), c => Assert.Equal("--rio-positive", allAbove.Scene.Styles.Get(c.Style).Fill));
+    }
+
+    [Fact]
+    public void A_json_heatmap_reads_its_midpoint()
+    {
+        var parsed = ChartDefinitionJson.Parse("""{ "series": [ { "type": "heatmap", "x": "hour", "y": "change", "midpoint": 0, "belowColor": "#2563eb" } ] }""");
+
+        Assert.Empty(parsed.Errors);
+        Assert.Equal(0, parsed.Definition!.Series[0].Midpoint);
+        Assert.Equal("#2563eb", parsed.Definition.Series[0].BelowColor);
+        var razor = ChartRazor.FromDefinition(parsed.Definition, "Row", "rows");
+        Assert.Contains(" Midpoint=\"0\"", razor, StringComparison.Ordinal);
+        Assert.Contains(" BelowColor=\"#2563eb\"", razor, StringComparison.Ordinal);
+    }
 }

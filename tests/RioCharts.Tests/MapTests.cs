@@ -343,4 +343,37 @@ public class MapTests
         Assert.Contains(" Projection=\"MapProjection.Mercator\"", razor, StringComparison.Ordinal);
         Assert.DoesNotContain("Projection", ChartRazor.FromDefinition(new ChartDefinition { Series = [new SeriesOptions { Id = "m", Type = SeriesType.Map }] }), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_midpoint_colors_countries_below_it_in_the_below_color_ranked_from_it()
+    {
+        // Growth in % against last year: two countries shrank, three grew.
+        var growth = SeriesData.FromCategories(["SE", "NO", "DE", "US", "FR"], [12.0, -3, 4, -9, 30]);
+        var layout = ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "m", Type = SeriesType.Map, Midpoint = 0 }] },
+            new Dictionary<string, SeriesData> { ["m"] = growth }, Options);
+
+        var tips = layout.Tooltip.Series.Single();
+        string ColorOf(string name) => tips.PointColors![Array.IndexOf(tips.XLabels, name)];
+        Assert.Equal(ThemeTokens.Negative, ColorOf("Norway"));
+        Assert.Equal(ThemeTokens.Negative, ColorOf("United States of America"));
+        Assert.Equal(ThemeTokens.Series(0), ColorOf("Sweden"));
+
+        var styles = layout.Scene.Styles;
+        var land = All<PathNode>(layout.Scene.Series).Select(p => styles.Get(p.Style)).Where(s => s.FillOpacity is not null && s.Fill != ThemeTokens.Grid).ToList();
+        Assert.Contains(land, s => s.Fill == ThemeTokens.Negative && s.FillOpacity == 1); // −9: the furthest below
+        Assert.Contains(land, s => s.Fill == ThemeTokens.Negative && Math.Abs(s.FillOpacity!.Value - 0.63f) < 0.01); // −3: half way
+        Assert.Contains(land, s => s.Fill == ThemeTokens.Series(0) && s.FillOpacity == 1); // 30
+
+        var legend = All<GroupNode>(layout.Scene.Static).Single(g => g.Class == "rio-legend rio-heat-legend");
+        Assert.Equal(["-9", "0", "30"], All<TextNode>(legend).Select(t => t.Text.Replace('−', '-')));
+    }
+
+    [Fact]
+    public void Razor_for_a_diverging_map_sets_the_midpoint()
+    {
+        var razor = ChartRazor.FromDefinition(new ChartDefinition { Series = [new SeriesOptions { Id = "m", Type = SeriesType.Map, Midpoint = 0 }] });
+
+        Assert.Contains(" Midpoint=\"0\"", razor, StringComparison.Ordinal);
+        Assert.DoesNotContain("BelowColor", razor, StringComparison.Ordinal);
+    }
 }

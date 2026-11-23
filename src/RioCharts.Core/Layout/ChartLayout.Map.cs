@@ -92,10 +92,33 @@ public static partial class ChartLayout
 
         // Without a fixed Max, the color follows each value's rank, so a few large values do not wash out the rest.
         var ranks = values.Values.Select(v => v.Value).Distinct().Order().ToList();
-        double Strength(double v) => area?.Spec.Max is not null
-            ? (vMax > vMin ? Math.Clamp((v - vMin) / (vMax - vMin), 0, 1) : 1)
-            : ranks.Count > 1 ? (double)ranks.BinarySearch(v) / (ranks.Count - 1) : 1;
+
+        // With a midpoint the colors diverge: above it the series color, below it the below color, each side
+        // ranked (or scaled, with Max) on its own from the midpoint out.
+        var mid = area?.Spec.Midpoint is { } m && double.IsFinite(m) ? m : (double?)null;
+        var below = area?.Spec.BelowColor ?? ThemeTokens.Negative;
+        var aboveRanks = mid is { } ma ? ranks.Where(v => v > ma).ToList() : [];
+        var belowRanks = mid is { } mb ? ranks.Where(v => v < mb).Reverse().ToList() : []; // nearest the midpoint first
+        double Strength(double v)
+        {
+            if (mid is { } md)
+            {
+                if (area?.Spec.Max is not null)
+                {
+                    return DivergingStrength(v, md, vMin, vMax);
+                }
+
+                var side = v > md ? aboveRanks : v < md ? belowRanks : null;
+                return side is null ? 0 : (double)(side.IndexOf(v) + 1) / side.Count;
+            }
+
+            return area?.Spec.Max is not null
+                ? (vMax > vMin ? Math.Clamp((v - vMin) / (vMax - vMin), 0, 1) : 1)
+                : ranks.Count > 1 ? (double)ranks.BinarySearch(v) / (ranks.Count - 1) : 1;
+        }
+
         double Opacity(double v) => MapMinOpacity + (1 - MapMinOpacity) * Strength(v);
+        string ColorOf(double v) => mid is { } mc && v < mc ? below : color;
 
         // ---------- Bubbles ----------
         var bubbles = new List<MapBubble>();
@@ -148,7 +171,10 @@ public static partial class ChartLayout
         var showScale = !compact && values.Count > 0 && spec.Legend.Mode != LegendMode.Hide && (chrome.Legend || spec.Legend.Mode == LegendMode.Show);
         if (showScale)
         {
-            statics.Add(HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend, MapMinOpacity));
+            statics.Add(mid is { } md
+                ? DivergingLegend(PadLeft, y0, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
+                    texts.Legend, MapMinOpacity, "heat")
+                : HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend, MapMinOpacity));
             y0 += lineHeight + 4 + 8;
         }
 
@@ -212,8 +238,9 @@ public static partial class ChartLayout
         StyleRef ValueStyle(double v, bool fade)
         {
             var opacity = Math.Round(Opacity(v), 2);
-            return styles.Add($"map-{color}-{opacity.ToString(CultureInfo.InvariantCulture)}{(fade ? "-faded" : "")}",
-                new Style { Fill = color, FillOpacity = (float)opacity, Stroke = ThemeTokens.Surface, StrokeWidth = 0.5f, Opacity = fade ? faded : null });
+            var fill = ColorOf(v);
+            return styles.Add($"map-{fill}-{opacity.ToString(CultureInfo.InvariantCulture)}{(fade ? "-faded" : "")}",
+                new Style { Fill = fill, FillOpacity = (float)opacity, Stroke = ThemeTokens.Surface, StrokeWidth = 0.5f, Opacity = fade ? faded : null });
         }
 
         var land = new List<Node>();
@@ -342,6 +369,7 @@ public static partial class ChartLayout
                 [.. tips.Select(t => t.Region.Name)], [.. tips.Select(t => F(t.Value))])
             {
                 Shapes = [.. tips.Select(t => t.Rings)],
+                PointColors = mid is null ? null : [.. tips.Select(t => ColorOf(t.Value))],
             });
         }
 
