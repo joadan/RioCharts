@@ -149,6 +149,28 @@ public class SnapshotTests
             ],
         }, new() { ["cpu"] = Categories([""], 64) }, Width: 360, Height: 280),
 
+        // A shop's month: three measures, each on its own scale, with poor/fair/good ranges and a target.
+        ["bullet"] = new(new ChartDefinition
+        {
+            Title = "March",
+            Series =
+            [
+                new SeriesOptions
+                {
+                    Id = "revenue", Name = "Revenue", Type = SeriesType.Bullet, Max = 300, Target = 250, Format = "0 k€",
+                    ColorBands = [new ColorBand { Below = 150, Color = "--rio-negative" }, new ColorBand { Above = 225, Color = "--rio-positive" }],
+                },
+                new SeriesOptions { Id = "margin", Name = "Margin", Type = SeriesType.Bullet, Max = 40, Target = 26, Format = "0'%'" },
+                new SeriesOptions { Id = "rating", Name = "Rating", Type = SeriesType.Bullet, Min = 1, Max = 5, Target = 4.2, Format = "0.0" },
+            ],
+        }, new() { ["revenue"] = Categories([""], 268), ["margin"] = Categories([""], 22), ["rating"] = Categories([""], 4.4) }, Width: 520, Height: 260),
+
+        // Sales per region against each region's own target.
+        ["bullets-targets"] = new(new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "s", Name = "Sales", Type = SeriesType.Bullet, Format = "0 k€", DataLabels = true }],
+        }, new() { ["s"] = Categories(["North", "South", "East", "West"], 182, 96, 141, 120).WithTargets([160.0, 130, 140, 100]) }, Width: 520, Height: 220),
+
         // Disk use per drive: half-circle gauges in a row.
         ["gauges-half"] = new(new ChartDefinition
         {

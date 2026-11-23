@@ -78,7 +78,7 @@ public static class ChartDefinitionBinder
         return new DefinitionBindResult(bound, data, errors, warnings);
     }
 
-    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null, bool Total = false, double? Size = null);
+    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null, bool Total = false, double? Size = null, double? Target = null);
 
     private static void BindSeries(ChartDefinition chart, SeriesOptions s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
         List<SeriesOptions> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
@@ -107,17 +107,18 @@ public static class ChartDefinitionBinder
             return;
         }
 
-        if (s.Type == SeriesType.Gauge && s.X is null)
+        if (s.Type is SeriesType.Gauge or SeriesType.Bullet && s.X is null)
         {
+            var kind = s.Type == SeriesType.Gauge ? "gauge" : "bullet";
             if (s.GroupBy is { } perGroup)
             {
-                // One gauge per value of groupBy: that is the gauge's label, i.e. its x.
+                // One gauge (or bullet) per value of groupBy: that is its label, i.e. its x.
                 s = s with { X = perGroup, GroupBy = null, Aggregate = s.Aggregate ?? Aggregate.Last };
-                warnings.Add($"{path}.groupBy: one gauge per '{perGroup}' value (the {s.Aggregate.ToString()!.ToLowerInvariant()} of each).");
+                warnings.Add($"{path}.groupBy: one {kind} per '{perGroup}' value (the {s.Aggregate.ToString()!.ToLowerInvariant()} of each).");
             }
             else
             {
-                BindGauge(s, path, dataset, output, data, usedIds, errors, warnings);
+                BindSingleValue(s, kind, path, dataset, output, data, usedIds, errors, warnings);
                 return;
             }
         }
@@ -223,6 +224,13 @@ public static class ChartDefinitionBinder
         {
             warnings.Add($"{path}.total: only waterfall series have totals; ignored.");
             totalField = null;
+        }
+
+        var targetField = s.TargetField is null ? null : Find(dataset, s.TargetField, $"{path}.targetField", FieldType.Number, errors);
+        if (targetField is not null && s.Type != SeriesType.Bullet)
+        {
+            warnings.Add($"{path}.targetField: only bullet series have a target per row; ignored.");
+            targetField = null;
         }
 
         var sizeField = s.Size is null ? null : Find(dataset, s.Size, $"{path}.size", FieldType.Number, errors);
@@ -344,7 +352,7 @@ public static class ChartDefinitionBinder
                 continue;
             }
 
-            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField);
+            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField, targetField);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -372,6 +380,7 @@ public static class ChartDefinitionBinder
             series = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
             series = totalField is null ? series : series.WithTotals(points.Select(p => p.Total).ToArray());
             series = sizeField is null ? series : series.WithSizes(points.Select(p => p.Size ?? double.NaN).ToArray());
+            series = targetField is null ? series : series.WithTargets(points.Select(p => p.Target ?? double.NaN).ToArray());
             data[id] = colorField is null ? series : series.WithColors([.. points.Select(p => p.Color)]);
         }
     }
@@ -472,12 +481,12 @@ public static class ChartDefinitionBinder
     }
 
     /// <summary>
-    /// A gauge without x: one value from the (filtered) rows, the aggregate of the y field (default:
-    /// the last value; count needs no y). With x (or groupBy) a gauge is bound like other series:
-    /// one gauge per x value.
+    /// A gauge or bullet without x: one value from the (filtered) rows, the aggregate of the y field
+    /// (default: the last value; count needs no y), and for a bullet its targetField the same way.
+    /// With x (or groupBy) they are bound like other series: one per x value.
     /// </summary>
-    private static void BindGauge(SeriesOptions s, string path, ChartDataset dataset, List<SeriesOptions> output, Dictionary<string, SeriesData> data,
-        HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
+    private static void BindSingleValue(SeriesOptions s, string kind, string path, ChartDataset dataset, List<SeriesOptions> output,
+        Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
     {
         var errorsBefore = errors.Count;
         var aggregate = s.Aggregate ?? Aggregate.Last;
@@ -497,8 +506,15 @@ public static class ChartDefinitionBinder
             else
             {
                 errors.Add(new DefinitionError($"{path}.y",
-                    $"a gauge needs the y field with its value; candidates: {(numbers.Count > 0 ? string.Join(", ", numbers.Select(f => f.Name)) : "none")}."));
+                    $"a {kind} needs the y field with its value; candidates: {(numbers.Count > 0 ? string.Join(", ", numbers.Select(f => f.Name)) : "none")}."));
             }
+        }
+
+        var targetField = s.TargetField is null ? null : Find(dataset, s.TargetField, $"{path}.targetField", FieldType.Number, errors);
+        if (targetField is not null && kind != "bullet")
+        {
+            warnings.Add($"{path}.targetField: only bullet series have a target per row (a gauge takes \"target\"); ignored.");
+            targetField = null;
         }
 
         var filters = new List<(Filter Spec, DataField Field)>();
@@ -523,14 +539,17 @@ public static class ChartDefinitionBinder
 
         if (aggregate == Aggregate.Last && s.Aggregate is null && rows.Count > 1)
         {
-            warnings.Add($"{path}.aggregate: not set; the gauge shows the last of {rows.Count} rows.");
+            warnings.Add($"{path}.aggregate: not set; the {kind} shows the last of {rows.Count} rows.");
         }
 
         var value = Aggregation.Apply(aggregate, [.. rows.Select(r => y?.Values[r] is double d ? d : (double?)null)]) ?? double.NaN;
+        var target = targetField is null ? (double?)null
+            : Aggregation.Apply(aggregate == Aggregate.Count ? Aggregate.Average : aggregate, [.. rows.Select(r => targetField.Values[r] is double d ? d : (double?)null)]);
         var name = s.Name ?? (y is null ? "Count" : Humanize(y.Name));
         var id = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(name) : s.Id, null, usedIds);
         output.Add(s with { Id = id, Name = name, Y = y?.Name, Aggregate = s.Aggregate });
-        data[id] = SeriesData.FromCategories([""], [value]);
+        var single = SeriesData.FromCategories([""], [value]);
+        data[id] = targetField is null ? single : single.WithTargets([target ?? double.NaN]);
     }
 
     /// <summary>Treemap: the path fields joined into one text field per row ("Europe/Sweden/Stockholm"); null when a field is missing.</summary>
@@ -569,9 +588,10 @@ public static class ChartDefinitionBinder
     }
 
     private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null,
-        DataField? color = null, DataField? total = null, DataField? size = null)
+        DataField? color = null, DataField? total = null, DataField? size = null, DataField? target = null)
     {
         double? SizeAt(int r) => size?.Values[r] is double d ? d : null;
+        double? TargetAt(int r) => target?.Values[r] is double d ? d : null;
         double? LowAt(int r) => low?.Values[r] is double d ? d : null;
         string? ColorAt(int r) => color?.Values[r] is { } c ? Text(c) : null;
         bool TotalAt(int r) => total?.Values[r] is { } t && Text(t)?.Trim().ToLowerInvariant() is "true" or "yes" or "1";
@@ -586,7 +606,7 @@ public static class ChartDefinitionBinder
 
         if (aggregate is null)
         {
-            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r), TotalAt(r), SizeAt(r))).ToList();
+            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r), TotalAt(r), SizeAt(r), TargetAt(r))).ToList();
         }
 
         // Group by x (or its bucket), keeping first-appearance order (categories) — times and numbers are sorted later anyway.
@@ -615,7 +635,8 @@ public static class ChartDefinitionBinder
         return order.Select(key => new Point(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),
             low is null ? null : Aggregation.Apply(lowAggregate, groups[key].Select(LowAt).ToList()),
             ColorAt(groups[key][0]), TotalAt(groups[key][0]), // a group's color and total flag: its first row's
-            size is null ? null : Aggregation.Apply(Aggregate.Sum, groups[key].Select(SizeAt).ToList()))).ToList(); // its size: the sum
+            size is null ? null : Aggregation.Apply(Aggregate.Sum, groups[key].Select(SizeAt).ToList()), // its size: the sum
+            target is null ? null : Aggregation.Apply(aggregate == Aggregate.Count ? Aggregate.Average : aggregate.Value, groups[key].Select(TargetAt).ToList()))).ToList();
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>

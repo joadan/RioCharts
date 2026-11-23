@@ -49,6 +49,7 @@ Rules of thumb:
 | Pie / donut | `PieSeries`, `DonutSeries` / `pie` | A donut is a pie with an inner radius. |
 | Radial bar | `RadialBarSeries` / `radialBar` | Also `radial`. |
 | Gauge | `GaugeSeries` / `gauge` (also `meter`, `dial`) | One value on a min–max scale; color bands as a scale ring, a target marker, the value in the middle. One gauge per point, in a grid. No needle. |
+| Bullet | `BulletSeries` / `bullet` | A bar against a target over tinted ranges, a row per point; each series its own scale. Horizontal only. |
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
@@ -61,7 +62,6 @@ Rules of thumb:
 | Type | Status | Popularity | Effort | Complexity | What it's for | Notes / why not yet |
 |---|---|---|---|---|---|---|
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
-| Bullet | Candidate | Low–Medium | Small–Medium | Medium | Value against target and quality bands in little space | A compact horizontal bar with band backgrounds and a target tick. Goes well with sparklines, but bands and targets are new concepts. |
 | Error bars | Candidate | Medium | Small | Medium | Uncertainty on points or bars | Cheap to draw, but as an option it spreads to bar, line and scatter (extent, tooltip, describer, spec). |
 | Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |
 | Dumbbell / slope | Candidate | Low | Small–Medium | Low | Two values per category (before/after, min/max) | Two markers joined by a line on a band axis; a slope chart is the same with two x positions. |

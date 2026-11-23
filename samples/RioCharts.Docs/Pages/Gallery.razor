@@ -157,6 +157,13 @@
         </RioChart>
         <span class="tile-label">Gauge <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="bullets">
+        <RioChart TItem="object" Height="170">
+            <BulletSeries Name="Revenue" Value="268" Max="300" Target="250" Format="0 k€" ColorBands="RevenueBands" />
+            <BulletSeries Name="Margin" Value="22" Max="40" Target="26" Format="0'%'" />
+        </RioChart>
+        <span class="tile-label">Bullet <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="compact">
         <div class="gallery-sparks">
             <RioChart TItem="Reading" Items="WebSessions" Compact="true" Interactive="false" Height="40">
@@ -175,6 +182,7 @@
 
 @code {
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
+    private static readonly ColorBand[] RevenueBands = [new() { Below = 150, Color = "--rio-negative" }, new() { Above = 225, Color = "--rio-positive" }];
     private static readonly ColorBand[] Load = [new() { Above = 60, Color = "--rio-series-2" }, new() { Above = 85, Color = "--rio-negative" }];
 
     private sealed record Stage(string Name, DateOnly Start, DateOnly End);

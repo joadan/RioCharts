@@ -289,6 +289,11 @@ public static partial class ChartLayout
             resolved.Add(r);
         }
 
+        if (resolved.Any(r => r.Spec.Type == SeriesType.Bullet))
+        {
+            return ComputeBullets(spec, resolved, options, warnings, styles);
+        }
+
         if (resolved.Any(r => r.Spec.Type == SeriesType.RangeBar))
         {
             return ComputeRangeBars(spec, resolved, options, warnings, styles, time);

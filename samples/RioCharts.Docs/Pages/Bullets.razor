@@ -1,0 +1,88 @@
+@page "/bullets"
+
+<PageTitle>Bullet charts · RioCharts</PageTitle>
+
+<h1>Bullet charts</h1>
+<p class="lead">
+    A bullet chart shows a value against its target in a single row: a bar for the value, a mark for the target, and tinted ranges
+    behind them for poor, fair and good. Several fit where one gauge would, so they suit dashboards and KPI lists.
+</p>
+
+<Example Title="Measures with their own scales" Code="@MeasuresCode">
+    <Description>
+        <p>
+            Each <code>BulletSeries</code> is a row with its own scale from <code>Min</code> (default 0) to <code>Max</code>, with tick
+            labels under it, so measures in different units can share a chart. Give it a <code>Value</code>, a <code>Target</code> and
+            <code>ColorBands</code>: the bands are tinted behind the bar, and the bar takes the color of the band its value is in. Rows are
+            labeled by their <code>Name</code>; there is no legend.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="object" Title="March" Height="260">
+            <BulletSeries Name="Revenue" Value="268" Max="300" Target="250" Format="0 k€" ColorBands="Revenue" />
+            <BulletSeries Name="Margin" Value="22" Max="40" Target="26" Format="0'%'" />
+            <BulletSeries Name="Rating" Value="4.4" Min="1" Max="5" Target="4.2" Format="0.0" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="A row per item" Code="@ItemsCode">
+    <Description>
+        <p>
+            With <code>Items</code>, <code>XValue</code> labels each row and <code>YValue</code> is its value; <code>TargetValue</code> gives
+            each item its own target. The rows share the series' scale. With <code>Aggregate</code>, items with the same x make one row,
+            and their targets are combined the same way. <code>DataLabels</code> writes the value after the bar.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Region" Items="Regions" Title="Sales against target" Height="230">
+            <BulletSeries XValue="r => r.Name" YValue="r => r.Sales" TargetValue="r => r.Target" Format="0 k€" DataLabels="true" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON definitions</h2>
+<p>
+    <code>"type": "bullet"</code> with <code>x</code> (the rows), <code>y</code>, and a <code>"targetField"</code> with each row's
+    target, or one <code>"target"</code> for all; <code>"min"</code>, <code>"max"</code> and <code>"colorBands"</code> as for gauges.
+    Without <code>x</code> a bullet shows one value from the rows (the last, or the <code>aggregate</code>).
+</p>
+<pre><code>{ "dataset": "sales", "series": [ { "type": "bullet", "x": "region", "y": "amount", "targetField": "goal", "aggregate": "sum" } ] }</code></pre>
+
+@code {
+    private sealed record Region(string Name, double Sales, double Target);
+
+    private static readonly ColorBand[] Revenue =
+    [
+        new() { Below = 150, Color = "--rio-negative" },
+        new() { Above = 225, Color = "--rio-positive" },
+    ];
+
+    private static readonly Region[] Regions = [new("North", 182, 160), new("South", 96, 130), new("East", 141, 140), new("West", 120, 100)];
+
+    private const string MeasuresCode = """
+        <RioChart TItem="object" Title="March">
+            <BulletSeries Name="Revenue" Value="268" Max="300" Target="250" Format="0 k€" ColorBands="revenue" />
+            <BulletSeries Name="Margin" Value="22" Max="40" Target="26" Format="0'%'" />
+            <BulletSeries Name="Rating" Value="4.4" Min="1" Max="5" Target="4.2" Format="0.0" />
+        </RioChart>
+
+        @code {
+            ColorBand[] revenue =
+            [
+                new() { Below = 150, Color = "--rio-negative" },
+                new() { Above = 225, Color = "--rio-positive" },
+            ];
+        }
+        """;
+
+    private const string ItemsCode = """
+        <RioChart TItem="Region" Items="regions" Title="Sales against target">
+            <BulletSeries XValue="r => r.Name" YValue="r => r.Sales" TargetValue="r => r.Target" Format="0 k€" DataLabels="true" />
+        </RioChart>
+
+        @code {
+            record Region(string Name, double Sales, double Target);
+        }
+        """;
+}

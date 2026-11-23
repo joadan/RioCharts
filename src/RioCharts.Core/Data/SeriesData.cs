@@ -78,7 +78,7 @@ public sealed class SeriesData
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
             TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = any ? values : null,
-            Rows = Rows, EndOffsets = EndOffsets,
+            Rows = Rows, EndOffsets = EndOffsets, Targets = Targets,
         };
     }
 
@@ -99,7 +99,7 @@ public sealed class SeriesData
             values[i] = source < low.Length ? low[source] : double.NaN;
         }
 
-        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Totals = Totals, Sizes = Sizes, Colors = Colors };
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Totals = Totals, Sizes = Sizes, Colors = Colors, Targets = Targets };
     }
 
     /// <summary>
@@ -163,7 +163,33 @@ public sealed class SeriesData
 
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
-            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = values,
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = values, Targets = Targets,
+        };
+    }
+
+    /// <summary>
+    /// Bullets: each point's target value, NaN where it has none; null for other series. Set with
+    /// <see cref="WithTargets"/>.
+    /// </summary>
+    public double[]? Targets { get; private set; }
+
+    /// <summary>
+    /// The same points with a target each (bullet charts). <paramref name="targets"/> is in input
+    /// order, like the y values given when creating the data: index i is the target of input item
+    /// (or group) i.
+    /// </summary>
+    public SeriesData WithTargets(ReadOnlySpan<double> targets)
+    {
+        var values = new double[Count];
+        for (var i = 0; i < values.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            values[i] = source < targets.Length ? targets[source] : double.NaN;
+        }
+
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex)
+        {
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = Sizes, Rows = Rows, Targets = values,
         };
     }
 
@@ -332,7 +358,7 @@ public sealed class SeriesData
         {
             return new SeriesData(x, Y, Kind, Categories, SourceIndex)
             {
-                Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = Colors, Rows = Rows,
+                Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = Colors, Rows = Rows, Targets = Targets,
             };
         }
 
@@ -383,6 +409,11 @@ public sealed class SeriesData
         if (Rows is { } rows)
         {
             result.Rows = [.. order.Select(i => rows[i])];
+        }
+
+        if (Targets is { } targets)
+        {
+            result.Targets = [.. order.Select(i => targets[i])];
         }
 
         return result;

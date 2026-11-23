@@ -5,6 +5,14 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Bullet charts: `BulletSeries` shows each value as a bar against its target in a row of its own,
+  over tinted ranges (`ColorBands`; the bar takes the color of the range it is in). Each series has
+  its own scale from `Min` to `Max` with tick labels, so measures in different units can share a
+  chart: one series per measure with a `Value` and a `Target`, or Items with `XValue`, `YValue`
+  and `TargetValue` for a row per item. JSON definitions: `"type": "bullet"` with a new
+  `targetField` (or `target`). New in Core: `SeriesType.Bullet`, `SeriesData.Targets` and
+  `WithTargets`, `SeriesOptions.TargetField`, `ChartTexts.BulletChart`. Docs: a Bullet charts page
+  and a gallery tile.
 - Gauges: `GaugeSeries` shows one value on a scale from `Min` (default 0) to `Max`, as an arc with
   the value written large in the middle, min and max at the ends and the label under it. Give it a
   `Value`, or Items with `YValue` (and `XValue` for the labels) for a gauge per item, laid out in a

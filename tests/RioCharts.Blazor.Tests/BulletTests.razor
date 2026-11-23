@@ -1,0 +1,37 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Sale(string Region, double Amount, double Goal);
+
+    private static readonly Sale[] Sales = [new("North", 90, 80), new("South", 40, 70), new("North", 92, 80), new("South", 56, 60)];
+
+    [Fact]
+    public void A_value_is_a_bullet_without_items()
+    {
+        var cut = Render<RioChart<Sale>>(@<RioChart TItem="Sale" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <BulletSeries Name="Revenue" Value="268" Max="300" Target="250" Format="0 k€" />
+        </RioChart>);
+
+        Assert.Equal("Revenue", cut.Find(".rio-row-label").TextContent);
+        Assert.Single(cut.FindAll(".rio-bullet-bar"));
+        Assert.Single(cut.FindAll(".rio-bullet-target"));
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal("268 k€ (Target 250 k€)", series.GetProperty("v")[0].GetString());
+
+        cut.Render(p => p.Add(c => c.ChildContent, @<BulletSeries TItem="Sale" Name="Revenue" Value="120" Max="300" Target="250" Format="0 k€" />));
+        Assert.Equal("120 k€ (Target 250 k€)", Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v")[0].GetString());
+    }
+
+    [Fact]
+    public void Items_give_a_row_each_with_their_aggregated_targets()
+    {
+        var cut = Render<RioChart<Sale>>(@<RioChart TItem="Sale" Items="Sales" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <BulletSeries XValue="s => s.Region" YValue="s => s.Amount" TargetValue="s => s.Goal" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        Assert.Equal(["North", "South"], cut.FindAll(".rio-row-label").Select(l => l.TextContent));
+        var values = Payload(Calls("update")[^1]).GetProperty("series")[0].GetProperty("v");
+        Assert.Equal("182 (Target 160)", values[0].GetString());
+        Assert.Equal("96 (Target 130)", values[1].GetString());
+    }
+}

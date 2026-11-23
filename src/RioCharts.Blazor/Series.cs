@@ -1032,6 +1032,87 @@ public sealed class GaugeSeries<TItem> : SeriesBase<TItem>
     };
 }
 
+/// <summary>
+/// Bullets: each value as a bar on a horizontal scale from <see cref="Min"/> to <see cref="Max"/>, in
+/// a row of its own, over the scale's ranges (<c>ColorBands</c>, tinted) with a target mark. Give one
+/// <see cref="Value"/>, or Items with <c>XValue</c> (each row's label) and <c>YValue</c>. Each series
+/// has its own scale, so measures in different units (revenue, margin, satisfaction) can be one
+/// series each in the same chart.
+/// </summary>
+public sealed class BulletSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>
+    /// The value to show; used instead of Items when set. Its label is <c>Name</c>. A chart without
+    /// items still needs a <c>TItem</c>, e.g. <c>&lt;RioChart TItem="object"&gt;</c>.
+    /// </summary>
+    [Parameter] public double? Value { get; set; }
+
+    /// <summary>The value at the start of the scale. Default 0 (or a nice value below a negative value).</summary>
+    [Parameter] public double? Min { get; set; }
+
+    /// <summary>The value at the end of the scale. Default: a nice value above the largest value and target.</summary>
+    [Parameter] public double? Max { get; set; }
+
+    /// <summary>A target for every row, marked across it and given in the tooltip. <see cref="TargetValue"/> gives one per item.</summary>
+    [Parameter] public double? Target { get; set; }
+
+    /// <summary>
+    /// Each item's target, e.g. <c>k =&gt; k.Goal</c>; null for none (then <see cref="Target"/>).
+    /// Items combined into one row (<c>Aggregate</c>) get the same aggregate of their targets, or
+    /// the average without one.
+    /// </summary>
+    [Parameter] public Func<TItem, double?>? TargetValue { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Bullet;
+
+    private protected override object? DataSettings => (Value, TargetValue is not null);
+
+    private protected override SeriesData? OwnData => Value is { } value ? SeriesData.FromCategories([""], [value]) : null;
+
+    // Items without XValue: one unlabeled row per item.
+    private protected override SeriesData? BuildData(IReadOnlyList<TItem> items, out IReadOnlyList<int[]>? groups)
+    {
+        groups = null;
+        if (XValue is not null || YValue is not { } y)
+        {
+            return null;
+        }
+
+        var values = new double[items.Count];
+        for (var i = 0; i < values.Length; i++)
+        {
+            values[i] = y(items[i]) ?? double.NaN;
+        }
+
+        return Complete(SeriesData.FromCategories([.. items.Select(_ => "")], values), items, null);
+    }
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (TargetValue is not { } target)
+        {
+            return data;
+        }
+
+        if (groups is null)
+        {
+            return data.WithTargets([.. items.Select(item => target(item) ?? double.NaN)]);
+        }
+
+        var aggregate = Aggregate is { } a && a != Core.Aggregate.Count ? a : Core.Aggregate.Average;
+        return data.WithTargets([.. groups.Select(g => Aggregation.Apply(aggregate, g.Select(i => target(items[i])).ToList()) ?? double.NaN)]);
+    }
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
+    {
+        Min = Min,
+        Max = Max,
+        Target = Target,
+    };
+}
+
 /// <summary>Radial bars: one circular track per category, filled up to its value.</summary>
 public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
 {

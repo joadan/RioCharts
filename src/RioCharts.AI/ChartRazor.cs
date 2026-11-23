@@ -98,10 +98,11 @@ public static class ChartRazor
 
             // Components aggregate per x value, or per bucket where they take one.
             var componentAggregate = s.TimeBucket is null || componentBucket is not null ? s.Aggregate : null;
-            var singleGauge = s.Type == SeriesType.Gauge && s.X is null; // one value, given as Value
+            var singleGauge = s.Type is SeriesType.Gauge or SeriesType.Bullet && s.X is null; // one value, given as Value
             if (singleGauge)
             {
-                notes.Add($"value: the {(s.Aggregate ?? Aggregate.Last).ToString().ToLowerInvariant()} of {(s.Aggregate == Aggregate.Count ? "the rows" : s.Y ?? "value")}");
+                notes.Add($"value: the {(s.Aggregate ?? Aggregate.Last).ToString().ToLowerInvariant()} of {(s.Aggregate == Aggregate.Count ? "the rows" : s.Y ?? "value")}"
+                    + (s.TargetField is { } single ? $"; Target: the same of {single}" : ""));
                 componentAggregate = null;
             }
 
@@ -143,6 +144,7 @@ public static class ChartRazor
                 SeriesType.Histogram => "HistogramSeries",
                 SeriesType.RangeBar => "RangeBarSeries",
                 SeriesType.Gauge => "GaugeSeries",
+                SeriesType.Bullet => "BulletSeries",
                 _ => "LineSeries",
             };
 
@@ -323,7 +325,7 @@ public static class ChartRazor
                 sb.Append($" InnerRadius=\"{Number(inner)}\"");
             }
 
-            if (s.Type == SeriesType.Gauge && s.Min is { } min)
+            if (s.Type is SeriesType.Gauge or SeriesType.Bullet && s.Min is { } min)
             {
                 sb.Append($" Min=\"{Number(min)}\"");
             }
@@ -333,7 +335,12 @@ public static class ChartRazor
                 sb.Append($" Max=\"{Number(max)}\"");
             }
 
-            if (s.Type == SeriesType.Gauge)
+            if (s.Type == SeriesType.Bullet && s.TargetField is { } targetField && !singleGauge)
+            {
+                sb.Append($" TargetValue=\"r => r.{Property(targetField)}\"");
+            }
+
+            if (s.Type is SeriesType.Gauge or SeriesType.Bullet)
             {
                 foreach (var (attribute, value) in new[] { ("Target", s.Target), ("StartAngle", s.StartAngle), ("EndAngle", s.EndAngle), ("InnerRadius", s.InnerRadius) })
                 {

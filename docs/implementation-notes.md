@@ -827,6 +827,37 @@ radial bar alias until then.
 - **Not yet:** a needle, ticks along the scale, a full-circle "progress ring" style with rounded
   ends, and gauges mixed with other polar series.
 
+## Bullet
+
+Not in Design.md; added from `docs/chart-types.md` (candidate). It reuses the gauge's ideas: a
+scale per series (`Min`, `Max`), `ColorBands` for the ranges and `Target`.
+
+- **Data:** every finite point of a bullet series is a row, labeled by its category (or x), else the
+  series name. Targets per point are a new column, `SeriesData.Targets` (`WithTargets`, carried
+  through `WithColors`, `WithLow`, `WithSizes` and re-sorting); `SeriesOptions.Target` is the target
+  of rows without one. `BulletSeries.TargetValue` fills the column from items (aggregated rows: the
+  same aggregate as y, the average for count or without one); `Value` makes a one-row series as for
+  gauges.
+- **Layout:** its own pass (`ChartLayout.ComputeBullets`); other series types and all annotations
+  are skipped with a warning. Rows top to bottom, series after series, at most 48 px apart (up to 40
+  rows, warning), the block centered vertically. Each series has its own scale across the plot
+  width, with tick labels under its last row (no grid, no axis line). A row is a track (grid color)
+  70 % of the row high (at most 30 px), the color bands' ranges on it at 30 % opacity, a bar a third
+  as high from the base (0, or the scale's start when it does not include 0) to the value, clipped
+  to the scale, and a 2.5 px target line across 80 % of the track (left out when off the scale).
+  Series do not take palette colors: every bar is the first palette color unless the series sets
+  `Color`, a point its own (`ColorValue`), or a band colors it. `DataLabels` writes the value after
+  the bar. Compact: tracks and bars only.
+- **No legend:** rows are labeled. The tooltip is the horizontal bar's (hover anywhere on the row):
+  the label, then "value (Target t)" (`ChartTexts.Target`). The description lists
+  "Revenue 268 k€ (0 k€–300 k€, Target 250 k€)" per row (`ChartTexts.BulletChart`, all languages).
+- **JSON definitions:** `"type": "bullet"` (also `bulletChart`, `bulletGraph`), with a new
+  `targetField` (`SeriesOptions.TargetField`; warning and ignored on other types) aggregated like y.
+  Without `x` one value from the rows, as for gauges (`BindSingleValue`). `ChartRazor` writes
+  `TargetValue` for a target field.
+- **Not yet:** vertical bullets, a shared scale across series, qualitative ranges in shades of one
+  color by default, and per-row ranges.
+
 ## Waterfall
 
 Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high popularity, low complexity).

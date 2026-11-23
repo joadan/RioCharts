@@ -333,17 +333,21 @@ public sealed record SeriesOptions
     [Description("Treemap: what separates the groups in an x path. Default \"/\".")]
     public string? PathSeparator { get; init; }
 
-    /// <summary>Radial bar and gauge: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.</summary>
-    [Description("Radial bar and gauge: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.")]
+    /// <summary>Radial bar, gauge and bullet: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.</summary>
+    [Description("Radial bar, gauge and bullet: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.")]
     public double? Max { get; init; }
 
-    /// <summary>Gauge: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).</summary>
-    [Description("Gauge: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).")]
+    /// <summary>Gauge and bullet: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).</summary>
+    [Description("Gauge and bullet: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).")]
     public double? Min { get; init; }
 
-    /// <summary>Gauge: a target value, marked across the scale and given in the tooltip.</summary>
-    [Description("Gauge: a target value, marked across the scale and given in the tooltip.")]
+    /// <summary>Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.</summary>
+    [Description("Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.")]
     public double? Target { get; init; }
+
+    /// <summary>Bullet: the field with each row's target value (numbers), aggregated like y.</summary>
+    [Description("Bullet: the field with each row's target value (numbers), aggregated like y.")]
+    public string? TargetField { get; init; }
 
     /// <summary>.NET format string for values in tooltips and data labels, e.g. "0.0" or "P0". Null: the axis format, else automatic.</summary>
     [Description(".NET format string for values in tooltips and data labels, e.g. \"0.0\" or \"P0\". Null: the axis format, else automatic.")]
@@ -479,6 +483,9 @@ public enum SeriesType
 
     /// <summary>A single value on a scale from min to max, drawn as an arc with the value in the middle; colorBands color the scale's ranges and a target is marked. One gauge per data point.</summary>
     Gauge,
+
+    /// <summary>Bullets: a bar for each value on a horizontal scale, in a row of its own, over colored ranges (colorBands) with a target mark: a KPI against its target in little space. Each series has its own scale.</summary>
+    Bullet,
 
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

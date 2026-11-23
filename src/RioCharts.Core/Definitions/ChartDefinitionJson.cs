@@ -344,6 +344,10 @@ public static class ChartDefinitionJson
         ["dial"] = ("gauge", null),
         ["speedometer"] = ("gauge", null),
         ["kpigauge"] = ("gauge", null),
+        ["bullet"] = ("bullet", null),
+        ["bulletchart"] = ("bullet", null),
+        ["bulletgraph"] = ("bullet", null),
+        ["bulletbar"] = ("bullet", null),
         ["rangebar"] = ("rangeBar", null),
         ["timeline"] = ("rangeBar", null),
         ["gantt"] = ("rangeBar", null),
@@ -451,7 +455,7 @@ public static class ChartDefinitionJson
                     else
                     {
                         errors.Add(new DefinitionError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, radar, treemap, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, bullet, radar, treemap, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt)."));
                     }
                 }
 

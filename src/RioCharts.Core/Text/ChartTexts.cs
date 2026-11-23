@@ -186,6 +186,9 @@ public sealed record ChartTexts
     /// <summary>A gauge chart.</summary>
     public string GaugeChart { get => Get(); init => Set(value); }
 
+    /// <summary>A bullet chart.</summary>
+    public string BulletChart { get => Get(); init => Set(value); }
+
     /// <summary>A gauge's target value, e.g. "Target 80" in its tooltip and description.</summary>
     public string Target { get => Get(); init => Set(value); }
 
@@ -419,6 +422,7 @@ public sealed record ChartTexts
         [nameof(DonutChart)] = "Donut chart",
         [nameof(RadialBarChart)] = "Radial bar chart",
         [nameof(GaugeChart)] = "Gauge",
+        [nameof(BulletChart)] = "Bullet chart",
         [nameof(Target)] = "Target",
         [nameof(RadarChart)] = "Radar chart",
         [nameof(Treemap)] = "Treemap",
@@ -496,6 +500,7 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radiellt stapeldiagram",
         GaugeChart = "Mätare",
+        BulletChart = "Bulletdiagram",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trädkarta",
@@ -567,6 +572,7 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radielt stolpediagram",
         GaugeChart = "Måler",
+        BulletChart = "Bulletdiagram",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trekart",
@@ -638,6 +644,7 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radialt søjlediagram",
         GaugeChart = "Måler",
+        BulletChart = "Bulletdiagram",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trækort",
@@ -709,6 +716,7 @@ public sealed record ChartTexts
         DonutChart = "Rengaskaavio",
         RadialBarChart = "Säteittäinen pylväskaavio",
         GaugeChart = "Mittari",
+        BulletChart = "Bullet-kaavio",
         Target = "Tavoite",
         RadarChart = "Tutkakaavio",
         Treemap = "Puukartta",
@@ -780,6 +788,7 @@ public sealed record ChartTexts
         DonutChart = "Ringdiagramm",
         RadialBarChart = "Radiales Balkendiagramm",
         GaugeChart = "Messanzeige",
+        BulletChart = "Bullet-Diagramm",
         Target = "Ziel",
         RadarChart = "Netzdiagramm",
         Treemap = "Treemap",
@@ -851,6 +860,7 @@ public sealed record ChartTexts
         DonutChart = "Graphique en anneau",
         RadialBarChart = "Graphique à barres radiales",
         GaugeChart = "Jauge",
+        BulletChart = "Graphique à puces",
         Target = "Cible",
         RadarChart = "Graphique en radar",
         Treemap = "Carte proportionnelle",
@@ -922,6 +932,7 @@ public sealed record ChartTexts
         DonutChart = "Gráfico de anillo",
         RadialBarChart = "Gráfico de barras radiales",
         GaugeChart = "Indicador",
+        BulletChart = "Gráfico de viñetas",
         Target = "Objetivo",
         RadarChart = "Gráfico radial",
         Treemap = "Mapa de árbol",

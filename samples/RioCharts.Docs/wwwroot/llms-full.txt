@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, radar, heatmap, box plot, histogram, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, radar, heatmap, box plot, histogram, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -56,6 +56,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Shares of a whole | `PieSeries`, `DonutSeries` | `GroupSmallSlices` |
 | Progress toward a goal | `RadialBarSeries` | `Max` |
 | One value on a scale (load, how full), with ranges and a target | `GaugeSeries` | `Value` (or `YValue` per item, `XValue` its label), `Max`, `Target`, `ColorBands` |
+| Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
 | Several measures per item | `RadarSeries` | one series per item |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
@@ -525,6 +526,16 @@ A gauge: a value on a scale from `GaugeSeries.Min` to `GaugeSeries.Max`, drawn a
 - `StartAngle`: `double?` — Start angle in degrees, clockwise from 12 o'clock. Default -120 (with `GaugeSeries.EndAngle` 120); -90 and 90 make a half circle.
 - `EndAngle`: `double?` — End angle in degrees. Default 120.
 
+#### `<BulletSeries>` (`BulletSeries<TItem>`)
+
+Bullets: each value as a bar on a horizontal scale from `BulletSeries.Min` to `BulletSeries.Max`, in a row of its own, over the scale's ranges (`ColorBands`, tinted) with a target mark. Give one `BulletSeries.Value`, or Items with `XValue` (each row's label) and `YValue`. Each series has its own scale, so measures in different units (revenue, margin, satisfaction) can be one series each in the same chart.
+
+- `Value`: `double?` — The value to show; used instead of Items when set. Its label is `Name`. A chart without items still needs a `TItem`, e.g. `<RioChart TItem="object">`.
+- `Min`: `double?` — The value at the start of the scale. Default 0 (or a nice value below a negative value).
+- `Max`: `double?` — The value at the end of the scale. Default: a nice value above the largest value and target.
+- `Target`: `double?` — A target for every row, marked across it and given in the tooltip. `BulletSeries.TargetValue` gives one per item.
+- `TargetValue`: `Func<TItem, double?>?` — Each item's target, e.g. `k => k.Goal`; null for none (then `BulletSeries.Target`). Items combined into one row (`Aggregate`) get the same aggregate of their targets, or the average without one.
+
 #### `<RadialBarSeries>` (`RadialBarSeries<TItem>`)
 
 Radial bars: one circular track per category, filled up to its value.
@@ -706,7 +717,7 @@ How times without a zone (DateTime with Kind Unspecified, DateOnly, plain string
 
 The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
 
-76 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+77 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `BulletChart`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
 
 - `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
 - `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.
@@ -875,6 +886,7 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `Colors`: `string?[]?` (read-only) — Each point's own color (a CSS color or theme token such as "--rio-negative"), null where the point keeps its series color; null when no point has one. Set with `SeriesData.WithColors`.
 - `Totals`: `bool[]?` (read-only) — Waterfalls: true for each total point, whose y is the running total of the changes before it; null for other series (and for a waterfall without totals). Set with `SeriesData.WithTotals`.
 - `Sizes`: `double[]?` (read-only) — Bubbles (scatter with a size): each point's size, NaN where missing; null for other series. A bubble's area is proportional to its size. Set with `SeriesData.WithSizes`.
+- `Targets`: `double[]?` (read-only) — Bullets: each point's target value, NaN where it has none; null for other series. Set with `SeriesData.WithTargets`.
 - `Candles`: `CandleColumns?` (read-only) — Candlesticks: the open, high and low of each point (`SeriesData.Y` is the close); null for other series. Set with `SeriesData.WithCandles`.
 - `Box`: `BoxColumns?` (read-only) — Box plots: the quartiles, whiskers, extremes and outliers of each point (`SeriesData.Y` is the median); null for other series. Set with `SeriesData.WithBox`.
 - `TimeOffsets`: `double[]?` (read-only) — Time data: the UTC offset (milliseconds) of each point when the input had one (DateTimeOffset, or DateTime with Kind Utc or Local), NaN otherwise; null when no point had one. Used only when the chart has a display time zone; by default times are shown as given.
@@ -886,6 +898,7 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `SeriesData WithLow(ReadOnlySpan<double> low)` — The same points with a low value each, for range series (`SeriesData.Y` is the high value). `low` is in input order, like the y values given when creating the data: index i is the low of input item (or column entry) i.
 - `SeriesData WithTotals(ReadOnlySpan<bool> totals)` — The same points as a waterfall with totals: `totals` is in input order, like the y values given when creating the data (index i is true when input item or group i is a total). A total point's y becomes the running total of the changes before it (its own y is ignored); the other points are changes, and gaps (NaN) change nothing.
 - `SeriesData WithSizes(ReadOnlySpan<double> sizes)` — The same points with a size each, which makes a scatter series a bubble chart. `sizes` is in input order, like the y values given when creating the data: index i is the size of input item (or group) i.
+- `SeriesData WithTargets(ReadOnlySpan<double> targets)` — The same points with a target each (bullet charts). `targets` is in input order, like the y values given when creating the data: index i is the target of input item (or group) i.
 - `SeriesData WithCandles(ReadOnlySpan<CandleSummary> candles)` — The same points as candles: `candles` is in input order (index i is the candle of input item or group i). Each point's y becomes its candle's close; an incomplete candle is a gap.
 - `static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value, TimeBucket bucket, IReadOnlyList<int[]> groups)` — Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on their wall-clock time) and each bucket gives the first, highest, lowest and last value in time order. Null values are skipped.
 - `static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups)` — Groups items per time bucket (e.g. per day or month, on their wall-clock time) and makes one point per bucket at the bucket's start, with y from `aggregate` (null is a gap). `TimeBucket.Auto` picks the bucket from the span of the times. Items with a null x are left out; x values that are not times group by value. Selectors and the aggregate run once here, never per render.
@@ -1096,9 +1109,10 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `ColorBands`: `IReadOnlyList<ColorBand>?` — Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.
 - `ColorField`: `string?` — The field with each row's own color (a CSS color such as "#d6485a", or a theme token such as "--rio-negative"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.
 - `PathSeparator`: `string?` — Treemap: what separates the groups in an x path. Default "/".
-- `Max`: `double?` — Radial bar and gauge: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
-- `Min`: `double?` — Gauge: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).
-- `Target`: `double?` — Gauge: a target value, marked across the scale and given in the tooltip.
+- `Max`: `double?` — Radial bar, gauge and bullet: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
+- `Min`: `double?` — Gauge and bullet: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).
+- `Target`: `double?` — Gauge and bullet: a target value, marked across the scale and given in the tooltip. A bullet's targetField gives one per row instead.
+- `TargetField`: `string?` — Bullet: the field with each row's target value (numbers), aggregated like y.
 - `Format`: `string?` — .NET format string for values in tooltips and data labels, e.g. "0.0" or "P0". Null: the axis format, else automatic.
 - `DisplayName`: `string` (read-only) — The name shown in the legend and tooltips: `SeriesOptions.Name`, or the id when no name is set.
 
@@ -1169,6 +1183,7 @@ How a series is drawn.
 - `Histogram` — The distribution of values: x values counted in equal-width bins, drawn as bars without gaps.
 - `RangeBar` — Bars from a start to an end on a time (or number) axis, in rows: schedules, or states over time such as running, idle and stopped.
 - `Gauge` — A single value on a scale from min to max, drawn as an arc with the value in the middle; colorBands color the scale's ranges and a target is marked. One gauge per data point.
+- `Bullet` — Bullets: a bar for each value on a horizontal scale, in a row of its own, over colored ranges (colorBands) with a target mark: a KPI against its target in little space. Each series has its own scale.
 - `Auto` — JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
 
 #### `Filter` (record, RioCharts.Core)

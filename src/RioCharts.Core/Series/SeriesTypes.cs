@@ -34,7 +34,7 @@ internal interface ISeriesType
         SeriesType.Bar => BarSeriesType.Instance,
         SeriesType.Scatter => ScatterSeriesType.Instance,
         SeriesType.Heatmap => HeatmapSeriesType.Instance,
-        SeriesType.RangeBar => new PolarSeriesType(type, CoordinateSystem.Cartesian), // laid out by ChartLayout.ComputeRangeBars
+        SeriesType.RangeBar or SeriesType.Bullet => new PolarSeriesType(type, CoordinateSystem.Cartesian), // laid out by ChartLayout.ComputeRangeBars
         SeriesType.RangeArea => RangeAreaSeriesType.Instance,
         SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
         SeriesType.Candlestick => CandlestickSeriesType.Instance,
