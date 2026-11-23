@@ -137,6 +137,9 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         return null;
     }
 
+    /// <summary>Data a series type makes without items (e.g. a gauge's single <c>Value</c>), used instead of Items when not null.</summary>
+    private protected virtual SeriesData? OwnData => null;
+
     /// <summary>
     /// The time bucket items are grouped into (one point per bucket), or null to group only items
     /// with the same x. Series types with a <c>Bucket</c> parameter return it.
@@ -268,6 +271,11 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             if (Data is not null)
             {
                 _data = Data;
+                ItemList = [];
+            }
+            else if (OwnData is { } own0)
+            {
+                _data = own0;
                 ItemList = [];
             }
             else if (items is not null && BuildData(ItemList = items as IReadOnlyList<TItem> ?? items.ToList(), out var own) is { } built)
@@ -953,6 +961,75 @@ public sealed class TreemapSeries<TItem> : SeriesBase<TItem>
 
         return SeriesData.FromCategories(paths, data.Y);
     }
+}
+
+/// <summary>
+/// A gauge: a value on a scale from <see cref="Min"/> to <see cref="Max"/>, drawn as an arc with the
+/// value in the middle. Give one <see cref="Value"/>, or Items with <c>YValue</c> (and <c>XValue</c>
+/// for each gauge's label) for a row of gauges. <c>ColorBands</c> color the scale's ranges (and the
+/// value, when it is in one); <see cref="Target"/> marks a target.
+/// </summary>
+public sealed class GaugeSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>
+    /// The value to show; used instead of Items when set. Its label is <c>Name</c>. A chart without
+    /// items still needs a <c>TItem</c>, e.g. <c>&lt;RioChart TItem="object"&gt;</c>.
+    /// </summary>
+    [Parameter] public double? Value { get; set; }
+
+    /// <summary>The value at the start of the scale. Default 0 (or a nice value below a negative value).</summary>
+    [Parameter] public double? Min { get; set; }
+
+    /// <summary>The value at the end of the scale, e.g. 100 for percentages. Default: a nice value above the largest.</summary>
+    [Parameter] public double? Max { get; set; }
+
+    /// <summary>A target value, marked across the scale and given in the tooltip.</summary>
+    [Parameter] public double? Target { get; set; }
+
+    /// <summary>Inner radius as a fraction of the outer radius. Default 0.8.</summary>
+    [Parameter] public double? InnerRadius { get; set; }
+
+    /// <summary>Start angle in degrees, clockwise from 12 o'clock. Default -120 (with <see cref="EndAngle"/> 120); -90 and 90 make a half circle.</summary>
+    [Parameter] public double? StartAngle { get; set; }
+
+    /// <summary>End angle in degrees. Default 120.</summary>
+    [Parameter] public double? EndAngle { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Gauge;
+
+    private protected override object? DataSettings => Value;
+
+    private protected override SeriesData? OwnData => Value is { } value ? SeriesData.FromCategories([""], [value]) : null;
+
+    // Items without XValue: one unlabeled gauge per item.
+    private protected override SeriesData? BuildData(IReadOnlyList<TItem> items, out IReadOnlyList<int[]>? groups)
+    {
+        groups = null;
+        if (XValue is not null || YValue is not { } y)
+        {
+            return null;
+        }
+
+        var values = new double[items.Count];
+        for (var i = 0; i < values.Length; i++)
+        {
+            values[i] = y(items[i]) ?? double.NaN;
+        }
+
+        return SeriesData.FromCategories([.. items.Select(_ => "")], values);
+    }
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
+    {
+        Min = Min,
+        Max = Max,
+        Target = Target,
+        InnerRadius = InnerRadius,
+        StartAngle = StartAngle,
+        EndAngle = EndAngle,
+    };
 }
 
 /// <summary>Radial bars: one circular track per category, filled up to its value.</summary>

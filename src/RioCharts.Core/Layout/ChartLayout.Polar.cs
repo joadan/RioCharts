@@ -28,7 +28,7 @@ public static partial class ChartLayout
 
         foreach (var r in resolved.Where(r => r.Type.CoordinateSystem != CoordinateSystem.Polar))
         {
-            warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} series cannot be mixed with pie or radial bar series; the series is skipped.");
+            warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} series cannot be mixed with pie, radial bar or gauge series; the series is skipped.");
         }
 
         var polar = resolved.Where(r => r.Type.CoordinateSystem == CoordinateSystem.Polar).ToList();
@@ -131,7 +131,8 @@ public static partial class ChartLayout
             return string.Join("\n", lines);
         }
 
-        var legendEntries = categories.Where(c => !grouped.Contains(c))
+        // Gauges label themselves: no legend.
+        var legendEntries = type == SeriesType.Gauge ? [] : categories.Where(c => !grouped.Contains(c))
             .Select(c => new LegendEntry(c, c, ColorOf(c), type, !Hidden(c), false, SliceTip(c)))
             .ToList();
         if (hasOther || Hidden(OtherSliceKey))
@@ -204,8 +205,11 @@ public static partial class ChartLayout
         var labelNodes = new List<Node>();
         var tooltipSlices = new List<TooltipSlice>();
         var described = new List<(string Label, double Value)>();
+        var gaugeItems = new List<string>();
         var hasData = type == SeriesType.Pie
             ? LayoutPies(polar, labelsPerSeries, plot, compact, ColorOf, Hidden, culture, texts, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, described)
+            : type == SeriesType.Gauge
+            ? LayoutGauges(polar, labelsPerSeries, plot, compact, culture, texts, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, gaugeItems)
             : LayoutRadialBars(polar[0], labelsPerSeries[polar[0]], plot, compact, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes,
                 tooltipSlices, described);
 
@@ -217,13 +221,19 @@ public static partial class ChartLayout
                 new TextStyle("empty"), Anchor.Middle) { Class = "rio-empty" });
         }
 
-        var kind = type == SeriesType.Pie ? (polar.Any(r => (r.Spec.InnerRadius ?? 0) > 0) ? texts.DonutChart : texts.PieChart) : texts.RadialBarChart;
-        var items = string.Join(", ", described.Take(8).Select(d => $"{d.Label} {ValueFormatter.Format(d.Value, culture)}"))
-            + (described.Count > 8 ? " " + texts.Fill(nameof(ChartTexts.More), culture, described.Count - 8) : "");
+        var kind = type switch
+        {
+            SeriesType.Pie => polar.Any(r => (r.Spec.InnerRadius ?? 0) > 0) ? texts.DonutChart : texts.PieChart,
+            SeriesType.Gauge => texts.GaugeChart,
+            _ => texts.RadialBarChart,
+        };
+        var itemTexts = type == SeriesType.Gauge ? gaugeItems : described.Select(d => $"{d.Label} {ValueFormatter.Format(d.Value, culture)}").ToList();
+        var items = string.Join(", ", itemTexts.Take(8))
+            + (itemTexts.Count > 8 ? " " + texts.Fill(nameof(ChartTexts.More), culture, itemTexts.Count - 8) : "");
         var description = (string.IsNullOrWhiteSpace(spec.Title) ? "" : spec.Title + ". ")
-            + (described.Count == 0
+            + (itemTexts.Count == 0
                 ? texts.Fill(nameof(ChartTexts.PolarNoData), culture, kind)
-                : texts.FillCount(nameof(ChartTexts.PolarItems), described.Count, culture, kind, described.Count, items) + ".");
+                : texts.FillCount(nameof(ChartTexts.PolarItems), itemTexts.Count, culture, kind, itemTexts.Count, items) + ".");
 
         var scene = new Scene.Scene(
             new GroupNode(statics) { Class = "rio-static" },

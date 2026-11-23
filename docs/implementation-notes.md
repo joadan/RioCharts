@@ -213,7 +213,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `<RioChart Definition>` and the AI tool share it.
 - **Tolerant reading** happens on the JSON before deserializing: letter case, comments and
   trailing commas, a single series object or top-level x/y, and synonyms (column, stackedBar,
-  doughnut/donut/ring → pie with innerRadius 0.6, spline/smooth → monotone, gauge → radialBar,
+  doughnut/donut/ring → pie with innerRadius 0.6, spline/smooth → monotone, meter/dial → gauge,
   avg/mean, daily/monthly, asc/desc, >=, ...). Unknown fields are ignored. Unknown enum values
   are errors listing the valid ones. Limits: 20 series (after groupBy), 1000 inline rows, 50
   annotations.
@@ -791,6 +791,41 @@ Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high pop
 - **Not yet:** dependencies, milestones, progress, drag to move or resize, nested rows (groups of
   tasks), per-item labels inside bars, side-by-side bars per series (planned against actual) and
   sorting rows.
+
+## Gauge
+
+In Design.md (polar, "custom start/end angle", a target marker); `gauge` in JSON definitions was a
+radial bar alias until then.
+
+- **Data:** every finite point of a gauge series is a gauge; its label is its category (or x), else
+  the series name. `GaugeSeries.Value` makes a one-point series without items (through the new
+  internal `OwnData` hook of `SeriesBase`, so a new value rebuilds the data); Items with `YValue`
+  and no `XValue` give one unlabeled gauge per item.
+- **Scale:** `SeriesOptions.Min` (new; default 0, or a nice value below a negative value) to `Max`
+  (default a nice value above the largest value and the target), per series. Values off the
+  scale fill or empty the track but keep their text. Max not above min warns and uses min + 1.
+- **Layout:** part of the polar pass (`LayoutGauges`), so gauges cannot be mixed with pies or radial
+  bars. Angles from the first gauge series: default -120° to 120°; start and end closer than about
+  6° warn and fall back to the default. Gauges go in the grid (columns × rows) that gives the
+  largest radius, the last row centered; at most 24 (warning). The track is a filled ring (inner
+  radius 0.8), not a stroke, so its ends are square. Color bands (the existing
+  `SeriesOptions.ColorBands`) are drawn as a thin ring outside the track, each range in its color
+  (ranges without a band are left out), and color the value as for bars. `Target` (new) is a line
+  across the ring. The value is written in the middle, as large as fits; the label under it, or
+  under the gauge when the scale leaves no room below the center (a half circle); min and max under
+  the track's ends when those point down or sideways. Compact: the rings only, plus the value if
+  it fits at 9 px; no bands, labels or ends. `DataLabels = false` hides the value.
+- **No legend:** each gauge is labeled. The tooltip (hover anywhere on a gauge, its middle too) shows
+  the label, the value and the target as a part row (`ChartTexts.Target`, all languages). The
+  description lists "CPU 64 (0–100, Target 70)" per gauge (`ChartTexts.GaugeChart`).
+- **JSON definitions:** `"type": "gauge"` (also `meter`, `dial`, `speedometer`) with `min`, `max`
+  and `target`. Without `x` the binder reduces the filtered rows to one value: the `aggregate`, by
+  default the last (warning when there are several rows); without `y` the only number field is used.
+  `groupBy` without `x` is read as x (one gauge per value, last of each). With `x` it binds like
+  other series. `ChartRazor` writes `<GaugeSeries Value="@value">` for one value, with a note on how
+  the value was computed.
+- **Not yet:** a needle, ticks along the scale, a full-circle "progress ring" style with rounded
+  ends, and gauges mixed with other polar series.
 
 ## Waterfall
 

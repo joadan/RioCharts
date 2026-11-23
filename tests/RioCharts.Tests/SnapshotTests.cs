@@ -135,6 +135,26 @@ public class SnapshotTests
             Series = [new SeriesOptions { Id = "h", Name = "Target", Type = SeriesType.RadialBar, Max = 100, Format = "0'%'" }],
         }, new() { ["h"] = Categories(["North", "South", "East", "West"], 87, 74, 41, 92) }, Width: 420, Height: 300),
 
+        // A server's CPU load: one gauge with a scale in three bands and a target.
+        ["gauge"] = new(new ChartDefinition
+        {
+            Title = "CPU load",
+            Series =
+            [
+                new SeriesOptions
+                {
+                    Id = "cpu", Name = "Web server", Type = SeriesType.Gauge, Max = 100, Target = 70, Format = "0'%'",
+                    ColorBands = [new ColorBand { Above = 60, Color = "--rio-series-2" }, new ColorBand { Above = 85, Color = "--rio-negative" }],
+                },
+            ],
+        }, new() { ["cpu"] = Categories([""], 64) }, Width: 360, Height: 280),
+
+        // Disk use per drive: half-circle gauges in a row.
+        ["gauges-half"] = new(new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "d", Type = SeriesType.Gauge, Max = 100, StartAngle = -90, EndAngle = 90, Format = "0'%'" }],
+        }, new() { ["d"] = Categories(["System", "Data", "Backup"], 42, 77, 93) }, Width: 600, Height: 200),
+
         ["dual-axes"] = new(new ChartDefinition
         {
             Y = new AxisOptions { Title = "°C" },

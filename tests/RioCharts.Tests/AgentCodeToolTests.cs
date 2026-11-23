@@ -78,6 +78,7 @@ public class AgentCodeToolTests
         Assert.Equal(line, RioChartsUsage.Get("<LineSeries>"));
         Assert.Contains("`Title`", RioChartsUsage.Get("axisoptions"), StringComparison.Ordinal);
         Assert.StartsWith("## Common mistakes", RioChartsUsage.Get("Common mistakes"), StringComparison.Ordinal);
-        Assert.StartsWith("No section", RioChartsUsage.Get("Gauge"), StringComparison.Ordinal);
+        Assert.StartsWith("No section", RioChartsUsage.Get("Sankey"), StringComparison.Ordinal);
+        Assert.StartsWith("#### `<GaugeSeries>`", RioChartsUsage.Get("GaugeSeries"), StringComparison.Ordinal);
     }
 }

@@ -1,0 +1,95 @@
+@page "/gauges"
+
+<PageTitle>Gauges · RioCharts</PageTitle>
+
+<h1>Gauges</h1>
+<p class="lead">
+    A gauge shows one value on a scale from a minimum to a maximum: the load on a server, how full a disk is, how much of a goal is
+    reached. The value is written large in the middle; colored ranges and a target show what it means.
+</p>
+
+<Example Title="One value" Code="@OneCode">
+    <Description>
+        <p>
+            Give <code>GaugeSeries</code> a <code>Value</code> and a <code>Max</code> (<code>Min</code> defaults to 0). The scale runs from
+            -120° to 120° unless you set <code>StartAngle</code> and <code>EndAngle</code>. <code>ColorBands</code> color the scale's ranges
+            in a thin ring outside the track, and the value takes the color of the range it is in. <code>Target</code> marks a target across
+            the scale and adds it to the tooltip. A new <code>Value</code> draws the gauge again: drag the slider.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="object" Title="CPU load" Height="260">
+            <GaugeSeries Name="Web server" Value="cpu" Max="100" Target="70" Format="0'%'" ColorBands="Load" />
+        </RioChart>
+        <p class="note">
+            <label>Load <input type="range" min="0" max="100" @bind="cpu" @bind:event="oninput" /> @cpu %</label>
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="A gauge per item" Code="@PerItemCode">
+    <Description>
+        <p>
+            With <code>Items</code>, <code>XValue</code> and <code>YValue</code> every item is a gauge, labeled by its x, laid out in the grid
+            that makes them largest. Here <code>StartAngle="-90"</code> and <code>EndAngle="90"</code> make half circles. Several
+            <code>GaugeSeries</code> also make a gauge each, each with its own scale, format and color.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Drive" Items="Drives" Title="Disk use" Height="200">
+            <GaugeSeries XValue="d => d.Name" YValue="d => d.Used" Max="100" StartAngle="-90" EndAngle="90" Format="0'%'" ColorBands="Full" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON definitions</h2>
+<p>
+    <code>"type": "gauge"</code> (also <code>meter</code> and <code>dial</code>) with a <code>"y"</code> field, and <code>"min"</code>,
+    <code>"max"</code>, <code>"target"</code> and <code>"colorBands"</code>. Without <code>x</code> the gauge shows one value from the rows:
+    the last, or the <code>aggregate</code> (e.g. <code>average</code>); with <code>x</code> or <code>groupBy</code> there is one gauge per value.
+</p>
+<pre><code>{ "dataset": "servers", "series": [ { "type": "gauge", "y": "cpu", "aggregate": "average", "max": 100, "target": 70,
+  "colorBands": [ { "above": 60, "color": "--rio-series-2" }, { "above": 85, "color": "--rio-negative" } ] } ] }</code></pre>
+
+@code {
+    private sealed record Drive(string Name, double Used);
+
+    private double cpu = 64;
+
+    private static readonly ColorBand[] Load =
+    [
+        new() { Above = 60, Color = "--rio-series-2" },
+        new() { Above = 85, Color = "--rio-negative" },
+    ];
+
+    private static readonly ColorBand[] Full = [new() { Above = 90, Color = "--rio-negative" }];
+
+    private static readonly Drive[] Drives = [new("System", 42), new("Data", 77), new("Backup", 93)];
+
+    private const string OneCode = """
+        <RioChart TItem="object" Title="CPU load">
+            <GaugeSeries Name="Web server" Value="cpu" Max="100" Target="70" Format="0'%'" ColorBands="load" />
+        </RioChart>
+
+        @code {
+            double cpu = 64;
+
+            ColorBand[] load =
+            [
+                new() { Above = 60, Color = "--rio-series-2" },
+                new() { Above = 85, Color = "--rio-negative" },
+            ];
+        }
+        """;
+
+    private const string PerItemCode = """
+        <RioChart TItem="Drive" Items="drives" Title="Disk use">
+            <GaugeSeries XValue="d => d.Name" YValue="d => d.Used" Max="100" StartAngle="-90" EndAngle="90" Format="0'%'"
+                         ColorBands="[new() { Above = 90, Color = "--rio-negative" }]" />
+        </RioChart>
+
+        @code {
+            record Drive(string Name, double Used);
+        }
+        """;
+}

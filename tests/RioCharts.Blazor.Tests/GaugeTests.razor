@@ -1,0 +1,47 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Drive(string Name, double Used);
+
+    private static readonly Drive[] Drives = [new("System", 42), new("Data", 77), new("Backup", 93)];
+
+    private static readonly ColorBand[] Full = [new() { Above = 90, Color = "--rio-negative" }];
+
+    [Fact]
+    public void A_value_is_a_gauge_without_items()
+    {
+        var cut = Render<RioChart<Drive>>(@<RioChart TItem="Drive" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <GaugeSeries Name="CPU" Value="64" Max="100" Target="70" Format="0'%'" />
+        </RioChart>);
+
+        Assert.Equal("64%", cut.Find(".rio-gauge-value-text").TextContent);
+        Assert.Equal("CPU", cut.Find(".rio-gauge-label").TextContent);
+        Assert.Single(cut.FindAll(".rio-gauge-target"));
+        var slice = Payload(Calls("update")[^1]).GetProperty("slices")[0];
+        Assert.Equal("64%", slice.GetProperty("value").GetString());
+    }
+
+    [Fact]
+    public void A_new_value_redraws_the_gauge()
+    {
+        var cut = Render<RioChart<Drive>>(@<RioChart TItem="Drive">
+            <GaugeSeries Value="64" Max="100" />
+        </RioChart>);
+
+        cut.Render(p => p.Add(c => c.ChildContent, @<GaugeSeries TItem="Drive" Value="81" Max="100" />));
+
+        Assert.Equal("81", cut.Find(".rio-gauge-value-text").TextContent);
+    }
+
+    [Fact]
+    public void Items_make_a_gauge_each()
+    {
+        var cut = Render<RioChart<Drive>>(@<RioChart TItem="Drive" Items="Drives">
+            <GaugeSeries XValue="d => d.Name" YValue="d => d.Used" Max="100" ColorBands="Full" />
+        </RioChart>);
+
+        Assert.Equal(["System", "Data", "Backup"], cut.FindAll(".rio-gauge-label").Select(l => l.TextContent));
+        Assert.Equal(3, cut.FindAll(".rio-gauge-value").Count);
+        Assert.Equal(3, cut.FindAll(".rio-gauge-band").Count); // the 90–100 range on each scale
+    }
+}

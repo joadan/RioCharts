@@ -5,6 +5,18 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Gauges: `GaugeSeries` shows one value on a scale from `Min` (default 0) to `Max`, as an arc with
+  the value written large in the middle, min and max at the ends and the label under it. Give it a
+  `Value`, or Items with `YValue` (and `XValue` for the labels) for a gauge per item, laid out in a
+  grid. `ColorBands` color the scale's ranges in a thin ring and color the value by the range it is
+  in; `Target` marks a target and adds it to the tooltip. `StartAngle` and `EndAngle` set the
+  scale (default -120° to 120°; -90° and 90° make a half circle). JSON definitions:
+  `"type": "gauge"` (also `meter`, `dial`) with `min`, `max` and `target`; without `x` it shows
+  one value from the rows (the last, or the `aggregate`). New in Core: `SeriesType.Gauge`,
+  `SeriesOptions.Min` and `Target`, `ChartTexts.GaugeChart` and `Target`. Docs: a Gauges page and
+  a gallery tile.
+- **Breaking:** `"type": "gauge"` in JSON definitions now makes a gauge; it was read as a radial bar.
+
 - Range bars and timelines: `RangeBarSeries` draws a bar from each item's `StartValue` to its
   `EndValue` (DateTime, DateTimeOffset, DateOnly or numbers) in the row `RowValue` gives, e.g. a
   project schedule or what each machine was doing through a shift. Rows are listed in the order

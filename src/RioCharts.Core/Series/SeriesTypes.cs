@@ -40,7 +40,7 @@ internal interface ISeriesType
         SeriesType.Candlestick => CandlestickSeriesType.Instance,
         SeriesType.Waterfall => WaterfallSeriesType.Instance,
         SeriesType.Histogram => HistogramSeriesType.Instance,
-        SeriesType.Pie or SeriesType.RadialBar or SeriesType.Radar => new PolarSeriesType(type),
+        SeriesType.Pie or SeriesType.RadialBar or SeriesType.Radar or SeriesType.Gauge => new PolarSeriesType(type),
         SeriesType.Treemap => new PolarSeriesType(type, CoordinateSystem.SpaceFilling),
         _ => LineSeriesType.Instance,
     };

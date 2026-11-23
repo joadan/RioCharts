@@ -98,7 +98,14 @@ public static class ChartRazor
 
             // Components aggregate per x value, or per bucket where they take one.
             var componentAggregate = s.TimeBucket is null || componentBucket is not null ? s.Aggregate : null;
-            if (s.Aggregate is { } aggregate && componentAggregate is null)
+            var singleGauge = s.Type == SeriesType.Gauge && s.X is null; // one value, given as Value
+            if (singleGauge)
+            {
+                notes.Add($"value: the {(s.Aggregate ?? Aggregate.Last).ToString().ToLowerInvariant()} of {(s.Aggregate == Aggregate.Count ? "the rows" : s.Y ?? "value")}");
+                componentAggregate = null;
+            }
+
+            if (s.Aggregate is { } aggregate && componentAggregate is null && !singleGauge)
             {
                 notes.Add($"aggregate: {aggregate.ToString().ToLowerInvariant()}");
             }
@@ -135,6 +142,7 @@ public static class ChartRazor
                 SeriesType.Waterfall => "WaterfallSeries",
                 SeriesType.Histogram => "HistogramSeries",
                 SeriesType.RangeBar => "RangeBarSeries",
+                SeriesType.Gauge => "GaugeSeries",
                 _ => "LineSeries",
             };
 
@@ -162,6 +170,10 @@ public static class ChartRazor
                 }
 
                 sb.Append($" StartValue=\"r => r.{Property(s.Start ?? "start")}\" EndValue=\"r => r.{Property(s.End ?? "end")}\"");
+            }
+            else if (singleGauge)
+            {
+                sb.Append(" Value=\"@value\"");
             }
             else
             {
@@ -245,7 +257,7 @@ public static class ChartRazor
                 }
             }
 
-            if (s.Type is not (SeriesType.Histogram or SeriesType.RangeBar) && (componentAggregate != Aggregate.Count || s.Y is not null))
+            if (s.Type is not (SeriesType.Histogram or SeriesType.RangeBar) && !singleGauge && (componentAggregate != Aggregate.Count || s.Y is not null))
             {
                 sb.Append($" YValue=\"r => r.{Property(s.Y ?? "value")}\"");
             }
@@ -311,9 +323,25 @@ public static class ChartRazor
                 sb.Append($" InnerRadius=\"{Number(inner)}\"");
             }
 
+            if (s.Type == SeriesType.Gauge && s.Min is { } min)
+            {
+                sb.Append($" Min=\"{Number(min)}\"");
+            }
+
             if (s.Max is { } max)
             {
                 sb.Append($" Max=\"{Number(max)}\"");
+            }
+
+            if (s.Type == SeriesType.Gauge)
+            {
+                foreach (var (attribute, value) in new[] { ("Target", s.Target), ("StartAngle", s.StartAngle), ("EndAngle", s.EndAngle), ("InnerRadius", s.InnerRadius) })
+                {
+                    if (value is { } v)
+                    {
+                        sb.Append($" {attribute}=\"{Number(v)}\"");
+                    }
+                }
             }
 
             sb.AppendLine(" />");

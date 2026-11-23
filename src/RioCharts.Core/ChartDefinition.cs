@@ -297,16 +297,16 @@ public sealed record SeriesOptions
     [Description("Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. \"last, max\").")]
     public PointHighlight Highlight { get; init; }
 
-    /// <summary>Pie, donut and radial bar: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut).</summary>
-    [Description("Pie, donut and radial bar: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut).")]
+    /// <summary>Pie, donut, radial bar and gauge: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut). Gauge default 0.8.</summary>
+    [Description("Pie, donut, radial bar and gauge: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut). Gauge default 0.8.")]
     public double? InnerRadius { get; init; }
 
-    /// <summary>Pie, donut and radial bar: start angle in degrees, clockwise from 12 o'clock. Default 0.</summary>
-    [Description("Pie, donut and radial bar: start angle in degrees, clockwise from 12 o'clock. Default 0.")]
+    /// <summary>Pie, donut, radial bar and gauge: start angle in degrees, clockwise from 12 o'clock. Default 0 (gauge: -120).</summary>
+    [Description("Pie, donut, radial bar and gauge: start angle in degrees, clockwise from 12 o'clock. Default 0 (gauge: -120).")]
     public double? StartAngle { get; init; }
 
-    /// <summary>Pie, donut and radial bar: end angle in degrees. Default: start + 360 for pies, 270 for radial bars.</summary>
-    [Description("Pie, donut and radial bar: end angle in degrees. Default: start + 360 for pies, 270 for radial bars.")]
+    /// <summary>Pie, donut, radial bar and gauge: end angle in degrees. Default: start + 360 for pies, 270 for radial bars, 120 for gauges (-90 and 90 make a half circle).</summary>
+    [Description("Pie, donut, radial bar and gauge: end angle in degrees. Default: start + 360 for pies, 270 for radial bars, 120 for gauges (-90 and 90 make a half circle).")]
     public double? EndAngle { get; init; }
 
     /// <summary>Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one "Other" slice. Treemap: items smaller than this share of their group, per group.</summary>
@@ -333,9 +333,17 @@ public sealed record SeriesOptions
     [Description("Treemap: what separates the groups in an x path. Default \"/\".")]
     public string? PathSeparator { get; init; }
 
-    /// <summary>Radial bar: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.</summary>
-    [Description("Radial bar: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.")]
+    /// <summary>Radial bar and gauge: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.</summary>
+    [Description("Radial bar and gauge: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.")]
     public double? Max { get; init; }
+
+    /// <summary>Gauge: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).</summary>
+    [Description("Gauge: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).")]
+    public double? Min { get; init; }
+
+    /// <summary>Gauge: a target value, marked across the scale and given in the tooltip.</summary>
+    [Description("Gauge: a target value, marked across the scale and given in the tooltip.")]
+    public double? Target { get; init; }
 
     /// <summary>.NET format string for values in tooltips and data labels, e.g. "0.0" or "P0". Null: the axis format, else automatic.</summary>
     [Description(".NET format string for values in tooltips and data labels, e.g. \"0.0\" or \"P0\". Null: the axis format, else automatic.")]
@@ -468,6 +476,9 @@ public enum SeriesType
 
     /// <summary>Bars from a start to an end on a time (or number) axis, in rows: schedules, or states over time such as running, idle and stopped.</summary>
     RangeBar,
+
+    /// <summary>A single value on a scale from min to max, drawn as an arc with the value in the middle; colorBands color the scale's ranges and a target is marked. One gauge per data point.</summary>
+    Gauge,
 
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

@@ -151,6 +151,12 @@
         </RioChart>
         <span class="tile-label">Radial bars <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="gauges">
+        <RioChart TItem="object" Height="170">
+            <GaugeSeries Name="CPU load" Value="64" Max="100" Target="70" Format="0'%'" ColorBands="Load" />
+        </RioChart>
+        <span class="tile-label">Gauge <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="compact">
         <div class="gallery-sparks">
             <RioChart TItem="Reading" Items="WebSessions" Compact="true" Interactive="false" Height="40">
@@ -169,6 +175,7 @@
 
 @code {
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
+    private static readonly ColorBand[] Load = [new() { Above = 60, Color = "--rio-series-2" }, new() { Above = 85, Color = "--rio-negative" }];
 
     private sealed record Stage(string Name, DateOnly Start, DateOnly End);
 

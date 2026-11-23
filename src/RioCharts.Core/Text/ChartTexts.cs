@@ -183,6 +183,12 @@ public sealed record ChartTexts
     /// <summary>A radial bar chart.</summary>
     public string RadialBarChart { get => Get(); init => Set(value); }
 
+    /// <summary>A gauge chart.</summary>
+    public string GaugeChart { get => Get(); init => Set(value); }
+
+    /// <summary>A gauge's target value, e.g. "Target 80" in its tooltip and description.</summary>
+    public string Target { get => Get(); init => Set(value); }
+
     /// <summary>A radar chart.</summary>
     public string RadarChart { get => Get(); init => Set(value); }
 
@@ -412,6 +418,8 @@ public sealed record ChartTexts
         [nameof(PieChart)] = "Pie chart",
         [nameof(DonutChart)] = "Donut chart",
         [nameof(RadialBarChart)] = "Radial bar chart",
+        [nameof(GaugeChart)] = "Gauge",
+        [nameof(Target)] = "Target",
         [nameof(RadarChart)] = "Radar chart",
         [nameof(Treemap)] = "Treemap",
         [nameof(ShareOfGroup)] = "Share of group",
@@ -487,6 +495,8 @@ public sealed record ChartTexts
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radiellt stapeldiagram",
+        GaugeChart = "Mätare",
+        Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trädkarta",
         ShareOfGroup = "Andel av gruppen",
@@ -556,6 +566,8 @@ public sealed record ChartTexts
         PieChart = "Sektordiagram",
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radielt stolpediagram",
+        GaugeChart = "Måler",
+        Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trekart",
         ShareOfGroup = "Andel av gruppen",
@@ -625,6 +637,8 @@ public sealed record ChartTexts
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
         RadialBarChart = "Radialt søjlediagram",
+        GaugeChart = "Måler",
+        Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trækort",
         ShareOfGroup = "Andel af gruppen",
@@ -694,6 +708,8 @@ public sealed record ChartTexts
         PieChart = "Ympyräkaavio",
         DonutChart = "Rengaskaavio",
         RadialBarChart = "Säteittäinen pylväskaavio",
+        GaugeChart = "Mittari",
+        Target = "Tavoite",
         RadarChart = "Tutkakaavio",
         Treemap = "Puukartta",
         ShareOfGroup = "Osuus ryhmästä",
@@ -763,6 +779,8 @@ public sealed record ChartTexts
         PieChart = "Kreisdiagramm",
         DonutChart = "Ringdiagramm",
         RadialBarChart = "Radiales Balkendiagramm",
+        GaugeChart = "Messanzeige",
+        Target = "Ziel",
         RadarChart = "Netzdiagramm",
         Treemap = "Treemap",
         ShareOfGroup = "Anteil an der Gruppe",
@@ -832,6 +850,8 @@ public sealed record ChartTexts
         PieChart = "Graphique en secteurs",
         DonutChart = "Graphique en anneau",
         RadialBarChart = "Graphique à barres radiales",
+        GaugeChart = "Jauge",
+        Target = "Cible",
         RadarChart = "Graphique en radar",
         Treemap = "Carte proportionnelle",
         ShareOfGroup = "Part du groupe",
@@ -901,6 +921,8 @@ public sealed record ChartTexts
         PieChart = "Gráfico circular",
         DonutChart = "Gráfico de anillo",
         RadialBarChart = "Gráfico de barras radiales",
+        GaugeChart = "Indicador",
+        Target = "Objetivo",
         RadarChart = "Gráfico radial",
         Treemap = "Mapa de árbol",
         ShareOfGroup = "Parte del grupo",

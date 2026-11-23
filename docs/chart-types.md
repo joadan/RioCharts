@@ -47,7 +47,8 @@ Rules of thumb:
 | Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. |
 | Candlestick | `CandlestickSeries` / `candlestick` | OHLC. |
 | Pie / donut | `PieSeries`, `DonutSeries` / `pie` | A donut is a pie with an inner radius. |
-| Radial bar | `RadialBarSeries` / `radialBar` | The definition parser also accepts `gauge` as an alias for this. |
+| Radial bar | `RadialBarSeries` / `radialBar` | Also `radial`. |
+| Gauge | `GaugeSeries` / `gauge` (also `meter`, `dial`) | One value on a min–max scale; color bands as a scale ring, a target marker, the value in the middle. One gauge per point, in a grid. No needle. |
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
@@ -60,7 +61,6 @@ Rules of thumb:
 | Type | Status | Popularity | Effort | Complexity | What it's for | Notes / why not yet |
 |---|---|---|---|---|---|---|
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
-| Gauge | In Design.md | High | Medium | Medium | A single value against a range or target | `gauge` is only an alias for radial bar today. A real gauge needs custom start/end angles, colored ranges, a target marker and a big center value: several new parameters. |
 | Bullet | Candidate | Low–Medium | Small–Medium | Medium | Value against target and quality bands in little space | A compact horizontal bar with band backgrounds and a target tick. Goes well with sparklines, but bands and targets are new concepts. |
 | Error bars | Candidate | Medium | Small | Medium | Uncertainty on points or bars | Cheap to draw, but as an option it spreads to bar, line and scatter (extent, tooltip, describer, spec). |
 | Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |

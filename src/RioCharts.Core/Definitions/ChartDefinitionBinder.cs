@@ -107,6 +107,21 @@ public static class ChartDefinitionBinder
             return;
         }
 
+        if (s.Type == SeriesType.Gauge && s.X is null)
+        {
+            if (s.GroupBy is { } perGroup)
+            {
+                // One gauge per value of groupBy: that is the gauge's label, i.e. its x.
+                s = s with { X = perGroup, GroupBy = null, Aggregate = s.Aggregate ?? Aggregate.Last };
+                warnings.Add($"{path}.groupBy: one gauge per '{perGroup}' value (the {s.Aggregate.ToString()!.ToLowerInvariant()} of each).");
+            }
+            else
+            {
+                BindGauge(s, path, dataset, output, data, usedIds, errors, warnings);
+                return;
+            }
+        }
+
         // ---------- Fields ----------
         var count = s.Aggregate == Aggregate.Count;
         var histogram = s.Type == SeriesType.Histogram;
@@ -454,6 +469,68 @@ public static class ChartDefinitionBinder
             var series = SeriesData.FromRanges(groupRows, rowField is null ? null : r => Text(rowField.Values[r]), r => start.Values[r], r => end.Values[r]);
             data[id] = colorField is null ? series : series.WithColors([.. groupRows.Select(r => Text(colorField.Values[r]))]);
         }
+    }
+
+    /// <summary>
+    /// A gauge without x: one value from the (filtered) rows, the aggregate of the y field (default:
+    /// the last value; count needs no y). With x (or groupBy) a gauge is bound like other series:
+    /// one gauge per x value.
+    /// </summary>
+    private static void BindGauge(SeriesOptions s, string path, ChartDataset dataset, List<SeriesOptions> output, Dictionary<string, SeriesData> data,
+        HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
+    {
+        var errorsBefore = errors.Count;
+        var aggregate = s.Aggregate ?? Aggregate.Last;
+        DataField? y = null;
+        if (s.Y is not null)
+        {
+            y = Find(dataset, s.Y, $"{path}.y", FieldType.Number, errors);
+        }
+        else if (aggregate != Aggregate.Count)
+        {
+            var numbers = dataset.Fields.Where(f => f.Type == FieldType.Number).ToList();
+            if (numbers.Count == 1)
+            {
+                y = numbers[0];
+                warnings.Add($"{path}.y: not set; using '{y.Name}'.");
+            }
+            else
+            {
+                errors.Add(new DefinitionError($"{path}.y",
+                    $"a gauge needs the y field with its value; candidates: {(numbers.Count > 0 ? string.Join(", ", numbers.Select(f => f.Name)) : "none")}."));
+            }
+        }
+
+        var filters = new List<(Filter Spec, DataField Field)>();
+        for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
+        {
+            if (Find(dataset, s.Filter![f].Field, $"{path}.filter[{f}].field", null, errors) is { } field)
+            {
+                filters.Add((s.Filter![f], field));
+            }
+        }
+
+        if (errors.Count > errorsBefore)
+        {
+            return;
+        }
+
+        var rows = Enumerable.Range(0, dataset.RowCount).Where(r => filters.All(f => Matches(f.Field.Values[r], f.Spec))).ToList();
+        if (filters.Count > 0 && rows.Count == 0)
+        {
+            warnings.Add($"{path}.filter: no rows match.");
+        }
+
+        if (aggregate == Aggregate.Last && s.Aggregate is null && rows.Count > 1)
+        {
+            warnings.Add($"{path}.aggregate: not set; the gauge shows the last of {rows.Count} rows.");
+        }
+
+        var value = Aggregation.Apply(aggregate, [.. rows.Select(r => y?.Values[r] is double d ? d : (double?)null)]) ?? double.NaN;
+        var name = s.Name ?? (y is null ? "Count" : Humanize(y.Name));
+        var id = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(name) : s.Id, null, usedIds);
+        output.Add(s with { Id = id, Name = name, Y = y?.Name, Aggregate = s.Aggregate });
+        data[id] = SeriesData.FromCategories([""], [value]);
     }
 
     /// <summary>Treemap: the path fields joined into one text field per row ("Europe/Sweden/Stockholm"); null when a field is missing.</summary>

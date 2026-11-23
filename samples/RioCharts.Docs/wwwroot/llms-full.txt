@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, radar, heatmap, box plot, histogram, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, radar, heatmap, box plot, histogram, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -55,6 +55,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Three numbers per item (x, y and a size) | `ScatterSeries` with `SizeValue` | bubbles; `SizeName` labels the size in the tooltip |
 | Shares of a whole | `PieSeries`, `DonutSeries` | `GroupSmallSlices` |
 | Progress toward a goal | `RadialBarSeries` | `Max` |
+| One value on a scale (load, how full), with ranges and a target | `GaugeSeries` | `Value` (or `YValue` per item, `XValue` its label), `Max`, `Target`, `ColorBands` |
 | Several measures per item | `RadarSeries` | one series per item |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
@@ -512,6 +513,18 @@ Treemap: rectangles sized by value, nested by group, for how a total splits into
 - `GroupSmallItems`: `double?` — Group items smaller than this share of their group (e.g. 0.03) into one "Other" item per group.
 - `VisibleLevels`: `int?` — How many levels to draw at once below the group shown, e.g. 2 for continents and their countries; deeper groups show as one cell with their total and open on a click (drill-down). Null: all levels. The data keeps every level either way.
 
+#### `<GaugeSeries>` (`GaugeSeries<TItem>`)
+
+A gauge: a value on a scale from `GaugeSeries.Min` to `GaugeSeries.Max`, drawn as an arc with the value in the middle. Give one `GaugeSeries.Value`, or Items with `YValue` (and `XValue` for each gauge's label) for a row of gauges. `ColorBands` color the scale's ranges (and the value, when it is in one); `GaugeSeries.Target` marks a target.
+
+- `Value`: `double?` — The value to show; used instead of Items when set. Its label is `Name`. A chart without items still needs a `TItem`, e.g. `<RioChart TItem="object">`.
+- `Min`: `double?` — The value at the start of the scale. Default 0 (or a nice value below a negative value).
+- `Max`: `double?` — The value at the end of the scale, e.g. 100 for percentages. Default: a nice value above the largest.
+- `Target`: `double?` — A target value, marked across the scale and given in the tooltip.
+- `InnerRadius`: `double?` — Inner radius as a fraction of the outer radius. Default 0.8.
+- `StartAngle`: `double?` — Start angle in degrees, clockwise from 12 o'clock. Default -120 (with `GaugeSeries.EndAngle` 120); -90 and 90 make a half circle.
+- `EndAngle`: `double?` — End angle in degrees. Default 120.
+
 #### `<RadialBarSeries>` (`RadialBarSeries<TItem>`)
 
 Radial bars: one circular track per category, filled up to its value.
@@ -693,7 +706,7 @@ How times without a zone (DateTime with Kind Unspecified, DateOnly, plain string
 
 The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
 
-74 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+76 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
 
 - `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
 - `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.
@@ -1074,16 +1087,18 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `TrendLine`: `bool` — Scatter: draw a dashed least-squares trend line through the points.
 - `DirectionColors`: `bool` — Candlestick: color candles by direction, rising in the positive and falling in the negative theme color (green and red), with the change in percent in the tooltip, as for prices. Off: candles take the series color, and the fill alone shows the direction (light when rising, solid when falling).
 - `Highlight`: `PointHighlight` — Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. "last, max").
-- `InnerRadius`: `double?` — Pie, donut and radial bar: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut).
-- `StartAngle`: `double?` — Pie, donut and radial bar: start angle in degrees, clockwise from 12 o'clock. Default 0.
-- `EndAngle`: `double?` — Pie, donut and radial bar: end angle in degrees. Default: start + 360 for pies, 270 for radial bars.
+- `InnerRadius`: `double?` — Pie, donut, radial bar and gauge: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut). Gauge default 0.8.
+- `StartAngle`: `double?` — Pie, donut, radial bar and gauge: start angle in degrees, clockwise from 12 o'clock. Default 0 (gauge: -120).
+- `EndAngle`: `double?` — Pie, donut, radial bar and gauge: end angle in degrees. Default: start + 360 for pies, 270 for radial bars, 120 for gauges (-90 and 90 make a half circle).
 - `GroupSmallSlices`: `double?` — Pie and donut: slices smaller than this share of the total (e.g. 0.03) are grouped into one "Other" slice. Treemap: items smaller than this share of their group, per group.
 - `Path`: `IReadOnlyList<string>?` — Treemap: the fields that name the groups, from the outermost to the item, e.g. ["region", "country", "city"]; used instead of x. Without it, x is the item's path, e.g. "Europe/Sweden/Stockholm".
 - `VisibleLevels`: `int?` — Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.
 - `ColorBands`: `IReadOnlyList<ColorBand>?` — Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.
 - `ColorField`: `string?` — The field with each row's own color (a CSS color such as "#d6485a", or a theme token such as "--rio-negative"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.
 - `PathSeparator`: `string?` — Treemap: what separates the groups in an x path. Default "/".
-- `Max`: `double?` — Radial bar: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
+- `Max`: `double?` — Radial bar and gauge: the value of a full track (e.g. 100 for percentages). Default: a nice value above the largest.
+- `Min`: `double?` — Gauge: the value at the start of the scale. Default 0 (or a nice value below the lowest, when a value is negative).
+- `Target`: `double?` — Gauge: a target value, marked across the scale and given in the tooltip.
 - `Format`: `string?` — .NET format string for values in tooltips and data labels, e.g. "0.0" or "P0". Null: the axis format, else automatic.
 - `DisplayName`: `string` (read-only) — The name shown in the legend and tooltips: `SeriesOptions.Name`, or the id when no name is set.
 
@@ -1153,6 +1168,7 @@ How a series is drawn.
 - `Waterfall` — How a start value becomes an end value: a floating bar per change (rising or falling from the running total), and total bars from zero.
 - `Histogram` — The distribution of values: x values counted in equal-width bins, drawn as bars without gaps.
 - `RangeBar` — Bars from a start to an end on a time (or number) axis, in rows: schedules, or states over time such as running, idle and stopped.
+- `Gauge` — A single value on a scale from min to max, drawn as an arc with the value in the middle; colorBands color the scale's ranges and a target is marked. One gauge per data point.
 - `Auto` — JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
 
 #### `Filter` (record, RioCharts.Core)
