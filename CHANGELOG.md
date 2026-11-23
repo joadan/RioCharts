@@ -19,6 +19,10 @@ changes are called out under **Breaking**.
   `EqualEarth`), `SeriesData.Latitudes`, `Longitudes` and `WithLocations`, `LayoutOptions.MapRegion` and
   `InteractiveMap`, `ChartLayoutResult.MapRegion`, `TooltipSeries.Shapes`, `NodeInteraction.Focusable`,
   `ChartTexts.Map` and `MapWorld`. Docs: a World maps page and a gallery tile.
+- New default colors for `--rio-positive` and `--rio-negative`: emerald and rose (light `#059669`
+  and `#e11d48`, dark `#34d399` and `#fb7185`), in the browser and in exports. They color
+  waterfall rises and falls, candlesticks and anything colored with the tokens. Set the public
+  variables to keep the old ones (`#2f9e6e` and `#d6485a`).
 - Dumbbell charts: `DumbbellSeries` compares two values per category, e.g. before and after or plan
   and actual: `FromValue` is the first (a hollow dot), `YValue` the second (a filled dot), joined by
   a line. Upright, or as rows with `Horizontal="true"` on the chart; the value axis fits the values
