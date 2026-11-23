@@ -1011,6 +1011,20 @@ table.docs tr:last-child td {
     transform: translateX(3px);
 }
 
+/* The gallery page: three tiles a row in the narrower docs column. */
+.chart-gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 28px;
+}
+
+.gallery-sparks {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 12px;
+    height: 170px;
+}
+
 .features {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

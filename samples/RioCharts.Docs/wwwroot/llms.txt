@@ -20,6 +20,7 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 
 - [Getting started](https://riocharts.com/getting-started): install, first chart, how updates work, render modes, MAUI Blazor Hybrid
 - [Coming from Blazor-ApexCharts](https://riocharts.com/from-apexcharts): how the concepts map
+- [Chart gallery](https://riocharts.com/gallery): every chart type, live
 - [Lines and areas](https://riocharts.com/lines-and-areas)
 - [Bars and stacking](https://riocharts.com/bars)
 - [Scatter](https://riocharts.com/scatter)
