@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
-## Unreleased
+## 0.4.1-preview (2026-11-23)
 
 - World maps: `MapSeries` colors each country by its value (`XValue` an ISO 3166 code such as "SE" or
   "SWE", or an English name), the color following each value's rank unless `Max` is set; a color scale
