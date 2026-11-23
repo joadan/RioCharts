@@ -104,7 +104,6 @@ Each series type provides:
 - An optional threshold groups small slices into "Other".
 - Hit-testing uses the angle and distance from the center.
 - Hover explode and the donut center label (total or hovered value) live in the overlay layer.
-- Animate start and end angles, never path data.
 - Without axes, the legend does more of the work; it is a shared component for both coordinate systems.
 
 ### Radar
@@ -240,7 +239,7 @@ Charts should look calm, current and data-first. When in doubt, remove rather th
 - **Shapes**: line width around 2px, markers hidden until hover, subtle rounded corners on bars, a small gap between donut slices.
 - **Whitespace**: generous padding. Labels never touch the plot edges.
 - **Tooltip**: a clean card in the theme surface color, with series color dots, aligned values and no heavy borders.
-- **Motion**: a short, subtle fade when the series first appear; no animation on data changes, zoom or streaming. Easy to turn off, and off when the user prefers reduced motion (`prefers-reduced-motion`).
+- **Motion**: charts are not animated. The only motion is a short fade when the series first appear, which can be turned off and is off when the user prefers reduced motion (`prefers-reduced-motion`). Data changes, zoom and streaming are never animated.
 - **Theming**: everything is driven by CSS variables / theme tokens, with light and dark mode out of the box.
 
 ## Sensible defaults
@@ -321,7 +320,7 @@ See also the streaming buffer under Data input model.
 - **Incremental updates**: extents update incrementally. Only the series layer re-renders; axes re-render only when the domain or ticks change.
 - **Throttling**: coalesce rapid updates (especially on Blazor Server) and render at a capped rate.
 - **Downsampling** applies to the visible window.
-- **Motion**: no entry animation on every update; transitions stay subtle or off for streaming.
+- **Motion**: none; new data is drawn at once (see "Visual design").
 
 ## Linked charts
 - A **chart group** (by group id or a wrapping component) links charts on a dashboard.

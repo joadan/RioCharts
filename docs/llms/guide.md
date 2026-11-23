@@ -76,6 +76,7 @@ Each example is a complete component file. These exact files are compiled and re
 - Several series with their own `Items` and no `TItem` on `<RioChart>`: set `TItem="YourType"`.
 - An event handler lambda (`OnPointClick="e => clicked = e"`) without `TItem`: Blazor cannot infer `TItem` through it and reports errors such as "Cannot convert lambda expression". Set `TItem="YourType"` on `<RioChart>`.
 - Blazor-ApexCharts names: there is no `ApexPointSeries` or `SeriesType` parameter; each type is its own component (`<BarSeries>`, `<LineSeries>`, ...). `XValue`, `YValue`, `YAggregate` work as in ApexCharts.
+- Animation options (ApexCharts `Animations`, Chart.js `animation`): there are none. Charts are not animated; the series only fade in on first render. `Animate="false"` turns that off.
 - Setting a width: not needed, the chart follows its container. Set `Height` for another height.
 - Types not found (`SeriesData`, `SeriesBuffer`, `ChartDataset`): add `@using RioCharts.Core.Data` or `@using RioCharts.Core.Definitions`.
 - Hard-coded colors for light and dark: use theme variables such as `--rio-negative` and `--rio-positive`; they follow the theme.

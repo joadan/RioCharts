@@ -1045,8 +1045,8 @@ Design.md "Visual design": an entry fade only, no update animations. How it is d
   have to run frame by frame in the JS module (a Blazor Server round trip per frame is too slow),
   for both the SVG and the canvas layers. Morphing a path whose point count changes (LTTB,
   zoom, a sliding window) has no clean answer, and CSS transitions of `d` and SVG geometry are
-  not supported in every browser. If users ask for it, bars and pie angles are the cases worth an
-  opt-in.
+  not supported in every browser. Animation is not supported, by decision (Design.md), and there
+  are no animation options.
 - **Off switch:** `Animate="false"` puts `rio-still` on the container, and `prefers-reduced-motion`
   does the same: every animation and transition inside the chart is turned off
   (`!important`, so later rules cannot bring one back). Animation is a component parameter,
