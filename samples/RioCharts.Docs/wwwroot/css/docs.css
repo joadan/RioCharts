@@ -842,6 +842,11 @@ table.docs tr:last-child td {
     box-shadow: 0 0 0 3px rgba(239, 177, 24, 0.25);
 }
 
+/* FocusOnNavigate focuses the page's heading (for screen readers); it is not a control, so no focus ring. */
+h1:focus {
+    outline: none;
+}
+
 .hero h1 {
     margin: 0 0 20px;
     font-size: clamp(40px, 5.6vw, 64px);
