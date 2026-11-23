@@ -150,6 +150,22 @@ public static class ChartDescriber
             return sb.ToString();
         }
 
+        if (s.Type == SeriesType.Waterfall)
+        {
+            // The running total, not the changes: its range and where it ends, on any x axis.
+            var (upper, lower) = Series.WaterfallSeriesType.Steps(d);
+            var levels = upper.Concat(lower).Where(double.IsFinite).ToList();
+            var end = upper.LastOrDefault(double.IsFinite, double.NaN);
+            if (levels.Count == 0 || !double.IsFinite(end))
+            {
+                return null;
+            }
+
+            sb.Append(s.DisplayName).Append(": ").Append(texts.Fill(nameof(ChartTexts.ValueRange), culture, F(levels.Min()), F(levels.Max())));
+            sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LastValue), culture, F(end)));
+            return sb.ToString();
+        }
+
         if (s.Type == SeriesType.Scatter)
         {
             // Points in no order: their number, the y range and whether y rises with x.

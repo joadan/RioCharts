@@ -132,6 +132,7 @@ public static class ChartRazor
                 SeriesType.RangeArea => "RangeAreaSeries",
                 SeriesType.BoxPlot => "BoxPlotSeries",
                 SeriesType.Candlestick => "CandlestickSeries",
+                SeriesType.Waterfall => "WaterfallSeries",
                 _ => "LineSeries",
             };
 
@@ -177,6 +178,11 @@ public static class ChartRazor
             {
                 sb.Append($" VisibleLevels=\"{levels}\"");
             }
+            if (s.Type == SeriesType.Waterfall && s.Total is { } totalField)
+            {
+                sb.Append($" IsTotal=\"r => r.{Property(totalField)}\"");
+            }
+
             if (s.Type == SeriesType.RangeArea && s.Low is { } lowField)
             {
                 sb.Append($" LowValue=\"r => r.{Property(lowField)}\"");

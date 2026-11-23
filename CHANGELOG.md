@@ -3,6 +3,18 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
+## Unreleased
+
+- Waterfall charts: `WaterfallSeries` shows how a start value becomes an end value, e.g. a month's
+  result from revenue through costs. Each item is a change, drawn as a bar from the running total
+  before it to the one after, green when it rises and red when it falls (`--rio-positive` and
+  `--rio-negative`); items marked with `IsTotal` are totals (and subtotals) from zero to the
+  running total, in the series color. Thin lines connect each bar's end to the next. The tooltip
+  shows the change and the running total after it. JSON definitions: `"type": "waterfall"` (also
+  `bridge`) with `"total"` naming the field that marks total rows. New in Core:
+  `SeriesType.Waterfall`, `SeriesOptions.Total`, `SeriesData.Totals` and `SeriesData.WithTotals`.
+  Docs: a Waterfall page with two examples.
+
 ## 0.3.1-preview (2026-11-23)
 
 The chart model is renamed to *chart definition* (breaking; the JSON format is unchanged).

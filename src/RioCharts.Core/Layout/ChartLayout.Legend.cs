@@ -88,6 +88,20 @@ public static partial class ChartLayout
         };
     }
 
+    /// <summary>Waterfalls: a rising and a falling bar, in the positive and negative colors, as drawn.</summary>
+    private static GroupNode WaterfallSwatch(double x, double cy, StyleTable styles)
+    {
+        var w = (SwatchWidth - 3) / 2;
+        return new GroupNode(
+        [
+            new RectNode(new RectF((float)x, (float)(cy - 5), (float)w, 7), styles.Add($"bar-{ThemeTokens.Positive}", new Style { Fill = ThemeTokens.Positive })) { CornerRadius = 1 },
+            new RectNode(new RectF((float)(x + w + 3), (float)(cy - 2), (float)w, 7), styles.Add($"bar-{ThemeTokens.Negative}", new Style { Fill = ThemeTokens.Negative })) { CornerRadius = 1 },
+        ])
+        {
+            Class = "rio-swatch rio-swatch-waterfall",
+        };
+    }
+
     private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles)
     {
         var cy = y + height / 2;
@@ -104,6 +118,8 @@ public static partial class ChartLayout
                 styles.Add("swatch-dot-" + entry.SeriesId, new Style { Fill = entry.Color })) { Class = "rio-swatch rio-swatch-dot" }
             : entry.Type == SeriesType.Candlestick
             ? CandleSwatch(entry, x, cy, styles)
+            : entry.Type == SeriesType.Waterfall
+            ? WaterfallSwatch(x, cy, styles)
             : new RectNode(new RectF((float)x, (float)(cy - 5), (float)SwatchWidth, 10), swatchStyle) { CornerRadius = 2, Class = "rio-swatch" };
 
         var state = !entry.Visible ? ", hidden" : entry.IsEmpty ? ", no data" : "";

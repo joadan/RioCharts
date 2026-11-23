@@ -237,6 +237,10 @@ public sealed record SeriesOptions
     [Description("Box plot with precomputed boxes: the field with the upper whisker end.")]
     public string? High { get; init; }
 
+    /// <summary>Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.</summary>
+    [Description("Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.")]
+    public string? Total { get; init; }
+
     /// <summary>Scatter: marker diameter in pixels. Default 5.</summary>
     [Description("Scatter: marker diameter in pixels. Default 5.")]
     public double? MarkerSize { get; init; }
@@ -419,6 +423,9 @@ public enum SeriesType
 
     /// <summary>Rectangles sized by value, nested by group (a path such as "Europe/Sweden/Stockholm"), for how a total splits into many parts.</summary>
     Treemap,
+
+    /// <summary>How a start value becomes an end value: a floating bar per change (rising or falling from the running total), and total bars from zero.</summary>
+    Waterfall,
 
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

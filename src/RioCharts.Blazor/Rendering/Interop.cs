@@ -49,8 +49,8 @@ internal sealed record SeriesModel(
     float[] X, float[] Y, int[] Index, string[] Xl, string[] V, bool Dots = false, float Ch = 0, float[]? Cw = null,
     string[]? Pl = null, string[][]? Pv = null, int[]? Sp = null, float[]? Chs = null, string[]? Pc = null, bool Col = false);
 
-// Bar: hit-tested as a bar (its slot, barWidth wide at barOffset), not as a point. Col: box plots
-// and candlesticks, whose hit area is the slot's whole height (a bar's is from its top down).
+// Bar: hit-tested as a bar (its slot, barWidth wide at barOffset), not as a point. Col: box plots,
+// candlesticks and waterfalls, whose hit area is the slot's whole height (a bar's is from its top down).
 
 internal sealed record SliceModel(
     string Id, int Index, string Header, string Label, string Value, string Color,

@@ -1,0 +1,88 @@
+@page "/waterfall"
+
+<PageTitle>Waterfall · RioCharts</PageTitle>
+
+<h1>Waterfall</h1>
+<p class="lead">
+    A waterfall shows how a start value becomes an end value: a month's result from revenue through costs, or a budget through its
+    changes. Each change is a bar floating from the running total before it to the one after, and totals stand on zero.
+</p>
+
+<Example Title="From revenue to result" Code="@ResultCode">
+    <Description>
+        <p>
+            Give <code>WaterfallSeries</code> the changes as <code>YValue</code> and mark the totals with <code>IsTotal</code>. A total shows the
+            running total so far, so its own value is ignored (it can be null); a subtotal in between keeps the total running. Rises are
+            green and falls red (<code>--rio-positive</code> and <code>--rio-negative</code>), totals take the series color, and thin lines
+            carry each bar's end over to the next. The tooltip shows the change and the running total after it.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Step" Items="Result" YAxis="Keur" Height="280">
+            <WaterfallSeries Name="Result" XValue="s => s.Name" YValue="s => s.Amount" IsTotal="s => s.IsTotal" DataLabels="true" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="A start value and own colors" Code="@BalanceCode">
+    <Description>
+        <p>
+            The first bar is a change from zero, so an opening balance rises like any other. <code>ColorValue</code> gives it a color of its
+            own; here the series color, like the closing total. Bars with their own color keep it in the tooltip.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Step" Items="Balance" YAxis="Keur" Height="260">
+            <WaterfallSeries Name="Cash" XValue="s => s.Name" YValue="s => s.Amount" IsTotal="s => s.IsTotal"
+                             ColorValue="@(s => s.Name == "Opening" ? "--rio-series-1" : null)" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON definitions</h2>
+<p>
+    <code>"type": "waterfall"</code> (also <code>"bridge"</code>) with a category <code>x</code>, the changes as <code>y</code>, and
+    <code>"total"</code>: the field that marks total rows (<code>true</code>, <code>yes</code> or <code>1</code>).
+</p>
+
+@code {
+    private sealed record Step(string Name, double? Amount, bool IsTotal = false);
+
+    private static readonly AxisOptions Keur = new() { Title = "k€" };
+
+    private static readonly Step[] Result =
+    [
+        new("Revenue", 420), new("Cost of sales", -180), new("Gross profit", null, true),
+        new("Salaries", -120), new("Marketing", -45), new("Other income", 15), new("Result", null, true),
+    ];
+
+    private static readonly Step[] Balance =
+    [
+        new("Opening", 250), new("Customers", 310), new("Suppliers", -190), new("Payroll", -140),
+        new("Tax", -35), new("Loan", 60), new("Closing", null, true),
+    ];
+
+    private const string ResultCode = """
+        <RioChart TItem="Step" Items="steps">
+            <WaterfallSeries Name="Result" XValue="s => s.Name" YValue="s => s.Amount"
+                             IsTotal="s => s.IsTotal" DataLabels="true" />
+        </RioChart>
+
+        @code {
+            record Step(string Name, double? Amount, bool IsTotal = false);
+
+            Step[] steps =
+            [
+                new("Revenue", 420), new("Cost of sales", -180), new("Gross profit", null, true),
+                new("Salaries", -120), new("Marketing", -45), new("Other income", 15), new("Result", null, true),
+            ];
+        }
+        """;
+
+    private const string BalanceCode = """
+        <RioChart TItem="Step" Items="steps">
+            <WaterfallSeries Name="Cash" XValue="s => s.Name" YValue="s => s.Amount" IsTotal="s => s.IsTotal"
+                             ColorValue="@(s => s.Name == "Opening" ? "--rio-series-1" : null)" />
+        </RioChart>
+        """;
+}

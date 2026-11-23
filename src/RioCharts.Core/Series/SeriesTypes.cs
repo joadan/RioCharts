@@ -37,6 +37,7 @@ internal interface ISeriesType
         SeriesType.RangeArea => RangeAreaSeriesType.Instance,
         SeriesType.BoxPlot => BoxPlotSeriesType.Instance,
         SeriesType.Candlestick => CandlestickSeriesType.Instance,
+        SeriesType.Waterfall => WaterfallSeriesType.Instance,
         SeriesType.Pie or SeriesType.RadialBar or SeriesType.Radar => new PolarSeriesType(type),
         SeriesType.Treemap => new PolarSeriesType(type, CoordinateSystem.SpaceFilling),
         _ => LineSeriesType.Instance,
@@ -975,6 +976,134 @@ internal sealed class BarSeriesType : ISeriesType
             {
                 c.Labels.Add(new LabelAnchor(value, left + width / 2, y, y0, width, c.Stacked));
             }
+        }
+
+        c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);
+    }
+}
+
+/// <summary>
+/// Waterfall: how a start value becomes an end value. Each change is a bar floating from the running
+/// total before it to the one after, in the positive theme color when it rises and the negative
+/// color when it falls; a total (<see cref="SeriesData.Totals"/>) is a bar from zero to the running
+/// total, in the series color. Thin connector lines carry each bar's end level over to the next bar.
+/// Several waterfall series share the x band like grouped bars; gaps change nothing.
+/// </summary>
+internal sealed class WaterfallSeriesType : ISeriesType
+{
+    public static WaterfallSeriesType Instance { get; } = new();
+    public SeriesType Type => SeriesType.Waterfall;
+    public CoordinateSystem CoordinateSystem => CoordinateSystem.Cartesian;
+    public int DefaultLayer => 1;
+    public bool IncludesZero => true;
+    public bool UsesSlots => true;
+
+    /// <summary>
+    /// Each point's bar: from <c>Lower</c> (the running total before it, or zero for a total) to
+    /// <c>Upper</c> (the running total after it). NaN for gaps.
+    /// </summary>
+    internal static (double[] Upper, double[] Lower) Steps(SeriesData data)
+    {
+        var upper = new double[data.Count];
+        var lower = new double[data.Count];
+        var running = 0.0;
+        for (var i = 0; i < data.Count; i++)
+        {
+            if (data.Totals is { } totals && totals[i])
+            {
+                (lower[i], upper[i]) = (0, running);
+            }
+            else if (double.IsFinite(data.Y[i]))
+            {
+                lower[i] = running;
+                running += data.Y[i];
+                upper[i] = running;
+            }
+            else
+            {
+                upper[i] = lower[i] = double.NaN;
+            }
+        }
+
+        return (upper, lower);
+    }
+
+    /// <summary>A bar's color: its own, else the series color for a total, the positive color for a rise and the negative color for a fall.</summary>
+    internal static string ColorOf(SeriesData data, int i, string seriesColor) =>
+        data.Colors?[i] ?? (data.Totals is { } totals && totals[i] ? seriesColor : data.Y[i] < 0 ? ThemeTokens.Negative : ThemeTokens.Positive);
+
+    public void Build(SeriesBuildContext c)
+    {
+        if (c.Lower is not { } lower)
+        {
+            return;
+        }
+
+        var slot = c.SlotWidth / Math.Max(1, c.SlotCount);
+        var gap = slot > 8 ? 2 : 0;
+        var width = Math.Max(1, slot - gap);
+        var radius = (float)Math.Min(2, width / 6);
+        c.BarWidth = width;
+        c.BarOffset = -c.SlotWidth / 2 + c.SlotIndex * slot + gap / 2.0 + width / 2;
+
+        var connectors = new PathBuilder();
+        var hasConnectors = false;
+        (double Right, double Y)? previous = null;
+        var bars = new List<Node>();
+        var hx = new List<float>();
+        var hy = new List<float>();
+        var hi = new List<int>();
+        var hs = new List<int>();
+        for (var i = 0; i < c.Data.Count; i++)
+        {
+            var center = c.PixelX[i];
+            var (top, bottom) = (c.Upper[i], lower[i]);
+            if (!double.IsFinite(center) || !double.IsFinite(top) || !double.IsFinite(bottom))
+            {
+                continue; // a gap: the next bar's connector comes from the last bar drawn
+            }
+
+            var left = center + c.BarOffset - width / 2;
+            var (y, y0) = (c.MapY(top), c.MapY(bottom));
+            if (previous is { } p && c.InPlotX(center))
+            {
+                connectors.MoveTo(p.Right, p.Y).LineTo(left, p.Y);
+                hasConnectors = true;
+            }
+
+            previous = (left + width, y);
+            if (!c.InPlotX(center))
+            {
+                continue;
+            }
+
+            var color = ColorOf(c.Data, i, c.Color);
+            var total = c.Data.Totals is { } totals && totals[i];
+            bars.Add(new RectNode(new RectF((float)left, (float)Math.Min(y, y0), (float)width, (float)Math.Max(Math.Abs(y - y0), top == bottom ? 0 : 1)),
+                c.Styles.Add($"bar-{color}", new Style { Fill = color }))
+            {
+                CornerRadius = radius,
+                Class = total ? "rio-waterfall rio-waterfall-total" : "rio-waterfall",
+            });
+
+            // Hits at the x position (shared by grouped series), at the running total after the bar.
+            hx.Add((float)center);
+            hy.Add((float)y);
+            hi.Add(i);
+            hs.Add(c.Data.ToSourceIndex(i));
+            if (c.Spec.DataLabels == true)
+            {
+                // A change shows itself (above a rise, below a fall); a total its value.
+                c.Labels.Add(new LabelAnchor(total ? top : c.Data.Y[i], left + width / 2, total ? y : c.Data.Y[i] >= 0 ? Math.Min(y, y0) : Math.Max(y, y0),
+                    total ? y0 : c.Data.Y[i] >= 0 ? Math.Max(y, y0) : Math.Min(y, y0), width, false));
+            }
+        }
+
+        c.Output.AddRange(bars);
+        if (hasConnectors)
+        {
+            var style = c.Styles.Add("waterfall-connector", new Style { Stroke = ThemeTokens.Axis, StrokeWidth = 1f, Fill = "none" });
+            c.Output.Add(new PathNode(connectors.Build(), style) { Class = "rio-connectors" });
         }
 
         c.Hits = new HitTestIndex.SeriesHits(c.Spec.Id, [.. hx], [.. hy], [.. hi], [.. hs]);

@@ -77,7 +77,7 @@ public sealed class SeriesData
 
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
-            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Colors = any ? values : null,
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = any ? values : null,
         };
     }
 
@@ -98,7 +98,46 @@ public sealed class SeriesData
             values[i] = source < low.Length ? low[source] : double.NaN;
         }
 
-        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Colors = Colors };
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Totals = Totals, Colors = Colors };
+    }
+
+    /// <summary>
+    /// Waterfalls: true for each total point, whose y is the running total of the changes before it;
+    /// null for other series (and for a waterfall without totals). Set with <see cref="WithTotals"/>.
+    /// </summary>
+    public bool[]? Totals { get; private set; }
+
+    /// <summary>
+    /// The same points as a waterfall with totals: <paramref name="totals"/> is in input order, like
+    /// the y values given when creating the data (index i is true when input item or group i is a
+    /// total). A total point's y becomes the running total of the changes before it (its own y is
+    /// ignored); the other points are changes, and gaps (NaN) change nothing.
+    /// </summary>
+    public SeriesData WithTotals(ReadOnlySpan<bool> totals)
+    {
+        var flags = new bool[Count];
+        var y = (double[])Y.Clone();
+        var running = 0.0;
+        var any = false;
+        for (var i = 0; i < flags.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            flags[i] = source < totals.Length && totals[source];
+            if (flags[i])
+            {
+                y[i] = running;
+                any = true;
+            }
+            else if (double.IsFinite(y[i]))
+            {
+                running += y[i];
+            }
+        }
+
+        return new SeriesData(X, any ? y : Y, Kind, Categories, SourceIndex)
+        {
+            TimeOffsets = TimeOffsets, Low = Low, Colors = Colors, Totals = any ? flags : null,
+        };
     }
 
     /// <summary>
@@ -264,7 +303,7 @@ public sealed class SeriesData
     {
         if (IsSorted(x))
         {
-            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles, Colors = Colors };
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors };
         }
 
         var order = Enumerable.Range(0, x.Length).ToArray();
@@ -299,6 +338,11 @@ public sealed class SeriesData
         if (Colors is { } colors)
         {
             result.Colors = [.. order.Select(i => colors[i])];
+        }
+
+        if (Totals is { } totals)
+        {
+            result.Totals = [.. order.Select(i => totals[i])];
         }
 
         return result;

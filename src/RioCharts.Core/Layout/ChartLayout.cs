@@ -259,6 +259,11 @@ public static partial class ChartLayout
                 Upper = d.Y,
                 Lower = s.Type == SeriesType.RangeArea ? d.Low : null,
             };
+            if (s.Type == SeriesType.Waterfall)
+            {
+                (r.Upper, r.Lower) = WaterfallSeriesType.Steps(d); // each bar from the running total before it to the one after
+            }
+
             if (s.Type == SeriesType.RangeArea && d.Low is null && d.Count > 0)
             {
                 warnings.Add($"series '{s.Id}': a range area needs low values (LowValue, or \"low\" in a definition); nothing is drawn.");
@@ -815,7 +820,7 @@ public static partial class ChartLayout
     /// <summary>Selected points: a marker in the series color (ringed in the surface color), or an outline around a bar.</summary>
     private static IEnumerable<Node> SelectionMarks(Resolved r, SeriesBuildContext c, IReadOnlyCollection<int> picked, StyleTable styles)
     {
-        var bar = r.Spec.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick;
+        var bar = r.Spec.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall;
         if (c.CandleGroups is { } merged && merged.Any(g => g.First != g.Last))
         {
             yield break; // merged candles (zoomed out): a single period has no candle of its own to outline
@@ -861,13 +866,13 @@ public static partial class ChartLayout
         }
     }
 
-    // Box plots and candlesticks are never stacked: each series gets its own slot even with a Stack name.
+    // Box plots, candlesticks and waterfalls are never stacked: each series gets its own slot even with a Stack name.
     private static string SlotKey(Resolved r) => r.StackGroup is { } stack
         ? $"stack|{r.Axis.Id}|{stack}"
         : "series|" + r.Spec.Id;
 
     /// <summary>
-    /// The stack a series is in (see <see cref="Resolved.StackGroup"/>). Range areas, box plots and candlesticks are
+    /// The stack a series is in (see <see cref="Resolved.StackGroup"/>). Range areas, box plots, candlesticks and waterfalls are
     /// never stacked; on a percent axis, lines, areas and bars without a stack name share one.
     /// </summary>
     private static string? StackGroupOf(Resolved r, int index, List<string> warnings)
@@ -879,8 +884,8 @@ public static partial class ChartLayout
             return named ?? (percent ? "" : null);
         }
 
-        var stackable = r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick);
-        if (percent && (named is null || !stackable) && r.Spec.Type is SeriesType.Scatter or SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick)
+        var stackable = r.Spec.Type is not (SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall);
+        if (percent && (named is null || !stackable) && r.Spec.Type is SeriesType.Scatter or SeriesType.RangeArea or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall)
         {
             warnings.Add($"series[{index}]: a percent axis stacks line, area and bar series; this {r.Spec.Type} series is drawn with its own values.");
         }
@@ -924,7 +929,7 @@ public static partial class ChartLayout
         {
             var count = 0;
             r.Upper = Gaps(r.Upper);
-            if (r.Spec.Type == SeriesType.RangeArea && r.Lower is not null)
+            if (r.Spec.Type is SeriesType.RangeArea or SeriesType.Waterfall && r.Lower is not null)
             {
                 r.Lower = Gaps(r.Lower); // the low values; stack bases (zero for the first series) stay
             }
@@ -1235,6 +1240,9 @@ public static partial class ChartLayout
         var boxParts = r.Spec.Type == SeriesType.BoxPlot && r.Data.Box is not null ? new string[n][] : null;
         var candleParts = r.Spec.Type == SeriesType.Candlestick && r.Data.Candles is not null && context.CandleGroups is { } cg && cg.Count == n ? new string[n][] : null;
         var candleColors = candleParts is not null && r.Spec.DirectionColors ? new string[n] : null; // the tooltip dot as the candle
+        var waterfall = r.Spec.Type == SeriesType.Waterfall;
+        var waterfallParts = waterfall ? new string[n][] : null;
+        var waterfallColors = waterfall ? new string[n] : null; // the tooltip dot as the bar
         for (var i = 0; i < n; i++)
         {
             var j = hits.Index[i];
@@ -1252,6 +1260,16 @@ public static partial class ChartLayout
             if (r.Percent && r.Lower is { } lower && double.IsFinite(r.Upper[j] - lower[j]))
             {
                 values[i] += $" ({(r.Upper[j] - lower[j]).ToString("P0", culture)})"; // the value and its share
+            }
+
+            if (waterfallParts is not null)
+            {
+                // A change with its sign and the running total after it; a total bar shows the total alone.
+                var total = r.Data.Totals is { } totals && totals[j];
+                var change = r.Data.Y[j];
+                values[i] = total ? ValueFormatter.Format(r.Upper[j], culture, format) : (change > 0 ? "+" : "") + ValueFormatter.Format(change, culture, format);
+                waterfallParts[i] = [total ? "" : ValueFormatter.Format(r.Upper[j], culture, format)];
+                waterfallColors![i] = WaterfallSeriesType.ColorOf(r.Data, j, r.Color);
             }
 
             if (boxParts is not null && r.Data.Box is { } box)
@@ -1308,10 +1326,10 @@ public static partial class ChartLayout
             hits.X, hits.Y, hits.Index, xLabels, values)
         {
             Step = r.Spec.Curve == CurveType.Step && !r.Type.UsesSlots && kind != XKind.Category,
-            PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : null,
-            PartValues = boxParts ?? candleParts,
+            PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : waterfallParts is not null ? [texts.Total] : null,
+            PartValues = boxParts ?? candleParts ?? waterfallParts,
             // Points with their own color show it in the tooltip too.
-            PointColors = candleColors ?? (r.Data.Colors is null && r.Spec.ColorBands is null
+            PointColors = candleColors ?? waterfallColors ?? (r.Data.Colors is null && r.Spec.ColorBands is null
                 ? null
                 : [.. hits.Index.Select(j => r.Data.Colors?[j] ?? ColorBands.ColorOf(r.Spec.ColorBands, r.Data.Y[j]) ?? r.Color)]),
         };

@@ -693,6 +693,33 @@ Design.md "Candlestick" (milestone 7).
 - **Not yet:** live data (`SeriesBuffer`) with candles, a hollow/filled option, a volume pane
   helper (use a bar series on a second axis), and `Horizontal` candles.
 
+## Waterfall
+
+Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high popularity, low complexity).
+
+- **Data:** each point is a change (`Y`). `SeriesData.Totals` (a flag per point, set with
+  `WithTotals`, input order like the other columns, carried by `WithColors`, `WithLow` and `WithX`)
+  marks totals; `WithTotals` sets a total's `Y` to the running total before it, so the describer,
+  CSV export and clicks see the total, not a placeholder. `WaterfallSeries` takes `IsTotal`
+  (aggregated points: their first item's flag); JSON definitions take `"total"`, a field whose
+  rows are totals when it reads true, yes or 1 (booleans arrive as "true"/"false" text).
+- **Drawing:** the layout sets `Upper` to the running total after each point and `Lower` to the one
+  before it (zero for a total), so the y extent, selection outline and log-axis gaps work as for
+  stacked bars. A band slot per series like bars, never stacked (a percent axis warns, as for
+  candlesticks). Rises are `--rio-positive`, falls `--rio-negative`, totals the series color;
+  `ColorValue` wins. No color option: a waterfall's bars mean up and down, so green and red read
+  right here (unlike candlesticks of e.g. temperatures). Corners round 2 px at most. Connectors are
+  1 px lines in the axis color from each bar's end to the next bar's left edge, over gaps too.
+- **Tooltip:** the change with its sign ("+15", "−180") and the running total after it as a Total
+  row (`ChartTexts.Total`); a total bar shows its value alone. The dot takes the bar's color.
+  Hit-tested over the slot's whole height, like box plots (a floating bar has no top-down area).
+- **Data labels:** the change above a rise and below a fall, a total's value at its end. Labels
+  show the plain value (no "+"), as for bars.
+- **Legend:** a small rising and falling bar in the positive and negative colors. The describer
+  gives the running total's range and its end ("Result: 0 to 420, last 105").
+- **Not yet:** `Horizontal` waterfalls, an automatic end total (add an item with `IsTotal`),
+  room on the y axis for labels at its ends (bars have it), and a "+" on change labels.
+
 ## Radar
 
 Design.md "Radar" (milestone 7).

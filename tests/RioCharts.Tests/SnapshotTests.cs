@@ -310,6 +310,18 @@ public class SnapshotTests
                 Enumerable.Range(0, 21).Select(d => Math.Round(20 + Math.Sin(d * 0.6) * 1.6 + Math.Sin(d * 1.9) * 0.45, 1)).ToArray()),
         }),
 
+        // A month's result in k€: from revenue through costs to the result, with a subtotal.
+        ["waterfall"] = new(new ChartDefinition
+        {
+            Title = "Result, March",
+            Y = new AxisOptions { Title = "k€" },
+            Series = [new SeriesOptions { Id = "w", Name = "Result", Type = SeriesType.Waterfall, DataLabels = true }],
+        }, new()
+        {
+            ["w"] = SeriesData.FromCategories(["Revenue", "Cost of sales", "Gross profit", "Salaries", "Marketing", "Other income", "Result"],
+                [420.0, -180, double.NaN, -120, -45, 15, double.NaN]).WithTotals([false, false, true, false, false, false, true]),
+        }),
+
         ["bars-horizontal"] = new(new ChartDefinition
         {
             Horizontal = true,

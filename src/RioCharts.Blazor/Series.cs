@@ -669,6 +669,41 @@ public sealed class BarSeries<TItem> : SeriesBase<TItem>
 }
 
 /// <summary>
+/// Waterfall: how a start value becomes an end value, e.g. a month's result from revenue through
+/// costs. Each item is a change (<c>YValue</c>), drawn as a bar from the running total before it to
+/// the one after: in <c>--rio-positive</c> (green) when it rises and <c>--rio-negative</c> (red) when
+/// it falls. Items marked with <see cref="IsTotal"/> are totals: a bar from zero to the running total,
+/// in the series color. Thin lines carry each bar's end over to the next. The tooltip shows the
+/// change and the running total after it.
+/// </summary>
+public sealed class WaterfallSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>
+    /// Marks the totals, e.g. <c>s =&gt; s.IsTotal</c>: a total shows the running total so far, so its
+    /// own <c>YValue</c> is ignored (it can return null). Totals in between (a subtotal) keep the running
+    /// total going. Aggregated points are totals when their first item is.
+    /// </summary>
+    [Parameter] public Func<TItem, bool>? IsTotal { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Waterfall;
+
+    private protected override object? DataSettings => IsTotal is not null;
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (IsTotal is not { } isTotal)
+        {
+            return data;
+        }
+
+        return data.WithTotals(groups is null
+            ? [.. items.Select(isTotal)]
+            : [.. groups.Select(g => g.Length > 0 && isTotal(items[g[0]]))]);
+    }
+}
+
+/// <summary>
 /// Pie: one slice per category (the x value), sized by its share of the total. Several pie
 /// series in one chart are drawn as nested rings, the first one outermost.
 /// </summary>

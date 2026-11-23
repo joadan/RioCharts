@@ -78,7 +78,7 @@ public static class ChartDefinitionBinder
         return new DefinitionBindResult(bound, data, errors, warnings);
     }
 
-    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null);
+    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null, bool Total = false);
 
     private static void BindSeries(ChartDefinition chart, SeriesOptions s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
         List<SeriesOptions> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
@@ -180,6 +180,12 @@ public static class ChartDefinitionBinder
 
         var groupBy = s.GroupBy is null ? null : Find(dataset, s.GroupBy, $"{path}.groupBy", null, errors);
         var colorField = s.ColorField is null ? null : Find(dataset, s.ColorField, $"{path}.colorField", FieldType.Text, errors);
+        var totalField = s.Total is null ? null : Find(dataset, s.Total, $"{path}.total", null, errors);
+        if (totalField is not null && s.Type != SeriesType.Waterfall)
+        {
+            warnings.Add($"{path}.total: only waterfall series have totals; ignored.");
+            totalField = null;
+        }
         var filters = new List<(Filter Spec, DataField Field)>();
         for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
         {
@@ -276,7 +282,7 @@ public static class ChartDefinitionBinder
                 continue;
             }
 
-            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField);
+            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -302,6 +308,7 @@ public static class ChartDefinitionBinder
             output.Add(bound);
             var series = SeriesData.FromItems(points, p => p.X, p => p.Y);
             series = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
+            series = totalField is null ? series : series.WithTotals(points.Select(p => p.Total).ToArray());
             data[id] = colorField is null ? series : series.WithColors([.. points.Select(p => p.Color)]);
         }
     }
@@ -342,10 +349,11 @@ public static class ChartDefinitionBinder
     }
 
     private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null,
-        DataField? color = null)
+        DataField? color = null, DataField? total = null)
     {
         double? LowAt(int r) => low?.Values[r] is double d ? d : null;
         string? ColorAt(int r) => color?.Values[r] is { } c ? Text(c) : null;
+        bool TotalAt(int r) => total?.Values[r] is { } t && Text(t)?.Trim().ToLowerInvariant() is "true" or "yes" or "1";
 
         object? XAt(int r)
         {
@@ -357,7 +365,7 @@ public static class ChartDefinitionBinder
 
         if (aggregate is null)
         {
-            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r))).ToList();
+            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r), TotalAt(r))).ToList();
         }
 
         // Group by x (or its bucket), keeping first-appearance order (categories) — times and numbers are sorted later anyway.
@@ -385,7 +393,7 @@ public static class ChartDefinitionBinder
             : (aggregate.Value, aggregate.Value);
         return order.Select(key => new Point(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),
             low is null ? null : Aggregation.Apply(lowAggregate, groups[key].Select(LowAt).ToList()),
-            ColorAt(groups[key][0]))).ToList(); // a group's color: its first row's
+            ColorAt(groups[key][0]), TotalAt(groups[key][0]))).ToList(); // a group's color and total flag: its first row's
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>
