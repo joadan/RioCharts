@@ -5,6 +5,18 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Range bars and timelines: `RangeBarSeries` draws a bar from each item's `StartValue` to its
+  `EndValue` (DateTime, DateTimeOffset, DateOnly or numbers) in the row `RowValue` gives, e.g. a
+  project schedule or what each machine was doing through a shift. Rows are listed in the order
+  they first appear; several series share the rows, so a state timeline is one series per state.
+  The tooltip shows the row, start, end and duration ("2 h 30 min", in the chart's language);
+  `DataLabels` writes the duration in the bar; x reference lines and bands mark times such as now;
+  zoom works. JSON definitions: `"type": "rangeBar"` (also `timeline`, `gantt`) with `"row"`,
+  `"start"` and `"end"` fields, and `groupBy` for one series per state. New in Core:
+  `SeriesType.RangeBar`, `SeriesData.Rows`, `SeriesData.FromRanges` and `WithRows`,
+  `SeriesOptions.Row`, `Start` and `End`, `ChartTexts.RangeBarSummary` and `DurationUnits`. Docs:
+  a Range bars and timelines page and a gallery tile.
+
 - Waterfall charts: `WaterfallSeries` shows how a start value becomes an end value, e.g. a month's
   result from revenue through costs. Each item is a change, drawn as a bar from the running total
   before it to the one after, green when it rises and red when it falls (`--rio-positive` and

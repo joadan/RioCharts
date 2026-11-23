@@ -134,6 +134,7 @@ public static class ChartRazor
                 SeriesType.Candlestick => "CandlestickSeries",
                 SeriesType.Waterfall => "WaterfallSeries",
                 SeriesType.Histogram => "HistogramSeries",
+                SeriesType.RangeBar => "RangeBarSeries",
                 _ => "LineSeries",
             };
 
@@ -152,6 +153,15 @@ public static class ChartRazor
                 {
                     sb.Append($" PathSeparator=\"{Attr(custom)}\"");
                 }
+            }
+            else if (s.Type == SeriesType.RangeBar)
+            {
+                if (s.Row is { } rowField)
+                {
+                    sb.Append($" RowValue=\"r => r.{Property(rowField)}\"");
+                }
+
+                sb.Append($" StartValue=\"r => r.{Property(s.Start ?? "start")}\" EndValue=\"r => r.{Property(s.End ?? "end")}\"");
             }
             else
             {
@@ -235,7 +245,7 @@ public static class ChartRazor
                 }
             }
 
-            if (s.Type != SeriesType.Histogram && (componentAggregate != Aggregate.Count || s.Y is not null))
+            if (s.Type is not (SeriesType.Histogram or SeriesType.RangeBar) && (componentAggregate != Aggregate.Count || s.Y is not null))
             {
                 sb.Append($" YValue=\"r => r.{Property(s.Y ?? "value")}\"");
             }

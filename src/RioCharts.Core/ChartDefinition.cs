@@ -241,6 +241,18 @@ public sealed record SeriesOptions
     [Description("Box plot with precomputed boxes: the field with the upper whisker end.")]
     public string? High { get; init; }
 
+    /// <summary>Range bar: the field with the row of each bar (e.g. the machine or task); text. Null: one row per series.</summary>
+    [Description("Range bar: the field with the row of each bar (e.g. the machine or task); text. Null: one row per series.")]
+    public string? Row { get; init; }
+
+    /// <summary>Range bar: the field with each bar's start, a time (or a number).</summary>
+    [Description("Range bar: the field with each bar's start, a time (or a number).")]
+    public string? Start { get; init; }
+
+    /// <summary>Range bar: the field with each bar's end, of the same kind as start.</summary>
+    [Description("Range bar: the field with each bar's end, of the same kind as start.")]
+    public string? End { get; init; }
+
     /// <summary>Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.</summary>
     [Description("Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.")]
     public string? Total { get; init; }
@@ -453,6 +465,9 @@ public enum SeriesType
 
     /// <summary>The distribution of values: x values counted in equal-width bins, drawn as bars without gaps.</summary>
     Histogram,
+
+    /// <summary>Bars from a start to an end on a time (or number) axis, in rows: schedules, or states over time such as running, idle and stopped.</summary>
+    RangeBar,
 
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,

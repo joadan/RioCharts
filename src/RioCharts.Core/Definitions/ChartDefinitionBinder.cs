@@ -101,6 +101,12 @@ public static class ChartDefinitionBinder
             return;
         }
 
+        if (s.Type == SeriesType.RangeBar)
+        {
+            BindRangeBars(s, path, dataset, output, data, usedIds, errors, warnings);
+            return;
+        }
+
         // ---------- Fields ----------
         var count = s.Aggregate == Aggregate.Count;
         var histogram = s.Type == SeriesType.Histogram;
@@ -352,6 +358,101 @@ public static class ChartDefinitionBinder
             series = totalField is null ? series : series.WithTotals(points.Select(p => p.Total).ToArray());
             series = sizeField is null ? series : series.WithSizes(points.Select(p => p.Size ?? double.NaN).ToArray());
             data[id] = colorField is null ? series : series.WithColors([.. points.Select(p => p.Color)]);
+        }
+    }
+
+    /// <summary>
+    /// Range bars: a bar per row from its start field to its end field (times or numbers, the same
+    /// kind), in the row its row field gives; filter and groupBy (one series per value, e.g. per state)
+    /// apply as for other series, aggregates and buckets do not.
+    /// </summary>
+    private static void BindRangeBars(SeriesOptions s, string path, ChartDataset dataset, List<SeriesOptions> output, Dictionary<string, SeriesData> data,
+        HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
+    {
+        var errorsBefore = errors.Count;
+        var times = dataset.Fields.Where(f => f.Type == FieldType.Time).ToList();
+        DataField? start = null, end = null;
+        if (s.Start is null || s.End is null)
+        {
+            if (s.Start is null && s.End is null && times.Count == 2)
+            {
+                (start, end) = (times[0], times[1]);
+                warnings.Add($"{path}.start: not set; using '{start.Name}' to '{end.Name}'.");
+            }
+            else
+            {
+                var candidates = times.Count > 0 ? times : dataset.Fields.Where(f => f.Type == FieldType.Number).ToList();
+                errors.Add(new DefinitionError($"{path}.{(s.Start is null ? "start" : "end")}",
+                    $"a range bar needs start and end fields (times or numbers); candidates: {(candidates.Count > 0 ? string.Join(", ", candidates.Select(f => f.Name)) : "none")}."));
+            }
+        }
+
+        start ??= s.Start is null ? null : Find(dataset, s.Start, $"{path}.start", null, errors);
+        end ??= s.End is null ? null : Find(dataset, s.End, $"{path}.end", null, errors);
+        foreach (var (field, name) in new[] { (start, "start"), (end, "end") })
+        {
+            if (field is { Type: FieldType.Text })
+            {
+                errors.Add(new DefinitionError($"{path}.{name}", $"'{field.Name}' is text; a range bar's {name} is a time or a number. Fields: {Describe(dataset.Fields)}."));
+            }
+        }
+
+        if (start is not null && end is not null && start.Type != end.Type && start.Type != FieldType.Text && end.Type != FieldType.Text)
+        {
+            errors.Add(new DefinitionError($"{path}.end", $"'{start.Name}' is {start.Type.ToString().ToLowerInvariant()} but '{end.Name}' is {end.Type.ToString().ToLowerInvariant()}; start and end must be the same kind."));
+        }
+
+        var rowField = s.Row is null ? null : Find(dataset, s.Row, $"{path}.row", null, errors);
+        if (s.Row is null && s.X is not null)
+        {
+            rowField = Find(dataset, s.X, $"{path}.x", null, errors);
+            warnings.Add($"{path}.row: not set; using x ('{s.X}') as the row.");
+        }
+
+        var groupBy = s.GroupBy is null ? null : Find(dataset, s.GroupBy, $"{path}.groupBy", null, errors);
+        var colorField = s.ColorField is null ? null : Find(dataset, s.ColorField, $"{path}.colorField", FieldType.Text, errors);
+        var filters = new List<(Filter Spec, DataField Field)>();
+        for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
+        {
+            if (Find(dataset, s.Filter![f].Field, $"{path}.filter[{f}].field", null, errors) is { } field)
+            {
+                filters.Add((s.Filter![f], field));
+            }
+        }
+
+        if (s.Aggregate is not null || s.TimeBucket is not null)
+        {
+            warnings.Add($"{path}: range bars draw every row as it is; aggregate and timeBucket are ignored.");
+        }
+
+        if (start is null || end is null || errors.Count > errorsBefore)
+        {
+            return;
+        }
+
+        var rows = Enumerable.Range(0, dataset.RowCount).Where(r => filters.All(f => Matches(f.Field.Values[r], f.Spec))).ToList();
+        if (filters.Count > 0 && rows.Count == 0)
+        {
+            warnings.Add($"{path}.filter: no rows match.");
+        }
+
+        var groups = groupBy is null
+            ? [(Key: (string?)null, Rows: rows)]
+            : rows.GroupBy(r => Text(groupBy.Values[r]) ?? "(none)").Select(g => (Key: (string?)g.Key, Rows: g.ToList())).ToList();
+        if (groups.Count > ChartDefinitionJson.MaxSeries)
+        {
+            errors.Add(new DefinitionError($"{path}.groupBy", $"'{groupBy!.Name}' has {groups.Count} values; at most {ChartDefinitionJson.MaxSeries} series. Filter it first."));
+            return;
+        }
+
+        foreach (var (key, groupRows) in groups)
+        {
+            var baseName = s.Name ?? (rowField is null ? "Bars" : Humanize(rowField.Name));
+            var id = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(key is null ? baseName : "bars") : s.Id, key, usedIds);
+            var name = key is null ? baseName : s.Name is null ? key : $"{s.Name}: {key}";
+            output.Add(s with { Id = id, Name = name, Row = rowField?.Name ?? s.Row, Start = start.Name, End = end.Name });
+            var series = SeriesData.FromRanges(groupRows, rowField is null ? null : r => Text(rowField.Values[r]), r => start.Values[r], r => end.Values[r]);
+            data[id] = colorField is null ? series : series.WithColors([.. groupRows.Select(r => Text(colorField.Values[r]))]);
         }
     }
 

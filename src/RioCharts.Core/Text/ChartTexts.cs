@@ -129,6 +129,12 @@ public sealed record ChartTexts
     /// <summary>Description of a histogram. {0}: its name, {1}: the number of values (one|other), {2} and {3}: the edges of the fullest bin.</summary>
     public string HistogramPeak { get => Get(); init => Set(value); }
 
+    /// <summary>A range bar series in the chart description. {0}: series, {1}: bar count, {2}: earliest start, {3}: latest end, {4}: row count.</summary>
+    public string RangeBarSummary { get => Get(); init => Set(value); }
+
+    /// <summary>Units of a duration in range bar tooltips and labels, "days hours minutes seconds" separated by spaces, e.g. "d h min s" for "2 h 30 min".</summary>
+    public string DurationUnits { get => Get(); init => Set(value); }
+
     /// <summary>Box plot tooltip: the highest value.</summary>
     public string BoxMax { get => Get(); init => Set(value); }
 
@@ -388,6 +394,8 @@ public sealed record ChartTexts
         [nameof(ValueRange)] = "{0} to {1}",
         [nameof(LastValue)] = "last {0}",
         [nameof(HistogramPeak)] = "{0}: {1} value, most from {2} to {3}|{0}: {1} values, most from {2} to {3}",
+        [nameof(RangeBarSummary)] = "{0}: {1} bar in {4} rows, from {2} to {3}|{0}: {1} bars in {4} rows, from {2} to {3}",
+        [nameof(DurationUnits)] = "d h min s",
         [nameof(NoDataShort)] = "No data.",
         [nameof(BoxMax)] = "Max",
         [nameof(BoxUpperQuartile)] = "Upper quartile",
@@ -473,6 +481,8 @@ public sealed record ChartTexts
         CandleChange = "Förändring",
         LastValue = "senast {0}",
         HistogramPeak = "{0}: {1} värde, flest från {2} till {3}|{0}: {1} värden, flest från {2} till {3}",
+        RangeBarSummary = "{0}: {1} stapel i {4} rader, från {2} till {3}|{0}: {1} staplar i {4} rader, från {2} till {3}",
+        DurationUnits = "d h min s",
         NoDataShort = "Inga data.",
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
@@ -540,6 +550,8 @@ public sealed record ChartTexts
         CandleChange = "Endring",
         LastValue = "sist {0}",
         HistogramPeak = "{0}: {1} verdi, flest fra {2} til {3}|{0}: {1} verdier, flest fra {2} til {3}",
+        RangeBarSummary = "{0}: {1} stolpe i {4} rader, fra {2} til {3}|{0}: {1} stolper i {4} rader, fra {2} til {3}",
+        DurationUnits = "d t min s",
         NoDataShort = "Ingen data.",
         PieChart = "Sektordiagram",
         DonutChart = "Ringdiagram",
@@ -607,6 +619,8 @@ public sealed record ChartTexts
         CandleChange = "Ændring",
         LastValue = "senest {0}",
         HistogramPeak = "{0}: {1} værdi, flest fra {2} til {3}|{0}: {1} værdier, flest fra {2} til {3}",
+        RangeBarSummary = "{0}: {1} søjle i {4} rækker, fra {2} til {3}|{0}: {1} søjler i {4} rækker, fra {2} til {3}",
+        DurationUnits = "d t min s",
         NoDataShort = "Ingen data.",
         PieChart = "Cirkeldiagram",
         DonutChart = "Ringdiagram",
@@ -674,6 +688,8 @@ public sealed record ChartTexts
         CandleChange = "Muutos",
         LastValue = "viimeisin {0}",
         HistogramPeak = "{0}: {1} arvo, eniten välillä {2}–{3}|{0}: {1} arvoa, eniten välillä {2}–{3}",
+        RangeBarSummary = "{0}: {1} palkki {4} rivillä, {2}–{3}|{0}: {1} palkkia {4} rivillä, {2}–{3}",
+        DurationUnits = "pv h min s",
         NoDataShort = "Ei tietoja.",
         PieChart = "Ympyräkaavio",
         DonutChart = "Rengaskaavio",
@@ -741,6 +757,8 @@ public sealed record ChartTexts
         CandleChange = "Änderung",
         LastValue = "zuletzt {0}",
         HistogramPeak = "{0}: {1} Wert, die meisten von {2} bis {3}|{0}: {1} Werte, die meisten von {2} bis {3}",
+        RangeBarSummary = "{0}: {1} Balken in {4} Zeilen, von {2} bis {3}|{0}: {1} Balken in {4} Zeilen, von {2} bis {3}",
+        DurationUnits = "d h min s",
         NoDataShort = "Keine Daten.",
         PieChart = "Kreisdiagramm",
         DonutChart = "Ringdiagramm",
@@ -808,6 +826,8 @@ public sealed record ChartTexts
         CandleChange = "Variation",
         LastValue = "dernière valeur {0}",
         HistogramPeak = "{0} : {1} valeur, la plupart de {2} à {3}|{0} : {1} valeurs, la plupart de {2} à {3}",
+        RangeBarSummary = "{0} : {1} barre sur {4} lignes, de {2} à {3}|{0} : {1} barres sur {4} lignes, de {2} à {3}",
+        DurationUnits = "j h min s",
         NoDataShort = "Aucune donnée.",
         PieChart = "Graphique en secteurs",
         DonutChart = "Graphique en anneau",
@@ -875,6 +895,8 @@ public sealed record ChartTexts
         CandleChange = "Variación",
         LastValue = "último {0}",
         HistogramPeak = "{0}: {1} valor, la mayoría de {2} a {3}|{0}: {1} valores, la mayoría de {2} a {3}",
+        RangeBarSummary = "{0}: {1} barra en {4} filas, de {2} a {3}|{0}: {1} barras en {4} filas, de {2} a {3}",
+        DurationUnits = "d h min s",
         NoDataShort = "Sin datos.",
         PieChart = "Gráfico circular",
         DonutChart = "Gráfico de anillo",

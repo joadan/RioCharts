@@ -101,6 +101,12 @@
         </RioChart>
         <span class="tile-label">Histogram <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="range-bars">
+        <RioChart TItem="Stage" Items="Schedule" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+            <RangeBarSeries Name="Schedule" RowValue="s => s.Name" StartValue="s => s.Start" EndValue="s => s.End" />
+        </RioChart>
+        <span class="tile-label">Range bar / timeline <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="candlesticks">
         <RioChart TItem="PriceDay" Items="Prices" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
             <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
@@ -164,6 +170,16 @@
 @code {
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
     private static readonly TooltipOptions NoTooltip = new() { Enabled = false };
+
+    private sealed record Stage(string Name, DateOnly Start, DateOnly End);
+
+    // A small project schedule.
+    private static readonly Stage[] Schedule =
+    [
+        new("Plan", new(2026, 3, 2), new(2026, 3, 13)), new("Design", new(2026, 3, 9), new(2026, 3, 27)),
+        new("Build", new(2026, 3, 23), new(2026, 4, 17)), new("Test", new(2026, 4, 13), new(2026, 4, 24)),
+        new("Launch", new(2026, 4, 24), new(2026, 5, 1)),
+    ];
 
     private sealed record Step(string Name, double? Amount, bool IsTotal = false);
 

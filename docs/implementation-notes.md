@@ -753,6 +753,45 @@ Not in Design.md; added from `docs/chart-types.md` (candidate, high popularity).
 - **Not yet:** density or percent instead of counts, cumulative histograms, uneven bins, a
   `Horizontal` histogram and time x values (bins of hours or days: use `BarSeries` with `Bucket`).
 
+## Range bar / timeline
+
+Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high popularity).
+
+- **Data:** a point is a bar: `X` its start, `Y` its end (same units: numbers, or times in ms),
+  and the new `SeriesData.Rows` its row. `SeriesData.FromRanges(items, row, start, end)` builds it
+  (sorted by start, `SourceIndex` back to the items; text or a start/end of the other kind counts as
+  missing); `WithRows` adds rows to columnar data. Without rows (e.g. `SeriesData.From(starts,
+  ends)`) every bar is in a row named after its series. `RangeBarSeries` builds its data through
+  the `BuildData` hook from `RowValue`, `StartValue` and `EndValue`; `ColorValue` and
+  `TooltipValue` work as for other series.
+- **Time zones:** with a display zone the ends are converted too (`TimeConversion.Convert`), each
+  with its own offset (`EndOffsets`, internal), so a bar across a DST change keeps its length.
+- **Layout:** its own pass (`ChartLayout.ComputeRangeBars`), like the heatmap and horizontal bars;
+  other series types are skipped with a warning. Rows top to bottom in order of first appearance in
+  the input (also hidden series, so rows do not move when a series is toggled). Series share the
+  rows and overlap where their bars do (a state timeline has one series per state, so they do not);
+  no slots per series. Bars are at most 40 px tall, with a 2 px corner radius. The time axis is the
+  value axis, so its grid is vertical (`X.GridLines`, default on), unlike Design.md's horizontal-only
+  default; there is no y grid. Numeric axes get a nice domain; time axes run from the first start to
+  the last end. `X.Min`/`X.Max` and the zoom window (`XRange`, `Zoomable`) clip bars at the plot
+  edges. Bars that end before they start are skipped with one warning.
+- **Annotations:** x lines and bands only (e.g. "now", a holiday); others are skipped with a warning.
+  A line outside the data does not widen the axis unless `ExpandsDomain` is true.
+- **Tooltip:** the row as the header, then "start – end (duration)": times only when every bar is
+  on one day, otherwise the date, with the end's date left out when it is on the start's day.
+  Durations read "2 h 30 min" or "3 d 4 h", with units from `ChartTexts.DurationUnits` (all
+  languages); numeric axes give the difference in the series format. Hover outlines the bar, as
+  for horizontal bars (no JS changes). `DataLabels` writes the duration inside bars where it fits.
+- **Description:** per series "Running: 5 bars in 3 rows, from 06:00 to 13:00"
+  (`ChartTexts.RangeBarSummary`, all languages), in the legend and the chart description.
+- **JSON definitions:** `"type": "rangeBar"` (also `timeline`, `gantt`, `schedule`), with new
+  `row`, `start` and `end` fields (`SeriesOptions.Row`, `Start`, `End`). Without start and end, a
+  dataset with exactly two time fields uses them (warning); `x` is read as the row when `row` is not
+  set. `groupBy`, `filter` and `colorField` apply; aggregates and time buckets are ignored (warning).
+- **Not yet:** dependencies, milestones, progress, drag to move or resize, nested rows (groups of
+  tasks), per-item labels inside bars, side-by-side bars per series (planned against actual) and
+  sorting rows.
+
 ## Waterfall
 
 Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high popularity, low complexity).

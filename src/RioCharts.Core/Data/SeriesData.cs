@@ -78,6 +78,7 @@ public sealed class SeriesData
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
             TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = any ? values : null,
+            Rows = Rows, EndOffsets = EndOffsets,
         };
     }
 
@@ -329,7 +330,10 @@ public sealed class SeriesData
     {
         if (IsSorted(x))
         {
-            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = Colors };
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex)
+            {
+                Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = Colors, Rows = Rows,
+            };
         }
 
         var order = Enumerable.Range(0, x.Length).ToArray();
@@ -376,7 +380,85 @@ public sealed class SeriesData
             result.Sizes = [.. order.Select(i => sizes[i])];
         }
 
+        if (Rows is { } rows)
+        {
+            result.Rows = [.. order.Select(i => rows[i])];
+        }
+
         return result;
+    }
+
+    /// <summary>
+    /// Range bars: the row of each point, e.g. the machine or task it belongs to (<see cref="X"/> is
+    /// the start, <see cref="Y"/> the end, in the same units); null for other series. Set with
+    /// <see cref="WithRows"/> or made by <see cref="FromRanges"/>.
+    /// </summary>
+    public string[]? Rows { get; private set; }
+
+    /// <summary>Range bars from times: the UTC offset of each end (like <see cref="TimeOffsets"/> for the starts); null otherwise.</summary>
+    internal double[]? EndOffsets { get; private set; }
+
+    /// <summary>
+    /// The same points as range bars, each in a row: <paramref name="rows"/> is in input order, like
+    /// the y values given when creating the data (index i is the row of input item i); a null or
+    /// missing row is "". <see cref="X"/> is each bar's start and <see cref="Y"/> its end.
+    /// </summary>
+    public SeriesData WithRows(IReadOnlyList<string?> rows)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+        var values = new string[Count];
+        for (var i = 0; i < values.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            values[i] = source < rows.Count ? rows[source] ?? "" : "";
+        }
+
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, EndOffsets = EndOffsets, Colors = Colors, Rows = values };
+    }
+
+    /// <summary>Range bars: the same bars with new ends (e.g. converted to instants).</summary>
+    internal SeriesData WithEnds(double[] end) =>
+        new(X, end, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Colors = Colors, Rows = Rows };
+
+    /// <summary>
+    /// Range bars from items: a bar from <paramref name="start"/> to <paramref name="end"/> (both
+    /// numbers, or both DateTime, DateTimeOffset or DateOnly; the first non-null start decides) in
+    /// the row <paramref name="row"/> gives (null: every bar in one row, named after the series).
+    /// Items without a start are left out; a missing end, or one before the start, draws nothing.
+    /// Points are sorted by start; selectors run once here, never per render.
+    /// </summary>
+    public static SeriesData FromRanges<TItem>(IEnumerable<TItem> items, Func<TItem, string?>? row, Func<TItem, object?> start, Func<TItem, object?> end)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(start);
+        ArgumentNullException.ThrowIfNull(end);
+        var list = items as IReadOnlyList<TItem> ?? items.ToList();
+        var rawStart = new object?[list.Count];
+        var rawEnd = new object?[list.Count];
+        XKind? kind = null;
+        for (var i = 0; i < list.Count; i++)
+        {
+            rawStart[i] = start(list[i]);
+            rawEnd[i] = end(list[i]);
+            kind ??= KindOf(rawStart[i]);
+        }
+
+        // Text is not a range: such values count as missing.
+        var time = kind == XKind.Time;
+        double Value(object? v) => v is string ? double.NaN : time != (KindOf(v) == XKind.Time) ? double.NaN : ToX(v);
+        var data = Create(Array.ConvertAll(rawStart, Value), Array.ConvertAll(rawEnd, Value), time ? XKind.Time : XKind.Numeric);
+        if (time)
+        {
+            data.WithOffsets(Array.ConvertAll(rawStart, TimeValue.OffsetOf));
+            var endOffsets = Array.ConvertAll(rawEnd, TimeValue.OffsetOf);
+            if (endOffsets.Any(double.IsFinite))
+            {
+                data.EndOffsets = [.. Enumerable.Range(0, data.Count).Select(i => endOffsets[data.ToSourceIndex(i)])];
+            }
+        }
+
+        var rows = row is null ? new string?[list.Count] : list.Select(row).ToArray();
+        return data.WithRows(rows);
     }
 
     /// <summary>A series with no points.</summary>

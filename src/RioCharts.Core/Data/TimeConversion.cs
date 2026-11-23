@@ -108,6 +108,18 @@ public sealed class TimeConversion
             x[i] = ToInstant(data.X[i], data.TimeOffsets?[i] ?? double.NaN);
         }
 
+        if (data.Rows is not null)
+        {
+            // Range bars: the ends are times too.
+            var end = new double[data.Count];
+            for (var i = 0; i < end.Length; i++)
+            {
+                end[i] = ToInstant(data.Y[i], data.EndOffsets?[i] ?? double.NaN);
+            }
+
+            data = data.WithEnds(end);
+        }
+
         return data.WithX(x);
     }
 

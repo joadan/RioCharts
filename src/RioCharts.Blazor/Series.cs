@@ -759,6 +759,38 @@ public sealed class HistogramSeries<TItem> : SeriesBase<TItem>
 }
 
 /// <summary>
+/// Range bars (a timeline): a bar from each item's <see cref="StartValue"/> to its
+/// <see cref="EndValue"/> (times, or numbers) in the row <see cref="RowValue"/> gives, e.g. a
+/// project schedule (one row per task) or states over time (one row per machine). Rows are listed
+/// top to bottom in the order they first appear. Several range bar series share the rows and the
+/// time axis, so a state timeline is one series per state (running, idle, stopped), each with its
+/// color and legend entry. The tooltip shows the row, start, end and duration. Cannot be mixed with
+/// other series types; x lines and bands (<c>Annotations</c>) mark times such as "now".
+/// </summary>
+public sealed class RangeBarSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>The row of each item, e.g. <c>t =&gt; t.Machine</c>. Default: every bar in one row, named after the series.</summary>
+    [Parameter] public Func<TItem, string?>? RowValue { get; set; }
+
+    /// <summary>Where each bar starts: a DateTime, DateTimeOffset, DateOnly or number. Items without a start are left out.</summary>
+    [Parameter] public Func<TItem, object?>? StartValue { get; set; }
+
+    /// <summary>Where each bar ends, of the same kind as <see cref="StartValue"/>. A missing end, or one before the start, draws nothing.</summary>
+    [Parameter] public Func<TItem, object?>? EndValue { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.RangeBar;
+
+    private protected override object? DataSettings => RowValue is not null;
+
+    private protected override SeriesData? BuildData(IReadOnlyList<TItem> items, out IReadOnlyList<int[]>? groups)
+    {
+        groups = null;
+        return StartValue is { } start && EndValue is { } end ? SeriesData.FromRanges(items, RowValue, start, end) : SeriesData.Empty;
+    }
+}
+
+/// <summary>
 /// Waterfall: how a start value becomes an end value, e.g. a month's result from revenue through
 /// costs. Each item is a change (<c>YValue</c>), drawn as a bar from the running total before it to
 /// the one after: in <c>--rio-positive</c> (green) when it rises and <c>--rio-negative</c> (red) when

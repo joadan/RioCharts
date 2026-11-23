@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, radar, heatmap, box plot, histogram, candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, radar, heatmap, box plot, histogram, range bar (timeline), candlestick, waterfall and treemap, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -59,6 +59,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value` |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
+| Periods per row on a time axis (schedule, states over time) | `RangeBarSeries` | `RowValue`, `StartValue`, `EndValue`; one series per state |
 | Open, high, low, close | `CandlestickSeries` | `OpenValue`, `HighValue`, `LowValue`, `CloseValue`, or raw values with `Bucket` |
 | From a start value to an end value (result, budget) | `WaterfallSeries` | `YValue` the change, `IsTotal` marks totals |
 | Hierarchy by size | `TreemapSeries` | `XValue` (path or name), `ParentValue`, `VisibleLevels` |
@@ -464,6 +465,14 @@ Histogram: how values are distributed, e.g. response times. Give one item per va
 - `BinWidth`: `double?` — The width of each bin, in x units (e.g. 5 for bins of 5 ms). Default: a nice width picked from the data.
 - `BinCount`: `int?` — About how many bins, when `HistogramSeries.BinWidth` is not set (the width is rounded to a nice number). Default: picked from the data.
 
+#### `<RangeBarSeries>` (`RangeBarSeries<TItem>`)
+
+Range bars (a timeline): a bar from each item's `RangeBarSeries.StartValue` to its `RangeBarSeries.EndValue` (times, or numbers) in the row `RangeBarSeries.RowValue` gives, e.g. a project schedule (one row per task) or states over time (one row per machine). Rows are listed top to bottom in the order they first appear. Several range bar series share the rows and the time axis, so a state timeline is one series per state (running, idle, stopped), each with its color and legend entry. The tooltip shows the row, start, end and duration. Cannot be mixed with other series types; x lines and bands (`Annotations`) mark times such as "now".
+
+- `RowValue`: `Func<TItem, string?>?` — The row of each item, e.g. `t => t.Machine`. Default: every bar in one row, named after the series.
+- `StartValue`: `Func<TItem, object?>?` — Where each bar starts: a DateTime, DateTimeOffset, DateOnly or number. Items without a start are left out.
+- `EndValue`: `Func<TItem, object?>?` — Where each bar ends, of the same kind as `RangeBarSeries.StartValue`. A missing end, or one before the start, draws nothing.
+
 #### `<WaterfallSeries>` (`WaterfallSeries<TItem>`)
 
 Waterfall: how a start value becomes an end value, e.g. a month's result from revenue through costs. Each item is a change (`YValue`), drawn as a bar from the running total before it to the one after: in `--rio-positive` (green) when it rises and `--rio-negative` (red) when it falls. Items marked with `WaterfallSeries.IsTotal` are totals: a bar from zero to the running total, in the series color. Thin lines carry each bar's end over to the next. The tooltip shows the change and the running total after it.
@@ -684,7 +693,7 @@ How times without a zone (DateTime with Kind Unspecified, DateOnly, plain string
 
 The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
 
-72 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+74 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
 
 - `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
 - `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.
@@ -856,6 +865,7 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `Candles`: `CandleColumns?` (read-only) — Candlesticks: the open, high and low of each point (`SeriesData.Y` is the close); null for other series. Set with `SeriesData.WithCandles`.
 - `Box`: `BoxColumns?` (read-only) — Box plots: the quartiles, whiskers, extremes and outliers of each point (`SeriesData.Y` is the median); null for other series. Set with `SeriesData.WithBox`.
 - `TimeOffsets`: `double[]?` (read-only) — Time data: the UTC offset (milliseconds) of each point when the input had one (DateTimeOffset, or DateTime with Kind Utc or Local), NaN otherwise; null when no point had one. Used only when the chart has a display time zone; by default times are shown as given.
+- `Rows`: `string[]?` (read-only) — Range bars: the row of each point, e.g. the machine or task it belongs to (`SeriesData.X` is the start, `SeriesData.Y` the end, in the same units); null for other series. Set with `SeriesData.WithRows` or made by `SeriesData.FromRanges`.
 - `Empty`: `SeriesData` (static) — A series with no points.
 
 - `SeriesData WithColors(IReadOnlyList<string?> colors)` — The same points with a color each (bars, scatter markers, slices, treemap items; a dot on lines and areas). `colors` is in input order like the y values: index i is the color of input item (or group) i; null keeps the series color.
@@ -868,6 +878,8 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups)` — Groups items per time bucket (e.g. per day or month, on their wall-clock time) and makes one point per bucket at the bucket's start, with y from `aggregate` (null is a gap). `TimeBucket.Auto` picks the bucket from the span of the times. Items with a null x are left out; x values that are not times group by value. Selectors and the aggregate run once here, never per render.
 - `SeriesData WithBox(ReadOnlySpan<BoxSummary> boxes)` — The same points as boxes: `boxes` is in input order, like the y values given when creating the data (index i is the box of input item or group i). Each point's y becomes its box's median.
 - `static SeriesData FromBoxGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> value, IReadOnlyList<int[]> groups)` — Box plot data from raw values: items with the same x form one box, summarized with `BoxSummary.FromValues`. Categories keep the order of first appearance; numbers and times are sorted. Null values are skipped.
+- `SeriesData WithRows(IReadOnlyList<string?> rows)` — The same points as range bars, each in a row: `rows` is in input order, like the y values given when creating the data (index i is the row of input item i); a null or missing row is "". `SeriesData.X` is each bar's start and `SeriesData.Y` its end.
+- `static SeriesData FromRanges<TItem>(IEnumerable<TItem> items, Func<TItem, string?>? row, Func<TItem, object?> start, Func<TItem, object?> end)` — Range bars from items: a bar from `start` to `end` (both numbers, or both DateTime, DateTimeOffset or DateOnly; the first non-null start decides) in the row `row` gives (null: every bar in one row, named after the series). Items without a start are left out; a missing end, or one before the start, draws nothing. Points are sorted by start; selectors run once here, never per render.
 - `int ToSourceIndex(int index)` — Index of the point in the original input (items list or columns).
 - `static SeriesData From(ReadOnlySpan<double> x, ReadOnlySpan<double> y)` — Numeric x and y columns (copied). Points without a finite x are dropped, unsorted x is sorted, and missing y values are NaN (gaps).
 - `static SeriesData From(ReadOnlyMemory<double> x, ReadOnlyMemory<double> y)` — Numeric x and y columns (copied).
@@ -1049,6 +1061,9 @@ One series: its type, where its data comes from (fields and transforms in JSON d
 - `Q1`: `string?` — Box plot with precomputed boxes: the field with the lower quartile (y is the median). Leave out q1, q3, low and high to compute the boxes from the raw y values per x.
 - `Q3`: `string?` — Box plot with precomputed boxes: the field with the upper quartile.
 - `High`: `string?` — Box plot with precomputed boxes: the field with the upper whisker end.
+- `Row`: `string?` — Range bar: the field with the row of each bar (e.g. the machine or task); text. Null: one row per series.
+- `Start`: `string?` — Range bar: the field with each bar's start, a time (or a number).
+- `End`: `string?` — Range bar: the field with each bar's end, of the same kind as start.
 - `Total`: `string?` — Waterfall: the field that marks total rows (true, yes or 1). A total bar shows the running total from zero; its own y is ignored. Other rows are changes.
 - `BinWidth`: `double?` — Histogram: the width of each bin, in x units (e.g. 5 for bins of 5 ms). Null: a nice width picked from the data.
 - `BinCount`: `int?` — Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.
@@ -1137,6 +1152,7 @@ How a series is drawn.
 - `Treemap` — Rectangles sized by value, nested by group (a path such as "Europe/Sweden/Stockholm"), for how a total splits into many parts.
 - `Waterfall` — How a start value becomes an end value: a floating bar per change (rising or falling from the running total), and total bars from zero.
 - `Histogram` — The distribution of values: x values counted in equal-width bins, drawn as bars without gaps.
+- `RangeBar` — Bars from a start to an end on a time (or number) axis, in rows: schedules, or states over time such as running, idle and stopped.
 - `Auto` — JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).
 
 #### `Filter` (record, RioCharts.Core)

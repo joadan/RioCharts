@@ -1,0 +1,111 @@
+@page "/range-bars"
+
+<PageTitle>Range bars and timelines · RioCharts</PageTitle>
+
+<h1>Range bars and timelines</h1>
+<p class="lead">
+    A range bar runs from a start to an end on a time axis, in a row of its own: what each machine was doing through a shift, or when
+    each task of a project starts and ends.
+</p>
+
+<Example Title="States over time" Code="@StatesCode">
+    <Description>
+        <p>
+            Give <code>RangeBarSeries</code> a <code>StartValue</code> and an <code>EndValue</code> (DateTime, DateTimeOffset, DateOnly or
+            numbers) and a <code>RowValue</code>. Rows are listed in the order they first appear. Series share the rows, so a state timeline
+            is one series per state, each with its own color and legend entry. The tooltip shows the row, the start, the end and the
+            duration; a <code>ReferenceLine</code> on the x axis marks a time such as now.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Period" Items="Periods" Title="Packing line" Height="260" Zoomable="true">
+            <RangeBarSeries Name="Running" Items="Running" RowValue="p => p.Machine" StartValue="p => p.From" EndValue="p => p.To" Color="--rio-positive" />
+            <RangeBarSeries Name="Idle" Items="Idle" RowValue="p => p.Machine" StartValue="p => p.From" EndValue="p => p.To" Color="--rio-text-muted" />
+            <RangeBarSeries Name="Stopped" Items="Stopped" RowValue="p => p.Machine" StartValue="p => p.From" EndValue="p => p.To" Color="--rio-negative" />
+            <ReferenceLine Axis="AnnotationAxis.X" Value="Shift.AddHours(13)" Label="Now" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="A project schedule" Code="@ScheduleCode">
+    <Description>
+        <p>
+            One row per task: <code>RowValue</code> is the task, and <code>ColorValue</code> colors each bar by its phase. Dates work as well
+            as times. <code>DataLabels</code> writes each bar's duration in it where it fits. A task without an end is listed but not drawn.
+            Dependencies, dragging and editing are not part of RioCharts.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="ProjectTask" Items="Tasks" Height="280">
+            <RangeBarSeries Name="Tasks" RowValue="t => t.Name" StartValue="t => t.Start" EndValue="t => t.End"
+                            ColorValue='t => t.Phase == "Plan" ? "--rio-series-2" : null' DataLabels="true" />
+            <ReferenceBand Axis="AnnotationAxis.X" From="new DateOnly(2026, 4, 3)" To="new DateOnly(2026, 4, 7)" Label="Easter" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>In JSON definitions</h2>
+<p>
+    <code>"type": "rangeBar"</code> (also <code>timeline</code> and <code>gantt</code>) with <code>"start"</code> and <code>"end"</code>
+    fields (times or numbers) and a <code>"row"</code> field. <code>groupBy</code> makes one series per value, e.g. per state:
+</p>
+<pre><code>{ "dataset": "line", "series": [ { "type": "timeline", "row": "machine", "start": "from", "end": "to", "groupBy": "state" } ] }</code></pre>
+
+@code {
+    private sealed record Period(string Machine, string State, DateTime From, DateTime To);
+    private sealed record ProjectTask(string Name, string Phase, DateOnly Start, DateOnly? End);
+
+    private static readonly DateTime Shift = new(2026, 3, 2);
+
+    private static Period P(string machine, string state, double from, double to) => new(machine, state, Shift.AddHours(from), Shift.AddHours(to));
+
+    // A packing line's machines through the morning shift, from 06:00.
+    private static readonly Period[] Periods =
+    [
+        P("Filler", "Running", 6, 9.5), P("Filler", "Stopped", 9.5, 10), P("Filler", "Running", 10, 13),
+        P("Capper", "Running", 6.5, 8), P("Capper", "Idle", 8, 8.25), P("Capper", "Running", 8.25, 12), P("Capper", "Idle", 12, 13),
+        P("Labeler", "Idle", 6, 7), P("Labeler", "Running", 7, 11), P("Labeler", "Stopped", 11, 11.75), P("Labeler", "Running", 11.75, 13),
+        P("Palletizer", "Running", 6, 13),
+    ];
+
+    private static readonly Period[] Running = [.. Periods.Where(p => p.State == "Running")];
+    private static readonly Period[] Idle = [.. Periods.Where(p => p.State == "Idle")];
+    private static readonly Period[] Stopped = [.. Periods.Where(p => p.State == "Stopped")];
+
+    // A website relaunch.
+    private static readonly ProjectTask[] Tasks =
+    [
+        new("Interviews", "Plan", new(2026, 3, 2), new(2026, 3, 9)),
+        new("Content plan", "Plan", new(2026, 3, 6), new(2026, 3, 16)),
+        new("Design", "Plan", new(2026, 3, 12), new(2026, 3, 27)),
+        new("Build", "Make", new(2026, 3, 23), new(2026, 4, 17)),
+        new("Content", "Make", new(2026, 3, 30), new(2026, 4, 20)),
+        new("Testing", "Make", new(2026, 4, 13), new(2026, 4, 24)),
+        new("Launch", "Make", new(2026, 4, 27), null),
+    ];
+
+    private const string StatesCode = """
+        <RioChart TItem="Period" Title="Packing line" Zoomable="true">
+            <RangeBarSeries Name="Running" Items="running" RowValue="p => p.Machine" StartValue="p => p.From" EndValue="p => p.To" Color="--rio-positive" />
+            <RangeBarSeries Name="Idle" Items="idle" RowValue="p => p.Machine" StartValue="p => p.From" EndValue="p => p.To" Color="--rio-text-muted" />
+            <RangeBarSeries Name="Stopped" Items="stopped" RowValue="p => p.Machine" StartValue="p => p.From" EndValue="p => p.To" Color="--rio-negative" />
+            <ReferenceLine Axis="AnnotationAxis.X" Value="now" Label="Now" />
+        </RioChart>
+
+        @code {
+            record Period(string Machine, string State, DateTime From, DateTime To);
+        }
+        """;
+
+    private const string ScheduleCode = """
+        <RioChart TItem="ProjectTask" Items="tasks">
+            <RangeBarSeries Name="Tasks" RowValue="t => t.Name" StartValue="t => t.Start" EndValue="t => t.End"
+                            ColorValue='t => t.Phase == "Plan" ? "--rio-series-2" : null' DataLabels="true" />
+            <ReferenceBand Axis="AnnotationAxis.X" From="new DateOnly(2026, 4, 3)" To="new DateOnly(2026, 4, 7)" Label="Easter" />
+        </RioChart>
+
+        @code {
+            record ProjectTask(string Name, string Phase, DateOnly Start, DateOnly? End);
+        }
+        """;
+}

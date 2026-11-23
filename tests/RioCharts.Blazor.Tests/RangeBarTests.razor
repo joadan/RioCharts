@@ -1,0 +1,47 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Task(string Name, string Phase, DateOnly Start, DateOnly? End);
+
+    // A small website project.
+    private static readonly Task[] Tasks =
+    [
+        new("Content", "Plan", new(2026, 3, 2), new(2026, 3, 13)),
+        new("Design", "Plan", new(2026, 3, 9), new(2026, 3, 20)),
+        new("Build", "Make", new(2026, 3, 16), new(2026, 4, 10)),
+        new("Launch", "Make", new(2026, 4, 13), null),
+    ];
+
+    // Fixed lists: a new list on every render would rebuild the series every time.
+    private static readonly Task[] Plan = [.. Tasks.Where(t => t.Phase == "Plan")];
+    private static readonly Task[] Make = [.. Tasks.Where(t => t.Phase == "Make")];
+
+    [Fact]
+    public void Each_item_is_a_bar_in_its_row()
+    {
+        var cut = Render<RioChart<Task>>(@<RioChart TItem="Task" Items="Tasks" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <RangeBarSeries Id="t" Name="Tasks" RowValue="t => t.Name" StartValue="t => t.Start" EndValue="t => t.End" />
+        </RioChart>);
+
+        Assert.Equal(3, cut.FindAll(".rio-series-range-bar rect").Count); // Launch has no end yet
+        Assert.Equal(["Content", "Design", "Build", "Launch"], cut.FindAll(".rio-row-label").Select(l => l.TextContent));
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal("Design", series.GetProperty("xl")[1].GetString());
+        Assert.Equal("03/09/2026 – 03/20/2026 (11 d)", series.GetProperty("v")[1].GetString());
+    }
+
+    [Fact]
+    public void Clicking_a_bar_gives_its_item()
+    {
+        IReadOnlyList<Task> clicked = [];
+        var cut = Render<RioChart<Task>>(@<RioChart TItem="Task" Items="Tasks" OnPointClick="e => clicked = e.Items">
+            <RangeBarSeries Id="Plan" Name="Plan" Items="Plan" RowValue="t => t.Name" StartValue="t => t.Start" EndValue="t => t.End" />
+            <RangeBarSeries Id="Make" Name="Make" Items="Make" RowValue="t => t.Name" StartValue="t => t.Start" EndValue="t => t.End" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("Make", 0, false));
+
+        Assert.Equal([Tasks[2]], clicked);
+        Assert.Equal(2, cut.FindAll(".rio-legend-item").Count);
+    }
+}

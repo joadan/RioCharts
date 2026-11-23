@@ -51,6 +51,7 @@ Rules of thumb:
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
+| Range bar / timeline | `RangeBarSeries` / `rangeBar` (also `timeline`, `gantt`) | Start to end per row on a time axis; one series per state. Not a full Gantt (no dependencies or dragging). |
 | Waterfall | `WaterfallSeries` / `waterfall` | Changes from a running total, totals and subtotals, connectors. Also `bridge`. |
 | Sparkline | compact mode on any chart | Not a series type. |
 
@@ -60,7 +61,6 @@ Rules of thumb:
 |---|---|---|---|---|---|---|
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
 | Gauge | In Design.md | High | Medium | Medium | A single value against a range or target | `gauge` is only an alias for radial bar today. A real gauge needs custom start/end angles, colored ranges, a target marker and a big center value: several new parameters. |
-| Range bar / timeline | Candidate | Medium–High | Medium | Medium | Periods per category: schedules, states over time (on/off/fault) | Horizontal bars from start to end on a time axis, many per category row. A new data shape (start/end per item). A full Gantt (dependencies, drag) is out of scope. |
 | Bullet | Candidate | Low–Medium | Small–Medium | Medium | Value against target and quality bands in little space | A compact horizontal bar with band backgrounds and a target tick. Goes well with sparklines, but bands and targets are new concepts. |
 | Error bars | Candidate | Medium | Small | Medium | Uncertainty on points or bars | Cheap to draw, but as an option it spreads to bar, line and scatter (extent, tooltip, describer, spec). |
 | Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |

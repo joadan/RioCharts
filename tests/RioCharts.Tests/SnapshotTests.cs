@@ -46,6 +46,10 @@ public class SnapshotTests
 
     private static readonly string[] Quarters = ["Q1", "Q2", "Q3", "Q4"];
 
+    // Periods on 2 March 2026, from and to in hours.
+    private static SeriesData Ranges(params (string Row, double From, double To)[] periods) =>
+        SeriesData.FromRanges(periods, p => p.Row, p => new DateTime(2026, 3, 2).AddHours(p.From), p => new DateTime(2026, 3, 2).AddHours(p.To));
+
     private sealed record Case(ChartDefinition Spec, Dictionary<string, SeriesData> Data, double Width = 640, double Height = 320, string Culture = "", (double, double)? XRange = null);
 
     private static readonly Dictionary<string, Case> Cases = new()
@@ -339,6 +343,25 @@ public class SnapshotTests
                 v => v, 10, null, out _, out _),
             ["after"] = SeriesData.FromBins(Enumerable.Range(0, 400).Select(i => 120 + 20 * (Math.Sin(i * 1.3) + Math.Sin(i * 0.53) + Math.Sin(i * 3.1)) / 3 * 1.6),
                 v => v, 10, null, out _, out _),
+        }),
+
+        // A packing line's machines through a shift: running, idle and stopped periods (a state timeline), with "now".
+        ["range-bar"] = new(new ChartDefinition
+        {
+            Title = "Packing line",
+            Series =
+            [
+                new SeriesOptions { Id = "running", Name = "Running", Type = SeriesType.RangeBar, Color = "--rio-positive" },
+                new SeriesOptions { Id = "idle", Name = "Idle", Type = SeriesType.RangeBar, Color = "--rio-text-muted" },
+                new SeriesOptions { Id = "stopped", Name = "Stopped", Type = SeriesType.RangeBar, Color = "--rio-negative" },
+            ],
+            Annotations = [new Annotation { Axis = AnnotationAxis.X, Value = new DateTime(2026, 3, 2, 13, 0, 0), Label = "Now" }],
+        }, new()
+        {
+            ["running"] = Ranges(("Filler", 6, 9.5), ("Filler", 10, 13), ("Capper", 6.5, 8), ("Capper", 8.25, 12), ("Labeler", 7, 11), ("Labeler", 11.75, 13),
+                ("Palletizer", 6, 13)),
+            ["idle"] = Ranges(("Capper", 8, 8.25), ("Capper", 12, 13), ("Labeler", 6, 7)),
+            ["stopped"] = Ranges(("Filler", 9.5, 10), ("Labeler", 11, 11.75)),
         }),
 
         // Stores: floor area against revenue per m², sized by visitors per day, in two cities (bubbles).
