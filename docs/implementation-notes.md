@@ -1032,3 +1032,23 @@ chart on its own. The JSON format did not change; the AI tools' argument is `def
   else inside the plot's top right corner as before (a chart with nothing above the plot has no
   top row, and adding one while zoomed would move the plot on every zoom). Only the cartesian
   layout reports the area; it is the only zoomable one.
+
+## Motion
+
+Design.md "Visual design" asks for "short, subtle entry and update animations". The code
+has the entry fade only, on purpose:
+
+- **Entry:** `.rio-series` fades in once (`--rio-enter-duration`, default 0.35 s). The tooltip,
+  the hover buttons and series dimmed from the legend have short opacity fades. Nothing grows,
+  draws on or sweeps in (radial bars included, see Milestone 3).
+- **No update animations.** Changed data, zoom, pan and streaming render the new state at once.
+  A tween would show values that are not in the data, and interaction would lag. It would also
+  have to run frame by frame in the JS module (a Blazor Server round trip per frame is too slow),
+  for both the SVG and the canvas layers. Morphing a path whose point count changes (LTTB,
+  zoom, a sliding window) has no clean answer, and CSS transitions of `d` and SVG geometry are
+  not supported in every browser. If users ask for it, bars and pie angles are the cases worth an
+  opt-in.
+- **Off switch:** `Animate="false"` puts `rio-still` on the container, and `prefers-reduced-motion`
+  does the same: every animation and transition inside the chart is turned off
+  (`!important`, so later rules cannot bring one back). Animation is a component parameter,
+  not part of `ChartDefinition`: exports are static anyway.

@@ -16,7 +16,7 @@
     var keys = KeyboardEnabled(layout);
 }
 
-<div @ref="_container" class="rio-chart @Class" style="@ContainerStyle">
+<div @ref="_container" class="rio-chart@(Animate ? null : " rio-still") @Class" style="@ContainerStyle">
     <svg class="rio-chart-svg"
          xmlns="http://www.w3.org/2000/svg"
          width="100%"

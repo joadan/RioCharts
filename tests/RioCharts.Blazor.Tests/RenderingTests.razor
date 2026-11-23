@@ -105,4 +105,18 @@
                 || a.GetType().IsGenericType && a.GetType().GetGenericTypeDefinition() == typeof(DotNetObjectReference<>),
             $"{a!.GetType()} goes through reflection-based interop JSON"));
     }
+
+    [Fact]
+    public void Animate_false_marks_the_chart_still()
+    {
+        var moving = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Class="mine">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var still = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Class="mine" Animate="false">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        Assert.Equal(["rio-chart", "mine"], moving.Find("div.rio-chart").ClassList);
+        Assert.Equal(["rio-chart", "rio-still", "mine"], still.Find("div.rio-chart").ClassList);
+    }
 }

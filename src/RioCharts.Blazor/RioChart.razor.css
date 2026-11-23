@@ -320,21 +320,17 @@
     stroke: var(--rio-axis, var(--_rio-axis));
 }
 
-/* ---------- Motion: short entry fade; nothing on updates ---------- */
+/* ---------- Motion: short entry fade; nothing on updates ----------
+   --rio-enter-duration sets the fade (0s turns it off). Animate="false" (.rio-still) and
+   prefers-reduced-motion turn off every animation and transition in the chart (end of file). */
 
 .rio-chart ::deep .rio-series {
-    animation: rio-enter 0.35s ease-out both;
+    animation: rio-enter var(--rio-enter-duration, 0.35s) ease-out both;
 }
 
 @keyframes rio-enter {
     from {
         opacity: 0;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .rio-chart ::deep .rio-series {
-        animation: none;
     }
 }
 
@@ -520,9 +516,19 @@
     opacity: 0.2;
 }
 
+/* No motion: Animate="false" or the user's reduced-motion setting. */
+.rio-chart.rio-still ::deep *,
+.rio-chart.rio-still ::deep *::before,
+.rio-chart.rio-still ::deep *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .rio-chart ::deep .rio-series,
-    .rio-chart ::deep .rio-data-labels {
-        transition: none;
+    .rio-chart ::deep *,
+    .rio-chart ::deep *::before,
+    .rio-chart ::deep *::after {
+        animation: none !important;
+        transition: none !important;
     }
 }

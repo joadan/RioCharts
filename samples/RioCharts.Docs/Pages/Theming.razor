@@ -32,9 +32,34 @@
     <tr><td><code>--rio-series-1</code> … <code>--rio-series-10</code></td><td>The palette, in series order (colorblind-aware by default).</td></tr>
 </table>
 
-<p>Charts inherit the page font and use tabular numbers. Motion is a short fade on first render and respects <code>prefers-reduced-motion</code>.</p>
+<p>Charts inherit the page font and use tabular numbers.</p>
+
+<h2>Motion</h2>
+<p>
+    A chart moves very little, on purpose. The series fade in once, in 0.35 seconds, when they first appear. The
+    tooltip, the buttons and the series that dim when you hover the legend also fade, but only briefly.
+</p>
+<p>
+    Nothing else animates. Bars don't grow, lines don't draw on and pies don't sweep in. Changed data is drawn in
+    its new place right away, and zoom, pan and live data follow the pointer and the data without delay. A
+    transition there would show values that aren't in the data, and the chart would lag behind what you do.
+</p>
+<p>
+    When the user asks for reduced motion (<code>prefers-reduced-motion</code>), nothing moves. To turn motion off
+    yourself, set <code>Animate="false"</code>. To change only the fade's length, set
+    <code>--rio-enter-duration</code> (<code>0s</code> turns it off) anywhere above the chart.
+</p>
+<CodeBlock Code="@MotionCode" />
 
 @code {
+    private const string MotionCode = """
+        @* No motion at all *@
+        <RioChart TItem="Sales" Animate="false">…</RioChart>
+
+        @* A quicker fade for every chart on the page *@
+        <div style="--rio-enter-duration: 0.15s">…</div>
+        """;
+
     private const string PaletteCode = """
         <div style="--rio-series-1: #0b6e4f; --rio-series-2: #c4721a; --rio-grid: #dfe7e2;">
             <RioChart TItem="Sales" Title="Revenue per quarter">

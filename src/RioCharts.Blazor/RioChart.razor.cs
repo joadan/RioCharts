@@ -223,6 +223,14 @@ public partial class RioChart<TItem> : IChartContext
     /// </summary>
     [Parameter] public bool? KeyboardNavigation { get; set; }
 
+    /// <summary>
+    /// False turns off all motion: the short fade when the series first appear, and the fades of the
+    /// tooltip, buttons and dimmed series. Charts never animate data changes, zoom or streaming either
+    /// way, and motion is always off when the user asks for reduced motion. To change only the fade's
+    /// length, set the CSS variable <c>--rio-enter-duration</c> (default <c>0.35s</c>; <c>0s</c> turns it off).
+    /// </summary>
+    [Parameter] public bool Animate { get; set; } = true;
+
     /// <summary>Extra CSS class on the container.</summary>
     [Parameter] public string? Class { get; set; }
 

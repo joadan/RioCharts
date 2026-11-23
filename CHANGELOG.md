@@ -5,6 +5,12 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Motion can be turned off: `Animate="false"` on `RioChart` turns off the series' entry fade and
+  the short fades of the tooltip, buttons and dimmed series. The CSS variable `--rio-enter-duration`
+  sets the entry fade's length (default `0.35s`, `0s` turns it off). `prefers-reduced-motion` now
+  turns off all of these, not only the entry fade and the dimming. The Theming page explains what
+  moves and what doesn't (data changes, zoom and streaming never animate).
+
 - Docs: the "Tooltips, clicks and zoom" page is split into four pages (Tooltips; Clicks and
   selection; Zoom and pan; Keyboard access), with one feature per example. The old
   `/interaction` address opens the Tooltips page.
