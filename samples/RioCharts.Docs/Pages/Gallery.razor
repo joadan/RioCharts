@@ -9,20 +9,20 @@
 
 <div class="gallery chart-gallery">
     <a class="tile" href="lines-and-areas#curves">
-        <RioChart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Reading" Height="170" Legend="NoLegend">
             <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
             <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
         <span class="tile-label">Line <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="lines-and-areas#areas">
-        <RioChart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Reading" Height="170" Legend="NoLegend">
             <AreaSeries Items="Revenue" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
         <span class="tile-label">Area <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="lines-and-areas#stacked-areas">
-        <RioChart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Reading" Height="170" Legend="NoLegend">
             <AreaSeries Items="Search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" Curve="CurveType.Monotone" />
             <AreaSeries Items="Social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" Curve="CurveType.Monotone" />
             <AreaSeries Items="Email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" Curve="CurveType.Monotone" />
@@ -30,21 +30,21 @@
         <span class="tile-label">Stacked area <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="lines-and-areas#range-areas">
-        <RioChart TItem="DayRange" Items="RevenueHistory" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="DayRange" Items="RevenueHistory" Height="170" Legend="NoLegend">
             <RangeAreaSeries Name="Last 3 years" XValue="d => d.Date" LowValue="d => d.Low" HighValue="d => d.High" Curve="CurveType.Monotone" />
             <LineSeries Name="Average" XValue="d => d.Date" YValue="d => d.Average" Curve="CurveType.Monotone" />
         </RioChart>
         <span class="tile-label">Range area <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="bars#grouped-bars">
-        <RioChart TItem="Sales" Items="Quarters" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Sales" Items="Quarters" Height="170" Legend="NoLegend">
             <BarSeries Name="2025" XValue="s => s.Quarter" YValue="s => s.LastYear" />
             <BarSeries Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
         </RioChart>
         <span class="tile-label">Grouped bars <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="bars#stacked-bars-with-data-labels">
-        <RioChart TItem="Monthly" Items="Mix" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Monthly" Items="Mix" Height="170" Legend="NoLegend">
             <BarSeries Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="mix" />
             <BarSeries Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Stack="mix" />
             <BarSeries Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Stack="mix" />
@@ -52,26 +52,26 @@
         <span class="tile-label">Stacked bars <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="bars#horizontal-bars">
-        <RioChart TItem="Share" Items="CategoryRevenue" Horizontal="true" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Share" Items="CategoryRevenue" Horizontal="true" Height="170" Legend="NoLegend">
             <BarSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" />
         </RioChart>
         <span class="tile-label">Horizontal bars <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="bars#bars-and-a-line">
-        <RioChart TItem="Reading" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Reading" Height="170" Legend="NoLegend">
             <BarSeries Items="DailyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
             <LineSeries Items="OrdersAverage" Name="7-day average" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
         <span class="tile-label">Bars and a line <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="scatter">
-        <RioChart TItem="Delivery" Items="Deliveries" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Delivery" Items="Deliveries" Height="170" Legend="NoLegend">
             <ScatterSeries Name="Delivery" XValue="d => d.Km" YValue="d => d.Hours" MarkerSize="3" />
         </RioChart>
         <span class="tile-label">Scatter <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="scatter#bubbles">
-        <RioChart TItem="Store" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Store" Height="170" Legend="NoLegend">
             @foreach (var (city, stores) in StoresPerCity)
             {
                 <ScatterSeries Items="stores" Name="@city" XValue="s => s.Area" YValue="s => s.Revenue" SizeValue="s => s.Visitors" />
@@ -80,7 +80,7 @@
         <span class="tile-label">Bubble <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="heatmap">
-        <RioChart TItem="HourCount" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="HourCount" Height="170" Legend="NoLegend">
             @foreach (var (day, hours) in WeekTraffic)
             {
                 <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" />
@@ -89,64 +89,64 @@
         <span class="tile-label">Heatmap <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="box-plots">
-        <RioChart TItem="Percentiles" Items="ResponseTimes" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Percentiles" Items="ResponseTimes" Height="170" Legend="NoLegend">
             <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint" LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
                            Q3Value="p => p.P75" HighValue="p => p.P95" />
         </RioChart>
         <span class="tile-label">Box plot <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="histogram">
-        <RioChart TItem="Delivery" Items="Deliveries" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Delivery" Items="Deliveries" Height="170" Legend="NoLegend">
             <HistogramSeries Name="Deliveries" XValue="d => d.Hours" />
         </RioChart>
         <span class="tile-label">Histogram <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="range-bars">
-        <RioChart TItem="Stage" Items="Schedule" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Stage" Items="Schedule" Height="170" Legend="NoLegend">
             <RangeBarSeries Name="Schedule" RowValue="s => s.Name" StartValue="s => s.Start" EndValue="s => s.End" />
         </RioChart>
         <span class="tile-label">Range bar / timeline <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="candlesticks">
-        <RioChart TItem="PriceDay" Items="Prices" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="PriceDay" Items="Prices" Height="170" Legend="NoLegend">
             <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
                                LowValue="p => p.Lowest" CloseValue="p => p.Last" DirectionColors="true" />
         </RioChart>
         <span class="tile-label">Candlestick <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="waterfall">
-        <RioChart TItem="Step" Items="Result" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Step" Items="Result" Height="170" Legend="NoLegend">
             <WaterfallSeries Name="Result" XValue="s => s.Name" YValue="s => s.Amount" IsTotal="s => s.IsTotal" />
         </RioChart>
         <span class="tile-label">Waterfall <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="radar">
-        <RioChart TItem="LaptopScore" Items="LaptopScores" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="LaptopScore" Items="LaptopScores" Height="170" Legend="NoLegend">
             <RadarSeries Name="Laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
             <RadarSeries Name="Class average" XValue="s => s.Measure" YValue="s => s.Average" />
         </RioChart>
         <span class="tile-label">Radar <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="treemap">
-        <RioChart TItem="Country" Items="Countries" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Country" Items="Countries" Height="170" Legend="NoLegend">
             <TreemapSeries Name="Population" XValue="@(c => $"{c.Continent}/{c.Name}")" YValue="c => c.Millions" />
         </RioChart>
         <span class="tile-label">Treemap <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="pies#pie">
-        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend">
             <PieSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" />
         </RioChart>
         <span class="tile-label">Pie <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="pies#donut">
-        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend">
             <DonutSeries XValue="s => s.Name" YValue="s => s.Value" />
         </RioChart>
         <span class="tile-label">Donut <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="pies#radial-bars">
-        <RioChart TItem="Share" Items="Goals" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+        <RioChart TItem="Share" Items="Goals" Height="170" Legend="NoLegend">
             <RadialBarSeries XValue="s => s.Name" YValue="s => s.Value" Max="100" />
         </RioChart>
         <span class="tile-label">Radial bars <span aria-hidden="true">→</span></span>
@@ -169,7 +169,6 @@
 
 @code {
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
-    private static readonly TooltipOptions NoTooltip = new() { Enabled = false };
 
     private sealed record Stage(string Name, DateOnly Start, DateOnly End);
 

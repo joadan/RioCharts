@@ -1017,6 +1017,11 @@ table.docs tr:last-child td {
     margin-top: 28px;
 }
 
+/* Gallery tiles show tooltips; a click still follows the tile's link. */
+.chart-gallery .tile .rio-chart {
+    pointer-events: auto;
+}
+
 .gallery-sparks {
     display: flex;
     flex-direction: column;
