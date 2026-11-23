@@ -56,7 +56,8 @@ through CSS variables, PNG/SVG/CSV download, keyboard navigation, screen reader 
 built-in texts in eight languages.
 
 Coming from Blazor-ApexCharts? The concepts map closely: see
-[the mapping](https://riocharts.com/from-apexcharts).
+[the mapping](https://riocharts.com/from-apexcharts). Blazor-ApexCharts is production ready and
+battle-proven; RioCharts is an early preview, so expect changes before 1.0.
 
 ## Images on the server
 
