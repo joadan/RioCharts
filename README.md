@@ -57,7 +57,8 @@ built-in texts in eight languages.
 
 Coming from Blazor-ApexCharts? The concepts map closely: see
 [the mapping](https://riocharts.com/from-apexcharts). Blazor-ApexCharts is production ready and
-battle-proven; RioCharts is an early preview, so expect changes before 1.0.
+battle-proven; RioCharts is an early preview, so expect changes before 1.0. It is an alternative
+approach, not an attempt to match Blazor-ApexCharts feature for feature.
 
 ## Images on the server
 
