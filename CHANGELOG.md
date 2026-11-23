@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Horizontal box plots and waterfalls: `Horizontal="true"` on the chart (`"horizontal": true` in JSON) now lays
+  `BoxPlotSeries` and `WaterfallSeries` on their side, with the categories down the left, first on top, as for bars.
+  They share a row with bar series in slots. Docs: an example on the Box plots and Waterfall pages.
 - Diverging colors on heatmaps and maps: `Midpoint` on `HeatmapSeries` and `MapSeries` (`"midpoint"` in JSON)
   colors values above it in the series color and values below it in `BelowColor` (`"belowColor"`, default
   `--rio-negative`), each stronger the further it is from the midpoint. For changes (0) or values around a normal

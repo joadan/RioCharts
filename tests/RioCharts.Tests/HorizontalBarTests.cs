@@ -141,10 +141,110 @@ public class HorizontalBarTests
         var empty = Layout(Spec(), new() { ["r"] = SeriesData.Empty });
         var compact = Layout(Spec() with { Compact = true }, Revenue(1, 2, 3), Options with { Width = 120, Height = 40 });
 
-        Assert.Contains(mixed.Warnings, w => w.Contains("cannot be drawn in a horizontal bar chart", StringComparison.Ordinal));
+        Assert.Contains(mixed.Warnings, w => w.Contains("cannot be drawn in a horizontal chart", StringComparison.Ordinal));
         Assert.Contains(All(empty.Scene), n => n is TextNode { Text: "No data available" });
         Assert.Equal(3, Bars(compact).Count);
         Assert.DoesNotContain(All(compact.Scene), n => n is TextNode);
+    }
+
+    // ---------- Box plots ----------
+
+    // Outdoor temperatures in °C at two weather stations; the second has one reading far off.
+    private static Dictionary<string, SeriesData> Temperatures() => new()
+    {
+        ["t"] = SeriesData.FromCategories(["Station 1", "Station 2"], [0.0, 0]).WithBox(
+        [
+            BoxSummary.FromValues([18.0, 18.5, 19.0, 19.5, 20.0, 20.5, 21.0]),
+            BoxSummary.FromValues([19.0, 19.2, 19.4, 19.6, 19.8, 20.0, 27.5]),
+        ]),
+    };
+
+    [Fact]
+    public void Box_plots_lie_down_with_the_median_as_a_vertical_line()
+    {
+        var layout = Layout(Spec(new SeriesOptions { Id = "t", Name = "Temperature", Type = SeriesType.BoxPlot, Format = "0.0" }), Temperatures());
+
+        var x = layout.YScale;
+        var boxes = All(layout.Scene.Series).OfType<RectNode>().Where(n => n.Class == "rio-box").ToList();
+        Assert.Equal(2, boxes.Count);
+        Assert.Equal(x.Map(18.75), boxes[0].Bounds.X, 1); // from the lower quartile ...
+        Assert.Equal(x.Map(20.25), boxes[0].Bounds.Right, 1); // ... to the upper one
+        Assert.True(boxes[1].Bounds.Y > boxes[0].Bounds.Bottom); // Station 2 below Station 1
+        Assert.Contains(All(layout.Scene.Series), n => n is PathNode { Class: "rio-medians" });
+        Assert.Contains(All(layout.Scene.Series), n => n is PathNode { Class: "rio-whiskers" });
+        Assert.Contains(All(layout.Scene.Series), n => n is PathNode { Class: "rio-outliers" });
+        Assert.True(x.DomainMax >= 27.5 && x.DomainMin > 0); // the outlier fits; no forced zero
+        Assert.Empty(layout.Warnings);
+
+        var s = layout.Tooltip.Series.Single();
+        Assert.Equal(["Station 1", "Station 2"], s.XLabels);
+        Assert.Equal("19.6", s.Values[1]);
+        Assert.Equal(["27.5", "19.9", "19.6", "19.3", "19.0", "7", "1: 27.5"], s.PartValues![1]);
+        Assert.Equal(boxes[0].Bounds.Width, s.CellWidths![0], 0.5);
+    }
+
+    [Fact]
+    public void Box_plots_and_bars_share_the_row_in_slots()
+    {
+        var data = Temperatures();
+        data["b"] = SeriesData.FromCategories(["Station 1", "Station 2"], [19.5, 20.1]);
+        var layout = Layout(Spec(new SeriesOptions { Id = "t", Type = SeriesType.BoxPlot, Stack = "s" }, new SeriesOptions { Id = "b", Type = SeriesType.Bar, Stack = "s" }), data);
+
+        var box = All(layout.Scene.Series).OfType<RectNode>().First(n => n.Class == "rio-box");
+        var bar = Bars(layout, "b")[0];
+        Assert.True(bar.Bounds.Y >= box.Bounds.Bottom - 0.5); // the bar's slot is below the box, not stacked onto it
+        Assert.Equal(0, layout.YScale.DomainMin); // the bars bring in zero
+    }
+
+    // ---------- Waterfalls ----------
+
+    // A month's result in k€: revenue, two costs, a subtotal and the result.
+    private static Dictionary<string, SeriesData> Result() => new()
+    {
+        ["w"] = SeriesData.FromCategories(["Revenue", "Cost of sales", "Gross profit", "Salaries", "Result"], [420.0, -180, double.NaN, -150, double.NaN])
+            .WithTotals([false, false, true, false, true]),
+    };
+
+    [Fact]
+    public void Waterfalls_run_down_the_rows_from_the_running_total()
+    {
+        var layout = Layout(Spec(new SeriesOptions { Id = "w", Name = "Result", Type = SeriesType.Waterfall, DataLabels = true }), Result());
+
+        var x = layout.YScale;
+        var bars = All(layout.Scene.Series).OfType<RectNode>().Where(n => n.Class?.StartsWith("rio-waterfall", StringComparison.Ordinal) == true).ToList();
+        Assert.Equal(5, bars.Count);
+        Assert.Equal(x.Map(0), bars[0].Bounds.X, 1); // revenue: 0 to 420
+        Assert.Equal(x.Map(420), bars[0].Bounds.Right, 1);
+        Assert.Equal(x.Map(240), bars[1].Bounds.X, 1); // cost of sales: from 420 back to 240
+        Assert.Equal(x.Map(420), bars[1].Bounds.Right, 1);
+        Assert.Equal(x.Map(240), bars[2].Bounds.Right, 1); // gross profit: a total from zero
+        Assert.Equal("rio-waterfall rio-waterfall-total", bars[2].Class);
+        Assert.Equal(x.Map(90), bars[4].Bounds.Right, 1); // the result
+        Assert.True(bars[1].Bounds.Y > bars[0].Bounds.Bottom); // first on top
+        Assert.Equal(0, x.DomainMin);
+
+        var styles = layout.Scene.Styles!;
+        Assert.Equal(ThemeTokens.Positive, styles.Get(bars[0].Style).Fill);
+        Assert.Equal(ThemeTokens.Negative, styles.Get(bars[1].Style).Fill);
+        Assert.Contains(All(layout.Scene.Series), n => n is PathNode { Class: "rio-connectors" });
+        Assert.Contains(All(layout.Scene.Series), n => n is TextNode { Class: "rio-data-label", Text: "-180" });
+
+        var s = layout.Tooltip.Series.Single();
+        Assert.Equal(["+420", "-180", "240", "-150", "90"], s.Values.Select(v => v.Replace('−', '-')));
+        Assert.Equal(["Total"], s.PartLabels!);
+        Assert.Equal("240", s.PartValues![1][0]); // the running total after the change
+        Assert.Equal("", s.PartValues[2][0]); // a total shows its value alone
+        Assert.Equal(ThemeTokens.Negative, s.PointColors![1]);
+    }
+
+    [Fact]
+    public void A_json_box_plot_or_waterfall_turns_sideways_with_horizontal()
+    {
+        var parsed = ChartDefinitionJson.Parse("""{ "horizontal": true, "series": [ { "type": "waterfall", "x": "step", "y": "amount" } ] }""");
+
+        Assert.Empty(parsed.Errors);
+        Assert.True(parsed.Definition!.Horizontal);
+        Assert.Contains(" Horizontal=\"true\"", ChartRazor.FromDefinition(parsed.Definition, "Row", "rows"), StringComparison.Ordinal);
     }
 
     [Theory]

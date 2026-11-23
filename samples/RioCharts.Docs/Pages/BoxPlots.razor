@@ -51,11 +51,26 @@
     </ChildContent>
 </Example>
 
+<Example Title="Lying down" Code="@HorizontalCode">
+    <Description>
+        <p>
+            With <code>Horizontal="true"</code> on the chart, the boxes run left to right with the categories down the side, first on top:
+            room for long names such as endpoint paths. <code>YAxis</code> still sets the value axis (title, format, min and max).
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Percentiles" Items="ResponseTimes" YAxis="Milliseconds" Height="260" Horizontal="true">
+            <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint" LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
+                           Q3Value="p => p.P75" HighValue="p => p.P95" Format="0 'ms'" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <h2>In JSON definitions</h2>
 <p>
     <code>"type": "boxPlot"</code> (also <code>"box"</code>) with <code>x</code> and <code>y</code> computes the boxes from the rows' y values
     per x. With <code>q1</code> and <code>q3</code> (and <code>low</code>, <code>high</code>), each row is a box and <code>y</code> its median.
-    Automatic chart types never pick a box plot.
+    <code>"horizontal": true</code> lays the boxes down. Automatic chart types never pick a box plot.
 </p>
 
 @code {
@@ -78,6 +93,14 @@
 
     private const string PrecomputedCode = """
         <RioChart TItem="Percentiles" Items="responseTimes">
+            <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint"
+                           LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
+                           Q3Value="p => p.P75" HighValue="p => p.P95" Format="0 'ms'" />
+        </RioChart>
+        """;
+
+    private const string HorizontalCode = """
+        <RioChart TItem="Percentiles" Items="responseTimes" Horizontal="true">
             <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint"
                            LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
                            Q3Value="p => p.P75" HighValue="p => p.P95" Format="0 'ms'" />

@@ -81,10 +81,97 @@ public static partial class ChartLayout
         }
     }
 
+    /// <summary>Series types a horizontal chart draws: bars, box plots, waterfalls and dumbbells.</summary>
+    private static bool DrawsHorizontally(SeriesType type) => type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Waterfall or SeriesType.Dumbbell;
+
+    /// <summary>A horizontal box's height in its slot: as for upright boxes, at most 56 px.</summary>
+    private static double BoxHeight(double slot) => Math.Clamp(slot - (slot > 12 ? 6 : 0), 1, 56);
+
+    /// <summary>
+    /// Horizontal box plots: in each row's slot a box from the lower to the upper quartile with a stronger median
+    /// line, thin whiskers out to the whisker ends and outliers as small hollow dots, as for upright boxes.
+    /// </summary>
+    private static void HorizontalBoxes(Resolved r, (double Q1, double Q3, int Index)[] boxes, Func<SeriesData, int, int> rowOf, BandScale band, int slot,
+        double thickness, Scales.ContinuousScale valueScale, StyleTable styles, List<Node> nodes, List<(float X, float Y, float Width, int Index, int Row, double Share)> points)
+    {
+        const double outlierRadius = 2.5;
+        if (r.Data.Box is not { } box)
+        {
+            return;
+        }
+
+        var h = BoxHeight(thickness);
+        var boxStyle = styles.Add($"series-{r.ColorIndex}-box", new Style { Fill = r.Color, FillOpacity = 0.22f, Stroke = r.Color, StrokeWidth = 1f });
+        var whiskers = new PathBuilder();
+        var medians = new PathBuilder();
+        var outliers = new PathBuilder();
+        var (hasWhiskers, hasOutliers) = (false, false);
+        var rects = new List<Node>();
+        foreach (var (q1, q3, i) in boxes)
+        {
+            var row = rowOf(r.Data, i);
+            var cy = band.Start(row) + slot * thickness + thickness / 2;
+            var (x1, x3, xm) = (valueScale.Map(q1), valueScale.Map(q3), valueScale.Map(r.Data.Y[i]));
+            var (left, right) = (Math.Min(x1, x3), Math.Max(x1, x3));
+            rects.Add(new RectNode(new RectF((float)left, (float)(cy - h / 2), (float)Math.Max(1, right - left), (float)h), boxStyle)
+            {
+                CornerRadius = (float)Math.Min(2, h / 6),
+                Class = "rio-box",
+            });
+            medians.MoveTo(xm, cy - h / 2).LineTo(xm, cy + h / 2);
+            if (double.IsFinite(box.High[i]) && box.High[i] > q3)
+            {
+                whiskers.MoveTo(x3, cy).LineTo(valueScale.Map(box.High[i]), cy);
+                hasWhiskers = true;
+            }
+
+            if (double.IsFinite(box.Low[i]) && box.Low[i] < q1)
+            {
+                whiskers.MoveTo(x1, cy).LineTo(valueScale.Map(box.Low[i]), cy);
+                hasWhiskers = true;
+            }
+
+            foreach (var v in box.OutliersOf(i))
+            {
+                var ox = valueScale.Map(v);
+                outliers.MoveTo(ox, cy - outlierRadius).Arc(ox, cy, outlierRadius, 0, Math.PI * 2).Close();
+                hasOutliers = true;
+            }
+
+            points.Add(((float)((left + right) / 2), (float)cy, (float)Math.Max(6, right - left), i, row, 0));
+        }
+
+        if (hasWhiskers)
+        {
+            nodes.Add(new PathNode(whiskers.Build(), styles.Add($"series-{r.ColorIndex}-whisker", new Style { Stroke = r.Color, StrokeWidth = 1f, Fill = "none" }))
+            {
+                Class = "rio-whiskers",
+            });
+        }
+
+        nodes.AddRange(rects);
+        if (rects.Count > 0)
+        {
+            nodes.Add(new PathNode(medians.Build(), styles.Add($"series-{r.ColorIndex}-median", new Style { Stroke = r.Color, StrokeWidth = 1.75f, Fill = "none" }))
+            {
+                Class = "rio-medians",
+            });
+        }
+
+        if (hasOutliers)
+        {
+            nodes.Add(new PathNode(outliers.Build(), styles.Add($"series-{r.ColorIndex}-outlier", new Style { Fill = ThemeTokens.Surface, Stroke = r.Color, StrokeWidth = 1f }))
+            {
+                Class = "rio-outliers",
+            });
+        }
+    }
+
     /// <summary>
     /// Horizontal bars (<see cref="ChartDefinition.Horizontal"/>): categories down the left side, first on
     /// top, values along the bottom (<see cref="ChartDefinition.Y"/> formats them). Several bar series are
-    /// grouped side by side in each row, or stacked with <see cref="SeriesOptions.Stack"/>. Value lines and
+    /// grouped side by side in each row, or stacked with <see cref="SeriesOptions.Stack"/>. Box plots and
+    /// waterfalls take a slot like a bar series; a waterfall runs down the rows. Value lines and
     /// bands from the annotations are drawn across the rows.
     /// </summary>
     private static ChartLayoutResult ComputeHorizontal(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles,
@@ -100,14 +187,17 @@ public static partial class ChartLayout
         var lineHeight = font * 1.3;
         var chrome = FitChrome(spec.AutoCompact && !compact, width, height, font);
 
-        foreach (var r in resolved.Where(r => r.Spec.Type is not (SeriesType.Bar or SeriesType.Dumbbell)))
+        foreach (var r in resolved.Where(r => !DrawsHorizontally(r.Spec.Type)))
         {
-            warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} series cannot be drawn in a horizontal bar chart; the series is skipped.");
+            warnings.Add($"series '{r.Spec.Id}': {r.Spec.Type} series cannot be drawn in a horizontal chart; the series is skipped.");
         }
 
-        // Bars and dumbbells; dumbbells sit in the middle of the row, bars share it in slots.
-        var bars = resolved.Where(r => r.Spec.Type is SeriesType.Bar or SeriesType.Dumbbell).ToList();
+        // Bars, box plots, waterfalls and dumbbells; dumbbells sit in the middle of the row, the others share it in slots.
+        var bars = resolved.Where(r => DrawsHorizontally(r.Spec.Type)).ToList();
         static bool IsDumbbell(Resolved r) => r.Spec.Type == SeriesType.Dumbbell;
+        static bool IsBox(Resolved r) => r.Spec.Type == SeriesType.BoxPlot;
+        static bool IsWaterfall(Resolved r) => r.Spec.Type == SeriesType.Waterfall;
+        static bool IsBar(Resolved r) => r.Spec.Type == SeriesType.Bar;
         var xKind = ResolveXKind(spec.X.Scale, bars);
 
         // ---------- Rows: categories, or the distinct x values as labels ----------
@@ -132,7 +222,7 @@ public static partial class ChartLayout
         var hasData = drawn.Count > 0 && rows.Count > 0;
 
         // ---------- Values, stacks and the value range ----------
-        static string KeyOf(Resolved r) => r.StackGroup is { } s ? "stack|" + s : "series|" + r.Spec.Id;
+        static string KeyOf(Resolved r) => r.StackGroup is { } s && IsBar(r) ? "stack|" + s : "series|" + r.Spec.Id;
         var slotKeys = drawn.Where(r => !IsDumbbell(r)).Select(KeyOf).Distinct().ToList();
         var segments = new Dictionary<Resolved, (double Start, double End, int Index)[]>();
         var stacks = new Dictionary<(string Key, int Row, bool Positive), double>();
@@ -140,12 +230,34 @@ public static partial class ChartLayout
         foreach (var r in drawn)
         {
             var key = KeyOf(r);
-            var stacked = r.StackGroup is not null && !IsDumbbell(r);
+            var stacked = r.StackGroup is not null && IsBar(r);
             var list = new List<(double, double, int)>();
             for (var i = 0; i < r.Data.Count; i++)
             {
                 var v = r.Data.Y[i];
                 var row = rowOf(r.Data, i);
+                if (IsBox(r))
+                {
+                    // From the lower to the upper quartile; the whiskers and outliers come from the box.
+                    if (row >= 0 && r.Data.Box is { } box && double.IsFinite(v) && double.IsFinite(box.Q1[i]) && double.IsFinite(box.Q3[i]))
+                    {
+                        list.Add((box.Q1[i], box.Q3[i], i));
+                    }
+
+                    continue;
+                }
+
+                if (IsWaterfall(r))
+                {
+                    // From the running total before the change to the one after (a total from zero).
+                    if (row >= 0 && r.Lower is { } lower && double.IsFinite(r.Upper[i]) && double.IsFinite(lower[i]))
+                    {
+                        list.Add((lower[i], r.Upper[i], i));
+                    }
+
+                    continue;
+                }
+
                 if (IsDumbbell(r))
                 {
                     // From its first value to its second; either may be missing.
@@ -178,8 +290,8 @@ public static partial class ChartLayout
             segments[r] = [.. list];
         }
 
-        // Bars start at zero; dumbbells alone fit their values.
-        var withZero = drawn.Any(r => !IsDumbbell(r)) || drawn.Count == 0;
+        // Bars and waterfalls start at zero; box plots and dumbbells alone fit their values.
+        var withZero = drawn.Any(r => IsBar(r) || IsWaterfall(r)) || drawn.Count == 0;
         double vMin = withZero ? 0 : double.PositiveInfinity, vMax = withZero ? 0 : double.NegativeInfinity;
         foreach (var r in drawn)
         {
@@ -197,9 +309,23 @@ public static partial class ChartLayout
                 continue;
             }
 
+            if (IsBox(r) && r.Data.Box is { } box)
+            {
+                // The extremes, outliers included.
+                foreach (var (_, _, i) in list)
+                {
+                    foreach (var v in new[] { box.Min[i], box.Low[i], box.Q1[i], box.Q3[i], box.High[i], box.Max[i] }.Where(double.IsFinite))
+                    {
+                        (vMin, vMax) = (Math.Min(vMin, v), Math.Max(vMax, v));
+                    }
+                }
+
+                continue;
+            }
+
             for (var n = 0; n < list.Length; n++)
             {
-                if (r.Percent && totals.TryGetValue((KeyOf(r), rowOf(r.Data, list[n].Index)), out var total))
+                if (r.Percent && IsBar(r) && totals.TryGetValue((KeyOf(r), rowOf(r.Data, list[n].Index)), out var total))
                 {
                     list[n] = (Share(list[n].Start, total), Share(list[n].End, total), list[n].Index);
                 }
@@ -220,7 +346,7 @@ public static partial class ChartLayout
             }
         }
 
-        var percent = drawn.Any(r => r.Percent);
+        var percent = drawn.Any(r => r.Percent && IsBar(r));
         var valueFormat = spec.Y.Format ?? (percent ? "P0" : null);
 
         var lines = new List<(Annotation Spec, double A, double B)>();
@@ -371,7 +497,7 @@ public static partial class ChartLayout
         foreach (var r in drawn)
         {
             var slot = slotKeys.IndexOf(KeyOf(r));
-            var stacked = r.StackGroup is not null;
+            var stacked = r.StackGroup is not null && IsBar(r);
             var style = styles.Add($"series-{r.ColorIndex}-bar", new Style { Fill = r.Color });
             var format = r.Spec.Format ?? spec.Y.Format;
             var nodes = new List<Node>();
@@ -382,18 +508,48 @@ public static partial class ChartLayout
             {
                 HorizontalDumbbells(r, segments[r], rowOf, band, valueScale, plot, compact, measure, font, culture, format, styles, nodes, labelNodes, points);
             }
+            else if (IsBox(r))
+            {
+                HorizontalBoxes(r, segments[r], rowOf, band, slot, thickness, valueScale, styles, nodes, points);
+            }
 
-            foreach (var (start, end, i) in IsDumbbell(r) ? [] : segments[r])
+            var connectors = IsWaterfall(r) ? new PathBuilder() : null;
+            var hasConnectors = false;
+            (double X, double Bottom)? previous = null;
+            foreach (var (start, end, i) in IsDumbbell(r) || IsBox(r) ? [] : segments[r])
             {
                 var row = rowOf(r.Data, i);
                 var top = band.Start(row) + slot * thickness + gap / 2.0;
                 var h = Math.Max(1, thickness - gap);
                 var (x0, x1) = (valueScale.Map(Math.Min(start, end)), valueScale.Map(Math.Max(start, end)));
-                var own = (r.Data.Colors?[i] ?? Series.ColorBands.ColorOf(r.Spec.ColorBands, r.Data.Y[i])) is { } color ? styles.Add($"bar-{color}", new Style { Fill = color }) : style;
-                nodes.Add(new RectNode(new RectF((float)x0, (float)top, (float)Math.Max(0.5, x1 - x0), (float)h), own)
+                if (IsWaterfall(r))
                 {
-                    CornerRadius = stacked ? 0 : (float)Math.Min(3, h / 4),
-                });
+                    // Rises in the positive color, falls in the negative one, totals in the series color; a thin
+                    // line carries each bar's end down to the next bar.
+                    var color = Series.WaterfallSeriesType.ColorOf(r.Data, i, r.Color);
+                    var total = r.Data.Totals is { } flags && flags[i];
+                    nodes.Add(new RectNode(new RectF((float)x0, (float)top, (float)Math.Max(start == end ? 0 : 1, x1 - x0), (float)h),
+                        styles.Add($"bar-{color}", new Style { Fill = color }))
+                    {
+                        CornerRadius = (float)Math.Min(2, h / 6),
+                        Class = total ? "rio-waterfall rio-waterfall-total" : "rio-waterfall",
+                    });
+                    if (previous is { } p)
+                    {
+                        connectors!.MoveTo(p.X, p.Bottom).LineTo(p.X, top);
+                        hasConnectors = true;
+                    }
+
+                    previous = (valueScale.Map(end), top + h);
+                }
+                else
+                {
+                    var own = (r.Data.Colors?[i] ?? Series.ColorBands.ColorOf(r.Spec.ColorBands, r.Data.Y[i])) is { } color ? styles.Add($"bar-{color}", new Style { Fill = color }) : style;
+                    nodes.Add(new RectNode(new RectF((float)x0, (float)top, (float)Math.Max(0.5, x1 - x0), (float)h), own)
+                    {
+                        CornerRadius = stacked ? 0 : (float)Math.Min(3, h / 4),
+                    });
+                }
                 points.Add(((float)((x0 + x1) / 2), (float)(top + h / 2), (float)Math.Max(6, x1 - x0), i, row, end - start));
                 if (errors is not null && RawErrorAt(r, i) is var (low, high) && double.IsFinite(low))
                 {
@@ -432,6 +588,14 @@ public static partial class ChartLayout
                 }
             }
 
+            if (hasConnectors)
+            {
+                nodes.Add(new PathNode(connectors!.Build(), styles.Add("waterfall-connector", new Style { Stroke = ThemeTokens.Axis, StrokeWidth = 1f, Fill = "none" }))
+                {
+                    Class = "rio-connectors",
+                });
+            }
+
             if (anyError)
             {
                 nodes.Add(new PathNode(errors!.Build(), styles.Add("error-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.25f, Fill = "none" }))
@@ -447,7 +611,13 @@ public static partial class ChartLayout
             seriesNodes.Add(new GroupNode(nodes)
             {
                 Key = "series:" + r.Spec.Id,
-                Class = IsDumbbell(r) ? "rio-series rio-series-dumbbell" : "rio-series rio-series-bar",
+                Class = r.Spec.Type switch
+                {
+                    SeriesType.Dumbbell => "rio-series rio-series-dumbbell",
+                    SeriesType.BoxPlot => "rio-series rio-series-boxplot",
+                    SeriesType.Waterfall => "rio-series rio-series-waterfall",
+                    _ => "rio-series rio-series-bar",
+                },
                 AriaLabel = texts.FillCount(nameof(ChartTexts.SeriesPoints), points.Count, culture, r.Spec.DisplayName, points.Count),
             });
 
@@ -455,16 +625,31 @@ public static partial class ChartLayout
             var hits = new HitTestIndex.SeriesHits(r.Spec.Id, [.. points.Select(p => p.X)], [.. points.Select(p => p.Y)], [.. points.Select(p => p.Index)],
                 [.. points.Select(p => r.Data.ToSourceIndex(p.Index))]);
             hitTest.Add(hits);
+            bool IsTotal(int i) => r.Data.Totals is { } flags && flags[i];
             tooltipSeries.Add(new TooltipSeries(r.Spec.Id, r.Spec.DisplayName, r.Color, SeriesType.Bar, 0, 0, 0, hits.X, hits.Y, hits.Index,
                 [.. points.Select(p => rows[p.Row])],
-                [.. points.Select(p => IsDumbbell(r)
-                    ? Series.DumbbellSeriesType.Text(r.Data.Low?[p.Index] ?? double.NaN, r.Data.Y[p.Index], culture, format)
-                    : ValueFormatter.Format(r.Data.Y[p.Index], culture, format) + (HasErrors(r) ? ErrorText(r, p.Index, culture, format) : "")
-                        + (r.Percent ? $" ({p.Share.ToString("P0", culture)})" : ""))])
+                [.. points.Select(p => r.Spec.Type switch
+                {
+                    SeriesType.Dumbbell => Series.DumbbellSeriesType.Text(r.Data.Low?[p.Index] ?? double.NaN, r.Data.Y[p.Index], culture, format),
+                    // A change with its sign; a total bar shows the total.
+                    SeriesType.Waterfall => IsTotal(p.Index)
+                        ? ValueFormatter.Format(r.Upper[p.Index], culture, format)
+                        : (r.Data.Y[p.Index] > 0 ? "+" : "") + ValueFormatter.Format(r.Data.Y[p.Index], culture, format),
+                    _ => ValueFormatter.Format(r.Data.Y[p.Index], culture, format) + (HasErrors(r) ? ErrorText(r, p.Index, culture, format) : "")
+                        + (r.Percent && IsBar(r) ? $" ({p.Share.ToString("P0", culture)})" : ""),
+                })])
             {
-                CellHeight = (float)(IsDumbbell(r) ? Series.DumbbellSeriesType.Radius * 2 + 6 : Math.Max(1, thickness - gap)),
+                CellHeight = (float)(IsDumbbell(r) ? Series.DumbbellSeriesType.Radius * 2 + 6 : IsBox(r) ? BoxHeight(thickness) : Math.Max(1, thickness - gap)),
                 CellWidths = [.. points.Select(p => p.Width)],
-                PointColors = r.Data.Colors is null && r.Spec.ColorBands is null
+                PartLabels = IsBox(r) && r.Data.Box is not null ? BoxPartLabels(texts) : IsWaterfall(r) ? [texts.Total] : null,
+                PartValues = IsBox(r) && r.Data.Box is { } box
+                    ? [.. points.Select(p => BoxPartValues(box, p.Index, r.Data.Y[p.Index], culture, format))]
+                    : IsWaterfall(r)
+                    ? [.. points.Select(p => new[] { IsTotal(p.Index) ? "" : ValueFormatter.Format(r.Upper[p.Index], culture, format) })]
+                    : null,
+                PointColors = IsWaterfall(r)
+                    ? [.. points.Select(p => Series.WaterfallSeriesType.ColorOf(r.Data, p.Index, r.Color))]
+                    : r.Data.Colors is null && r.Spec.ColorBands is null
                     ? null
                     : [.. points.Select(p => r.Data.Colors?[p.Index] ?? Series.ColorBands.ColorOf(r.Spec.ColorBands, r.Data.Y[p.Index]) ?? r.Color)],
             });

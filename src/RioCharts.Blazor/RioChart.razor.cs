@@ -202,8 +202,8 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public bool AutoCompact { get; set; } = true;
 
     /// <summary>
-    /// Bar charts: bars run left to right, with the categories down the side (first on top). For
-    /// rankings and long category names. <see cref="YAxis"/> (title, format, min, max) applies to the values.
+    /// Bar, box plot, waterfall and dumbbell charts: they run left to right, with the categories down the side
+    /// (first on top). For rankings and long category names. <see cref="YAxis"/> (title, format, min, max) applies to the values.
     /// </summary>
     [Parameter] public bool Horizontal { get; set; }
 

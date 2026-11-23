@@ -526,6 +526,45 @@ public class SnapshotTests
             ["b"] = Categories(["Trail shoe · Ridge 2", "Rain jacket · Storm", "Headlamp · Beam 400", "Merino base layer, long sleeve", "Tent · Dome 2p"], 128, 92, 71, 58, 22),
         }, Height: 340),
 
+        // Outdoor temperatures in °C per weather station, lying down: this week and last week in each row.
+        ["box-plot-horizontal"] = new(new ChartDefinition
+        {
+            Horizontal = true,
+            Y = new AxisOptions { Title = "Temperature °C", Format = "0.0" },
+            Series =
+            [
+                new SeriesOptions { Id = "now", Name = "This week", Type = SeriesType.BoxPlot },
+                new SeriesOptions { Id = "before", Name = "Last week", Type = SeriesType.BoxPlot },
+            ],
+        }, new()
+        {
+            ["now"] = SeriesData.FromCategories(["Station 1", "Station 2", "Station 3"], [0.0, 0, 0]).WithBox(
+            [
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.5 + Math.Sin(i * 1.7) * 0.6)),
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 20.0 + Math.Sin(i * 2.3) * 2.2)),
+                BoxSummary.FromValues([.. Enumerable.Range(0, 40).Select(i => 18.8 + Math.Sin(i * 1.3) * 0.8), 24.6, 15.2]),
+            ]),
+            ["before"] = SeriesData.FromCategories(["Station 1", "Station 2", "Station 3"], [0.0, 0, 0]).WithBox(
+            [
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.8 + Math.Sin(i * 1.1) * 0.9)),
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 20.6 + Math.Sin(i * 2.9) * 1.4)),
+                BoxSummary.FromValues(Enumerable.Range(0, 40).Select(i => 19.1 + Math.Sin(i * 0.7) * 1.0)),
+            ]),
+        }),
+
+        // The month's result in k€ from the waterfall above, running down the rows.
+        ["waterfall-horizontal"] = new(new ChartDefinition
+        {
+            Title = "Result, March",
+            Horizontal = true,
+            Y = new AxisOptions { Title = "k€" },
+            Series = [new SeriesOptions { Id = "w", Name = "Result", Type = SeriesType.Waterfall, DataLabels = true }],
+        }, new()
+        {
+            ["w"] = SeriesData.FromCategories(["Revenue", "Cost of sales", "Gross profit", "Salaries", "Marketing", "Other income", "Result"],
+                [420.0, -180, double.NaN, -120, -45, 15, double.NaN]).WithTotals([false, false, true, false, false, false, true]),
+        }, Height: 340),
+
         ["line-log"] = new(new ChartDefinition
         {
             Title = "Downloads per day",

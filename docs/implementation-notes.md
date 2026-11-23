@@ -684,7 +684,9 @@ Design.md "Box plot" (milestone 7).
   announcement reads the same. Outliers are listed in the tooltip rather than hovered one by one
   (Design.md: "hovering an outlier shows its value"): simpler, and it works from the keyboard.
 - **Selection:** a selected box is outlined from quartile to quartile.
-- **Not yet:** `Horizontal` box plots, hovering a single outlier (with its item), notches, and a
+- **Horizontal** (`ChartDefinition.Horizontal`): drawn in the horizontal bar path (`HorizontalBoxes`), a slot
+  per series beside any bars; the value axis fits the extremes. Tooltip and part rows as upright.
+- **Not yet:** hovering a single outlier (with its item), notches, and a
   box plot description for screen readers beyond the medians.
 
 ## Candlestick
@@ -973,7 +975,9 @@ Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high pop
   show the plain value (no "+"), as for bars.
 - **Legend:** a small rising and falling bar in the positive and negative colors. The describer
   gives the running total's range and its end ("Result: 0 to 420, last 105").
-- **Not yet:** `Horizontal` waterfalls, an automatic end total (add an item with `IsTotal`),
+- **Horizontal:** in the horizontal bar path, steps down the rows (first on top), each bar from the running
+  total before it to the one after; connectors run down from a bar's end to the next row's bar.
+- **Not yet:** an automatic end total (add an item with `IsTotal`),
   room on the y axis for labels at its ends (bars have it), and a "+" on change labels.
 
 ## Radar
@@ -1152,6 +1156,8 @@ Not in Design.md; added on request ("a way to set a colour on a value").
   annotations are skipped with a warning); their labels sit in a strip above the rows.
 - **Hover:** `TooltipSeries.CellWidths` gives each bar's length; JS checks the rectangle under the
   pointer (a linear scan, also used for heatmap cells now) and outlines it. No zoom.
+- **Other types:** box plots, waterfalls and dumbbells are drawn here too (`DrawsHorizontally`). Box plots and
+  waterfalls take a slot like a bar series and are never stacked; other series are skipped with a warning.
 
 ## Performance
 
