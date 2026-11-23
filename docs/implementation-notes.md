@@ -1019,3 +1019,16 @@ settings, so they are `Annotation` and `Filter`. The whole is not called options
 ApexCharts' `ChartOptions` it also holds the series, their fields and the data, and draws a
 chart on its own. The JSON format did not change; the AI tools' argument is `definition`.
 
+
+## Reset zoom button
+
+- **An icon** (arrows out to the corners), a 28 px square like the download button but always
+  visible while zoomed; `ChartTexts.ResetZoom` is its `title` and `aria-label`. An icon fits the
+  top row more often than the text did, whatever the language.
+- **In the top row when it fits:** `ChartLayoutResult.TopRowFree` is the area at the chart's top
+  right, above the plot's top y label and right of the title, a top legend and the y-axis titles
+  (a right axis title takes the row's right end). The component puts the button there, at the
+  right edge or left of the download button, when it fits there without reaching the plot;
+  else inside the plot's top right corner as before (a chart with nothing above the plot has no
+  top row, and adding one while zoomed would move the plot on every zoom). Only the cartesian
+  layout reports the area; it is the only zoomable one.

@@ -272,4 +272,38 @@ public class LayoutTests
         Assert.Equal(spec.Y, back.Y);
         Assert.Equal(spec.Series[0], back.Series[0]);
     }
+    [Fact]
+    public void The_top_row_is_free_right_of_the_title_legend_and_y_titles()
+    {
+        var data = new Dictionary<string, SeriesData>
+        {
+            ["a"] = SeriesData.From([0.0, 1, 2], [1.0, 2, 3]),
+            ["b"] = SeriesData.From([0.0, 1, 2], [2.0, 3, 1]),
+        };
+        var options = new LayoutOptions { Width = 600, Height = 300 };
+        ChartDefinition Spec(string? title = null, string? yTitle = null, LegendPosition legend = LegendPosition.Bottom) => new()
+        {
+            Title = title,
+            Y = new AxisOptions { Title = yTitle },
+            Legend = new LegendOptions { Position = legend },
+            Series = [new SeriesOptions { Id = "a", Name = "Alpha" }, new SeriesOptions { Id = "b", Name = "Beta" }],
+        };
+
+        var bare = ChartLayout.Compute(Spec(), data, options);
+        var titled = ChartLayout.Compute(Spec(title: "Sales"), data, options);
+        var yTitled = ChartLayout.Compute(Spec(yTitle: "°C"), data, options);
+        var topLegend = ChartLayout.Compute(Spec(legend: LegendPosition.Top), data, options);
+        var compact = ChartLayout.Compute(Spec(title: "Sales") with { Compact = true }, data, options);
+
+        Assert.Null(bare.TopRowFree);    // nothing above the plot
+        Assert.Null(compact.TopRowFree);
+        foreach (var layout in new[] { titled, yTitled, topLegend })
+        {
+            var free = Assert.NotNull(layout.TopRowFree);
+            Assert.Equal(600, free.Right, 0.01);
+            Assert.InRange(free.X, 20, 200);              // right of the text
+            Assert.True(free.Bottom < layout.Plot.Y);     // above the plot and its top label
+            Assert.True(free.Height >= 15);
+        }
+    }
 }

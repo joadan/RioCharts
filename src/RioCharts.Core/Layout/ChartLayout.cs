@@ -134,6 +134,14 @@ public sealed class ChartLayoutResult
     /// <summary>True when <see cref="LayoutOptions.XRange"/> narrowed the x axis.</summary>
     public bool Zoomed { get; init; }
 
+    /// <summary>
+    /// The free area at the chart's top right, above the plot: right of the title, a top legend and
+    /// the y-axis titles, and above the top y label. Renderers put buttons such as Reset zoom there
+    /// when they fit, so they do not cover the data. Null when nothing is above the plot (no title,
+    /// legend or y-axis title) or a compact chart.
+    /// </summary>
+    public RectF? TopRowFree { get; init; }
+
     /// <summary>The display time zone conversion, or null when times are shown as given.</summary>
     public TimeConversion? Time { get; init; }
 
@@ -589,6 +597,7 @@ public static partial class ChartLayout
         }
 
         var titleY = (float)(plotTop - font / 2 - yTitleHeight / 2 - 2);
+        double topRowUsed = 0;
         foreach (var axis in compact || !chrome.YTitles ? [] : hasData ? visibleAxes : [primary])
         {
             if (!string.IsNullOrWhiteSpace(axis.Spec.Title))
@@ -597,8 +606,25 @@ public static partial class ChartLayout
                     : axis.Right ? (axis.LabelX + axis.LabelWidth, Anchor.End)
                     : (axis.LabelX - axis.LabelWidth, Anchor.Start);
                 statics.Add(new TextNode(axis.Spec.Title!, new PointF((float)tx, titleY), new TextStyle("axis-title"), anchor) { Class = "rio-axis-title" });
+                topRowUsed = Math.Max(topRowUsed, anchor == Anchor.End ? tx : tx + measure.Measure(axis.Spec.Title!, font));
             }
         }
+
+        // The free area at the top right (for the Reset zoom button): right of what sits above the plot.
+        if (titleNodes.Count > 0)
+        {
+            topRowUsed = Math.Max(topRowUsed, PadLeft + measure.Measure(spec.Title!, options.TitleFontSize));
+        }
+
+        if (showLegend && legendPosition == LegendPosition.Top)
+        {
+            topRowUsed = Math.Max(topRowUsed, legendRows.Select(row => PadLeft + row.Sum(i => i.Width) + (row.Count - 1) * ItemGap).DefaultIfEmpty(0).Max());
+        }
+
+        var topRowBottom = plotTop - font / 2 - 1; // above the top y label, centered on the plot's top edge
+        RectF? topRowFree = compact || plotTop - PadTop - font / 2 <= 1 || topRowBottom <= 0 || width - topRowUsed - 8 <= 0
+            ? null
+            : new RectF((float)(topRowUsed + 8), 0, (float)(width - topRowUsed - 8), (float)topRowBottom);
 
         if (showLegend)
         {
@@ -746,6 +772,7 @@ public static partial class ChartLayout
             XBand = xBand,
             XExtent = fullX,
             Zoomed = window is not null,
+            TopRowFree = topRowFree,
             Time = time,
             YScale = gridAxis.Scale,
             YScales = axes.ToDictionary(a => a.Id, a => a.Scale, StringComparer.Ordinal),

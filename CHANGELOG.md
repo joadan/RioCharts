@@ -5,6 +5,12 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- The Reset zoom button is an icon (arrows out to the corners) like the download button, with
+  `ChartTexts.ResetZoom` as its tooltip and accessible name. It moves to the top row, above the
+  plot and next to the download button, when there is room there (a chart with a title, a top
+  legend or a y-axis title), so it no longer covers the data. A chart with nothing above the plot
+  keeps it in the plot's top right corner. New: `ChartLayoutResult.TopRowFree`.
+
 - Compact pies, donuts, radial bars, radar charts and treemaps: `Compact="true"` now works for
   every chart type. Round charts and treemaps drop their labels, legend, title and the donut's
   center total and fill the box, keeping the tooltip, so a 48 px donut or progress ring sits next to

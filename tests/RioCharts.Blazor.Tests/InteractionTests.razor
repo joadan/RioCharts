@@ -78,6 +78,33 @@
     }
 
     [Fact]
+    public void Reset_zoom_sits_in_the_top_row_when_it_fits_and_in_the_plot_otherwise()
+    {
+        var titled = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true" Width="640" Title="Temperature">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var bare = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Zoomable="true" Width="640">
+            <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+        var range = ChartRange.Of(Start.AddHours(1), Start.AddHours(2));
+
+        titled.InvokeAsync(() => titled.Instance.ZoomToAsync(range));
+        bare.InvokeAsync(() => bare.Instance.ZoomToAsync(range));
+
+        // Above the plot, at the right edge (no download button here).
+        var button = titled.Find(".rio-reset-zoom");
+        Assert.Equal("top:0px;right:0px", button.GetAttribute("style"));
+        // An icon, named by the chart's text.
+        Assert.Equal("Reset zoom", button.GetAttribute("aria-label"));
+        Assert.Equal("Reset zoom", button.GetAttribute("title"));
+        Assert.Equal("", button.TextContent.Trim());
+        // Nothing above the plot: inside its top right corner.
+        var style = bare.Find(".rio-reset-zoom").GetAttribute("style")!;
+        Assert.DoesNotContain("top:0px", style, StringComparison.Ordinal);
+        Assert.StartsWith("top:", style, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OnZoomChanging_can_cancel_a_zoom()
     {
         var changed = false;

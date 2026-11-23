@@ -808,6 +808,25 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Called by JS on a double-click (zoom reset).</summary>
     internal Task OnZoomReset() => ApplyRangeAsync(null, share: false);
 
+    // The Reset zoom and download buttons are 28 px squares.
+    private const double ToolbarButton = 28;
+
+    /// <summary>
+    /// Where the Reset zoom button goes: in the top row, left of the download button, when it fits
+    /// there (<see cref="ChartLayoutResult.TopRowFree"/>) without reaching the plot, so it does not
+    /// cover the data; else inside the plot's top right corner.
+    /// </summary>
+    private string ResetZoomStyle(ChartLayoutResult layout)
+    {
+        var export = Exportable && Live && ExportFormats != ExportFormats.None ? ToolbarButton + 4 : 0;
+        if (layout.TopRowFree is { } free && layout.Plot.Y >= ToolbarButton + 1 && layout.Scene.Width - export - ToolbarButton >= free.X)
+        {
+            return $"top:0px;right:{SvgWriter.N(export)}px";
+        }
+
+        return $"top:{SvgWriter.N(layout.Plot.Y + 4)}px;right:{SvgWriter.N(layout.Scene.Width - layout.Plot.Right + 4 + export)}px";
+    }
+
     // The Reset zoom button: linked charts (same Group) reset together, as with a double-click.
     private async Task OnResetZoomClick()
     {

@@ -61,7 +61,7 @@ public sealed record ChartTexts
     /// <summary>Under the total in a donut's center.</summary>
     public string Total { get => Get(); init => Set(value); }
 
-    /// <summary>The "Reset zoom" button.</summary>
+    /// <summary>The Reset zoom button's tooltip and accessible name (the button is an icon).</summary>
     public string ResetZoom { get => Get(); init => Set(value); }
 
     /// <summary>The download menu's name.</summary>
