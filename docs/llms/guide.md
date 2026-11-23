@@ -59,7 +59,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | One value on a scale (load, how full), with ranges and a target | `GaugeSeries` | `Value` (or `YValue` per item, `XValue` its label), `Max`, `Target`, `ColorBands` |
 | Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
 | Several measures per item | `RadarSeries` | one series per item |
-| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color |
+| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors) |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
 | Two values per category (before/after, plan/actual) | `DumbbellSeries` | `XValue` the category, `FromValue` the first value, `YValue` the second; `Horizontal="true"` on the chart for rows |

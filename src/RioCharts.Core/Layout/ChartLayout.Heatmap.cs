@@ -57,7 +57,23 @@ public static partial class ChartLayout
         var color = rows.FirstOrDefault()?.Spec.Color ?? ThemeTokens.Series(0);
         var format = rows.FirstOrDefault()?.Spec.Format ?? spec.Y.Format;
         string F(double v) => ValueFormatter.Format(v, culture, format);
-        double Opacity(double v) => vMax > vMin ? HeatMinOpacity + (1 - HeatMinOpacity) * Math.Clamp((v - vMin) / (vMax - vMin), 0, 1) : 0.6;
+
+        // With a midpoint the colors diverge: above it the row color, below it the below color, each side
+        // from faint at the midpoint to full at its furthest value.
+        var mid = rows.FirstOrDefault()?.Spec.Midpoint is { } m && double.IsFinite(m) ? m : (double?)null;
+        var below = rows.FirstOrDefault()?.Spec.BelowColor ?? ThemeTokens.Negative;
+        double Opacity(double v) => mid is { } md
+            ? HeatMinOpacity + (1 - HeatMinOpacity) * DivergingStrength(v, md, vMin, vMax)
+            : vMax > vMin ? HeatMinOpacity + (1 - HeatMinOpacity) * Math.Clamp((v - vMin) / (vMax - vMin), 0, 1) : 0.6;
+        bool IsBelow(double v) => mid is { } md && v < md;
+        StyleRef CellStyle(double v)
+        {
+            var opacity = Math.Round(Opacity(v), 2);
+            var key = opacity.ToString(CultureInfo.InvariantCulture);
+            return IsBelow(v)
+                ? styles.Add($"heat-below-{key}", new Style { Fill = below, FillOpacity = (float)opacity })
+                : styles.Add($"heat-{key}", new Style { Fill = color, FillOpacity = (float)opacity });
+        }
 
         // ---------- Title and color legend ----------
         var statics = new List<Node>();
@@ -72,7 +88,10 @@ public static partial class ChartLayout
         var showScale = !compact && hasData && spec.Legend.Mode != LegendMode.Hide && (chrome.Legend || spec.Legend.Mode == LegendMode.Show);
         if (showScale)
         {
-            statics.Add(HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend));
+            statics.Add(mid is { } md
+                ? DivergingLegend(PadLeft, y0, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
+                    texts.Legend, HeatMinOpacity, "heat")
+                : HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend));
             y0 += lineHeight + 4 + 8;
         }
 
@@ -172,8 +191,7 @@ public static partial class ChartLayout
                     }
 
                     var opacity = Opacity(v);
-                    var style = styles.Add($"heat-{Math.Round(opacity, 2).ToString(CultureInfo.InvariantCulture)}",
-                        new Style { Fill = color, FillOpacity = (float)Math.Round(opacity, 2) });
+                    var style = CellStyle(v);
                     cellNodes.Add(new RectNode(new RectF((float)(px - cellWidth / 2 + gap / 2), (float)(cy - rowHeight / 2 + gap / 2),
                         (float)Math.Max(0.5, cellWidth - gap), (float)Math.Max(0.5, rowHeight - gap)), style) { CornerRadius = gap > 0 ? 2 : 0 });
                     points.Add(((float)px, i));
@@ -198,6 +216,7 @@ public static partial class ChartLayout
                 hits.X, hits.Y, hits.Index, [.. points.Select(p => XLabel(r.Data, p.Index))], [.. points.Select(p => F(r.Data.Y[p.Index]))])
             {
                 CellHeight = (float)rowHeight,
+                PointColors = mid is null ? null : [.. points.Select(p => IsBelow(r.Data.Y[p.Index]) ? below : color)],
             });
 
             if (showYLabels)
@@ -289,6 +308,70 @@ public static partial class ChartLayout
 
         nodes.Add(new TextNode(high, new PointF((float)(sx + HeatLegendSteps * step + 6), (float)cy), new TextStyle("legend-label"), Anchor.Start));
         return new GroupNode(nodes) { Class = "rio-legend rio-heat-legend", AriaLabel = $"{label}: {low} – {high}" };
+    }
+
+    /// <summary>
+    /// How strong a value's color is on a diverging scale: 0 at the midpoint, 1 at the furthest value on its
+    /// side (each side scaled on its own, so both reach the full color).
+    /// </summary>
+    private static double DivergingStrength(double v, double mid, double min, double max)
+    {
+        var reach = v >= mid ? max - mid : mid - min;
+        return reach > 0 ? Math.Clamp(Math.Abs(v - mid) / reach, 0, 1) : 0;
+    }
+
+    /// <summary>
+    /// A diverging color scale: the lowest value, steps of the below color fading toward the midpoint, the
+    /// midpoint, steps of the above color growing to the highest value. A side without values is left out.
+    /// </summary>
+    private static GroupNode DivergingLegend(double x, double y, double height, string belowColor, string aboveColor, string? low, string mid, string? high,
+        Text.ITextMeasurer measure, double font, StyleTable styles, string label, double minOpacity, string prefix)
+    {
+        const int steps = 4;
+        const double step = 16;
+        var cy = y + height / 2;
+        var nodes = new List<Node>();
+        var at = x;
+        void Text(string text)
+        {
+            nodes.Add(new TextNode(text, new PointF((float)at, (float)cy), new TextStyle("legend-label"), Anchor.Start));
+            at += measure.Measure(text, font) + 8;
+        }
+
+        void Box(string color, string key, double opacity)
+        {
+            var o = Math.Round(opacity, 2);
+            var style = styles.Add($"{key}-{o.ToString(CultureInfo.InvariantCulture)}", new Style { Fill = color, FillOpacity = (float)o });
+            nodes.Add(new RectNode(new RectF((float)at, (float)(cy - 5), (float)(step - 2), 10), style) { CornerRadius = 2 });
+            at += step;
+        }
+
+        double Opacity(int i) => minOpacity + (1 - minOpacity) * (i + 1) / steps; // the faintest next to the midpoint
+        if (low is not null)
+        {
+            Text(low);
+            for (var i = steps - 1; i >= 0; i--)
+            {
+                Box(belowColor, prefix + "-below", Opacity(i));
+            }
+
+            at += 6;
+        }
+
+        Text(mid);
+        if (high is not null)
+        {
+            for (var i = 0; i < steps; i++)
+            {
+                Box(aboveColor, prefix, Opacity(i));
+            }
+
+            at += 6;
+            Text(high);
+        }
+
+        var range = string.Join(" – ", new[] { low, mid, high }.Where(t => t is not null));
+        return new GroupNode(nodes) { Class = "rio-legend rio-heat-legend", AriaLabel = $"{label}: {range}" };
     }
 
     /// <summary>"Chart "Title" with 7 series. Lowest 12 at Sun 04:00, highest 312 at Fri 20:00."</summary>

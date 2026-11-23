@@ -546,18 +546,27 @@ public sealed class ScatterSeries<TItem> : ErrorBarSeriesBase<TItem>
 /// <summary>
 /// One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for
 /// higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one
-/// color scale (the first row's Color, Format and Max).
+/// color scale (the first row's Color, Format, Max, Midpoint and BelowColor).
 /// </summary>
 public sealed class HeatmapSeries<TItem> : SeriesBase<TItem>
 {
     /// <summary>The value that gets the full color (e.g. 100 for percentages). Default: the highest value.</summary>
     [Parameter] public double? Max { get; set; }
 
+    /// <summary>
+    /// Colors diverge from this value, e.g. 0 for changes or 20 for °C: values above it take the series color,
+    /// values below it <see cref="BelowColor"/>, stronger the further they are from it. Default: one color, stronger for higher values.
+    /// </summary>
+    [Parameter] public double? Midpoint { get; set; }
+
+    /// <summary>With a <see cref="Midpoint"/>: the color of values below it. Default <c>--rio-negative</c>.</summary>
+    [Parameter] public string? BelowColor { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Heatmap;
 
     /// <inheritdoc />
-    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Max = Max };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Max = Max, Midpoint = Midpoint, BelowColor = BelowColor };
 }
 
 /// <summary>
@@ -1272,11 +1281,20 @@ public sealed class MapSeries<TItem> : SeriesBase<TItem>
     /// <summary>The value given the strongest color, e.g. 100 for percentages. Default: the largest value.</summary>
     [Parameter] public double? Max { get; set; }
 
+    /// <summary>
+    /// Colors diverge from this value, e.g. 0 for growth: countries above it take the series color, those below it
+    /// <see cref="BelowColor"/>, stronger the further they are from it. Default: one color, stronger for higher values.
+    /// </summary>
+    [Parameter] public double? Midpoint { get; set; }
+
+    /// <summary>With a <see cref="Midpoint"/>: the color of values below it. Default <c>--rio-negative</c>.</summary>
+    [Parameter] public string? BelowColor { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Map;
 
     /// <inheritdoc />
-    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Max = Max };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Max = Max, Midpoint = Midpoint, BelowColor = BelowColor };
 }
 
 /// <summary>

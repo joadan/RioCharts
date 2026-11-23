@@ -336,6 +336,16 @@ public class SnapshotTests
                 Enumerable.Range(0, 24).Select(h => Math.Round(Math.Max(5, (k >= 5 ? 260 : 200) * Math.Max(0, Math.Sin((h - 6) / 18.0 * Math.PI)) + (h is >= 19 and <= 22 ? 90 : 0)))).ToArray())))
             .ToDictionary(t => t.d, t => t.Item2), Width: 720),
 
+        // Sessions against the same hour last week, in %: down in the mornings, up in the evenings (diverging from 0).
+        ["heatmap-diverging"] = new(new ChartDefinition
+        {
+            Title = "Sessions against last week",
+            Series = [.. new[] { "Mon", "Tue", "Wed", "Thu", "Fri" }.Select(d => new SeriesOptions { Id = d, Type = SeriesType.Heatmap, Format = "+0'%';-0'%';0'%'", Midpoint = 0 })],
+        }, new[] { "Mon", "Tue", "Wed", "Thu", "Fri" }.Select((d, k) => (d, SeriesData.FromCategories(
+                Enumerable.Range(8, 14).Select(h => h.ToString("00", CultureInfo.InvariantCulture)).ToList(),
+                Enumerable.Range(8, 14).Select(h => Math.Round(30 * Math.Sin((h - 13) / 5.0) + 6 * Math.Sin(k * 1.9 + h))).ToArray())))
+            .ToDictionary(t => t.d, t => t.Item2), Width: 720),
+
         ["range-band"] = new(new ChartDefinition
         {
             Y = new AxisOptions { Title = "Revenue per day" },

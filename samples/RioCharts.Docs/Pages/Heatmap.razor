@@ -43,6 +43,24 @@
     </ChildContent>
 </Example>
 
+<Example Title="Above and below a midpoint" Code="@ChangeCode">
+    <Description>
+        <p>
+            For changes, or values around a normal level, set <code>Midpoint</code>: values above it take the series color and values below
+            it <code>BelowColor</code> (default <code>--rio-negative</code>), each side faint near the midpoint and full at its furthest
+            value. The legend shows both sides. Here, sessions against the same hour last week: fewer in the mornings, more in the evenings.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="HourCount" Title="Sessions against last week" XAxis="_hourAxis" Height="240">
+            @foreach (var (day, hours) in WeekChange)
+            {
+                <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" Format="+0'%';-0'%';0'%'" Midpoint="0" />
+            }
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <h2>Options</h2>
 <div class="table-scroll">
     <table class="docs">
@@ -51,6 +69,7 @@
         <tr><td><code>XValue</code></td><td></td><td>The column: categories, numbers or times (cells as wide as the spacing of the data).</td></tr>
         <tr><td><code>YValue</code></td><td></td><td>The value that sets the cell's color. Missing values leave the cell empty.</td></tr>
         <tr><td><code>Color</code>, <code>Format</code>, <code>Max</code></td><td>first row's</td><td>The hue, value format and full-color value, shared by all rows.</td></tr>
+        <tr><td><code>Midpoint</code>, <code>BelowColor</code></td><td>first row's</td><td>Colors diverge from the midpoint: above it the series color, below it <code>BelowColor</code> (default <code>--rio-negative</code>). JSON: <code>"midpoint"</code>, <code>"belowColor"</code>.</td></tr>
         <tr><td><code>DataLabels</code></td><td>false</td><td>Write the values in the cells (when they fit).</td></tr>
         <tr><td>JSON</td><td></td><td><code>"type": "heatmap"</code> with <code>"groupBy"</code> on the row field makes one row per value, e.g. <code>"x": "hour", "y": "sessions", "groupBy": "weekday"</code>.</td></tr>
     </table>
@@ -58,6 +77,22 @@
 
 @code {
     private readonly AxisOptions _hourAxis = new() { Title = "Hour" };
+
+    // Change in sessions against the same hour last week, in %.
+    private static readonly List<(string Day, List<HourCount> Hours)> WeekChange =
+        [.. new[] { "Mon", "Tue", "Wed", "Thu", "Fri" }.Select((day, k) => (day, Enumerable.Range(8, 14)
+            .Select(h => new HourCount(h.ToString("00", System.Globalization.CultureInfo.InvariantCulture), Math.Round(30 * Math.Sin((h - 13) / 5.0) + 6 * Math.Sin(k * 1.9 + h))))
+            .ToList()))];
+
+    private const string ChangeCode = """
+        <RioChart TItem="HourCount" Title="Sessions against last week">
+            @foreach (var (day, hours) in weekChange)
+            {
+                <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions"
+                               Format="+0'%';-0'%';0'%'" Midpoint="0" />
+            }
+        </RioChart>
+        """;
 
     private const string WeekCode = """
         <RioChart TItem="HourCount" Title="Sessions per hour, last month" XAxis="@(new AxisOptions { Title = "Hour" })">
