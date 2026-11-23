@@ -9,6 +9,7 @@ changes are called out under **Breaking**.
   `MapProjection.EqualEarth` (default, equal-area) or `MapProjection.Mercator`, the projection of web
   maps, cut at ±85°. New in Core: `MapProjection` and `RioCharts.Core.Geo.Mercator`.
 - Fixed: a map zoomed into Antarctica (`TreemapPath="AQ"`) without a value for it drew no land.
+- Docs site: Microsoft Clarity usage analytics on https://riocharts.com (not on localhost).
 
 ## 0.4.1-preview (2026-11-23)
 
