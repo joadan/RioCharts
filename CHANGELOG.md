@@ -22,6 +22,19 @@ changes are called out under **Breaking**.
   with `groupBy` the groups share their bins. New in Core: `SeriesType.Histogram`, `Bins`,
   `SeriesData.FromBins`, `SeriesOptions.BinWidth` and `BinCount`, `ChartTexts.HistogramPeak`.
   Docs: a Histogram page.
+- Bubble charts: `ScatterSeries` with `SizeValue` sizes each marker by a third measure. A
+  bubble's area is proportional to its size, all bubble series in a chart share one size scale,
+  large bubbles are drawn first, and the axes leave room for bubbles at their ends. `MarkerSize`
+  sets the largest bubble's diameter (default from the chart size); `SizeName` and `SizeFormat`
+  label the size in the tooltip, which highlights the bubble with a ring. Sizes of zero or less
+  are not drawn; aggregated points add up their sizes. JSON definitions: `"type": "bubble"`
+  (scatter) with `"size"` naming the size field, and `"sizeName"` and `"sizeFormat"`; `"auto"`
+  with a size is a bubble chart. New in Core: `SeriesOptions.Size`, `SizeName` and `SizeFormat`,
+  `SeriesData.Sizes` and `SeriesData.WithSizes`, `ChartTexts.Size`. Docs: a Bubbles example on
+  the Scatter and bubbles page, and a gallery tile.
+- Docs: a chart gallery with a live tile per chart type; Compact charts moved to Features.
+- **Breaking:** `ScatterSeries.MarkerSize` is `double?` (null: 5 px for markers, automatic for
+  bubbles).
 
 ## 0.3.1-preview (2026-11-23)
 

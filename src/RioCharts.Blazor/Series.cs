@@ -403,21 +403,55 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 
 /// <summary>
 /// Scatter series: a marker per point, for how two measures relate, e.g. delivery distance
-/// against delivery time. The tooltip shows the point nearest the pointer.
+/// against delivery time. With <see cref="SizeValue"/> it is a bubble chart: a third measure sets
+/// each marker's size. The tooltip shows the point nearest the pointer.
 /// </summary>
 public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
 {
-    /// <summary>Marker diameter in pixels. Default 5.</summary>
-    [Parameter] public double MarkerSize { get; set; } = 5;
+    /// <summary>
+    /// Marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default
+    /// from the chart size.
+    /// </summary>
+    [Parameter] public double? MarkerSize { get; set; }
 
     /// <summary>Draw a dashed least-squares trend line through the points.</summary>
     [Parameter] public bool TrendLine { get; set; }
 
+    /// <summary>
+    /// Each item's size, e.g. <c>c =&gt; c.Population</c>, which makes a bubble chart: a bubble's
+    /// area is proportional to its size, and all bubble series in a chart share one size scale.
+    /// Sizes of zero or less, or null, are not drawn. Aggregated points take the sum of their items' sizes.
+    /// </summary>
+    [Parameter] public Func<TItem, double?>? SizeValue { get; set; }
+
+    /// <summary>Bubbles: what the size is, shown with it in the tooltip, e.g. "Population". Default: "Size" in the chart's language.</summary>
+    [Parameter] public string? SizeName { get; set; }
+
+    /// <summary>Bubbles: .NET format string for the size in tooltips, e.g. "0 M".</summary>
+    [Parameter] public string? SizeFormat { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Scatter;
 
+    private protected override object? DataSettings => SizeValue is not null;
+
+    private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
+    {
+        if (SizeValue is not { } size)
+        {
+            return data;
+        }
+
+        return data.WithSizes(groups is null
+            ? [.. items.Select(item => size(item) ?? double.NaN)]
+            : [.. groups.Select(g => g.Select(i => size(items[i])).Where(v => v is not null).Sum() ?? double.NaN)]);
+    }
+
     /// <inheritdoc />
-    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { MarkerSize = MarkerSize, TrendLine = TrendLine };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
+    {
+        MarkerSize = MarkerSize, TrendLine = TrendLine, SizeName = SizeName, SizeFormat = SizeFormat,
+    };
 }
 
 /// <summary>

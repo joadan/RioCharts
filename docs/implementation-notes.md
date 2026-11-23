@@ -582,8 +582,31 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   distance; x is sorted so the scan is short). A chart with any scatter series is not shared, since
   "everything at this x" means little for unordered points. No crosshair; the hovered point gets a
   ring. The tooltip header is "x axis title: x" for scatter.
-- **Not yet:** bubble (a third, size field: `SeriesData` has no column for it), per-point colors,
-  and a log x axis (log y axes work, see Log axes).
+- **Not yet:** a log x axis (log y axes work, see Log axes).
+
+## Bubbles
+
+- **A scatter series with sizes**, not a series type of its own: `SeriesData.Sizes` (a column like
+  `Low` and `Totals`, set with `WithSizes`) switches `ScatterSeriesType` to bubbles. JSON
+  `"bubble"` is an alias for scatter; the `size` field makes the bubbles. Everything scatter has
+  (2D tooltip, trend line, colors, zoom, keyboard, export) keeps working.
+- **Scale:** area ∝ size (radius ∝ √size), over the largest positive size of all bubble series in
+  the chart (`BubbleScale`), so series compare. The largest radius is `MarkerSize / 2`, else 6 %
+  of the chart's smaller side, clamped to 4–28 px; the smallest drawn radius is 1.5 px. Sizes of
+  zero or less, or NaN, are not drawn (no negative bubbles).
+- **Drawing:** largest first within a series (small bubbles stay on top and hoverable), fill
+  opacity 0.5 with a 1 px outline in the series color. Never thinned: unlike markers, every bubble
+  carries its own value. Across series, later series draw on top as usual.
+- **Room at the edges:** before nice ticks, the x range and each y axis grow so that each bubble's
+  radius fits, converting pixels to data units with an estimated plot of 85 % of the chart width
+  and 70 % of its height. Axis `Min`/`Max` and zoom keep their values. The plot clip grows by the
+  largest radius.
+- **Tooltip:** the size as a part row labelled `SizeName` (else `ChartTexts.Size`), formatted with
+  `SizeFormat`. `TooltipSeries.Radii` goes to the JS module (`rs`): a bubble is hit when the
+  pointer is within its radius + 6 px, the best by distance relative to radius (a small bubble on
+  a large one wins), and highlighted with a ring.
+- **Aggregation:** points combined per x get the sum of their sizes (Blazor and JSON alike).
+- **Not yet:** a size legend (the tooltip and the description give the sizes).
 
 
 ## Heatmap

@@ -117,6 +117,12 @@ internal sealed class SeriesBuildContext
     /// <summary>Visible x range when zoomed (data units).</summary>
     public (double Min, double Max)? XWindow { get; init; }
 
+    /// <summary>The size scale all bubble series in the chart share; null when no series has sizes.</summary>
+    public BubbleScale? Bubbles { get; init; }
+
+    /// <summary>Bubbles: the drawn radius of each hit point (same order as <see cref="Hits"/>); null for other series.</summary>
+    public float[]? HitRadii { get; set; }
+
     /// <summary>True when a pixel x is inside the plot (hits and labels outside it are dropped).</summary>
     public bool InPlotX(double px) => px >= Plot.X - 0.5 && px <= Plot.Right + 0.5;
 
@@ -397,6 +403,52 @@ internal sealed class LineSeriesType : ISeriesType
 }
 
 /// <summary>
+/// The size scale of the bubbles in a chart: a bubble's area is proportional to its size, and the
+/// largest size in the chart gets each series' largest radius (from <see cref="SeriesOptions.MarkerSize"/>,
+/// else from the chart size), so bubbles of all series compare.
+/// </summary>
+/// <param name="MaxSize">The largest positive size of all bubble series.</param>
+/// <param name="ChartWidth">The chart's width in pixels.</param>
+/// <param name="ChartHeight">The chart's height in pixels.</param>
+internal readonly record struct BubbleScale(double MaxSize, double ChartWidth, double ChartHeight)
+{
+    /// <summary>The largest bubble's radius for a series.</summary>
+    public double MaxRadius(SeriesOptions spec) => spec.MarkerSize is > 0 and var d
+        ? Math.Clamp(d / 2, 2, 100)
+        : Math.Clamp(Math.Min(ChartWidth, ChartHeight) * 0.06, 4, 28);
+
+    /// <summary>A bubble's radius in pixels; NaN when it is not drawn (no size, or zero or less).</summary>
+    public double Radius(SeriesOptions spec, double size) => size > 0 && double.IsFinite(size) && MaxSize > 0
+        ? Math.Max(1.5, MaxRadius(spec) * Math.Sqrt(size / MaxSize))
+        : double.NaN;
+
+    /// <summary>The scale for the bubble series among <paramref name="series"/>; null when there are none.</summary>
+    public static BubbleScale? For(IEnumerable<(SeriesOptions Spec, SeriesData Data)> series, double width, double height)
+    {
+        var max = 0.0;
+        var any = false;
+        foreach (var (spec, data) in series)
+        {
+            if (spec.Type != SeriesType.Scatter || data.Sizes is not { } sizes)
+            {
+                continue;
+            }
+
+            any = true;
+            foreach (var v in sizes)
+            {
+                if (v > max && double.IsFinite(v))
+                {
+                    max = v;
+                }
+            }
+        }
+
+        return any ? new BubbleScale(max, width, height) : null;
+    }
+}
+
+/// <summary>
 /// A marker per point, slightly translucent so overlapping points show density, and optionally a
 /// least-squares trend line. Every visible point is drawn (no downsampling: each point matters).
 /// </summary>
@@ -421,6 +473,12 @@ internal sealed class ScatterSeriesType : ISeriesType
         var (start, end) = c.XWindow is { } w && data.Kind != XKind.Category
             ? Layout.ChartLayout.VisibleIndexes(data.X, w.Min, w.Max, 0)
             : (0, data.Count);
+        if (data.Sizes is { } sizes && c.Bubbles is { } scale)
+        {
+            BuildBubbles(c, sizes, scale, start, end);
+            return;
+        }
+
         var r = Radius(c.Spec);
         var xs = new List<double>();
         var ys = new List<double>();
@@ -476,6 +534,54 @@ internal sealed class ScatterSeriesType : ISeriesType
 
         c.Hits = LineSeriesType.Hits(c, [.. xs], [.. ys], [.. indices]);
         LineSeriesType.AddLabels(c, [.. xs], [.. ys], [.. indices]);
+    }
+
+    /// <summary>
+    /// Bubbles: a circle per point with its area proportional to its size, largest first so small
+    /// bubbles stay on top. Translucent with a solid outline, so overlaps show. Never thinned: each
+    /// bubble carries its own size.
+    /// </summary>
+    private static void BuildBubbles(SeriesBuildContext c, double[] sizes, BubbleScale scale, int start, int end)
+    {
+        var points = new List<(int Index, double X, double Y, double R)>();
+        for (var i = start; i < end; i++)
+        {
+            var (px, y) = (c.PixelX[i], c.Upper[i]);
+            var r = scale.Radius(c.Spec, sizes[i]);
+            if (double.IsFinite(px) && double.IsFinite(y) && double.IsFinite(r))
+            {
+                points.Add((i, px, c.MapY(y), r));
+            }
+        }
+
+        var builder = new PathBuilder();
+        var colored = c.Data.Colors is null && c.Spec.ColorBands is null ? null : new Dictionary<string, PathBuilder>(StringComparer.Ordinal);
+        foreach (var p in points.OrderByDescending(p => p.R).ThenBy(p => p.Index))
+        {
+            var target = colored is not null && c.PointColor(p.Index) is { } own
+                ? System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(colored, own, out _) ??= new PathBuilder()
+                : builder;
+            target.MoveTo(p.X, p.Y - p.R).Arc(p.X, p.Y, p.R, 0, Math.PI * 2).Close();
+        }
+
+        static Style BubbleStyle(string color) => new() { Fill = color, FillOpacity = 0.5f, Stroke = color, StrokeWidth = 1 };
+        c.Output.Add(new PathNode(builder.Build(), c.Styles.Add($"series-{c.ColorIndex}-bubble", BubbleStyle(c.Color))) { Class = "rio-marker rio-bubble" });
+        foreach (var (color, path) in colored ?? [])
+        {
+            c.Output.Add(new PathNode(path.Build(), c.Styles.Add($"bubble-{color}", BubbleStyle(color))) { Class = "rio-marker rio-bubble" });
+        }
+
+        // Hits stay in x order (the tooltip scans them by x).
+        double[] xs = [.. points.Select(p => p.X)], ys = [.. points.Select(p => p.Y)];
+        int[] indices = [.. points.Select(p => p.Index)];
+        c.Hits = LineSeriesType.Hits(c, xs, ys, indices);
+        c.HitRadii = [.. points.Where(p => c.InPlotX(p.X)).Select(p => (float)p.R)];
+        if (c.Spec.TrendLine && c.Data.Kind != XKind.Category)
+        {
+            AddTrendLine(c, start, end);
+        }
+
+        LineSeriesType.AddLabels(c, xs, ys, indices);
     }
 
     /// <summary>

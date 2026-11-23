@@ -745,7 +745,7 @@ public partial class RioChart<TItem> : IChartContext
                     s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type == SeriesType.Scatter, s.CellHeight, s.CellWidths,
                     s.PartLabels, s.PartValues, s.Spokes, s.CellHeights,
                     s.PointColors is { } colors ? [.. colors.Select(SvgWriter.Color)] : null,
-                    s.Type is SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall))],
+                    s.Type is SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall, s.Radii))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd,
                     s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))],

@@ -70,6 +70,15 @@
         </RioChart>
         <span class="tile-label">Scatter <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="scatter#bubbles">
+        <RioChart TItem="Store" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
+            @foreach (var (city, stores) in StoresPerCity)
+            {
+                <ScatterSeries Items="stores" Name="@city" XValue="s => s.Area" YValue="s => s.Revenue" SizeValue="s => s.Visitors" />
+            }
+        </RioChart>
+        <span class="tile-label">Bubble <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="heatmap">
         <RioChart TItem="HourCount" Height="170" Legend="NoLegend" Tooltip="NoTooltip">
             @foreach (var (day, hours) in WeekTraffic)

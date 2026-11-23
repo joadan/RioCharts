@@ -893,6 +893,25 @@ function findSingle(m, px, py) {
             continue;
         }
 
+        if (s.dots && s.rs) {
+            // Bubbles: the one under (or just next to) the pointer; of overlapping ones the one whose
+            // center is nearest relative to its size, so a small bubble on top of a large one wins.
+            let reach = 12;
+            for (const r of s.rs) {
+                reach = Math.max(reach, r + 6);
+            }
+
+            for (let j = atOrBefore(s.x, px - reach) + 1; j < s.x.length && s.x[j] <= px + reach; j++) {
+                const r = s.rs[j], d = Math.hypot(s.x[j] - px, s.y[j] - py);
+                const score = d / Math.max(r, 4);
+                if (d <= Math.max(r + 6, 12) && (best === null || score < best.d)) {
+                    best = { s, i: j, d: score };
+                }
+            }
+
+            continue;
+        }
+
         if (s.dots) {
             // Scatter: every point within reach in x (x is ascending), the nearest in 2D.
             for (let j = atOrBefore(s.x, px - 40) + 1; j < s.x.length && s.x[j] <= px + 40; j++) {
@@ -1140,7 +1159,12 @@ function drawHover(state, rows, m) {
     }
 
     for (const r of rows) {
-        if (!r.s.bar) {
+        if (r.s.rs) {
+            // A bubble: a ring around it.
+            g.appendChild(el('circle', {
+                class: 'rio-hover-ring', cx: r.s.x[r.i], cy: r.s.y[r.i], r: r.s.rs[r.i] + 2, style: `stroke:${r.s.color}`,
+            }));
+        } else if (!r.s.bar) {
             g.appendChild(el('circle', {
                 class: 'rio-hover-point', cx: r.x !== undefined ? r.x : r.s.x[r.i], cy: r.s.y[r.i], r: 4, style: `fill:${r.s.color}`,
             }));

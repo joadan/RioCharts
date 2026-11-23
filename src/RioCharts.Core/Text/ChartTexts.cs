@@ -61,6 +61,9 @@ public sealed record ChartTexts
     /// <summary>Under the total in a donut's center.</summary>
     public string Total { get => Get(); init => Set(value); }
 
+    /// <summary>The label of a bubble's size in its tooltip, when the series does not name it: "Size".</summary>
+    public string Size { get => Get(); init => Set(value); }
+
     /// <summary>The Reset zoom button's tooltip and accessible name (the button is an icon).</summary>
     public string ResetZoom { get => Get(); init => Set(value); }
 
@@ -363,6 +366,7 @@ public sealed record ChartTexts
         [nameof(AllSlicesHidden)] = "All slices are hidden",
         [nameof(Other)] = "Other",
         [nameof(Total)] = "Total",
+        [nameof(Size)] = "Size",
         [nameof(ResetZoom)] = "Reset zoom",
         [nameof(Download)] = "Download",
         [nameof(DownloadFormat)] = "Download {0}",
@@ -434,6 +438,7 @@ public sealed record ChartTexts
         AllSeriesHidden = "Alla serier är dolda",
         AllSlicesHidden = "Alla delar är dolda",
         Other = "Övrigt",
+        Size = "Storlek",
         Total = "Totalt",
         ResetZoom = "Återställ zoom",
         Download = "Ladda ner",
@@ -500,6 +505,7 @@ public sealed record ChartTexts
         AllSeriesHidden = "Alle serier er skjult",
         AllSlicesHidden = "Alle deler er skjult",
         Other = "Annet",
+        Size = "Størrelse",
         Total = "Totalt",
         ResetZoom = "Tilbakestill zoom",
         Download = "Last ned",
@@ -566,6 +572,7 @@ public sealed record ChartTexts
         AllSeriesHidden = "Alle serier er skjult",
         AllSlicesHidden = "Alle dele er skjult",
         Other = "Andet",
+        Size = "Størrelse",
         Total = "I alt",
         ResetZoom = "Nulstil zoom",
         Download = "Download",
@@ -632,6 +639,7 @@ public sealed record ChartTexts
         AllSeriesHidden = "Kaikki sarjat on piilotettu",
         AllSlicesHidden = "Kaikki osat on piilotettu",
         Other = "Muut",
+        Size = "Koko",
         Total = "Yhteensä",
         ResetZoom = "Palauta zoomaus",
         Download = "Lataa",
@@ -698,6 +706,7 @@ public sealed record ChartTexts
         AllSeriesHidden = "Alle Reihen sind ausgeblendet",
         AllSlicesHidden = "Alle Segmente sind ausgeblendet",
         Other = "Sonstige",
+        Size = "Größe",
         Total = "Gesamt",
         ResetZoom = "Zoom zurücksetzen",
         Download = "Herunterladen",
@@ -764,6 +773,7 @@ public sealed record ChartTexts
         AllSeriesHidden = "Toutes les séries sont masquées",
         AllSlicesHidden = "Toutes les parts sont masquées",
         Other = "Autres",
+        Size = "Taille",
         Total = "Total",
         ResetZoom = "Réinitialiser le zoom",
         Download = "Télécharger",
@@ -830,6 +840,7 @@ public sealed record ChartTexts
         AllSeriesHidden = "Todas las series están ocultas",
         AllSlicesHidden = "Todos los sectores están ocultos",
         Other = "Otros",
+        Size = "Tamaño",
         Total = "Total",
         ResetZoom = "Restablecer zoom",
         Download = "Descargar",

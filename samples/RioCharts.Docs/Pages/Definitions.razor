@@ -116,7 +116,7 @@
 <h2>What a definition can say</h2>
 <table class="docs">
     <tr><th>Series option</th><th>Meaning</th></tr>
-    <tr><td><code>type</code></td><td>line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, pie, radialBar, radar, treemap, or <code>auto</code> (time → line, categories → bar, shares of 100 % → donut). Synonyms such as column, doughnut, spline and spider are accepted.</td></tr>
+    <tr><td><code>type</code></td><td>line, area, bar, scatter, bubble (scatter with a <code>size</code> field), heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, pie, radialBar, radar, treemap, or <code>auto</code> (time → line, categories → bar, shares of 100 % → donut). Synonyms such as column, doughnut, spline and spider are accepted.</td></tr>
     <tr><td><code>dataset</code></td><td>Which dataset to read, on the chart or per series; leave it out when the definition has inline <code>data</code> rows.</td></tr>
     <tr><td><code>x</code>, <code>y</code></td><td>Field names in that dataset: x is the time, category or number along the axis, y the value.</td></tr>
     <tr><td><code>low</code>, <code>high</code>, <code>q1</code>, <code>q3</code>, <code>open</code>, <code>total</code>, <code>binWidth</code>, <code>binCount</code>, <code>path</code></td><td>Extra fields some types read: a histogram's bin width or about how many bins; a range area's low values; a box plot's precomputed quartiles and whiskers; a candlestick's open, high and low; a waterfall's total rows; a treemap's group fields (<code>"path": ["region", "country"]</code>).</td></tr>

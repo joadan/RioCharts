@@ -23,7 +23,7 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 - [Chart gallery](https://riocharts.com/gallery): every chart type, live
 - [Lines and areas](https://riocharts.com/lines-and-areas)
 - [Bars and stacking](https://riocharts.com/bars)
-- [Scatter](https://riocharts.com/scatter)
+- [Scatter and bubbles](https://riocharts.com/scatter)
 - [Heatmap](https://riocharts.com/heatmap)
 - [Box plots](https://riocharts.com/box-plots)
 - [Histogram](https://riocharts.com/histogram)

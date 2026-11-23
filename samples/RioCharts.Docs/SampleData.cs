@@ -18,6 +18,21 @@ public static class SampleData
     /// <summary>One delivery: distance and how long it took.</summary>
     public sealed record Delivery(double Km, double Hours);
 
+    /// <summary>A store: floor area in m², revenue per m² in € and visitors per day.</summary>
+    public sealed record Store(string Name, string City, double Area, double Revenue, double Visitors);
+
+    public static readonly List<Store> Stores =
+    [
+        new("Lund C", "Lund", 420, 310, 180), new("Lund Nova", "Lund", 680, 285, 520), new("Lund Väst", "Lund", 950, 350, 940),
+        new("Lund Öst", "Lund", 1300, 262, 1350), new("Lund Norr", "Lund", 1750, 305, 1500), new("Malmö Hamn", "Malmö", 500, 272, 300),
+        new("Malmö C", "Malmö", 820, 332, 760), new("Malmö Syd", "Malmö", 1150, 296, 1100), new("Malmö Triangeln", "Malmö", 1600, 241, 1900),
+        new("Malmö Emporia", "Malmö", 2100, 316, 2600),
+    ];
+
+    /// <summary>The stores per city, grouped once (a series per city keeps its list between renders).</summary>
+    public static readonly List<(string City, List<Store> Stores)> StoresPerCity =
+        [.. Stores.GroupBy(s => s.City).Select(g => (g.Key, g.ToList()))];
+
     /// <summary>Revenue per product group and month, k€.</summary>
     public sealed record Monthly(string Month, double Shoes, double Clothing, double Gear);
 

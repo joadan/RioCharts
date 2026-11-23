@@ -47,7 +47,7 @@ The axes, ticks, number and date formats, legend and colors come from the data; 
 parameters. Change `Items` and the chart draws again. It works on Server, WebAssembly and Auto, with
 static rendering and prerendering, trimmed and native AOT, and in .NET MAUI Blazor Hybrid apps.
 
-**Series:** line, area, range area, bar (grouped, stacked, horizontal), scatter with trend lines,
+**Series:** line, area, range area, bar (grouped, stacked, horizontal), scatter with trend lines, bubble,
 heatmap, box plot, histogram, candlestick, waterfall, pie, donut, radial bar, radar and treemap.
 
 **Also in the box:** tooltips and crosshair, zoom and pan, linked charts, annotations, data labels,

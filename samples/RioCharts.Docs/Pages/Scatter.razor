@@ -1,11 +1,11 @@
 @page "/scatter"
 
-<PageTitle>Scatter · RioCharts</PageTitle>
+<PageTitle>Scatter and bubbles · RioCharts</PageTitle>
 
-<h1>Scatter</h1>
+<h1>Scatter and bubbles</h1>
 <p class="lead">
     A marker per point shows how two measures relate: revenue against ad spend, delivery time against distance, response time against
-    traffic. The order of the points does not matter.
+    traffic. The order of the points does not matter. Give each point a size too and it is a bubble chart: a third measure at a glance.
 </p>
 
 <Example Title="Ad spend and revenue" Code="@AdsCode">
@@ -38,14 +38,37 @@
     </ChildContent>
 </Example>
 
+<Example Title="Bubbles" Code="@BubbleCode">
+    <Description>
+        <p>
+            <code>SizeValue</code> sizes each marker by a third measure: here a store's floor area against its revenue per m², with visitors
+            per day as the size. A bubble's area, not its width, is proportional to the size, so a store with four times the visitors is
+            twice as wide. All bubbles in a chart share one scale, so the cities compare. Large bubbles are drawn first and the axes leave
+            room for them at the edges. Hover a bubble: the tooltip shows its size under <code>SizeName</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Store" Title="Stores: size against revenue" XAxis="_areaAxis" YAxis="_perM2Axis" Height="320">
+            @foreach (var (city, stores) in StoresPerCity)
+            {
+                <ScatterSeries Items="stores" Name="@city" XValue="s => s.Area" YValue="s => s.Revenue" Format="0 €"
+                               SizeValue="s => s.Visitors" SizeName="Visitors per day" SizeFormat="#,0" />
+            }
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <h2>Options</h2>
 <div class="table-scroll">
     <table class="docs">
         <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
-        <tr><td><code>MarkerSize</code></td><td>5</td><td>Marker diameter in pixels.</td></tr>
+        <tr><td><code>MarkerSize</code></td><td>5</td><td>Marker diameter in pixels. Bubbles: the largest bubble's diameter, by default from the chart size.</td></tr>
         <tr><td><code>TrendLine</code></td><td>false</td><td>A dashed least-squares line from the first to the last point.</td></tr>
         <tr><td><code>XValue</code></td><td></td><td>Numbers or times. Numeric axes get nice ranges with room at the edges.</td></tr>
-        <tr><td>JSON</td><td></td><td><code>"type": "scatter"</code> (also <code>"points"</code>), with <code>"markerSize"</code> and <code>"trendLine"</code>.</td></tr>
+        <tr><td><code>SizeValue</code></td><td></td><td>Each item's size; makes a bubble chart. Sizes of zero or less, or null, are not drawn; aggregated points add up their sizes.</td></tr>
+        <tr><td><code>SizeName</code></td><td>"Size"</td><td>What the size is, shown with it in the tooltip.</td></tr>
+        <tr><td><code>SizeFormat</code></td><td></td><td>.NET format string for the size, e.g. <code>"#,0"</code>.</td></tr>
+        <tr><td>JSON</td><td></td><td><code>"type": "scatter"</code> (also <code>"points"</code>), with <code>"markerSize"</code> and <code>"trendLine"</code>; <code>"type": "bubble"</code> with <code>"size"</code> naming the size field, and <code>"sizeName"</code> and <code>"sizeFormat"</code>.</td></tr>
     </table>
 </div>
 <p>
@@ -58,12 +81,25 @@
     private readonly AxisOptions _revenueAxis = new() { Title = "Revenue, €" };
     private readonly AxisOptions _kmAxis = new() { Title = "Distance, km" };
     private readonly AxisOptions _hoursAxis = new() { Title = "Hours" };
+    private readonly AxisOptions _areaAxis = new() { Title = "Floor area, m²" };
+    private readonly AxisOptions _perM2Axis = new() { Title = "Revenue per m², €" };
 
     private const string AdsCode = """
         <RioChart Items="ads" Title="Revenue against ad spend, per day"
                   XAxis="@(new AxisOptions { Title = "Ad spend, €" })" YAxis="@(new AxisOptions { Title = "Revenue, €" })">
             <ScatterSeries Name="Search ads" XValue="a => a.SearchSpend" YValue="a => a.SearchRevenue" Format="#,0 €" TrendLine="true" />
             <ScatterSeries Name="Display ads" XValue="a => a.DisplaySpend" YValue="a => a.DisplayRevenue" Format="#,0 €" TrendLine="true" />
+        </RioChart>
+        """;
+
+    private const string BubbleCode = """
+        <RioChart TItem="Store" Title="Stores: size against revenue"
+                  XAxis="@(new AxisOptions { Title = "Floor area, m²" })" YAxis="@(new AxisOptions { Title = "Revenue per m², €" })">
+            @foreach (var (city, cityStores) in storesPerCity) // grouped once, not in the markup
+            {
+                <ScatterSeries Items="cityStores" Name="@city" XValue="s => s.Area" YValue="s => s.Revenue" Format="0 €"
+                               SizeValue="s => s.Visitors" SizeName="Visitors per day" SizeFormat="#,0" />
+            }
         </RioChart>
         """;
 

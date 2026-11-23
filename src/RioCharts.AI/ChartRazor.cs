@@ -257,7 +257,7 @@ public static class ChartRazor
 
             if (s.Type == SeriesType.Scatter)
             {
-                if (s.MarkerSize is { } size && size != 5)
+                if (s.MarkerSize is { } size && (size != 5 || s.Size is not null))
                 {
                     sb.Append(" MarkerSize=\"").Append(size.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('"');
                 }
@@ -265,6 +265,13 @@ public static class ChartRazor
                 if (s.TrendLine)
                 {
                     sb.Append(" TrendLine=\"true\"");
+                }
+
+                if (s.Size is { } sizeField)
+                {
+                    sb.Append($" SizeValue=\"r => r.{Property(sizeField)}\"");
+                    Optional(sb, "SizeName", s.SizeName);
+                    Optional(sb, "SizeFormat", s.SizeFormat);
                 }
             }
 

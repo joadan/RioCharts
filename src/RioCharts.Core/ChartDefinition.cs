@@ -249,9 +249,21 @@ public sealed record SeriesOptions
     [Description("Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.")]
     public int? BinCount { get; init; }
 
-    /// <summary>Scatter: marker diameter in pixels. Default 5.</summary>
-    [Description("Scatter: marker diameter in pixels. Default 5.")]
+    /// <summary>Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.</summary>
+    [Description("Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.")]
     public double? MarkerSize { get; init; }
+
+    /// <summary>Scatter: the field with each point's size, which makes a bubble chart. A bubble's area is proportional to its size; sizes of zero or less, or missing, are not drawn. All bubble series in a chart share one size scale. Aggregated points: the sum.</summary>
+    [Description("Scatter: the field with each point's size, which makes a bubble chart (type \"bubble\" is scatter with a size). A bubble's area is proportional to its size; sizes of zero or less, or missing, are not drawn. All bubble series in a chart share one size scale. Aggregated points: the sum.")]
+    public string? Size { get; init; }
+
+    /// <summary>Bubbles: what the size is, shown with it in the tooltip (e.g. "Population"). Null: the size field's name.</summary>
+    [Description("Bubbles: what the size is, shown with it in the tooltip (e.g. \"Population\"). Null: the size field's name.")]
+    public string? SizeName { get; init; }
+
+    /// <summary>Bubbles: .NET format string for the size in tooltips, e.g. "0 M". Null: automatic.</summary>
+    [Description("Bubbles: .NET format string for the size in tooltips, e.g. \"0 M\". Null: automatic.")]
+    public string? SizeFormat { get; init; }
 
     /// <summary>Scatter: draw a dashed least-squares trend line through the points.</summary>
     [Description("Scatter: draw a dashed least-squares trend line through the points.")]

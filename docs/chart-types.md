@@ -41,6 +41,7 @@ Rules of thumb:
 | Area | `AreaSeries` / `area` | Stacking groups, 100 % stacked. |
 | Bar | `BarSeries` / `bar` | Grouped, stacked, 100 % stacked, horizontal. Also `column`, `stackedBar`, `stackedBar100`. |
 | Scatter | `ScatterSeries` / `scatter` | Also `points`. |
+| Bubble | `ScatterSeries` with `SizeValue` / `bubble` (scatter with `size`) | Area ∝ size, one scale per chart, largest drawn first. No size legend yet. |
 | Heatmap | `HeatmapSeries` / `heatmap` | One row per series. |
 | Range area | `RangeAreaSeries` / `rangeArea` | Low/high band. |
 | Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. |
@@ -57,7 +58,6 @@ Rules of thumb:
 
 | Type | Status | Popularity | Effort | Complexity | What it's for | Notes / why not yet |
 |---|---|---|---|---|---|---|
-| Bubble | Candidate | Medium | Small | Low | Scatter with a third measure | A size column on a sqrt scale on `ScatterSeries`; needs a size legend and overlap handling (draw large first). |
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
 | Gauge | In Design.md | High | Medium | Medium | A single value against a range or target | `gauge` is only an alias for radial bar today. A real gauge needs custom start/end angles, colored ranges, a target marker and a big center value: several new parameters. |
 | Range bar / timeline | Candidate | Medium–High | Medium | Medium | Periods per category: schedules, states over time (on/off/fault) | Horizontal bars from start to end on a time axis, many per category row. A new data shape (start/end per item). A full Gantt (dependencies, drag) is out of scope. |

@@ -176,6 +176,11 @@
     stroke-width: 2;
 }
 
+.rio-chart ::deep .rio-hover-ring {
+    fill: none;
+    stroke-width: 2;
+}
+
 .rio-legend-tip {
     min-width: 0;
     white-space: pre-line;

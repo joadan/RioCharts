@@ -47,7 +47,7 @@ internal sealed record ScaleModel(double D0, double D1, double R0, double R1);
 internal sealed record SeriesModel(
     string Id, string Name, string Color, bool Bar, bool Step, float Snap, float BarWidth, float BarOffset,
     float[] X, float[] Y, int[] Index, string[] Xl, string[] V, bool Dots = false, float Ch = 0, float[]? Cw = null,
-    string[]? Pl = null, string[][]? Pv = null, int[]? Sp = null, float[]? Chs = null, string[]? Pc = null, bool Col = false);
+    string[]? Pl = null, string[][]? Pv = null, int[]? Sp = null, float[]? Chs = null, string[]? Pc = null, bool Col = false, float[]? Rs = null);
 
 // Bar: hit-tested as a bar (its slot, barWidth wide at barOffset), not as a point. Col: box plots,
 // candlesticks and waterfalls, whose hit area is the slot's whole height (a bar's is from its top down).

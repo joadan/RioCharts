@@ -1,0 +1,48 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Store(string City, double Area, double Revenue, double? Visitors);
+
+    private static readonly Store[] Stores =
+    [
+        new("Lund", 400, 310, 100), new("Lund", 900, 350, 900), new("Malmö", 1500, 300, 2500), new("Malmö", 650, 280, null),
+    ];
+
+    [Fact]
+    public void A_size_value_draws_bubbles_and_sends_their_radii()
+    {
+        var cut = Render<RioChart<Store>>(@<RioChart TItem="Store" Items="Stores" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <ScatterSeries Id="s" Name="Stores" XValue="s => s.Area" YValue="s => s.Revenue" SizeValue="s => s.Visitors" SizeName="Visitors" />
+        </RioChart>);
+
+        Assert.Single(cut.FindAll(".rio-bubble"));
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.True(series.GetProperty("dots").GetBoolean());
+        Assert.Equal(3, series.GetProperty("rs").GetArrayLength()); // the store without visitors is not drawn
+        Assert.Equal("Visitors", series.GetProperty("pl")[0].GetString());
+        Assert.Equal("2,500", series.GetProperty("pv")[2][0].GetString());
+    }
+
+    [Fact]
+    public void Aggregated_bubbles_add_up_their_sizes()
+    {
+        var cut = Render<RioChart<Store>>(@<RioChart TItem="Store" Items="Stores" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <ScatterSeries Id="s" XValue="s => s.City" YValue="s => s.Revenue" Aggregate="Aggregate.Average" SizeValue="s => s.Visitors" />
+        </RioChart>);
+
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal("1,000", series.GetProperty("pv")[0][0].GetString());
+        Assert.Equal("2,500", series.GetProperty("pv")[1][0].GetString());
+    }
+
+    [Fact]
+    public void A_plain_scatter_sends_no_radii()
+    {
+        var cut = Render<RioChart<Store>>(@<RioChart TItem="Store" Items="Stores">
+            <ScatterSeries Id="s" XValue="s => s.Area" YValue="s => s.Revenue" />
+        </RioChart>);
+
+        Assert.Empty(cut.FindAll(".rio-bubble"));
+        Assert.False(Payload(Calls("update")[^1]).GetProperty("series")[0].TryGetProperty("rs", out _));
+    }
+}

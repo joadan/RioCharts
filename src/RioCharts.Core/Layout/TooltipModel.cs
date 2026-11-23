@@ -60,6 +60,9 @@ public sealed record TooltipSeries(string Id, string Name, string Color, SeriesT
     /// <summary>Treemaps: each point's color (CSS color or theme token), when it differs from <see cref="Color"/>; null otherwise.</summary>
     public string[]? PointColors { get; init; }
 
+    /// <summary>Bubbles: each point's radius in pixels (its hover area and highlight); null for other series.</summary>
+    public float[]? Radii { get; init; }
+
     /// <summary>Radar charts: the spoke of each point; null for other series.</summary>
     public int[]? Spokes { get; init; }
 

@@ -78,7 +78,7 @@ public static class ChartDefinitionBinder
         return new DefinitionBindResult(bound, data, errors, warnings);
     }
 
-    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null, bool Total = false);
+    private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null, bool Total = false, double? Size = null);
 
     private static void BindSeries(ChartDefinition chart, SeriesOptions s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
         List<SeriesOptions> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
@@ -203,6 +203,13 @@ public static class ChartDefinitionBinder
             warnings.Add($"{path}.total: only waterfall series have totals; ignored.");
             totalField = null;
         }
+
+        var sizeField = s.Size is null ? null : Find(dataset, s.Size, $"{path}.size", FieldType.Number, errors);
+        if (sizeField is not null && s.Type is not (SeriesType.Scatter or SeriesType.Auto))
+        {
+            warnings.Add($"{path}.size: only scatter series have sizes (type \"bubble\"); ignored.");
+            sizeField = null;
+        }
         var filters = new List<(Filter Spec, DataField Field)>();
         for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
         {
@@ -316,7 +323,7 @@ public static class ChartDefinitionBinder
                 continue;
             }
 
-            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField);
+            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField);
             if (s.Sort is { } sort)
             {
                 points = sort == SortOrder.Ascending
@@ -329,10 +336,10 @@ public static class ChartDefinitionBinder
                 points = points.Take(limit).ToList();
             }
 
-            var type = s.Type == SeriesType.Auto ? Recommend(x, points, groups.Count, bucket) : s.Type;
+            var type = s.Type != SeriesType.Auto ? s.Type : sizeField is not null ? SeriesType.Scatter : Recommend(x, points, groups.Count, bucket);
             var id = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "count") : s.Id, key, usedIds);
             var name = key is null ? s.Name ?? Humanize(y?.Name ?? "count") : s.Name is null ? key : $"{s.Name}: {key}";
-            var bound = s with { Id = id, Name = name, Type = type };
+            var bound = s with { Id = id, Name = name, Type = type, SizeName = sizeField is null ? s.SizeName : s.SizeName ?? Humanize(sizeField.Name) };
             if (s.Type == SeriesType.Auto && type == SeriesType.Pie)
             {
                 bound = bound with { InnerRadius = bound.InnerRadius ?? 0.6 };
@@ -343,6 +350,7 @@ public static class ChartDefinitionBinder
             var series = SeriesData.FromItems(points, p => p.X, p => p.Y);
             series = low is null ? series : series.WithLow(points.Select(p => p.Low ?? double.NaN).ToArray());
             series = totalField is null ? series : series.WithTotals(points.Select(p => p.Total).ToArray());
+            series = sizeField is null ? series : series.WithSizes(points.Select(p => p.Size ?? double.NaN).ToArray());
             data[id] = colorField is null ? series : series.WithColors([.. points.Select(p => p.Color)]);
         }
     }
@@ -383,8 +391,9 @@ public static class ChartDefinitionBinder
     }
 
     private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null,
-        DataField? color = null, DataField? total = null)
+        DataField? color = null, DataField? total = null, DataField? size = null)
     {
+        double? SizeAt(int r) => size?.Values[r] is double d ? d : null;
         double? LowAt(int r) => low?.Values[r] is double d ? d : null;
         string? ColorAt(int r) => color?.Values[r] is { } c ? Text(c) : null;
         bool TotalAt(int r) => total?.Values[r] is { } t && Text(t)?.Trim().ToLowerInvariant() is "true" or "yes" or "1";
@@ -399,7 +408,7 @@ public static class ChartDefinitionBinder
 
         if (aggregate is null)
         {
-            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r), TotalAt(r))).ToList();
+            return rows.Where(r => x.Values[r] is not null).Select(r => new Point(XAt(r)!, YAt(r), LowAt(r), ColorAt(r), TotalAt(r), SizeAt(r))).ToList();
         }
 
         // Group by x (or its bucket), keeping first-appearance order (categories) — times and numbers are sorted later anyway.
@@ -427,7 +436,8 @@ public static class ChartDefinitionBinder
             : (aggregate.Value, aggregate.Value);
         return order.Select(key => new Point(key, Aggregation.Apply(low is null ? aggregate.Value : highAggregate, groups[key].Select(YAt).ToList()),
             low is null ? null : Aggregation.Apply(lowAggregate, groups[key].Select(LowAt).ToList()),
-            ColorAt(groups[key][0]), TotalAt(groups[key][0]))).ToList(); // a group's color and total flag: its first row's
+            ColorAt(groups[key][0]), TotalAt(groups[key][0]), // a group's color and total flag: its first row's
+            size is null ? null : Aggregation.Apply(Aggregate.Sum, groups[key].Select(SizeAt).ToList()))).ToList(); // its size: the sum
     }
 
     /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>

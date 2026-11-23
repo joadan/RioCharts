@@ -77,7 +77,7 @@ public sealed class SeriesData
 
         return new SeriesData(X, Y, Kind, Categories, SourceIndex)
         {
-            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = any ? values : null,
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = any ? values : null,
         };
     }
 
@@ -98,7 +98,7 @@ public sealed class SeriesData
             values[i] = source < low.Length ? low[source] : double.NaN;
         }
 
-        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Totals = Totals, Colors = Colors };
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = values, Totals = Totals, Sizes = Sizes, Colors = Colors };
     }
 
     /// <summary>
@@ -136,7 +136,33 @@ public sealed class SeriesData
 
         return new SeriesData(X, any ? y : Y, Kind, Categories, SourceIndex)
         {
-            TimeOffsets = TimeOffsets, Low = Low, Colors = Colors, Totals = any ? flags : null,
+            TimeOffsets = TimeOffsets, Low = Low, Colors = Colors, Sizes = Sizes, Totals = any ? flags : null,
+        };
+    }
+
+    /// <summary>
+    /// Bubbles (scatter with a size): each point's size, NaN where missing; null for other series.
+    /// A bubble's area is proportional to its size. Set with <see cref="WithSizes"/>.
+    /// </summary>
+    public double[]? Sizes { get; private set; }
+
+    /// <summary>
+    /// The same points with a size each, which makes a scatter series a bubble chart.
+    /// <paramref name="sizes"/> is in input order, like the y values given when creating the data:
+    /// index i is the size of input item (or group) i.
+    /// </summary>
+    public SeriesData WithSizes(ReadOnlySpan<double> sizes)
+    {
+        var values = new double[Count];
+        for (var i = 0; i < values.Length; i++)
+        {
+            var source = ToSourceIndex(i);
+            values[i] = source < sizes.Length ? sizes[source] : double.NaN;
+        }
+
+        return new SeriesData(X, Y, Kind, Categories, SourceIndex)
+        {
+            TimeOffsets = TimeOffsets, Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors, Sizes = values,
         };
     }
 
@@ -162,7 +188,7 @@ public sealed class SeriesData
             y[i] = ordered[i].Close;
         }
 
-        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Candles = CandleColumns.From(ordered), Colors = Colors };
+        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Candles = CandleColumns.From(ordered), Sizes = Sizes, Colors = Colors };
     }
 
     /// <summary>
@@ -249,7 +275,7 @@ public sealed class SeriesData
             y[i] = ordered[i].HasBox ? ordered[i].Median : double.NaN;
         }
 
-        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = Low, Box = BoxColumns.From(ordered), Colors = Colors };
+        return new SeriesData(X, y, Kind, Categories, SourceIndex) { TimeOffsets = TimeOffsets, Low = Low, Box = BoxColumns.From(ordered), Sizes = Sizes, Colors = Colors };
     }
 
     /// <summary>
@@ -303,7 +329,7 @@ public sealed class SeriesData
     {
         if (IsSorted(x))
         {
-            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles, Totals = Totals, Colors = Colors };
+            return new SeriesData(x, Y, Kind, Categories, SourceIndex) { Low = Low, Box = Box, Candles = Candles, Totals = Totals, Sizes = Sizes, Colors = Colors };
         }
 
         var order = Enumerable.Range(0, x.Length).ToArray();
@@ -343,6 +369,11 @@ public sealed class SeriesData
         if (Totals is { } totals)
         {
             result.Totals = [.. order.Select(i => totals[i])];
+        }
+
+        if (Sizes is { } sizes)
+        {
+            result.Sizes = [.. order.Select(i => sizes[i])];
         }
 
         return result;

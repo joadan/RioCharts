@@ -361,6 +361,13 @@ public static partial class ChartLayout
             ? (0, 0, 0)
             : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.ExpandsDomain));
         var scatter = drawable.Where(r => r.Spec.Type == SeriesType.Scatter).ToList();
+        var bubbles = BubbleScale.For(drawable.Select(r => (r.Spec, r.Data)), width, height);
+        if (bubbles is { } bubbleScale && xKind != XKind.Category && options.XRange is null)
+        {
+            // Room for the bubbles at the ends, about as much as their radius on a plot of this size.
+            (xMin, xMax) = PadForBubbles(scatter, bubbleScale, r => r.Data.X, xMin, xMax, width * 0.85, spec.X.Min is null, spec.X.Max is null);
+        }
+
         if (scatter.Count > 0 && xKind == XKind.Numeric && options.XRange is null)
         {
             // Scatter: a nice x range too, so points at the extremes are not on the plot edge.
@@ -378,6 +385,11 @@ public static partial class ChartLayout
         foreach (var axis in axes)
         {
             YExtent(axis, annotations.Where(a => a.ExpandsDomain && a.Axis == axis), window, compact);
+            if (bubbles is { } yBubbles && !axis.Log && axis.Series.Any(r => r.Data.Sizes is not null))
+            {
+                (axis.ExtentMin, axis.ExtentMax) = PadForBubbles(axis.Series.Where(r => r.Spec.Type == SeriesType.Scatter).ToList(), yBubbles, r => r.Upper,
+                    axis.ExtentMin, axis.ExtentMax, height * 0.7, axis.Spec.Min is null, axis.Spec.Max is null);
+            }
         }
 
         // ---------- Title and legend ----------
@@ -680,6 +692,7 @@ public static partial class ChartLayout
                 SlotCount = Math.Max(1, slotKeys.Count),
                 DownsampleThreshold = threshold,
                 XWindow = window,
+                Bubbles = bubbles,
             };
             r.Type.Build(context);
             if (context.Hits is { } hits)
@@ -738,7 +751,9 @@ public static partial class ChartLayout
         }
         var seriesLayer = new GroupNode(
         [
-            new GroupNode(plotNodes, Clip: Inflate(plot, (float)Math.Max(2, scatter.Count > 0 ? scatter.Max(r => ScatterSeriesType.Radius(r.Spec)) + 1 : 0))) { Class = "rio-plot" },
+            new GroupNode(plotNodes, Clip: Inflate(plot, (float)Math.Max(2, scatter.Count > 0
+                ? scatter.Max(r => r.Data.Sizes is not null && bubbles is { } b ? b.MaxRadius(r.Spec) : ScatterSeriesType.Radius(r.Spec)) + 1
+                : 0))) { Class = "rio-plot" },
             new GroupNode(labelNodes) { Class = "rio-labels" },
         ])
         {
@@ -1233,6 +1248,44 @@ public static partial class ChartLayout
         return (axis.Min ?? min, axis.Max ?? max, spacing);
     }
 
+    /// <summary>
+    /// Widens a range so the bubbles at its ends fit: each bubble's radius in data units, on a plot
+    /// about <paramref name="plotPixels"/> long. Only the ends that are not set explicitly move.
+    /// </summary>
+    private static (double Min, double Max) PadForBubbles(List<Resolved> series, BubbleScale scale, Func<Resolved, double[]> values,
+        double min, double max, double plotPixels, bool padMin, bool padMax)
+    {
+        var span = max - min;
+        if (!(span > 0) || !double.IsFinite(span) || plotPixels <= 0)
+        {
+            return (min, max);
+        }
+
+        var perPixel = span / plotPixels;
+        var (newMin, newMax) = (min, max);
+        foreach (var r in series)
+        {
+            if (r.Data.Sizes is not { } sizes)
+            {
+                continue;
+            }
+
+            var v = values(r);
+            for (var i = 0; i < sizes.Length && i < v.Length; i++)
+            {
+                var radius = scale.Radius(r.Spec, sizes[i]);
+                if (double.IsFinite(radius) && double.IsFinite(v[i]) && double.IsFinite(r.Upper[i]))
+                {
+                    var pad = (radius + 2) * perPixel;
+                    newMin = Math.Min(newMin, v[i] - pad);
+                    newMax = Math.Max(newMax, v[i] + pad);
+                }
+            }
+        }
+
+        return (padMin ? newMin : min, padMax ? newMax : max);
+    }
+
     private static TooltipSeries TooltipFor(Resolved r, HitTestIndex.SeriesHits hits, SeriesBuildContext context, Func<double, string> formatX,
         CultureInfo culture, ChartTexts texts, XKind kind, BandScale? band, double plotWidth, string? xAxisTitle = null, string?[]? sharedXLabels = null)
     {
@@ -1247,6 +1300,7 @@ public static partial class ChartLayout
         var waterfall = r.Spec.Type == SeriesType.Waterfall;
         var binWidth = r.Spec.Type == SeriesType.Histogram && kind != XKind.Category ? HistogramSeriesType.WidthOf(r.Spec, r.Data) : double.NaN;
         var waterfallParts = waterfall ? new string[n][] : null;
+        var sizeParts = r.Spec.Type == SeriesType.Scatter && r.Data.Sizes is not null ? new string[n][] : null;
         var waterfallColors = waterfall ? new string[n] : null; // the tooltip dot as the bar
         for (var i = 0; i < n; i++)
         {
@@ -1281,6 +1335,11 @@ public static partial class ChartLayout
                 values[i] = total ? ValueFormatter.Format(r.Upper[j], culture, format) : (change > 0 ? "+" : "") + ValueFormatter.Format(change, culture, format);
                 waterfallParts[i] = [total ? "" : ValueFormatter.Format(r.Upper[j], culture, format)];
                 waterfallColors![i] = WaterfallSeriesType.ColorOf(r.Data, j, r.Color);
+            }
+
+            if (sizeParts is not null)
+            {
+                sizeParts[i] = [ValueFormatter.Format(r.Data.Sizes![j], culture, r.Spec.SizeFormat)];
             }
 
             if (boxParts is not null && r.Data.Box is { } box)
@@ -1337,8 +1396,10 @@ public static partial class ChartLayout
             hits.X, hits.Y, hits.Index, xLabels, values)
         {
             Step = r.Spec.Curve == CurveType.Step && !r.Type.UsesSlots && kind != XKind.Category,
-            PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : waterfallParts is not null ? [texts.Total] : null,
-            PartValues = boxParts ?? candleParts ?? waterfallParts,
+            PartLabels = boxParts is not null ? BoxPartLabels(texts) : candleParts is not null ? CandlePartLabels(texts) : waterfallParts is not null ? [texts.Total]
+                : sizeParts is not null ? [string.IsNullOrWhiteSpace(r.Spec.SizeName) ? texts.Size : r.Spec.SizeName] : null,
+            PartValues = boxParts ?? candleParts ?? waterfallParts ?? sizeParts,
+            Radii = context.HitRadii,
             // Points with their own color show it in the tooltip too.
             PointColors = candleColors ?? waterfallColors ?? (r.Data.Colors is null && r.Spec.ColorBands is null
                 ? null

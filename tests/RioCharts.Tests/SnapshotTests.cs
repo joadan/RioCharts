@@ -341,6 +341,23 @@ public class SnapshotTests
                 v => v, 10, null, out _, out _),
         }),
 
+        // Stores: floor area against revenue per m², sized by visitors per day, in two cities (bubbles).
+        ["bubble"] = new(new ChartDefinition
+        {
+            Title = "Stores",
+            X = new AxisOptions { Title = "Floor area, m²" },
+            Y = new AxisOptions { Title = "Revenue per m², €" },
+            Series =
+            [
+                new SeriesOptions { Id = "lund", Name = "Lund", Type = SeriesType.Scatter, SizeName = "Visitors", Format = "0 €" },
+                new SeriesOptions { Id = "malmo", Name = "Malmö", Type = SeriesType.Scatter, SizeName = "Visitors", Format = "0 €" },
+            ],
+        }, new()
+        {
+            ["lund"] = SeriesData.From([420.0, 680, 950, 1300], [310.0, 285, 350, 260]).WithSizes([180.0, 520, 940, 1350]),
+            ["malmo"] = SeriesData.From([500.0, 820, 1150, 1600, 2100], [270.0, 330, 295, 240, 315]).WithSizes([300.0, 760, 1100, 1900, 2600]),
+        }),
+
         ["bars-horizontal"] = new(new ChartDefinition
         {
             Horizontal = true,

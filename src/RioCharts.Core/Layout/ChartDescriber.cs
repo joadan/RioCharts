@@ -78,10 +78,29 @@ public static class ChartDescriber
                 sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.Trend), culture, TrendText(stats.Trend, texts)));
             }
 
+            if (s.Type == SeriesType.Scatter && SizeRange(s, d, culture, texts) is { } sizes)
+            {
+                sb.Append(", ").Append(sizes);
+            }
+
             sb.Append('.');
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>Bubbles: the name and range of their sizes, e.g. "Visitors 100 to 2,500"; null without sizes.</summary>
+    private static string? SizeRange(SeriesOptions s, SeriesData d, CultureInfo culture, ChartTexts texts)
+    {
+        if (d.Sizes is not { } sizes || sizes.Where(v => v > 0 && double.IsFinite(v)).ToList() is not { Count: > 0 } drawn)
+        {
+            return null;
+        }
+
+        string S(double v) => Formatting.ValueFormatter.Format(v, culture, s.SizeFormat);
+        var (smallest, largest) = (drawn.Min(), drawn.Max());
+        return (string.IsNullOrWhiteSpace(s.SizeName) ? texts.Size : s.SizeName) + " "
+            + (smallest == largest ? S(smallest) : texts.Fill(nameof(ChartTexts.ValueRange), culture, S(smallest), S(largest)));
     }
 
     /// <summary>
@@ -195,6 +214,11 @@ public static class ChartDescriber
             if (stats.Trend != Trend.None)
             {
                 sb.Append(", ").Append(TrendText(stats.Trend, texts));
+            }
+
+            if (SizeRange(s, d, culture, texts) is { } sizes)
+            {
+                sb.Append(", ").Append(sizes); // bubbles: the range of their sizes too
             }
 
             return sb.ToString();
