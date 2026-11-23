@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Horizontal box plots and waterfalls: `Horizontal="true"` on the chart (`"horizontal": true` in JSON) now lays
+  `BoxPlotSeries` and `WaterfallSeries` on their side, with the categories down the left, first on top, as for bars.
+  They share a row with bar series in slots. Docs: an example on the Box plots and Waterfall pages.
 - Map projections: `Projection` on `RioChart` (and `ChartDefinition`, `"projection"` in JSON) picks
   `MapProjection.EqualEarth` (default, equal-area) or `MapProjection.Mercator`, the projection of web
   maps, cut at ±85°. New in Core: `MapProjection` and `RioCharts.Core.Geo.Mercator`.

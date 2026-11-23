@@ -21,8 +21,8 @@ public sealed record ChartDefinition
     [Description("Default true: as the chart gets small, leave out axis titles, then the legend, title and axis labels; very small charts become compact. False keeps everything at any size.")]
     public bool AutoCompact { get; init; } = true;
 
-    /// <summary>Bar charts: bars run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.</summary>
-    [Description("Bar charts: bars run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.")]
+    /// <summary>Bar, box plot, waterfall and dumbbell charts: they run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.</summary>
+    [Description("Bar, box plot, waterfall and dumbbell charts: they run left to right with the categories down the side (first on top). For rankings and long category names. The y axis settings (title, format, min, max) apply to the values.")]
     public bool Horizontal { get; init; }
 
     /// <summary>Maps: how the round world is drawn flat. EqualEarth (default) keeps every country's true relative size; Mercator is the projection of web maps, familiar shapes but areas that grow toward the poles.</summary>

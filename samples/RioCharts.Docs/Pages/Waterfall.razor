@@ -39,10 +39,25 @@
     </ChildContent>
 </Example>
 
+<Example Title="Down the page" Code="@HorizontalCode">
+    <Description>
+        <p>
+            With <code>Horizontal="true"</code> on the chart, the steps run down the side, first on top, and each bar floats left or right
+            from the running total. It reads like a statement, and long step names have room.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Step" Items="Result" YAxis="Keur" Height="300" Horizontal="true">
+            <WaterfallSeries Name="Result" XValue="s => s.Name" YValue="s => s.Amount" IsTotal="s => s.IsTotal" DataLabels="true" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <h2>In JSON definitions</h2>
 <p>
     <code>"type": "waterfall"</code> (also <code>"bridge"</code>) with a category <code>x</code>, the changes as <code>y</code>, and
-    <code>"total"</code>: the field that marks total rows (<code>true</code>, <code>yes</code> or <code>1</code>).
+    <code>"total"</code>: the field that marks total rows (<code>true</code>, <code>yes</code> or <code>1</code>). <code>"horizontal": true</code>
+    runs the steps down the rows.
 </p>
 
 @code {
@@ -83,6 +98,13 @@
         <RioChart TItem="Step" Items="steps">
             <WaterfallSeries Name="Cash" XValue="s => s.Name" YValue="s => s.Amount" IsTotal="s => s.IsTotal"
                              ColorValue="@(s => s.Name == "Opening" ? "--rio-series-1" : null)" />
+        </RioChart>
+        """;
+
+    private const string HorizontalCode = """
+        <RioChart TItem="Step" Items="steps" Horizontal="true">
+            <WaterfallSeries Name="Result" XValue="s => s.Name" YValue="s => s.Amount"
+                             IsTotal="s => s.IsTotal" DataLabels="true" />
         </RioChart>
         """;
 }

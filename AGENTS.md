@@ -55,7 +55,8 @@ not a reason to branch on the framework.
 
 ## Git
 
-- Commit and push directly to `master`; no feature branches or PRs for now.
+- Every change goes through a pull request: work on a branch, push it and open a PR against
+  `master`. Never commit or push directly to `master`.
 - Keep `CHANGELOG.md` up to date and call out breaking changes.
 
 ## Conventions

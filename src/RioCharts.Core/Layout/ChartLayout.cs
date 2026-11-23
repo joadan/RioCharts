@@ -316,7 +316,7 @@ public static partial class ChartLayout
             return ComputeRangeBars(spec, resolved, options, warnings, styles, time);
         }
 
-        if (spec.Horizontal && resolved.Any(r => r.Spec.Type is SeriesType.Bar or SeriesType.Dumbbell) && !resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
+        if (spec.Horizontal && resolved.Any(r => DrawsHorizontally(r.Spec.Type)) && !resolved.Any(r => r.Spec.Type == SeriesType.Heatmap))
         {
             return ComputeHorizontal(spec, resolved, options, warnings, styles, time);
         }
