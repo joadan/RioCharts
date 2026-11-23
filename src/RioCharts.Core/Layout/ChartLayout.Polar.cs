@@ -212,6 +212,10 @@ public static partial class ChartLayout
             ? LayoutGauges(polar, labelsPerSeries, plot, compact, culture, texts, measure, font, styles, warnings, seriesNodes, labelNodes, tooltipSlices, gaugeItems)
             : LayoutRadialBars(polar[0], labelsPerSeries[polar[0]], plot, compact, ColorOf, Hidden, culture, measure, font, styles, warnings, seriesNodes, labelNodes,
                 tooltipSlices, described);
+        if (type != SeriesType.Gauge && options.SelectedPoints is { Count: > 0 } selected && SliceSelection(tooltipSlices, selected, styles) is { Count: > 0 } marks)
+        {
+            seriesNodes.Add(new GroupNode(marks) { Key = "selection:points", Class = "rio-selected-points" });
+        }
 
         var overlay = new List<Node>();
         if (!hasData && !compact)
@@ -373,6 +377,37 @@ public static partial class ChartLayout
         }
 
         return (slices, total, grouped);
+    }
+
+    /// <summary>
+    /// Selected slices and radial bars: an outline along the shape's edge in the text color, as for selected bars. The
+    /// grouped "Other" slice is no single item and is never outlined.
+    /// </summary>
+    private static List<Node> SliceSelection(List<TooltipSlice> slices, IReadOnlyDictionary<string, IReadOnlyCollection<int>> selected, StyleTable styles)
+    {
+        var marks = new List<Node>();
+        var style = styles.Add("selected-slice", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.5f, Fill = "none" });
+        foreach (var s in slices)
+        {
+            if (s.Index < 0 || !selected.TryGetValue(s.SeriesId, out var picked) || !picked.Contains(s.Index) || s.A1 - s.A0 <= 0)
+            {
+                continue;
+            }
+
+            var path = new PathBuilder().Arc(s.Cx, s.Cy, s.R1, s.A0, s.A1);
+            if (s.R0 > 0)
+            {
+                path.Arc(s.Cx, s.Cy, s.R0, s.A1, s.A0);
+            }
+            else if (s.A1 - s.A0 < Math.PI * 2 - 1e-6)
+            {
+                path.LineTo(s.Cx, s.Cy);
+            }
+
+            marks.Add(new PathNode(path.Close().Build(), style) { Class = "rio-selected-slice" });
+        }
+
+        return marks;
     }
 
     private static bool LayoutPies(List<Resolved> rings, Dictionary<Resolved, string[]> labels, RectF plot, bool compact, Func<string, string> colorOf,

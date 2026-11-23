@@ -114,6 +114,27 @@
     </ChildContent>
 </Example>
 
+<Example Title="Selection on any chart" Code="@AnyChartCode">
+    <Description>
+        <p>
+            Horizontal bars, box plots and waterfalls, heatmap cells, pie and donut slices and radial bars show their selection too, as an
+            outline. Here two charts bind the same <code>SelectedItems</code>: select a topic in either and both outline it. The grouped
+            "Other" slice holds several items and is not outlined.
+        </p>
+    </Description>
+    <ChildContent>
+        <div class="row">
+            <RioChart TItem="Ticket" Items="Tickets" Height="200" YAxis="Minutes" Horizontal="true" Selection="SelectionMode.Points" @bind-SelectedItems="_sharedTickets">
+                <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+            </RioChart>
+            <RioChart TItem="Ticket" Items="Tickets" Height="200" Selection="SelectionMode.Points" @bind-SelectedItems="_sharedTickets">
+                <DonutSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+            </RioChart>
+        </div>
+        <p class="note">@(_sharedTickets.Count == 0 ? "Click a bar or a slice." : $"{_sharedTickets.Count} tickets, {_sharedTickets.Sum(t => t.Minutes)} min.")</p>
+    </ChildContent>
+</Example>
+
 <h2>From code</h2>
 <p>Everything the user can do has an API: take a reference with <code>@@ref</code> and call <code>SelectItemsAsync</code>,
     <code>SelectRangeAsync</code>, <code>ClearSelectionAsync</code>, <code>GetItemsInRange</code>, <code>ShowSeriesAsync</code>,
@@ -131,6 +152,16 @@
     private ChartRange? _selectedRange;
     private IReadOnlyCollection<Reading> _selectedReadings = [];
     private IReadOnlyCollection<Ticket> _selectedTickets = [];
+    private IReadOnlyCollection<Ticket> _sharedTickets = [];
+
+    private const string AnyChartCode = """
+        <RioChart TItem="Ticket" Items="tickets" Horizontal="true" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+            <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>
+        <RioChart TItem="Ticket" Items="tickets" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+            <DonutSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>
+        """;
     private RioChart<Reading>? _sourcesChart;
     private static readonly (string Id, string Name)[] Sources = [("search", "Search"), ("social", "Social"), ("email", "Email")];
 

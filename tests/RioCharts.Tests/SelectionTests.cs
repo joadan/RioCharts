@@ -104,4 +104,85 @@ public class SelectionTests
         Assert.Equal(y.Map(15) - 1.5, outline.Bounds.Y, 1);
         Assert.Equal(y.Map(10) + 1.5, outline.Bounds.Y + outline.Bounds.Height, 1);
     }
+
+    private static Dictionary<string, IReadOnlyCollection<int>> Pick(string id, params int[] indexes) => new() { [id] = indexes };
+
+    private static readonly string[] Products = ["Trail shoe", "Rain jacket", "Headlamp"];
+
+    [Fact]
+    public void Selected_horizontal_bar_is_outlined_around_its_bar()
+    {
+        var spec = new ChartDefinition { Horizontal = true, Series = [new SeriesOptions { Id = "r", Type = SeriesType.Bar }] };
+        var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["r"] = SeriesData.FromCategories(Products, [120, 90, 60]) },
+            Options with { SelectedPoints = Pick("r", 1) });
+
+        var bar = All<RectNode>(Group(layout.Scene, "series:r")!)[1];
+        var outline = All<RectNode>(Group(layout.Scene, "selection:points")!).Single();
+        Assert.Equal(bar.Bounds.X - 1.5, outline.Bounds.X, 1);
+        Assert.Equal(bar.Bounds.Right + 1.5, outline.Bounds.Right, 1);
+        Assert.Equal(bar.Bounds.Y - 1.5, outline.Bounds.Y, 1);
+        Assert.Equal(bar.Bounds.Bottom + 1.5, outline.Bounds.Bottom, 1);
+    }
+
+    [Fact]
+    public void Selected_horizontal_waterfall_step_is_outlined()
+    {
+        var spec = new ChartDefinition { Horizontal = true, Series = [new SeriesOptions { Id = "w", Type = SeriesType.Waterfall }] };
+        var data = SeriesData.FromCategories(["Revenue", "Costs", "Result"], [420.0, -180, double.NaN]).WithTotals([false, false, true]);
+
+        var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["w"] = data }, Options with { SelectedPoints = Pick("w", 1) });
+
+        var step = All<RectNode>(Group(layout.Scene, "series:w")!).Where(n => n.Class == "rio-waterfall").ElementAt(1);
+        var outline = All<RectNode>(Group(layout.Scene, "selection:points")!).Single();
+        Assert.Equal(step.Bounds.X - 1.5, outline.Bounds.X, 1);
+        Assert.Equal(step.Bounds.Right + 1.5, outline.Bounds.Right, 1);
+    }
+
+    [Fact]
+    public void Selected_heatmap_cell_is_outlined_inside_the_cell()
+    {
+        var spec = new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "Mon", Type = SeriesType.Heatmap }, new SeriesOptions { Id = "Tue", Type = SeriesType.Heatmap }],
+        };
+        var data = new Dictionary<string, SeriesData>
+        {
+            ["Mon"] = SeriesData.FromCategories(["08", "12", "16"], [10, 20, 30]),
+            ["Tue"] = SeriesData.FromCategories(["08", "12", "16"], [40, 50, 60]),
+        };
+
+        var layout = ChartLayout.Compute(spec, data, Options with { SelectedPoints = Pick("Tue", 2) });
+
+        var cell = All<RectNode>(Group(layout.Scene, "series:heatmap")!)[5]; // Tue 16
+        var outline = All<RectNode>(Group(layout.Scene, "selection:points")!).Single();
+        Assert.True(outline.Bounds.X > cell.Bounds.X && outline.Bounds.Right < cell.Bounds.Right);
+        Assert.True(outline.Bounds.Y > cell.Bounds.Y && outline.Bounds.Bottom < cell.Bounds.Bottom);
+        Assert.Null(Group(ChartLayout.Compute(spec, data, Options).Scene, "selection:points"));
+    }
+
+    [Fact]
+    public void Selected_slices_are_outlined_but_not_the_other_slice()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.1 }] };
+        var data = new Dictionary<string, SeriesData> { ["p"] = SeriesData.FromCategories(["Web", "App", "Store", "Phone"], [60, 30, 8, 2]) };
+
+        var layout = ChartLayout.Compute(spec, data, Options with { SelectedPoints = Pick("p", 1, 3) }); // App, and Phone (in "Other" with Store)
+
+        var outline = Assert.Single(All<PathNode>(Group(layout.Scene, "selection:points")!));
+        Assert.Equal("rio-selected-slice", outline.Class);
+        Assert.Equal("none", layout.Scene.Styles.Get(outline.Style).Fill);
+        var onlyOther = ChartLayout.Compute(spec, data, Options with { SelectedPoints = Pick("p", 2, 3) }); // both in "Other"
+        Assert.Null(Group(onlyOther.Scene, "selection:points"));
+    }
+
+    [Fact]
+    public void Selected_radial_bar_is_outlined()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "g", Type = SeriesType.RadialBar, Max = 100 }] };
+        var data = new Dictionary<string, SeriesData> { ["g"] = SeriesData.FromCategories(["Done", "Planned"], [70, 40]) };
+
+        var layout = ChartLayout.Compute(spec, data, Options with { SelectedPoints = Pick("g", 0) });
+
+        Assert.Single(All<PathNode>(Group(layout.Scene, "selection:points")!));
+    }
 }
