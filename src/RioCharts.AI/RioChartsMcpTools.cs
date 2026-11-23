@@ -15,27 +15,27 @@ namespace RioCharts.AI;
 [McpServerToolType]
 public sealed class RioChartsMcpTools(ChartTool tool)
 {
-    /// <summary>create_chart: validates and renders a spec, returning the result JSON and the PNG.</summary>
+    /// <summary>create_chart: validates and renders a definition, returning the result JSON and the PNG.</summary>
     [McpServerTool(Name = ChartTool.ToolName, Title = "Create chart")]
-    [Description("Creates a chart from a JSON spec and returns it as a PNG with a short description, or errors to fix (then call again). "
-        + "Call list_datasets first to see the datasets and fields. Minimal spec: "
+    [Description("Creates a chart from a JSON definition and returns it as a PNG with a short description, or errors to fix (then call again). "
+        + "Call list_datasets first to see the datasets and fields. Minimal definition: "
         + "{\"dataset\":\"<id>\",\"series\":[{\"type\":\"line\",\"x\":\"<time field>\",\"y\":\"<numeric field>\"}]}. "
         + "Types: line, area, bar, pie, radialBar, auto. Series options: groupBy, aggregate (sum|average|min|max|count|last), "
         + "timeBucket (minute|hour|day|week|month|quarter|year|auto), filter, sort, limit, stack (y.stacking \"percent\" stacks to 100 %). Inline \"data\" rows work instead of a dataset. "
         + "Call get_chart_schema for every option.")]
     public async Task<CallToolResult> CreateChart(
-        [Description("The chart spec as a JSON object.")] JsonElement spec,
+        [Description("The chart definition as a JSON object.")] JsonElement definition,
         CancellationToken cancellationToken)
     {
-        var result = await tool.CreateChartAsync(spec, cancellationToken).ConfigureAwait(false);
+        var result = await tool.CreateChartAsync(definition, cancellationToken).ConfigureAwait(false);
         return ToCallToolResult(result);
     }
 
-    /// <summary>render_chart: renders a spec as a PNG or SVG image for the agent.</summary>
+    /// <summary>render_chart: renders a definition as a PNG or SVG image for the agent.</summary>
     [McpServerTool(Name = ChartTool.RenderToolName, Title = "Render chart image")]
     [Description(ChartTool.RenderDescription)]
     public async Task<CallToolResult> RenderChart(
-        [Description("The chart spec as a JSON object (the same spec as create_chart).")] JsonElement spec,
+        [Description("The chart definition as a JSON object (the same definition as create_chart).")] JsonElement definition,
         [Description("png (default) or svg.")] ChartImageFormat format = ChartImageFormat.Png,
         [Description("Width in pixels, 100 to 4000. Default 800.")] int? width = null,
         [Description("Height in pixels, 100 to 4000. Default 400.")] int? height = null,
@@ -44,7 +44,7 @@ public sealed class RioChartsMcpTools(ChartTool tool)
         CancellationToken cancellationToken = default)
     {
         var request = new ChartImageRequest { Format = format, Width = width, Height = height, Theme = theme, FileName = fileName };
-        var result = await tool.RenderChartAsync(spec, request, cancellationToken).ConfigureAwait(false);
+        var result = await tool.RenderChartAsync(definition, request, cancellationToken).ConfigureAwait(false);
         return ToCallToolResult(result);
     }
 
@@ -53,9 +53,9 @@ public sealed class RioChartsMcpTools(ChartTool tool)
     [Description("Lists the datasets that charts can use, with their fields and types.")]
     public string ListDatasets() => tool.ListDatasets();
 
-    /// <summary>Returns the JSON schema of a chart spec, with a description of every option.</summary>
-    [McpServerTool(Name = "get_chart_schema", Title = "Chart spec schema", ReadOnly = true)]
-    [Description("Returns the JSON schema of a chart spec, with a description of every option.")]
+    /// <summary>Returns the JSON schema of a chart definition, with a description of every option.</summary>
+    [McpServerTool(Name = "get_chart_schema", Title = "Chart definition schema", ReadOnly = true)]
+    [Description("Returns the JSON schema of a chart definition, with a description of every option.")]
     public string GetChartSchema() => ChartTool.GetSchema();
 
     /// <summary>

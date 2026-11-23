@@ -1,6 +1,6 @@
 namespace RioCharts.Core.Series;
 
-/// <summary>Resolves <see cref="SeriesSpec.ColorBands"/>: the color of a value, and the value ranges each color covers.</summary>
+/// <summary>Resolves <see cref="SeriesOptions.ColorBands"/>: the color of a value, and the value ranges each color covers.</summary>
 internal static class ColorBands
 {
     /// <summary>The color of a value: the last band that contains it, or null (the series color).</summary>

@@ -21,23 +21,23 @@ public class Milestone5Tests
         }
     }
 
-    private static (ChartSpec Spec, Dictionary<string, SeriesData> Data) TemperatureChart()
+    private static (ChartDefinition Spec, Dictionary<string, SeriesData> Data) TemperatureChart()
     {
         var start = new DateTime(2026, 11, 16);
         var times = Enumerable.Range(0, 96).Select(i => start.AddMinutes(30 * i)).ToArray();
         var london = times.Select((t, i) => 19 + 1.5 * Math.Sin(i / 48.0 * 2 * Math.PI)).ToArray();
         var rain = times.Select((t, i) => 14 - 9 * Math.Sin(i / 48.0 * 2 * Math.PI)).ToArray();
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Title = "Weather station",
-            Y = new AxisSpec { Title = "°C" },
-            YAxes = [new AxisSpec { Id = "mm", Title = "mm" }],
+            Y = new AxisOptions { Title = "°C" },
+            YAxes = [new AxisOptions { Id = "mm", Title = "mm" }],
             Series =
             [
-                new SeriesSpec { Id = "rain", Name = "Rain", Type = SeriesType.Area, YAxisId = "mm" },
-                new SeriesSpec { Id = "london", Name = "London", Curve = CurveType.Monotone },
+                new SeriesOptions { Id = "rain", Name = "Rain", Type = SeriesType.Area, YAxisId = "mm" },
+                new SeriesOptions { Id = "london", Name = "London", Curve = CurveType.Monotone },
             ],
-            Annotations = [new AnnotationSpec { Value = 19, Label = "Average" }],
+            Annotations = [new Annotation { Value = 19, Label = "Average" }],
         };
         return (spec, new() { ["london"] = SeriesData.From(times, london), ["rain"] = SeriesData.From(times, rain) });
     }
@@ -45,7 +45,7 @@ public class Milestone5Tests
     [Fact]
     public void Png_has_the_requested_size_and_draws_the_series_colors()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar }] };
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(["A", "B", "C"], [3.0, 5, 4]) };
 
         var png = ChartExport.ToPng(spec, data, Options);
@@ -65,7 +65,7 @@ public class Milestone5Tests
     [Fact]
     public void Dark_theme_and_overrides_change_the_colors()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar }] };
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(["A"], [1.0]) };
         var options = Options with { Theme = ExportTheme.Dark.With(ThemeTokens.Series(0), "#0b6e4f") };
 
@@ -100,15 +100,15 @@ public class Milestone5Tests
         Save("temperature.png", ChartExport.ToPng(temperature, temperatureData, Options));
 
         var shares = SeriesData.FromCategories(["Industry", "Homes", "Transport", "Offices", "Shops"], [412.0, 236, 148, 97, 31]);
-        var donut = new ChartSpec { Title = "Energy use", Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }] };
+        var donut = new ChartDefinition { Title = "Energy use", Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }] };
         var donutPng = ChartExport.ToPng(donut, new Dictionary<string, SeriesData> { ["p"] = shares }, Options);
         Save("donut.png", donutPng);
 
-        var radial = new ChartSpec { Series = [new SeriesSpec { Id = "r", Type = SeriesType.RadialBar, Max = 100 }] };
+        var radial = new ChartDefinition { Series = [new SeriesOptions { Id = "r", Type = SeriesType.RadialBar, Max = 100 }] };
         var radialPng = ChartExport.ToPng(radial, new Dictionary<string, SeriesData> { ["r"] = SeriesData.FromCategories(["North", "South", "East"], [87.0, 41, 66]) }, Options);
         Save("radial.png", radialPng);
 
-        var empty = ChartExport.ToPng(new ChartSpec { Series = [new SeriesSpec { Id = "e" }] }, new Dictionary<string, SeriesData>(), Options);
+        var empty = ChartExport.ToPng(new ChartDefinition { Series = [new SeriesOptions { Id = "e" }] }, new Dictionary<string, SeriesData>(), Options);
         Save("empty.png", empty);
 
         Assert.All([donutPng, radialPng, empty], png => Assert.NotNull(SKBitmap.Decode(png)));
@@ -119,7 +119,7 @@ public class Milestone5Tests
     {
         static IEnumerable<Node> All(Node node) => node is GroupNode g ? g.Children.SelectMany(All).Prepend(g) : [node];
         var shares = SeriesData.FromCategories(["Industry", "Homes", "Transport", "Offices", "Shops", "Farms", "Rail"], [412.0, 236, 148, 97, 31, 9, 6]);
-        var donut = new ChartSpec { Legend = new LegendSpec { Mode = LegendMode.Hide }, Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }] };
+        var donut = new ChartDefinition { Legend = new LegendOptions { Mode = LegendMode.Hide }, Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }] };
         var measurer = new SkiaTextMeasurer(new SkiaFonts("Segoe UI, Arial, sans-serif"));
         var inside = 0;
 
@@ -159,7 +159,7 @@ public class Milestone5Tests
         var shares = SeriesData.FromCategories(["Industry", "Homes", "Transport", "Offices", "Shops", "Farms", "Rail"], [412.0, 236, 148, 97, 31, 9, 6]);
         foreach (var (inner, height) in new[] { 0, 0.6 }.SelectMany(inner => new[] { 150, 170, 220, 300 }.Select(h => (inner, h))))
         {
-            var donut = new ChartSpec { Legend = new LegendSpec { Mode = LegendMode.Hide }, Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = inner }] };
+            var donut = new ChartDefinition { Legend = new LegendOptions { Mode = LegendMode.Hide }, Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = inner }] };
             var layout = ChartExport.Layout(donut, new Dictionary<string, SeriesData> { ["p"] = shares }, Options with { Width = 360, Height = height });
             var leaders = new[] { layout.Scene.Static, layout.Scene.Series, layout.Scene.Overlay }.SelectMany(All).OfType<PathNode>()
                 .Where(p => p.Class == "rio-leader")

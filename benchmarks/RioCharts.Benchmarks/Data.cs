@@ -17,11 +17,11 @@ internal static class Data
     public static SeriesData Hourly(int n, Func<int, double> value) =>
         SeriesData.From(Hours(n), Enumerable.Range(0, n).Select(value).ToArray());
 
-    public static ChartSpec TwoLines() => new()
+    public static ChartDefinition TwoLines() => new()
     {
         Title = "Weather stations",
-        Y = new AxisSpec { Title = "°C", Format = "0.0" },
-        Series = [new SeriesSpec { Id = "s", Name = "London" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+        Y = new AxisOptions { Title = "°C", Format = "0.0" },
+        Series = [new SeriesOptions { Id = "s", Name = "London" }, new SeriesOptions { Id = "e", Name = "Toronto" }],
     };
 
     public static Dictionary<string, SeriesData> TwoLinesData(int n) =>

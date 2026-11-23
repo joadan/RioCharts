@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 using RioCharts.Skia;
 using SkiaSharp;
 
@@ -30,10 +30,10 @@ public class HeatmapTests
         ["Wed"] = SeriesData.FromCategories(Hours, [90, 100, 110, double.NaN]),
     };
 
-    private static ChartSpec Spec(bool labels = false, double? max = null) => new()
+    private static ChartDefinition Spec(bool labels = false, double? max = null) => new()
     {
         Title = "Sessions",
-        Series = [.. Days.Select(d => new SeriesSpec { Id = d, Type = SeriesType.Heatmap, DataLabels = labels, Max = max, Format = "#,0" })],
+        Series = [.. Days.Select(d => new SeriesOptions { Id = d, Type = SeriesType.Heatmap, DataLabels = labels, Max = max, Format = "#,0" })],
     };
 
     private static List<RectNode> Cells(ChartLayoutResult layout) =>
@@ -116,7 +116,7 @@ public class HeatmapTests
     {
         var start = new DateTime(2026, 11, 16);
         var times = Enumerable.Range(0, 24).Select(h => start.AddHours(h)).ToArray();
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Heatmap }, new SeriesSpec { Id = "b", Type = SeriesType.Heatmap }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Type = SeriesType.Heatmap }, new SeriesOptions { Id = "b", Type = SeriesType.Heatmap }] };
         var data = new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.From(times, times.Select(t => (double)t.Hour).ToArray()),
@@ -134,7 +134,7 @@ public class HeatmapTests
     [Fact]
     public void Other_series_types_are_skipped_with_a_warning()
     {
-        var spec = Spec() with { Series = [.. Spec().Series, new SeriesSpec { Id = "line" }] };
+        var spec = Spec() with { Series = [.. Spec().Series, new SeriesOptions { Id = "line" }] };
         var data = Week();
         data["line"] = SeriesData.From([1.0, 2], [1.0, 2]);
 
@@ -164,15 +164,15 @@ public class HeatmapTests
             ["weekday"] = d, ["hour"] = h, ["sessions"] = 10.0 * (i + 1),
         }));
         var dataset = ChartDataset.FromRows("traffic", rows);
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "traffic", "series": [ { "type": "heatmap", "x": "hour", "y": "sessions", "groupBy": "weekday" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "traffic", "series": [ { "type": "heatmap", "x": "hour", "y": "sessions", "groupBy": "weekday" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["traffic"] = dataset });
-        var layout = ChartLayout.Compute(bound.Spec, bound.Data, Options);
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["traffic"] = dataset });
+        var layout = ChartLayout.Compute(bound.Definition, bound.Data, Options);
 
         Assert.Empty(bound.Errors);
         Assert.Equal(Days, layout.Tooltip.Series.Select(s => s.Name));
         Assert.Equal(12, Cells(layout).Count);
-        Assert.Contains("<HeatmapSeries", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Contains("<HeatmapSeries", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 
     [Fact]

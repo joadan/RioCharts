@@ -4,7 +4,7 @@ using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.AI;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -113,11 +113,11 @@ public class BoxPlotTests
 
     // ---------- Layout ----------
 
-    private static ChartLayoutResult Layout(params SeriesSpec[] series) => Layout(series, null);
+    private static ChartLayoutResult Layout(params SeriesOptions[] series) => Layout(series, null);
 
-    private static ChartLayoutResult Layout(SeriesSpec[] series, Dictionary<string, SeriesData>? data)
+    private static ChartLayoutResult Layout(SeriesOptions[] series, Dictionary<string, SeriesData>? data)
     {
-        var spec = new ChartSpec { Series = series };
+        var spec = new ChartDefinition { Series = series };
         data ??= series.ToDictionary(s => s.Id, _ => SeriesData.FromBoxGroups(Readings, r => r.Station, r => r.Temp, out IReadOnlyList<int[]> _));
         return ChartLayout.Compute(spec, data, Options);
     }
@@ -125,7 +125,7 @@ public class BoxPlotTests
     [Fact]
     public void Boxes_whiskers_medians_and_outliers_are_drawn()
     {
-        var layout = Layout(new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot, Name = "Temperature" });
+        var layout = Layout(new SeriesOptions { Id = "t", Type = SeriesType.BoxPlot, Name = "Temperature" });
 
         var nodes = All<Node>(layout.Scene.Series);
         Assert.Equal(2, nodes.OfType<RectNode>().Count(n => n.Class == "rio-box")); // Station 3 is a gap
@@ -138,7 +138,7 @@ public class BoxPlotTests
     [Fact]
     public void The_y_axis_fits_the_outliers_and_does_not_force_zero()
     {
-        var layout = Layout(new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot });
+        var layout = Layout(new SeriesOptions { Id = "t", Type = SeriesType.BoxPlot });
 
         Assert.True(layout.YScale.DomainMax >= 27.5);
         Assert.True(layout.YScale.DomainMin > 0 && layout.YScale.DomainMin <= 18);
@@ -148,8 +148,8 @@ public class BoxPlotTests
     public void Two_box_series_sit_side_by_side_and_are_never_stacked()
     {
         var layout = Layout(
-            new SeriesSpec { Id = "a", Type = SeriesType.BoxPlot, Stack = "s" },
-            new SeriesSpec { Id = "b", Type = SeriesType.BoxPlot, Stack = "s" });
+            new SeriesOptions { Id = "a", Type = SeriesType.BoxPlot, Stack = "s" },
+            new SeriesOptions { Id = "b", Type = SeriesType.BoxPlot, Stack = "s" });
 
         var boxes = All<RectNode>(layout.Scene.Series).Where(n => n.Class == "rio-box").ToList();
         Assert.Equal(4, boxes.Count);
@@ -160,7 +160,7 @@ public class BoxPlotTests
     [Fact]
     public void Tooltip_lists_the_box_under_the_median()
     {
-        var layout = Layout(new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot, Format = "0.0" });
+        var layout = Layout(new SeriesOptions { Id = "t", Type = SeriesType.BoxPlot, Format = "0.0" });
 
         var s = layout.Tooltip.Series.Single();
         Assert.Equal("19.6", s.Values[1]);
@@ -172,7 +172,7 @@ public class BoxPlotTests
     [Fact]
     public void A_box_series_without_boxes_warns_and_draws_nothing()
     {
-        var layout = Layout([new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot }],
+        var layout = Layout([new SeriesOptions { Id = "t", Type = SeriesType.BoxPlot }],
             new Dictionary<string, SeriesData> { ["t"] = SeriesData.FromCategories(["a"], [1.0]) });
 
         Assert.Contains(layout.Warnings, w => w.Contains("box plot needs boxes"));
@@ -182,7 +182,7 @@ public class BoxPlotTests
     [Fact]
     public void Empty_box_data_renders_the_empty_state()
     {
-        var layout = Layout([new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot }],
+        var layout = Layout([new SeriesOptions { Id = "t", Type = SeriesType.BoxPlot }],
             new Dictionary<string, SeriesData> { ["t"] = SeriesData.FromBoxGroups(Array.Empty<Reading>(), r => r.Station, r => r.Temp, out _) });
 
         Assert.False(layout.HasData);
@@ -191,7 +191,7 @@ public class BoxPlotTests
     [Fact]
     public void A_selected_box_is_outlined_from_quartile_to_quartile()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "t", Type = SeriesType.BoxPlot }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "t", Type = SeriesType.BoxPlot }] };
         var data = new Dictionary<string, SeriesData> { ["t"] = SeriesData.FromBoxGroups(Readings, r => r.Station, r => r.Temp, out _) };
 
         var layout = ChartLayout.Compute(spec, data, Options with { SelectedPoints = new Dictionary<string, IReadOnlyCollection<int>> { ["t"] = [0] } });
@@ -202,7 +202,7 @@ public class BoxPlotTests
         Assert.Equal(box.Bounds.Height + 3, outline.Bounds.Height, 1);
     }
 
-    // ---------- JSON specs ----------
+    // ---------- JSON definitions ----------
 
     private static Dictionary<string, ChartDataset> Rows(params (string Station, double Temp)[] values) => new()
     {
@@ -212,17 +212,17 @@ public class BoxPlotTests
     [Fact]
     public void A_json_box_plot_computes_the_boxes_from_the_raw_values_per_x()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "box", "x": "station", "y": "temp" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "box", "x": "station", "y": "temp" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, Rows(("Station 1", 18), ("Station 1", 20), ("Station 1", 22), ("Station 2", 19), ("Station 2", 21)));
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, Rows(("Station 1", 18), ("Station 1", 20), ("Station 1", 22), ("Station 2", 19), ("Station 2", 21)));
 
         Assert.Empty(bound.Errors);
         Assert.DoesNotContain(bound.Warnings, w => w.Contains("using sum")); // repeating x is the point here
-        Assert.Equal(SeriesType.BoxPlot, bound.Spec.Series.Single().Type);
+        Assert.Equal(SeriesType.BoxPlot, bound.Definition.Series.Single().Type);
         var data = bound.Data.Values.Single();
         Assert.Equal([20.0, 20], data.Y);
         Assert.Equal([3, 2], data.Box!.Count);
-        Assert.Contains("<BoxPlotSeries", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Contains("<BoxPlotSeries", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -232,23 +232,23 @@ public class BoxPlotTests
         {
             ["station"] = "Station 1", ["lo"] = 17.0, ["p25"] = 18.5, ["med"] = 19.4, ["p75"] = 20.1, ["hi"] = 21.0,
         } };
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "station", "y": "med", "low": "lo", "q1": "p25", "q3": "p75", "high": "hi" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "station", "y": "med", "low": "lo", "q1": "p25", "q3": "p75", "high": "hi" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
         Assert.Empty(bound.Errors);
         var box = bound.Data.Values.Single().Box!;
         Assert.Equal((17.0, 18.5, 20.1, 21.0), (box.Low[0], box.Q1[0], box.Q3[0], box.High[0]));
-        var razor = ChartRazor.FromSpec(parsed.Spec!, "Row", "rows");
+        var razor = ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows");
         Assert.Contains(" Q1Value=\"r => r.P25\" Q3Value=\"r => r.P75\" LowValue=\"r => r.Lo\" HighValue=\"r => r.Hi\"", razor, StringComparison.Ordinal);
     }
 
     [Fact]
     public void A_json_box_plot_with_only_one_quartile_explains_what_is_missing()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "station", "y": "temp", "q1": "temp" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "boxPlot", "x": "station", "y": "temp", "q1": "temp" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, Rows(("Station 1", 18)));
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, Rows(("Station 1", 18)));
 
         Assert.Equal("series[0].q3", Assert.Single(bound.Errors).Path);
     }

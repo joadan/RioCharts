@@ -46,10 +46,10 @@
 </ul>
 
 @code {
-    private static readonly AxisSpec Ms = new() { Title = "ms" };
+    private static readonly AxisOptions Ms = new() { Title = "ms" };
     private static readonly SeriesData _big = Create();
-    private static readonly AxisSpec Minutes = new() { Title = "Minutes on the site" };
-    private static readonly AxisSpec Euros = new() { Title = "Order value, €" };
+    private static readonly AxisOptions Minutes = new() { Title = "Minutes on the site" };
+    private static readonly AxisOptions Euros = new() { Title = "Order value, €" };
     private static readonly SeriesData _orders = CreateOrders();
 
     private static SeriesData CreateOrders()
@@ -66,14 +66,14 @@
     }
 
     private const string BigCode = """
-        <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas" YAxis="@(new AxisSpec { Title = "ms" })">
+        <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas" YAxis="@(new AxisOptions { Title = "ms" })">
             <LineSeries Name="Response time" Data="SeriesData.From(times, values)" StrokeWidth="1.25" Format="0 ms" />
         </RioChart>
         """;
 
     private const string ScatterCode = """
         <RioChart TItem="double" Zoomable="true" SeriesLayer="SeriesLayer.Canvas"
-                  XAxis="@(new AxisSpec { Title = "Minutes on the site" })" YAxis="@(new AxisSpec { Title = "Order value, €" })">
+                  XAxis="@(new AxisOptions { Title = "Minutes on the site" })" YAxis="@(new AxisOptions { Title = "Order value, €" })">
             <ScatterSeries Name="Orders" Data="SeriesData.From(minutes, values)" MarkerSize="4" TrendLine="true" Format="0 €" />
         </RioChart>
         """;

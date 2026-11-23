@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -84,8 +84,8 @@ public class CandlestickTests
                 return new CandleSummary(open, Math.Max(open, close) + 0.5, Math.Min(open, close) - 0.4, close);
             }).ToArray());
 
-    private static ChartLayoutResult Layout(Dictionary<string, SeriesData> data, LayoutOptions? options = null, params SeriesSpec[] series) =>
-        ChartLayout.Compute(new ChartSpec { Series = series.Length > 0 ? series : [new SeriesSpec { Id = "t", Type = SeriesType.Candlestick }] }, data, options ?? Options);
+    private static ChartLayoutResult Layout(Dictionary<string, SeriesData> data, LayoutOptions? options = null, params SeriesOptions[] series) =>
+        ChartLayout.Compute(new ChartDefinition { Series = series.Length > 0 ? series : [new SeriesOptions { Id = "t", Type = SeriesType.Candlestick }] }, data, options ?? Options);
 
     [Fact]
     public void Rising_candles_are_light_and_falling_ones_solid()
@@ -149,7 +149,7 @@ public class CandlestickTests
     {
         var data = SeriesData.FromCategories(["Mon"], [0.0]).WithCandles([new CandleSummary(20, 22.5, 19.5, 21)]);
 
-        var s = Layout(new() { ["t"] = data }, null, new SeriesSpec { Id = "t", Type = SeriesType.Candlestick, Format = "0.0" }).Tooltip.Series.Single();
+        var s = Layout(new() { ["t"] = data }, null, new SeriesOptions { Id = "t", Type = SeriesType.Candlestick, Format = "0.0" }).Tooltip.Series.Single();
 
         Assert.Equal("21.0", s.Values[0]);
         Assert.Equal(["Open", "High", "Low", "Close", "Change"], s.PartLabels!);
@@ -160,7 +160,7 @@ public class CandlestickTests
     public void Two_candle_series_sit_side_by_side()
     {
         var layout = Layout(new() { ["a"] = Days(10), ["b"] = Days(10, 3) }, null,
-            new SeriesSpec { Id = "a", Type = SeriesType.Candlestick, Stack = "s" }, new SeriesSpec { Id = "b", Type = SeriesType.Candlestick, Stack = "s" });
+            new SeriesOptions { Id = "a", Type = SeriesType.Candlestick, Stack = "s" }, new SeriesOptions { Id = "b", Type = SeriesType.Candlestick, Stack = "s" });
 
         var hits = layout.Tooltip.Series;
         Assert.Equal(2, hits.Count);
@@ -186,7 +186,7 @@ public class CandlestickTests
         Assert.Equal(layout.YScale.Map(data.Candles!.High[2]) - 1.5, outline.Bounds.Y, 1);
     }
 
-    // ---------- JSON specs ----------
+    // ---------- JSON definitions ----------
 
     private static Dictionary<string, ChartDataset> Readings(int hours) => new()
     {
@@ -199,17 +199,17 @@ public class CandlestickTests
     [Fact]
     public void A_json_candlestick_makes_candles_from_raw_values_per_bucket()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "ohlc", "x": "time", "y": "temp", "timeBucket": "hour" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "ohlc", "x": "time", "y": "temp", "timeBucket": "hour" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, Readings(3));
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, Readings(3));
 
         Assert.Empty(bound.Errors);
         Assert.DoesNotContain(bound.Warnings, w => w.Contains("using average"));
         var data = bound.Data.Values.Single();
         Assert.Equal(3, data.Count);
         Assert.Equal(new CandleSummary(20, 21.5, 20, 21.5, 4), data.Candles!.At(0, data.Y[0]));
-        Assert.Contains("<CandlestickSeries", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
-        Assert.Contains(" Bucket=\"TimeBucket.Hour\"", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Contains("<CandlestickSeries", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Contains(" Bucket=\"TimeBucket.Hour\"", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -219,22 +219,22 @@ public class CandlestickTests
         {
             ["day"] = Start, ["first"] = 20.0, ["max"] = 22.0, ["min"] = 19.0, ["last"] = 21.0,
         } };
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "candlestick", "x": "day", "open": "first", "high": "max", "low": "min", "y": "last" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "candlestick", "x": "day", "open": "first", "high": "max", "low": "min", "y": "last" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
         Assert.Empty(bound.Errors);
         var data = bound.Data.Values.Single();
         Assert.Equal(new CandleSummary(20, 22, 19, 21), data.Candles!.At(0, data.Y[0]));
-        Assert.Contains(" OpenValue=\"r => r.First\" HighValue=\"r => r.Max\" LowValue=\"r => r.Min\"", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Contains(" OpenValue=\"r => r.First\" HighValue=\"r => r.Max\" LowValue=\"r => r.Min\"", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 
     [Fact]
     public void A_json_candlestick_explains_missing_fields()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "candlestick", "x": "time", "y": "temp", "open": "temp" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "candlestick", "x": "time", "y": "temp", "open": "temp" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, Readings(1));
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, Readings(1));
 
         Assert.Equal(["series[0].low", "series[0].high"], bound.Errors.Select(e => e.Path).Order().Reverse());
     }

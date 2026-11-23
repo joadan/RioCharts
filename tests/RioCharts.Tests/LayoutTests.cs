@@ -11,10 +11,10 @@ public class LayoutTests
 {
     private static readonly LayoutOptions Options = new() { Width = 600, Height = 300, Culture = CultureInfo.InvariantCulture };
 
-    private static ChartLayoutResult Layout(ChartSpec spec, Dictionary<string, SeriesData> data, LayoutOptions? options = null) =>
+    private static ChartLayoutResult Layout(ChartDefinition spec, Dictionary<string, SeriesData> data, LayoutOptions? options = null) =>
         ChartLayout.Compute(spec, data, options ?? Options);
 
-    private static ChartSpec Spec(params SeriesSpec[] series) => new() { Series = series };
+    private static ChartDefinition Spec(params SeriesOptions[] series) => new() { Series = series };
 
     private static IEnumerable<Node> All(Node node) => node is GroupNode g ? g.Children.SelectMany(All).Prepend(g) : [node];
 
@@ -23,7 +23,7 @@ public class LayoutTests
     [Fact]
     public void Single_line_has_no_legend()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2], [1.0, 3, 2]) });
+        var result = Layout(Spec(new SeriesOptions { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2], [1.0, 3, 2]) });
 
         Assert.DoesNotContain(All(result.Scene), n => n.Class == "rio-legend");
     }
@@ -31,7 +31,7 @@ public class LayoutTests
     [Fact]
     public void Two_series_show_a_legend_with_toggles()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "a" }, new SeriesSpec { Id = "b" }),
+        var result = Layout(Spec(new SeriesOptions { Id = "a" }, new SeriesOptions { Id = "b" }),
             new() { ["a"] = SeriesData.From([0.0, 1], [1.0, 2]), ["b"] = SeriesData.From([0.0, 1], [2.0, 3]) });
 
         var items = All(result.Scene).OfType<GroupNode>().Where(g => g.Interaction?.Kind == "legend").ToList();
@@ -43,8 +43,8 @@ public class LayoutTests
     {
         var data = new Dictionary<string, SeriesData> { ["s"] = SeriesData.From([0.0, 1, 2], [50.0, 60, 70]) };
 
-        var line = Layout(Spec(new SeriesSpec { Id = "s", Type = SeriesType.Line }), data);
-        var bar = Layout(Spec(new SeriesSpec { Id = "s", Type = SeriesType.Bar }), data);
+        var line = Layout(Spec(new SeriesOptions { Id = "s", Type = SeriesType.Line }), data);
+        var bar = Layout(Spec(new SeriesOptions { Id = "s", Type = SeriesType.Bar }), data);
 
         Assert.True(line.YScale.DomainMin > 0);
         Assert.Equal(0, bar.YScale.DomainMin);
@@ -53,7 +53,7 @@ public class LayoutTests
     [Fact]
     public void Hidden_series_keep_color_and_legend_but_leave_domain()
     {
-        var spec = Spec(new SeriesSpec { Id = "small" }, new SeriesSpec { Id = "big" });
+        var spec = Spec(new SeriesOptions { Id = "small" }, new SeriesOptions { Id = "big" });
         var data = new Dictionary<string, SeriesData>
         {
             ["small"] = SeriesData.From([0.0, 1], [1.0, 2]),
@@ -72,7 +72,7 @@ public class LayoutTests
     [Fact]
     public void Empty_chart_renders_a_message_not_an_error()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "a" }), new());
+        var result = Layout(Spec(new SeriesOptions { Id = "a" }), new());
 
         Assert.False(result.HasData);
         Assert.Contains(All(result.Scene.Overlay), n => n is TextNode { Text: "No data available" });
@@ -81,8 +81,8 @@ public class LayoutTests
     [Fact]
     public void Single_point_and_equal_values_do_not_collapse_the_axes()
     {
-        var single = Layout(Spec(new SeriesSpec { Id = "a" }), new() { ["a"] = SeriesData.From([5.0], [7.0]) });
-        var equal = Layout(Spec(new SeriesSpec { Id = "a" }), new() { ["a"] = SeriesData.From([1.0, 2, 3], [4.0, 4, 4]) });
+        var single = Layout(Spec(new SeriesOptions { Id = "a" }), new() { ["a"] = SeriesData.From([5.0], [7.0]) });
+        var equal = Layout(Spec(new SeriesOptions { Id = "a" }), new() { ["a"] = SeriesData.From([1.0, 2, 3], [4.0, 4, 4]) });
 
         Assert.True(single.XScale!.DomainMax > single.XScale.DomainMin);
         Assert.True(single.YScale.DomainMax > single.YScale.DomainMin);
@@ -92,7 +92,7 @@ public class LayoutTests
     [Fact]
     public void Gaps_split_the_line_path()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2, 3, 4], [1.0, 2, double.NaN, 3, 4]) });
+        var result = Layout(Spec(new SeriesOptions { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2, 3, 4], [1.0, 2, double.NaN, 3, 4]) });
 
         var path = All(result.Scene.Series).OfType<PathNode>().Single(p => p.Class == "rio-line").Path;
         Assert.Equal(2, path.Commands.Count(c => c == PathCommand.MoveTo));
@@ -101,7 +101,7 @@ public class LayoutTests
     [Fact]
     public void Lone_points_get_a_marker_others_do_not()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2, 3, 4], [1.0, 2, double.NaN, 3, double.NaN]) });
+        var result = Layout(Spec(new SeriesOptions { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2, 3, 4], [1.0, 2, double.NaN, 3, double.NaN]) });
 
         var points = All(result.Scene.Series).OfType<PathNode>().Where(p => p.Class == "rio-point").ToList();
 
@@ -112,7 +112,7 @@ public class LayoutTests
     [Fact]
     public void Y_title_is_horizontal_above_the_axis()
     {
-        var spec = new ChartSpec { Y = new AxisSpec { Title = "°C" }, Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Y = new AxisOptions { Title = "°C" }, Series = [new SeriesOptions { Id = "a" }] };
 
         var result = Layout(spec, new() { ["a"] = SeriesData.From([0.0, 1], [1.0, 2]) });
         var title = All(result.Scene.Static).OfType<TextNode>().Single(t => t.Text == "°C");
@@ -125,9 +125,9 @@ public class LayoutTests
     public void Default_z_order_is_areas_bars_lines()
     {
         var spec = Spec(
-            new SeriesSpec { Id = "line", Type = SeriesType.Line },
-            new SeriesSpec { Id = "bar", Type = SeriesType.Bar },
-            new SeriesSpec { Id = "area", Type = SeriesType.Area });
+            new SeriesOptions { Id = "line", Type = SeriesType.Line },
+            new SeriesOptions { Id = "bar", Type = SeriesType.Bar },
+            new SeriesOptions { Id = "area", Type = SeriesType.Area });
         var d = SeriesData.From([0.0, 1], [1.0, 2]);
 
         var result = Layout(spec, new() { ["line"] = d, ["bar"] = d, ["area"] = d });
@@ -140,7 +140,7 @@ public class LayoutTests
     [Fact]
     public void Grouped_bars_share_a_category_band_without_overlap()
     {
-        var spec = Spec(new SeriesSpec { Id = "a", Type = SeriesType.Bar }, new SeriesSpec { Id = "b", Type = SeriesType.Bar });
+        var spec = Spec(new SeriesOptions { Id = "a", Type = SeriesType.Bar }, new SeriesOptions { Id = "b", Type = SeriesType.Bar });
         var data = new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.FromCategories(["Q1", "Q2"], [1.0, 2]),
@@ -159,7 +159,7 @@ public class LayoutTests
     [Fact]
     public void Wider_charts_get_more_x_ticks()
     {
-        var spec = Spec(new SeriesSpec { Id = "a" });
+        var spec = Spec(new SeriesOptions { Id = "a" });
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([0.0, 1000], [0.0, 1]) };
 
         int Labels(double width) => All(Layout(spec, data, Options with { Width = width }).Scene.Static)
@@ -171,7 +171,7 @@ public class LayoutTests
     [Fact]
     public void X_labels_never_overlap()
     {
-        var spec = Spec(new SeriesSpec { Id = "a" });
+        var spec = Spec(new SeriesOptions { Id = "a" });
         var start = new DateTime(2026, 1, 1);
         var data = new Dictionary<string, SeriesData>
         {
@@ -209,7 +209,7 @@ public class LayoutTests
         var n = 50_000;
         var data = SeriesData.From(Enumerable.Range(0, n).Select(i => (double)i).ToArray(), Enumerable.Range(0, n).Select(i => Math.Sin(i / 100.0)).ToArray());
 
-        var result = Layout(Spec(new SeriesSpec { Id = "a" }), new() { ["a"] = data });
+        var result = Layout(Spec(new SeriesOptions { Id = "a" }), new() { ["a"] = data });
 
         Assert.True(result.HitTest.Series[0].X.Length < 2000);
     }
@@ -217,7 +217,7 @@ public class LayoutTests
     [Fact]
     public void Hit_test_finds_the_nearest_point()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2, 3], [0.0, 1, 0, 1]) });
+        var result = Layout(Spec(new SeriesOptions { Id = "a" }), new() { ["a"] = SeriesData.From([0.0, 1, 2, 3], [0.0, 1, 0, 1]) });
         var second = result.HitTest.Series[0];
 
         var hit = result.HitTest.FindNearest(second.X[2] + 3, second.Y[2] - 2);
@@ -230,7 +230,7 @@ public class LayoutTests
     [Fact]
     public void Duplicate_ids_and_mixed_x_kinds_are_reported()
     {
-        var spec = Spec(new SeriesSpec { Id = "a" }, new SeriesSpec { Id = "a" }, new SeriesSpec { Id = "c" });
+        var spec = Spec(new SeriesOptions { Id = "a" }, new SeriesOptions { Id = "a" }, new SeriesOptions { Id = "c" });
         var data = new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.From([0.0, 1], [1.0, 2]),
@@ -246,7 +246,7 @@ public class LayoutTests
     [Fact]
     public void Description_mentions_extremes_and_trend()
     {
-        var result = Layout(Spec(new SeriesSpec { Id = "temp", Name = "London" }), new() { ["temp"] = SeriesData.From([0.0, 1, 2, 3], [10.0, 12, 14, 16]) });
+        var result = Layout(Spec(new SeriesOptions { Id = "temp", Name = "London" }), new() { ["temp"] = SeriesData.From([0.0, 1, 2, 3], [10.0, 12, 14, 16]) });
 
         Assert.Contains("London: 4 values", result.Scene.Description);
         Assert.Contains("highest 16", result.Scene.Description);
@@ -256,15 +256,15 @@ public class LayoutTests
     [Fact]
     public void Spec_round_trips_through_json()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Title = "Temps",
-            Y = new AxisSpec { Title = "°C", Min = 0 },
-            Series = [new SeriesSpec { Id = "a", Type = SeriesType.Area, Curve = CurveType.Monotone }],
+            Y = new AxisOptions { Title = "°C", Min = 0 },
+            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Area, Curve = CurveType.Monotone }],
         };
 
         var json = JsonSerializer.Serialize(spec);
-        var back = JsonSerializer.Deserialize<ChartSpec>(json)!;
+        var back = JsonSerializer.Deserialize<ChartDefinition>(json)!;
 
         Assert.Contains("\"Area\"", json);
         Assert.DoesNotContain("DisplayName", json);

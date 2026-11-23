@@ -6,7 +6,7 @@
 <header class="top">
     <div>
         <h1>RioCharts</h1>
-        <p class="lead">An online-store dashboard: line, area, bar, pie and radial charts with tooltips, stacking, multiple Y axes, annotations, zoom, live data and time zones. <a href="/spec">Spec playground (AI chart specs)</a></p>
+        <p class="lead">An online-store dashboard: line, area, bar, pie and radial charts with tooltips, stacking, multiple Y axes, annotations, zoom, live data and time zones. <a href="/spec">Spec playground (AI chart definitions)</a></p>
     </div>
     <button class="theme" @onclick="() => _dark = !_dark">@(_dark ? "Light" : "Dark") theme</button>
 </header>
@@ -284,7 +284,7 @@
             Math.Round(420 + 300 * Math.Sin((h - 3) / 24.0 * 2 * Math.PI))))
         .ToList();
 
-    private readonly LegendSpec _rightLegend = new() { Position = LegendPosition.Right };
+    private readonly LegendOptions _rightLegend = new() { Position = LegendPosition.Right };
     private string _sliceClicked = "";
 
     private readonly List<Share> _categories =
@@ -355,13 +355,13 @@
 
     public void Dispose() => _liveTimer?.Dispose();
 
-    private readonly AxisSpec _sessionsAxis = new() { Title = "Sessions" };
-    private readonly AxisSpec _ordersAxis = new() { Title = "Orders" };
-    private readonly AxisSpec _eur = new() { Title = "€" };
-    private readonly AxisSpec _keur = new() { Title = "k€" };
-    private readonly AxisSpec _ms = new() { Title = "ms" };
-    private readonly IReadOnlyList<AxisSpec> _ordersAxes = [new() { Id = "orders", Title = "Orders" }];
-    private readonly TooltipSpec _singleTooltip = new() { Shared = false };
+    private readonly AxisOptions _sessionsAxis = new() { Title = "Sessions" };
+    private readonly AxisOptions _ordersAxis = new() { Title = "Orders" };
+    private readonly AxisOptions _eur = new() { Title = "€" };
+    private readonly AxisOptions _keur = new() { Title = "k€" };
+    private readonly AxisOptions _ms = new() { Title = "ms" };
+    private readonly IReadOnlyList<AxisOptions> _ordersAxes = [new() { Id = "orders", Title = "Orders" }];
+    private readonly TooltipOptions _singleTooltip = new() { Shared = false };
 
     private DateTime _incidentStart, _incidentEnd, _now, _alert, _deploy;
     private double _limit = 300;
@@ -371,7 +371,7 @@
     private List<Reading> _ads = [];
     private List<Reading> _email = [];
 
-    // Revenue per category and month, k€ (the same numbers as the "sales" spec dataset).
+    // Revenue per category and month, k€ (the same numbers as the "sales" definition dataset).
     private readonly List<CategoryMix> _mix =
     [
         new("Jan", 42, 18, 6), new("Feb", 38, 17, 7), new("Mar", 29, 21, 11), new("Apr", 33, 24, 19),

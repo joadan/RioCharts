@@ -12,7 +12,7 @@ public static partial class ChartLayout
     /// <summary>A vertical axis during layout: its series, extent, ticks and label column.</summary>
     private sealed class YAxisLayout
     {
-        public required AxisSpec Spec { get; init; }
+        public required AxisOptions Spec { get; init; }
         public required string Id { get; init; }
         public required bool Right { get; init; }
         public List<Resolved> Series { get; } = [];
@@ -50,7 +50,7 @@ public static partial class ChartLayout
         public ContinuousScale Scale { get; set; } = new(0, 1, 1, 0);
     }
 
-    private static List<YAxisLayout> ResolveAxes(ChartSpec spec, List<string> warnings)
+    private static List<YAxisLayout> ResolveAxes(ChartDefinition spec, List<string> warnings)
     {
         var axes = new List<YAxisLayout>
         {
@@ -360,7 +360,7 @@ public static partial class ChartLayout
     // ---------- X labels ----------
 
     /// <summary>Adds numeric or time tick labels, choosing the densest ticks whose labels do not overlap.</summary>
-    private static List<double> AddContinuousXLabels(ContinuousScale scale, XKind kind, AxisSpec axis, CultureInfo culture,
+    private static List<double> AddContinuousXLabels(ContinuousScale scale, XKind kind, AxisOptions axis, CultureInfo culture,
         ITextMeasurer measure, double font, double plotBottom, double chartWidth, List<Node> output, TimeConversion? time = null)
     {
         var plotWidth = scale.RangeEnd - scale.RangeStart;

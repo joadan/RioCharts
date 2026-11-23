@@ -46,37 +46,37 @@ public class SnapshotTests
 
     private static readonly string[] Quarters = ["Q1", "Q2", "Q3", "Q4"];
 
-    private sealed record Case(ChartSpec Spec, Dictionary<string, SeriesData> Data, double Width = 640, double Height = 320, string Culture = "", (double, double)? XRange = null);
+    private sealed record Case(ChartDefinition Spec, Dictionary<string, SeriesData> Data, double Width = 640, double Height = 320, string Culture = "", (double, double)? XRange = null);
 
     private static readonly Dictionary<string, Case> Cases = new()
     {
-        ["line-time"] = new(new ChartSpec
+        ["line-time"] = new(new ChartDefinition
         {
             Title = "Weather stations",
-            X = new AxisSpec { Title = "Time" },
-            Y = new AxisSpec { Title = "°C", Format = "0.0" },
-            Series = [new SeriesSpec { Id = "s", Name = "London", Curve = CurveType.Monotone }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+            X = new AxisOptions { Title = "Time" },
+            Y = new AxisOptions { Title = "°C", Format = "0.0" },
+            Series = [new SeriesOptions { Id = "s", Name = "London", Curve = CurveType.Monotone }, new SeriesOptions { Id = "e", Name = "Toronto" }],
         }, new() { ["s"] = Hourly(48, London), ["e"] = Hourly(48, Toronto) }),
 
-        ["line-gaps-step"] = new(new ChartSpec
+        ["line-gaps-step"] = new(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "t", Name = "Outdoor" }, new SeriesSpec { Id = "sp", Name = "Forecast", Curve = CurveType.Step }],
+            Series = [new SeriesOptions { Id = "t", Name = "Outdoor" }, new SeriesOptions { Id = "sp", Name = "Forecast", Curve = CurveType.Step }],
         }, new()
         {
             ["t"] = Hourly(36, i => i is >= 12 and < 18 ? double.NaN : 21 + Math.Sin(i / 5.0)),
             ["sp"] = Hourly(36, i => i < 8 ? 18 : i < 20 ? 21 : 19, step: 4),
         }),
 
-        ["line-categories"] = new(new ChartSpec { Series = [new SeriesSpec { Id = "a", Name = "Alarms" }] },
+        ["line-categories"] = new(new ChartDefinition { Series = [new SeriesOptions { Id = "a", Name = "Alarms" }] },
             new() { ["a"] = Categories(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], 4, 7, 3, 9, 6, 1, 2) }),
 
-        ["area-stacked"] = new(new ChartSpec
+        ["area-stacked"] = new(new ChartDefinition
         {
-            Y = new AxisSpec { Title = "kW" },
+            Y = new AxisOptions { Title = "kW" },
             Series =
             [
-                new SeriesSpec { Id = "h", Name = "Wind", Type = SeriesType.Area, Stack = "load" },
-                new SeriesSpec { Id = "v", Name = "Solar", Type = SeriesType.Area, Stack = "load" },
+                new SeriesOptions { Id = "h", Name = "Wind", Type = SeriesType.Area, Stack = "load" },
+                new SeriesOptions { Id = "v", Name = "Solar", Type = SeriesType.Area, Stack = "load" },
             ],
         }, new()
         {
@@ -84,61 +84,61 @@ public class SnapshotTests
             ["v"] = Hourly(48, i => i % 24 is >= 7 and < 18 ? 6 : 2, step: 2),
         }),
 
-        ["bars-grouped"] = new(new ChartSpec
+        ["bars-grouped"] = new(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a", Name = "2025", Type = SeriesType.Bar }, new SeriesSpec { Id = "b", Name = "2026", Type = SeriesType.Bar }],
+            Series = [new SeriesOptions { Id = "a", Name = "2025", Type = SeriesType.Bar }, new SeriesOptions { Id = "b", Name = "2026", Type = SeriesType.Bar }],
         }, new() { ["a"] = Categories(Quarters, 120, 95, 60, 110), ["b"] = Categories(Quarters, 105, 90, 52, 98) }),
 
-        ["bars-stacked-negative"] = new(new ChartSpec
+        ["bars-stacked-negative"] = new(new ChartDefinition
         {
             Series =
             [
-                new SeriesSpec { Id = "in", Name = "Bought", Type = SeriesType.Bar, Stack = "e" },
-                new SeriesSpec { Id = "out", Name = "Sold", Type = SeriesType.Bar, Stack = "e" },
+                new SeriesOptions { Id = "in", Name = "Bought", Type = SeriesType.Bar, Stack = "e" },
+                new SeriesOptions { Id = "out", Name = "Sold", Type = SeriesType.Bar, Stack = "e" },
             ],
         }, new() { ["in"] = Categories(Quarters, 40, 25, 10, 35), ["out"] = Categories(Quarters, -5, -18, -30, -8) }),
 
-        ["bars-stacked-percent"] = new(new ChartSpec
+        ["bars-stacked-percent"] = new(new ChartDefinition
         {
             Title = "Sales channels",
-            Y = new AxisSpec { Stacking = StackMode.Percent },
+            Y = new AxisOptions { Stacking = StackMode.Percent },
             Series =
             [
-                new SeriesSpec { Id = "w", Name = "Web", Type = SeriesType.Bar },
-                new SeriesSpec { Id = "s", Name = "Stores", Type = SeriesType.Bar },
-                new SeriesSpec { Id = "p", Name = "Partners", Type = SeriesType.Bar },
+                new SeriesOptions { Id = "w", Name = "Web", Type = SeriesType.Bar },
+                new SeriesOptions { Id = "s", Name = "Stores", Type = SeriesType.Bar },
+                new SeriesOptions { Id = "p", Name = "Partners", Type = SeriesType.Bar },
             ],
         }, new() { ["w"] = Categories(Quarters, 120, 150, 170, 210), ["s"] = Categories(Quarters, 200, 180, 160, 150), ["p"] = Categories(Quarters, 40, 60, 55, 80) }),
 
-        ["bars-data-labels"] = new(new ChartSpec
+        ["bars-data-labels"] = new(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "u", Name = "Energy", Type = SeriesType.Bar, DataLabels = true, Format = "0 MWh" }],
+            Series = [new SeriesOptions { Id = "u", Name = "Energy", Type = SeriesType.Bar, DataLabels = true, Format = "0 MWh" }],
         }, new() { ["u"] = Categories(["Store 1", "Store 2", "Store 3", "Store 4"], 412, 236, 148, 97) }, Height: 260),
 
-        ["pie-other"] = new(new ChartSpec
+        ["pie-other"] = new(new ChartDefinition
         {
             Title = "Energy use",
-            Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.03, Format = "0 MWh" }],
+            Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.03, Format = "0 MWh" }],
         }, new() { ["p"] = Categories(["Industry", "Homes", "Transport", "Offices", "Shops", "Farms", "Rail"], 412, 236, 148, 97, 31, 9, 6) }),
 
-        ["donut-total"] = new(new ChartSpec
+        ["donut-total"] = new(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6, DataLabels = false, Format = "0 MWh" }],
+            Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6, DataLabels = false, Format = "0 MWh" }],
         }, new() { ["p"] = Categories(["Industry", "Homes", "Transport"], 412, 236, 148) }, Width: 400, Height: 300),
 
-        ["radial-bar"] = new(new ChartSpec
+        ["radial-bar"] = new(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "h", Name = "Target", Type = SeriesType.RadialBar, Max = 100, Format = "0'%'" }],
+            Series = [new SeriesOptions { Id = "h", Name = "Target", Type = SeriesType.RadialBar, Max = 100, Format = "0'%'" }],
         }, new() { ["h"] = Categories(["North", "South", "East", "West"], 87, 74, 41, 92) }, Width: 420, Height: 300),
 
-        ["dual-axes"] = new(new ChartSpec
+        ["dual-axes"] = new(new ChartDefinition
         {
-            Y = new AxisSpec { Title = "°C" },
-            YAxes = [new AxisSpec { Id = "kw", Title = "kW", Position = AxisPosition.Right }],
+            Y = new AxisOptions { Title = "°C" },
+            YAxes = [new AxisOptions { Id = "kw", Title = "kW", Position = AxisPosition.Right }],
             Series =
             [
-                new SeriesSpec { Id = "t", Name = "Outdoor" },
-                new SeriesSpec { Id = "p", Name = "Power use", Type = SeriesType.Bar, YAxisId = "kw" },
+                new SeriesOptions { Id = "t", Name = "Outdoor" },
+                new SeriesOptions { Id = "p", Name = "Power use", Type = SeriesType.Bar, YAxisId = "kw" },
             ],
         }, new()
         {
@@ -146,55 +146,55 @@ public class SnapshotTests
             ["p"] = Hourly(24, i => Math.Max(0, 30 - 3 * (4 + 5 * Math.Sin((i - 9) / 24.0 * 2 * Math.PI))), step: 2),
         }),
 
-        ["annotations"] = new(new ChartSpec
+        ["annotations"] = new(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "s", Name = "London" }],
+            Series = [new SeriesOptions { Id = "s", Name = "London" }],
             Annotations =
             [
-                new AnnotationSpec { Type = AnnotationType.Band, From = 18.5, To = 20.5, Label = "Normal" },
-                new AnnotationSpec { Type = AnnotationType.Line, Value = 21, Label = "High limit" },
-                new AnnotationSpec { Type = AnnotationType.Band, Axis = AnnotationAxis.X, From = Start.AddHours(10), To = Start.AddHours(14), Label = "Service" },
-                new AnnotationSpec { Type = AnnotationType.Callout, X = Start.AddHours(30), Y = London(30), Label = "Sensor fault" },
+                new Annotation { Type = AnnotationType.Band, From = 18.5, To = 20.5, Label = "Normal" },
+                new Annotation { Type = AnnotationType.Line, Value = 21, Label = "High limit" },
+                new Annotation { Type = AnnotationType.Band, Axis = AnnotationAxis.X, From = Start.AddHours(10), To = Start.AddHours(14), Label = "Service" },
+                new Annotation { Type = AnnotationType.Callout, X = Start.AddHours(30), Y = London(30), Label = "Sensor fault" },
             ],
         }, new() { ["s"] = Hourly(48, London) }),
 
-        ["time-zone-dst"] = new(new ChartSpec
+        ["time-zone-dst"] = new(new ChartDefinition
         {
             TimeZone = "Europe/Stockholm",
-            Series = [new SeriesSpec { Id = "t", Name = "Outdoor" }],
+            Series = [new SeriesOptions { Id = "t", Name = "Outdoor" }],
         }, new()
         {
             ["t"] = SeriesData.From(Enumerable.Range(0, 36).Select(i => new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero).AddHours(i)).ToArray(),
                 Enumerable.Range(0, 36).Select(i => 8 + 3 * Math.Sin(i / 6.0)).ToArray()),
         }),
 
-        ["zoomed"] = new(new ChartSpec { Series = [new SeriesSpec { Id = "s", Name = "London" }] },
+        ["zoomed"] = new(new ChartDefinition { Series = [new SeriesOptions { Id = "s", Name = "London" }] },
             new() { ["s"] = Hourly(96, London) },
             XRange: (TimeValue.FromDateTime(Start.AddHours(30)), TimeValue.FromDateTime(Start.AddHours(42)))),
 
-        ["compact-sparkline"] = new(new ChartSpec
+        ["compact-sparkline"] = new(new ChartDefinition
         {
             Compact = true,
-            Series = [new SeriesSpec { Id = "s", Name = "London", Curve = CurveType.Monotone, Highlight = PointHighlight.Last | PointHighlight.Min | PointHighlight.Max }],
-            Annotations = [new AnnotationSpec { Type = AnnotationType.Band, From = 18.5, To = 20.5 }],
+            Series = [new SeriesOptions { Id = "s", Name = "London", Curve = CurveType.Monotone, Highlight = PointHighlight.Last | PointHighlight.Min | PointHighlight.Max }],
+            Annotations = [new Annotation { Type = AnnotationType.Band, From = 18.5, To = 20.5 }],
         }, new() { ["s"] = Hourly(48, London) }, Width: 160, Height: 32),
 
-        ["auto-compact-small"] = new(new ChartSpec
+        ["auto-compact-small"] = new(new ChartDefinition
         {
             Title = "Weather stations",
-            X = new AxisSpec { Title = "Time" },
-            Y = new AxisSpec { Title = "°C" },
-            Series = [new SeriesSpec { Id = "s", Name = "London" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+            X = new AxisOptions { Title = "Time" },
+            Y = new AxisOptions { Title = "°C" },
+            Series = [new SeriesOptions { Id = "s", Name = "London" }, new SeriesOptions { Id = "e", Name = "Toronto" }],
         }, new() { ["s"] = Hourly(48, London), ["e"] = Hourly(48, Toronto) }, Width: 360, Height: 130),
 
-        ["scatter-trend"] = new(new ChartSpec
+        ["scatter-trend"] = new(new ChartDefinition
         {
-            X = new AxisSpec { Title = "Outdoor °C" },
-            Y = new AxisSpec { Title = "Hot drinks sold, k" },
+            X = new AxisOptions { Title = "Outdoor °C" },
+            Y = new AxisOptions { Title = "Hot drinks sold, k" },
             Series =
             [
-                new SeriesSpec { Id = "s", Name = "Café A", Type = SeriesType.Scatter, TrendLine = true },
-                new SeriesSpec { Id = "t", Name = "Café B", Type = SeriesType.Scatter, MarkerSize = 4 },
+                new SeriesOptions { Id = "s", Name = "Café A", Type = SeriesType.Scatter, TrendLine = true },
+                new SeriesOptions { Id = "t", Name = "Café B", Type = SeriesType.Scatter, MarkerSize = 4 },
             ],
         }, new()
         {
@@ -204,22 +204,22 @@ public class SnapshotTests
                 Enumerable.Range(0, 30).Select(i => 21 - 0.1 * (-8 + i * 0.9) + Math.Sin(i * 2.1) * 0.6).ToArray()),
         }),
 
-        ["heatmap-week"] = new(new ChartSpec
+        ["heatmap-week"] = new(new ChartDefinition
         {
             Title = "Sessions per hour",
-            Series = [.. new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select(d => new SeriesSpec { Id = d, Type = SeriesType.Heatmap, Format = "#,0" })],
+            Series = [.. new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select(d => new SeriesOptions { Id = d, Type = SeriesType.Heatmap, Format = "#,0" })],
         }, new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }.Select((d, k) => (d, SeriesData.FromCategories(
                 Enumerable.Range(0, 24).Select(h => h.ToString("00", CultureInfo.InvariantCulture)).ToList(),
                 Enumerable.Range(0, 24).Select(h => Math.Round(Math.Max(5, (k >= 5 ? 260 : 200) * Math.Max(0, Math.Sin((h - 6) / 18.0 * Math.PI)) + (h is >= 19 and <= 22 ? 90 : 0)))).ToArray())))
             .ToDictionary(t => t.d, t => t.Item2), Width: 720),
 
-        ["range-band"] = new(new ChartSpec
+        ["range-band"] = new(new ChartDefinition
         {
-            Y = new AxisSpec { Title = "Revenue per day" },
+            Y = new AxisOptions { Title = "Revenue per day" },
             Series =
             [
-                new SeriesSpec { Id = "r", Name = "Range", Type = SeriesType.RangeArea, Curve = CurveType.Monotone },
-                new SeriesSpec { Id = "m", Name = "Average", Curve = CurveType.Monotone },
+                new SeriesOptions { Id = "r", Name = "Range", Type = SeriesType.RangeArea, Curve = CurveType.Monotone },
+                new SeriesOptions { Id = "m", Name = "Average", Curve = CurveType.Monotone },
             ],
         }, new()
         {
@@ -232,13 +232,13 @@ public class SnapshotTests
 
         // Outdoor temperatures in °C per weather station: a tight one, a wide one, one with outliers, and a
         // second series (last week) beside each box.
-        ["box-plot"] = new(new ChartSpec
+        ["box-plot"] = new(new ChartDefinition
         {
-            Y = new AxisSpec { Title = "Temperature °C", Format = "0.0" },
+            Y = new AxisOptions { Title = "Temperature °C", Format = "0.0" },
             Series =
             [
-                new SeriesSpec { Id = "now", Name = "This week", Type = SeriesType.BoxPlot },
-                new SeriesSpec { Id = "before", Name = "Last week", Type = SeriesType.BoxPlot },
+                new SeriesOptions { Id = "now", Name = "This week", Type = SeriesType.BoxPlot },
+                new SeriesOptions { Id = "before", Name = "Last week", Type = SeriesType.BoxPlot },
             ],
         }, new()
         {
@@ -257,9 +257,9 @@ public class SnapshotTests
         }),
 
         // Population in millions per continent and country (rounded), the small ones grouped per continent.
-        ["treemap"] = new(new ChartSpec
+        ["treemap"] = new(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "p", Name = "Population", Type = SeriesType.Treemap, Format = "0 M", GroupSmallSlices = 0.05 }],
+            Series = [new SeriesOptions { Id = "p", Name = "Population", Type = SeriesType.Treemap, Format = "0 M", GroupSmallSlices = 0.05 }],
         }, new()
         {
             ["p"] = SeriesData.FromCategories(
@@ -271,14 +271,14 @@ public class SnapshotTests
         }),
 
         // Two laptops' test scores (0-100) against the class average; the old one's display was not tested.
-        ["radar"] = new(new ChartSpec
+        ["radar"] = new(new ChartDefinition
         {
-            Y = new AxisSpec { Max = 100 },
+            Y = new AxisOptions { Max = 100 },
             Series =
             [
-                new SeriesSpec { Id = "unit", Name = "New laptop", Type = SeriesType.Radar },
-                new SeriesSpec { Id = "ref", Name = "Class average", Type = SeriesType.Radar },
-                new SeriesSpec { Id = "old", Name = "Old laptop", Type = SeriesType.Radar },
+                new SeriesOptions { Id = "unit", Name = "New laptop", Type = SeriesType.Radar },
+                new SeriesOptions { Id = "ref", Name = "Class average", Type = SeriesType.Radar },
+                new SeriesOptions { Id = "old", Name = "Old laptop", Type = SeriesType.Radar },
             ],
         }, new()
         {
@@ -289,13 +289,13 @@ public class SnapshotTests
 
         // Outdoor temperature in °C as daily candles (first, highest, lowest, last reading), with
         // the daily average as a line on top.
-        ["candles"] = new(new ChartSpec
+        ["candles"] = new(new ChartDefinition
         {
-            Y = new AxisSpec { Title = "Temperature °C", Format = "0.0" },
+            Y = new AxisOptions { Title = "Temperature °C", Format = "0.0" },
             Series =
             [
-                new SeriesSpec { Id = "c", Name = "Daily range", Type = SeriesType.Candlestick },
-                new SeriesSpec { Id = "m", Name = "Average", Curve = CurveType.Monotone },
+                new SeriesOptions { Id = "c", Name = "Daily range", Type = SeriesType.Candlestick },
+                new SeriesOptions { Id = "m", Name = "Average", Curve = CurveType.Monotone },
             ],
         }, new()
         {
@@ -310,28 +310,28 @@ public class SnapshotTests
                 Enumerable.Range(0, 21).Select(d => Math.Round(20 + Math.Sin(d * 0.6) * 1.6 + Math.Sin(d * 1.9) * 0.45, 1)).ToArray()),
         }),
 
-        ["bars-horizontal"] = new(new ChartSpec
+        ["bars-horizontal"] = new(new ChartDefinition
         {
             Horizontal = true,
-            Y = new AxisSpec { Title = "Revenue, k€" },
+            Y = new AxisOptions { Title = "Revenue, k€" },
             Series =
             [
-                new SeriesSpec { Id = "a", Name = "2025", Type = SeriesType.Bar },
-                new SeriesSpec { Id = "b", Name = "2026", Type = SeriesType.Bar, DataLabels = true },
+                new SeriesOptions { Id = "a", Name = "2025", Type = SeriesType.Bar },
+                new SeriesOptions { Id = "b", Name = "2026", Type = SeriesType.Bar, DataLabels = true },
             ],
-            Annotations = [new AnnotationSpec { Value = 100, Label = "Target" }],
+            Annotations = [new Annotation { Value = 100, Label = "Target" }],
         }, new()
         {
             ["a"] = Categories(["Trail shoe · Ridge 2", "Rain jacket · Storm", "Headlamp · Beam 400", "Merino base layer, long sleeve", "Tent · Dome 2p"], 112, 84, 55, 61, 41),
             ["b"] = Categories(["Trail shoe · Ridge 2", "Rain jacket · Storm", "Headlamp · Beam 400", "Merino base layer, long sleeve", "Tent · Dome 2p"], 128, 92, 71, 58, 22),
         }, Height: 340),
 
-        ["line-log"] = new(new ChartSpec
+        ["line-log"] = new(new ChartDefinition
         {
             Title = "Downloads per day",
-            Y = new AxisSpec { Scale = ScaleType.Log, Title = "Downloads" },
-            Series = [new SeriesSpec { Id = "d", Name = "Downloads", Format = "#,0" }, new SeriesSpec { Id = "e", Name = "Errors", Format = "#,0" }],
-            Annotations = [new AnnotationSpec { Value = 1000, Label = "1k" }],
+            Y = new AxisOptions { Scale = ScaleType.Log, Title = "Downloads" },
+            Series = [new SeriesOptions { Id = "d", Name = "Downloads", Format = "#,0" }, new SeriesOptions { Id = "e", Name = "Errors", Format = "#,0" }],
+            Annotations = [new Annotation { Value = 1000, Label = "1k" }],
         }, new()
         {
             ["d"] = SeriesData.From(Enumerable.Range(0, 60).Select(i => Start.AddDays(i)).ToArray(),
@@ -340,10 +340,10 @@ public class SnapshotTests
                 Enumerable.Range(0, 60).Select(i => i % 9 == 4 ? 0 : Math.Round(2 + 0.4 * Math.Pow(1.15, i))).ToArray()),
         }),
 
-        ["empty-swedish"] = new(new ChartSpec { Title = "Utetemperatur", Series = [new SeriesSpec { Id = "s", Name = "Utetemperatur" }] },
+        ["empty-swedish"] = new(new ChartDefinition { Title = "Utetemperatur", Series = [new SeriesOptions { Id = "s", Name = "Utetemperatur" }] },
             new() { ["s"] = SeriesData.Empty }, Culture: "sv-SE"),
 
-        ["single-point"] = new(new ChartSpec { Series = [new SeriesSpec { Id = "s", Name = "London", Format = "0.0 °C" }] },
+        ["single-point"] = new(new ChartDefinition { Series = [new SeriesOptions { Id = "s", Name = "London", Format = "0.0 °C" }] },
             new() { ["s"] = Hourly(1, _ => 20) }, Height: 200),
     };
 

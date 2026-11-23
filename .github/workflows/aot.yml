@@ -1,6 +1,6 @@
 name: Native AOT
 
-# Publishes tests/RioCharts.AotSmoke with native AOT (trimmed, no JIT) and runs it: JSON specs,
+# Publishes tests/RioCharts.AotSmoke with native AOT (trimmed, no JIT) and runs it: JSON definitions,
 # binding, layout, texts, SVG/PNG export and the AI tool. The publish fails on any trimming or
 # AOT warning, and the run fails when a check does.
 on:

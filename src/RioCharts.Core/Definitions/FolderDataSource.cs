@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace RioCharts.Core.Specs;
+namespace RioCharts.Core.Definitions;
 
 /// <summary>
 /// Datasets from the CSV and JSON files in a folder (not subfolders): one dataset per file, named

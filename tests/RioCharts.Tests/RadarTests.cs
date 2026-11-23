@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -15,9 +15,9 @@ public class RadarTests
     // A laptop's test scores (0-100) against the class average.
     private static readonly string[] Measures = ["Performance", "Battery", "Display", "Keyboard", "Weight"];
 
-    private static ChartSpec Spec(params SeriesSpec[] series) => new() { Series = series };
+    private static ChartDefinition Spec(params SeriesOptions[] series) => new() { Series = series };
 
-    private static SeriesSpec Radar(string id, string? name = null) => new() { Id = id, Name = name, Type = SeriesType.Radar };
+    private static SeriesOptions Radar(string id, string? name = null) => new() { Id = id, Name = name, Type = SeriesType.Radar };
 
     private static List<T> All<T>(Node node) where T : Node
     {
@@ -125,7 +125,7 @@ public class RadarTests
         {
             ["a"] = SeriesData.FromCategories(Measures, [1.0, 2, 3, 4, 5]),
         }, Options with { HiddenSeries = new HashSet<string> { "a" } });
-        var mixed = ChartLayout.Compute(Spec(Radar("a"), new SeriesSpec { Id = "l", Type = SeriesType.Line }), new Dictionary<string, SeriesData>
+        var mixed = ChartLayout.Compute(Spec(Radar("a"), new SeriesOptions { Id = "l", Type = SeriesType.Line }), new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.FromCategories(Measures, [1.0, 2, 3, 4, 5]),
             ["l"] = SeriesData.FromCategories(Measures, [1.0, 2, 3, 4, 5]),
@@ -147,7 +147,7 @@ public class RadarTests
     [Fact]
     public void The_value_axis_takes_a_fixed_range()
     {
-        var spec = Spec(Radar("a")) with { Y = new AxisSpec { Max = 100 } };
+        var spec = Spec(Radar("a")) with { Y = new AxisOptions { Max = 100 } };
 
         var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData>
         {
@@ -179,14 +179,14 @@ public class RadarTests
     [Fact]
     public void A_json_spider_chart_is_a_radar()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "spider", "x": "measure", "y": "score" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "spider", "x": "measure", "y": "score" } ] }""");
         var rows = Measures.Select((m, i) => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["measure"] = m, ["score"] = 50.0 + i });
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
         Assert.Empty(bound.Errors);
-        Assert.Equal(SeriesType.Radar, bound.Spec.Series.Single().Type);
-        Assert.True(ChartLayout.Compute(bound.Spec, bound.Data, Options).HasData);
-        Assert.Contains("<RadarSeries", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Equal(SeriesType.Radar, bound.Definition.Series.Single().Type);
+        Assert.True(ChartLayout.Compute(bound.Definition, bound.Data, Options).HasData);
+        Assert.Contains("<RadarSeries", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 }

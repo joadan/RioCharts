@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -18,13 +18,13 @@ public class HorizontalBarTests
 
     private static readonly string[] Products = ["Trail shoe", "Rain jacket", "Headlamp"];
 
-    private static ChartSpec Spec(params SeriesSpec[] series) => new()
+    private static ChartDefinition Spec(params SeriesOptions[] series) => new()
     {
         Horizontal = true,
-        Series = series.Length > 0 ? series : [new SeriesSpec { Id = "r", Name = "Revenue", Type = SeriesType.Bar }],
+        Series = series.Length > 0 ? series : [new SeriesOptions { Id = "r", Name = "Revenue", Type = SeriesType.Bar }],
     };
 
-    private static ChartLayoutResult Layout(ChartSpec spec, Dictionary<string, SeriesData> data, LayoutOptions? options = null) =>
+    private static ChartLayoutResult Layout(ChartDefinition spec, Dictionary<string, SeriesData> data, LayoutOptions? options = null) =>
         ChartLayout.Compute(spec, data, options ?? Options);
 
     private static Dictionary<string, SeriesData> Revenue(params double[] values) => new() { ["r"] = SeriesData.FromCategories(Products, values) };
@@ -49,7 +49,7 @@ public class HorizontalBarTests
     [Fact]
     public void Several_series_are_grouped_in_each_row()
     {
-        var spec = Spec(new SeriesSpec { Id = "a", Type = SeriesType.Bar }, new SeriesSpec { Id = "b", Type = SeriesType.Bar });
+        var spec = Spec(new SeriesOptions { Id = "a", Type = SeriesType.Bar }, new SeriesOptions { Id = "b", Type = SeriesType.Bar });
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(Products, [1, 2, 3]), ["b"] = SeriesData.FromCategories(Products, [3, 2, 1]) };
 
         var layout = Layout(spec, data);
@@ -62,7 +62,7 @@ public class HorizontalBarTests
     [Fact]
     public void Stacked_segments_continue_where_the_last_ended_and_negatives_go_left()
     {
-        var spec = Spec(new SeriesSpec { Id = "a", Type = SeriesType.Bar, Stack = "s" }, new SeriesSpec { Id = "b", Type = SeriesType.Bar, Stack = "s" });
+        var spec = Spec(new SeriesOptions { Id = "a", Type = SeriesType.Bar, Stack = "s" }, new SeriesOptions { Id = "b", Type = SeriesType.Bar, Stack = "s" });
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(Products, [10, 20, 30]), ["b"] = SeriesData.FromCategories(Products, [5, -5, 5]) };
 
         var layout = Layout(spec, data);
@@ -77,7 +77,7 @@ public class HorizontalBarTests
     [Fact]
     public void Values_sit_at_the_bar_ends()
     {
-        var spec = Spec(new SeriesSpec { Id = "r", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" });
+        var spec = Spec(new SeriesOptions { Id = "r", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" });
 
         var layout = Layout(spec, Revenue(120, 90, 60));
 
@@ -107,9 +107,9 @@ public class HorizontalBarTests
         {
             Annotations =
             [
-                new AnnotationSpec { Value = 100, Label = "Target" },
-                new AnnotationSpec { Type = AnnotationType.Band, From = 70, To = 80 },
-                new AnnotationSpec { Type = AnnotationType.Point, X = "Headlamp", Y = 60 },
+                new Annotation { Value = 100, Label = "Target" },
+                new Annotation { Type = AnnotationType.Band, From = 70, To = 80 },
+                new Annotation { Type = AnnotationType.Point, X = "Headlamp", Y = 60 },
             ],
         };
 
@@ -136,7 +136,7 @@ public class HorizontalBarTests
     [Fact]
     public void Other_series_are_skipped_and_edge_cases_render_cleanly()
     {
-        var mixed = Layout(Spec(new SeriesSpec { Id = "r", Type = SeriesType.Bar }, new SeriesSpec { Id = "l" }),
+        var mixed = Layout(Spec(new SeriesOptions { Id = "r", Type = SeriesType.Bar }, new SeriesOptions { Id = "l" }),
             new() { ["r"] = SeriesData.FromCategories(Products, [1, 2, 3]), ["l"] = SeriesData.FromCategories(Products, [1, 2, 3]) });
         var empty = Layout(Spec(), new() { ["r"] = SeriesData.Empty });
         var compact = Layout(Spec() with { Compact = true }, Revenue(1, 2, 3), Options with { Width = 120, Height = 40 });
@@ -152,11 +152,11 @@ public class HorizontalBarTests
     [InlineData("""{ "horizontal": true, "series": [ { "type": "bar", "x": "product", "y": "revenue" } ] }""")]
     public void Json_specs_turn_bars_sideways(string json)
     {
-        var parsed = ChartSpecJson.Parse(json);
+        var parsed = ChartDefinitionJson.Parse(json);
 
         Assert.Empty(parsed.Errors);
-        Assert.True(parsed.Spec!.Horizontal);
-        Assert.Equal(SeriesType.Bar, parsed.Spec.Series[0].Type);
-        Assert.Contains(" Horizontal=\"true\"", ChartRazor.FromSpec(parsed.Spec, "Row", "rows"), StringComparison.Ordinal);
+        Assert.True(parsed.Definition!.Horizontal);
+        Assert.Equal(SeriesType.Bar, parsed.Definition.Series[0].Type);
+        Assert.Contains(" Horizontal=\"true\"", ChartRazor.FromDefinition(parsed.Definition, "Row", "rows"), StringComparison.Ordinal);
     }
 }

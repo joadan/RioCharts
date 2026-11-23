@@ -88,7 +88,7 @@
     [Fact]
     public void Points_go_to_the_browser_even_without_a_tooltip()
     {
-        var off = new TooltipSpec { Enabled = false };
+        var off = new TooltipOptions { Enabled = false };
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Tooltip="off">
             <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
@@ -101,7 +101,7 @@
     [Fact]
     public void Without_keyboard_or_tooltip_no_points_are_sent()
     {
-        var off = new TooltipSpec { Enabled = false };
+        var off = new TooltipOptions { Enabled = false };
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Tooltip="off" KeyboardNavigation="false">
             <LineSeries Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);

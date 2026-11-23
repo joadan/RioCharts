@@ -6,7 +6,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 using RioCharts.Core.Text;
 
 namespace RioCharts.Blazor;
@@ -72,19 +72,19 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public string? Title { get; set; }
 
     /// <summary>The horizontal axis: title, range, scale and label format. Default: the scale is picked from the data.</summary>
-    [Parameter] public AxisSpec? XAxis { get; set; }
+    [Parameter] public AxisOptions? XAxis { get; set; }
 
     /// <summary>The primary vertical axis (id "y" unless set).</summary>
-    [Parameter] public AxisSpec? YAxis { get; set; }
+    [Parameter] public AxisOptions? YAxis { get; set; }
 
     /// <summary>Additional vertical axes; series pick one with <c>YAxisId</c>.</summary>
-    [Parameter] public IReadOnlyList<AxisSpec>? YAxes { get; set; }
+    [Parameter] public IReadOnlyList<AxisOptions>? YAxes { get; set; }
 
     /// <summary>Legend settings. Default: at the top, shown when there is more than one series.</summary>
-    [Parameter] public LegendSpec? Legend { get; set; }
+    [Parameter] public LegendOptions? Legend { get; set; }
 
     /// <summary>Tooltip settings. On and shared across series by default.</summary>
-    [Parameter] public TooltipSpec? Tooltip { get; set; }
+    [Parameter] public TooltipOptions? Tooltip { get; set; }
 
     /// <summary>
     /// Text for the tooltip header from the hovered point, e.g. <c>p =&gt; $"Week {Iso(p.X)}"</c>;
@@ -102,7 +102,7 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public RenderFragment<TooltipContext<TItem>>? TooltipTemplate { get; set; }
 
     /// <summary>Annotations as data (in addition to &lt;ReferenceLine&gt; and &lt;ReferenceBand&gt; children).</summary>
-    [Parameter] public IReadOnlyList<AnnotationSpec>? Annotations { get; set; }
+    [Parameter] public IReadOnlyList<Annotation>? Annotations { get; set; }
 
     /// <summary>
     /// Display time zone: "UTC", "local" (the viewer's browser zone) or an IANA id such as
@@ -148,7 +148,7 @@ public partial class RioChart<TItem> : IChartContext
 
     /// <summary>
     /// Raised when the user has dragged a reference line (<c>Draggable</c>). For lines in
-    /// <see cref="Annotations"/>, update the spec's value here; components use <c>@bind-Value</c>.
+    /// <see cref="Annotations"/>, update the definition's value here; components use <c>@bind-Value</c>.
     /// </summary>
     [Parameter] public EventCallback<AnnotationChangedEventArgs> OnAnnotationChanged { get; set; }
 
@@ -230,35 +230,35 @@ public partial class RioChart<TItem> : IChartContext
     public ChartLayoutResult? Layout => _layout;
 
     /// <summary>
-    /// A chart spec (e.g. from JSON or an AI agent) instead of child components: series read their
-    /// x and y fields from <see cref="Datasets"/> or the spec's inline data. Layout options such as
+    /// A chart definition (e.g. from JSON or an AI agent) instead of child components: series read their
+    /// x and y fields from <see cref="Datasets"/> or the definition's inline data. Layout options such as
     /// Height, Culture and HiddenSeries still come from the component.
     /// </summary>
-    [Parameter] public ChartSpec? Spec { get; set; }
+    [Parameter] public ChartDefinition? Definition { get; set; }
 
-    /// <summary>Datasets that a <see cref="Spec"/> refers to, by name.</summary>
+    /// <summary>Datasets that a <see cref="Definition"/> refers to, by name.</summary>
     [Parameter] public IReadOnlyDictionary<string, ChartDataset>? Datasets { get; set; }
 
-    /// <summary>Problems binding <see cref="Spec"/> to the data (missing fields, wrong types); empty when fine.</summary>
-    public IReadOnlyList<SpecError> SpecErrors => _bound?.Errors ?? [];
+    /// <summary>Problems binding <see cref="Definition"/> to the data (missing fields, wrong types); empty when fine.</summary>
+    public IReadOnlyList<DefinitionError> DefinitionErrors => _bound?.Errors ?? [];
 
-    /// <summary>The chart model: the <see cref="Spec"/> parameter, or one built from the parameters and child components (for saving, or as a starting point for edits).</summary>
-    public ChartSpec GetSpec() => Spec ?? BuildSpec();
+    /// <summary>The chart model: the <see cref="Definition"/> parameter, or one built from the parameters and child components (for saving, or as a starting point for edits).</summary>
+    public ChartDefinition GetDefinition() => Definition ?? BuildDefinition();
 
-    private SpecBindResult? _bound;
-    private (ChartSpec?, object?) _boundFrom;
+    private DefinitionBindResult? _bound;
+    private (ChartDefinition?, object?) _boundFrom;
 
-    /// <summary>The spec being drawn: the bound <see cref="Spec"/>, or the one from parameters and child components.</summary>
-    private ChartSpec CurrentSpec() => Spec is not null && _bound is not null
-        ? (Compact && !_bound.Spec.Compact) || (!AutoCompact && _bound.Spec.AutoCompact) || (Horizontal && !_bound.Spec.Horizontal)
-            ? _bound.Spec with
+    /// <summary>The definition being drawn: the bound <see cref="Definition"/>, or the one from parameters and child components.</summary>
+    private ChartDefinition CurrentDefinition() => Definition is not null && _bound is not null
+        ? (Compact && !_bound.Definition.Compact) || (!AutoCompact && _bound.Definition.AutoCompact) || (Horizontal && !_bound.Definition.Horizontal)
+            ? _bound.Definition with
             {
-                Compact = Compact || _bound.Spec.Compact,
-                AutoCompact = AutoCompact && _bound.Spec.AutoCompact,
-                Horizontal = Horizontal || _bound.Spec.Horizontal,
+                Compact = Compact || _bound.Definition.Compact,
+                AutoCompact = AutoCompact && _bound.Definition.AutoCompact,
+                Horizontal = Horizontal || _bound.Definition.Horizontal,
             }
-            : _bound.Spec
-        : BuildSpec();
+            : _bound.Definition
+        : BuildDefinition();
 
     /// <summary>The canvas series layer needs the JS module; without it the series stay SVG.</summary>
     private bool UsesCanvas => SeriesLayer == SeriesLayer.Canvas && Live;
@@ -269,8 +269,8 @@ public partial class RioChart<TItem> : IChartContext
     /// </summary>
     private bool Live => Interactive && RendererInfo.IsInteractive;
 
-    /// <summary>Compact from the parameter or the spec.</summary>
-    private bool IsCompact => Compact || Spec?.Compact == true;
+    /// <summary>Compact from the parameter or the definition.</summary>
+    private bool IsCompact => Compact || Definition?.Compact == true;
 
     /// <summary>The width to lay out at before (or without) measuring the container.</summary>
     private double DefaultWidth => IsCompact ? CompactFallbackWidth : FallbackWidth;
@@ -403,7 +403,7 @@ public partial class RioChart<TItem> : IChartContext
             }
         }
 
-        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Spec, Datasets,
+        var parameters = (Height, Width, Title, XAxis, YAxis, YAxes, Legend, Tooltip, Annotations, Culture?.Name, OnAnnotationClick.HasDelegate, TimeZone, UnspecifiedTimes, SeriesLayer, DownsampleThreshold, Definition, Datasets,
             TooltipHeader is not null, TooltipTemplate is not null, Compact, AutoCompact, Horizontal, CurrentTexts);
         if (!Equals(parameters, _lastParameters))
         {
@@ -415,17 +415,17 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Lays out again, e.g. after changing data in place without a new reference or DataVersion.</summary>
     public void Refresh() => Invalidate();
 
-    private ChartSpec BuildSpec() => new()
+    private ChartDefinition BuildDefinition() => new()
     {
         Title = Title,
         Compact = Compact,
         AutoCompact = AutoCompact,
         Horizontal = Horizontal,
-        X = XAxis ?? new AxisSpec(),
-        Y = YAxis ?? new AxisSpec(),
+        X = XAxis ?? new AxisOptions(),
+        Y = YAxis ?? new AxisOptions(),
         YAxes = YAxes ?? [],
-        Legend = Legend ?? new LegendSpec(),
-        Tooltip = Tooltip ?? new TooltipSpec(),
+        Legend = Legend ?? new LegendOptions(),
+        Tooltip = Tooltip ?? new TooltipOptions(),
         Series = _series.Select(s => s.Spec).ToList(),
         Annotations = (Annotations ?? []).Concat(_annotations.Select(a => a.Spec)).ToList(),
         TimeZone = TimeZone,
@@ -440,13 +440,13 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         IReadOnlyDictionary<string, SeriesData> data;
-        if (Spec is not null)
+        if (Definition is not null)
         {
-            // Bind once per spec/datasets pair; legend toggles and resizes reuse it.
-            if (_bound is null || !Equals(_boundFrom, (Spec, (object?)Datasets)))
+            // Bind once per definition/datasets pair; legend toggles and resizes reuse it.
+            if (_bound is null || !Equals(_boundFrom, (Definition, (object?)Datasets)))
             {
-                _bound = ChartSpecBinder.Bind(Spec, Datasets ?? new Dictionary<string, ChartDataset>());
-                _boundFrom = (Spec, Datasets);
+                _bound = ChartDefinitionBinder.Bind(Definition, Datasets ?? new Dictionary<string, ChartDataset>());
+                _boundFrom = (Definition, Datasets);
             }
 
             data = _bound.Data;
@@ -465,7 +465,7 @@ public partial class RioChart<TItem> : IChartContext
 
         _layoutData = data;
         SelectionForLayout(out var selectedRange, out var selectedPoints);
-        _layout = ChartLayout.Compute(CurrentSpec(), data, new LayoutOptions
+        _layout = ChartLayout.Compute(CurrentDefinition(), data, new LayoutOptions
         {
             Width = Width ?? _measuredWidth ?? DefaultWidth,
             Height = Height,
@@ -494,7 +494,7 @@ public partial class RioChart<TItem> : IChartContext
     {
         if (interaction.Kind == "annotation")
         {
-            var label = CurrentSpec().Annotations.Select((a, i) => (a, i)).FirstOrDefault(t => (t.a.Id ?? $"annotation-{t.i + 1}") == interaction.Id).a?.Label;
+            var label = CurrentDefinition().Annotations.Select((a, i) => (a, i)).FirstOrDefault(t => (t.a.Id ?? $"annotation-{t.i + 1}") == interaction.Id).a?.Label;
             await OnAnnotationClick.InvokeAsync(new AnnotationClickEventArgs(interaction.Id, label));
             return;
         }
@@ -516,7 +516,7 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Called by JS when a draggable line is dropped (value in data units).</summary>
     internal async Task OnAnnotationDragged(string id, double value)
     {
-        var all = CurrentSpec().Annotations;
+        var all = CurrentDefinition().Annotations;
         var index = -1;
         for (var i = 0; i < all.Count && index < 0; i++)
         {
@@ -576,7 +576,7 @@ public partial class RioChart<TItem> : IChartContext
 
     // ---------- Custom tooltips ----------
 
-    private ISeriesSource? SourceOf(string seriesId) => Spec is null ? _series.FirstOrDefault(s => s.Spec.Id == seriesId) : null;
+    private ISeriesSource? SourceOf(string seriesId) => Definition is null ? _series.FirstOrDefault(s => s.Spec.Id == seriesId) : null;
 
     private SeriesData? DataOf(string seriesId) => _layoutData.TryGetValue(seriesId, out var data) ? data : null;
 

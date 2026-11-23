@@ -117,7 +117,7 @@
         <div class="size-stage">
             <div style="@($"width:{Size.W}px;max-width:100%")">
                 <RioChart Items="WebSessions" Height="Size.H" Title="Store traffic" AutoCompact="_autoCompact"
-                          XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })">
+                          XAxis="@(new AxisOptions { Title = "Time" })" YAxis="@(new AxisOptions { Title = "Sessions per 15 min" })">
                     <LineSeries Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
                     <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
                 </RioChart>
@@ -130,12 +130,12 @@
 <div class="table-scroll">
 <table class="docs">
     <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
-    <tr><td><code>Compact</code></td><td>false</td><td>No axes, grid, legend or title; a tight y range. Also <code>"compact": true</code> in JSON specs.</td></tr>
+    <tr><td><code>Compact</code></td><td>false</td><td>No axes, grid, legend or title; a tight y range. Also <code>"compact": true</code> in JSON definitions.</td></tr>
     <tr><td><code>Height</code></td><td>300</td><td>Set it small, e.g. 24–48 px.</td></tr>
     <tr><td><code>Highlight</code> (line, area)</td><td>none</td><td><code>PointHighlight.Last</code>, <code>First</code>, <code>Min</code>, <code>Max</code>, combined with <code>|</code>.</td></tr>
     <tr><td><code>Interactive</code></td><td>true</td><td>False: plain SVG without JS (no tooltip). For many charts on a page.</td></tr>
     <tr><td><code>Width</code></td><td>the container</td><td>Needed for exact geometry when <code>Interactive="false"</code>.</td></tr>
-    <tr><td><code>AutoCompact</code></td><td>true</td><td>Leave out axis titles, legend, title and axis labels as a normal chart gets small. Also <code>"autoCompact"</code> in JSON specs.</td></tr>
+    <tr><td><code>AutoCompact</code></td><td>true</td><td>Leave out axis titles, legend, title and axis labels as a normal chart gets small. Also <code>"autoCompact"</code> in JSON definitions.</td></tr>
     <tr><td><code>KeyboardNavigation</code></td><td>off when compact</td><td>Set true to make a compact chart a tab stop with arrow-key navigation.</td></tr>
 </table>
 </div>
@@ -151,7 +151,7 @@
 
     private const string AutoCode = """
         <RioChart Items="web" Height="130" Title="Store traffic"
-                  XAxis="@(new AxisSpec { Title = "Time" })" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })">
+                  XAxis="@(new AxisOptions { Title = "Time" })" YAxis="@(new AxisOptions { Title = "Sessions per 15 min" })">
             <LineSeries Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
             <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
         </RioChart>

@@ -90,9 +90,9 @@
 </div>
 
 @code {
-    private static readonly AxisSpec Sessions = new() { Title = "Sessions" };
-    private static readonly AxisSpec Orders = new() { Title = "Orders" };
-    private static readonly AxisSpec Percent = new() { Title = "%" };
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions" };
+    private static readonly AxisOptions Orders = new() { Title = "Orders" };
+    private static readonly AxisOptions Percent = new() { Title = "%" };
     private RioChart<Reading>? _chart;
     private string? _pngInfo;
 

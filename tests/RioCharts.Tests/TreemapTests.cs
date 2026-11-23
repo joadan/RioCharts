@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -22,9 +22,9 @@ public class TreemapTests
 
     private static readonly double[] People = [84, 68, 59, 48, 1430, 1410, 124, 335, 216];
 
-    private static ChartSpec Spec(SeriesSpec? series = null) => new() { Series = [series ?? Tree()] };
+    private static ChartDefinition Spec(SeriesOptions? series = null) => new() { Series = [series ?? Tree()] };
 
-    private static SeriesSpec Tree(double? groupSmall = null) => new() { Id = "p", Name = "Population", Type = SeriesType.Treemap, Format = "0 M", GroupSmallSlices = groupSmall };
+    private static SeriesOptions Tree(double? groupSmall = null) => new() { Id = "p", Name = "Population", Type = SeriesType.Treemap, Format = "0 M", GroupSmallSlices = groupSmall };
 
     private static Dictionary<string, SeriesData> Data(string[]? paths = null, double[]? values = null) => new()
     {
@@ -166,7 +166,7 @@ public class TreemapTests
         var empty = ChartLayout.Compute(Spec(), new Dictionary<string, SeriesData>(), Options);
         var single = ChartLayout.Compute(Spec(), Data(["Only"], [3]), Options);
         var repeated = ChartLayout.Compute(Spec(), Data(["A/x", "A/x", "A"], [1, 2, 7]), Options);
-        var mixed = ChartLayout.Compute(new ChartSpec { Series = [Tree(), new SeriesSpec { Id = "l", Type = SeriesType.Line }] }, Data(), Options);
+        var mixed = ChartLayout.Compute(new ChartDefinition { Series = [Tree(), new SeriesOptions { Id = "l", Type = SeriesType.Line }] }, Data(), Options);
         var tiny = ChartLayout.Compute(Spec(), Data(), Options with { Width = 60, Height = 50 });
 
         Assert.False(empty.HasData);
@@ -253,10 +253,10 @@ public class TreemapTests
     [Fact]
     public void A_json_treemap_takes_visibleLevels()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "treemap", "x": "path", "y": "size", "visibleLevels": 1 } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "treemap", "x": "path", "y": "size", "visibleLevels": 1 } ] }""");
 
-        Assert.Equal(1, parsed.Spec!.Series[0].VisibleLevels);
-        Assert.Contains("VisibleLevels=\"1\"", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Equal(1, parsed.Definition!.Series[0].VisibleLevels);
+        Assert.Contains("VisibleLevels=\"1\"", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -295,15 +295,15 @@ public class TreemapTests
     {
         var rows = new[] { ("Europe", "Germany", 84.0), ("Europe", "France", 68.0), ("Asia", "India", 1430.0) }
             .Select(r => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["continent"] = r.Item1, ["country"] = r.Item2, ["people"] = r.Item3 });
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "treemap", "path": ["continent", "country"], "y": "people" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "treemap", "path": ["continent", "country"], "y": "people" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
         Assert.Empty(bound.Errors);
-        Assert.Equal(SeriesType.Treemap, bound.Spec.Series.Single().Type);
-        var result = ChartLayout.Compute(bound.Spec, bound.Data, Options);
+        Assert.Equal(SeriesType.Treemap, bound.Definition.Series.Single().Type);
+        var result = ChartLayout.Compute(bound.Definition, bound.Data, Options);
         Assert.Contains("Europe › France", result.Tooltip.Series[0].XLabels);
-        var razor = ChartRazor.FromSpec(parsed.Spec!, "Row", "rows");
+        var razor = ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows");
         Assert.Contains("<TreemapSeries", razor, StringComparison.Ordinal);
         Assert.Contains("XValue=\"r => $\"{r.Continent}/{r.Country}\"\"", razor, StringComparison.Ordinal);
     }
@@ -312,9 +312,9 @@ public class TreemapTests
     public void A_json_treemap_with_a_missing_path_field_says_which()
     {
         var rows = new[] { (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["country"] = "Germany", ["people"] = 84.0 } };
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "treemap", "path": ["continent", "country"], "y": "people" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "treemap", "path": ["continent", "country"], "y": "people" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
         Assert.Equal("series[0].path[0]", Assert.Single(bound.Errors).Path);
     }

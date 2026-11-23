@@ -3,7 +3,7 @@ using Microsoft.Extensions.AI;
 using ModelContextProtocol.Protocol;
 using RioCharts.AI;
 using RioCharts.Core;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -35,7 +35,7 @@ public class ChartToolTests
         Assert.NotNull(result.Png);
         Assert.Contains("Air temperature", result.Summary);
         Assert.Contains(result.Warnings, w => w.Contains("spline", StringComparison.Ordinal));
-        Assert.Equal(2, result.BoundSpec!.Series.Count);
+        Assert.Equal(2, result.BoundDefinition!.Series.Count);
         Assert.Same(result, created);
         Assert.Equal(ChartTool.ToolName, created!.Tool);
         var json = JsonSerializer.Serialize(result, JsonSerializerOptions.Web);
@@ -70,12 +70,12 @@ public class ChartToolTests
         var create = (AIFunction)functions.Single(f => f.Name == "create_chart");
         var spec = JsonDocument.Parse("""{"dataset":"weather","series":[{"type":"bar","x":"timestamp","y":"rain","timeBucket":"day","aggregate":"sum"}]}""").RootElement;
 
-        var fromObject = await create.InvokeAsync(new AIFunctionArguments { ["spec"] = spec });
-        var fromString = await create.InvokeAsync(new AIFunctionArguments { ["spec"] = spec.GetRawText() });
+        var fromObject = await create.InvokeAsync(new AIFunctionArguments { ["definition"] = spec });
+        var fromString = await create.InvokeAsync(new AIFunctionArguments { ["definition"] = spec.GetRawText() });
 
         Assert.Contains("\"success\":true", JsonSerializer.Serialize(fromObject));
         Assert.Contains("\"success\":true", JsonSerializer.Serialize(fromString));
-        Assert.Contains("spec", create.JsonSchema.GetRawText());
+        Assert.Contains("definition", create.JsonSchema.GetRawText());
         Assert.Equal(["create_chart", "render_chart", "list_datasets", "get_chart_schema"], functions.Select(f => f.Name));
     }
 
@@ -173,7 +173,7 @@ public class ChartToolTests
         var render = (AIFunction)tool.AsAIFunctions().Single(f => f.Name == "render_chart");
         var spec = JsonDocument.Parse("""{"data":[{"category":"Shoes","share":45},{"category":"Jackets","share":55}],"series":[{"type":"auto","x":"category","y":"share"}]}""").RootElement;
 
-        var aiResult = await render.InvokeAsync(new AIFunctionArguments { ["spec"] = spec, ["format"] = "svg" });
+        var aiResult = await render.InvokeAsync(new AIFunctionArguments { ["definition"] = spec, ["format"] = "svg" });
         var mcp = new RioChartsMcpTools(tool);
         var mcpPng = await mcp.RenderChart(spec, cancellationToken: default);
         var mcpSvg = await mcp.RenderChart(spec, ChartImageFormat.Svg, cancellationToken: default);
@@ -190,14 +190,14 @@ public class ChartToolTests
     [Fact]
     public void Specs_export_to_razor_markup()
     {
-        var spec = ChartSpecJson.Parse("""
+        var spec = ChartDefinitionJson.Parse("""
             { "title": "Weather \"now\"", "y": { "title": "°C" },
               "series": [ { "type": "line", "x": "timestamp", "y": "air_temp", "name": "Temperature", "curve": "smooth", "groupBy": "station" },
                           { "type": "doughnut", "x": "category", "y": "share" } ],
               "annotations": [ { "value": 21, "label": "Average" }, { "type": "band", "axis": "x", "from": "2026-11-16T06:00", "to": "2026-11-16T09:00" } ] }
-            """).Spec!;
+            """).Definition!;
 
-        var razor = ChartRazor.FromSpec(spec, "Reading", "readings");
+        var razor = ChartRazor.FromDefinition(spec, "Reading", "readings");
 
         Assert.StartsWith("<RioChart TItem=\"Reading\" Items=\"readings\" Title=\"Weather &quot;now&quot;\"", razor);
         Assert.Contains("<LineSeries Name=\"Temperature\" XValue=\"r => r.Timestamp\" YValue=\"r => r.AirTemp\" Curve=\"CurveType.Monotone\" />", razor);

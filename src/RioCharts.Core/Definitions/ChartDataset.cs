@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace RioCharts.Core.Specs;
+namespace RioCharts.Core.Definitions;
 
 /// <summary>The kind of values in a dataset field.</summary>
 public enum FieldType
@@ -21,7 +21,7 @@ public enum FieldType
 public sealed class DataField
 {
     /// <summary>Creates a field.</summary>
-    /// <param name="name">The field name specs refer to.</param>
+    /// <param name="name">The field name definitions refer to.</param>
     /// <param name="type">The kind of values.</param>
     /// <param name="values">One value per row; null for missing.</param>
     /// <param name="description">What the field means (shown to AI agents).</param>
@@ -33,7 +33,7 @@ public sealed class DataField
         Description = description;
     }
 
-    /// <summary>The field name specs refer to (matched case-insensitively).</summary>
+    /// <summary>The field name definitions refer to (matched case-insensitively).</summary>
     public string Name { get; }
     /// <summary>The kind of values.</summary>
     public FieldType Type { get; }
@@ -45,7 +45,7 @@ public sealed class DataField
 }
 
 /// <summary>
-/// Tabular data that chart specs refer to by name and fields, so a spec (e.g. from an AI agent)
+/// Tabular data that chart definitions refer to by name and fields, so a definition (e.g. from an AI agent)
 /// stays small and never has to carry the data itself.
 /// </summary>
 public sealed partial class ChartDataset
@@ -53,7 +53,7 @@ public sealed partial class ChartDataset
     private readonly Dictionary<string, DataField> _byName;
 
     /// <summary>Creates a dataset.</summary>
-    /// <param name="name">The name specs refer to.</param>
+    /// <param name="name">The name definitions refer to.</param>
     /// <param name="fields">The columns.</param>
     /// <param name="description">What the data is (shown to AI agents).</param>
     public ChartDataset(string name, IReadOnlyList<DataField> fields, string? description = null)
@@ -65,7 +65,7 @@ public sealed partial class ChartDataset
         _byName = fields.ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>The name specs refer to (matched case-insensitively).</summary>
+    /// <summary>The name definitions refer to (matched case-insensitively).</summary>
     public string Name { get; }
     /// <summary>What the data is (shown to AI agents), e.g. "Orders per day and store".</summary>
     public string? Description { get; }
@@ -271,12 +271,12 @@ public sealed partial class ChartDataset
 }
 
 /// <summary>
-/// Where specs get their data: the app lists its datasets (so an agent knows what it may chart)
+/// Where definitions get their data: the app lists its datasets (so an agent knows what it may chart)
 /// and loads one on demand. Querying and access control stay in the app.
 /// </summary>
 public interface IChartDataSource
 {
-    /// <summary>The datasets a spec may use (names, fields and descriptions; values may be empty).</summary>
+    /// <summary>The datasets a definition may use (names, fields and descriptions; values may be empty).</summary>
     IReadOnlyList<ChartDataset> Describe();
 
     /// <summary>The dataset with its values, or null when it does not exist.</summary>

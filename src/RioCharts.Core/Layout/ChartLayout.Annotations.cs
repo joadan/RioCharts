@@ -23,7 +23,7 @@ public static partial class ChartLayout
 {
     private sealed class ResolvedAnnotation
     {
-        public required AnnotationSpec Spec { get; init; }
+        public required Annotation Spec { get; init; }
         public required string Id { get; init; }
         public required int Index { get; init; }
 
@@ -58,7 +58,7 @@ public static partial class ChartLayout
         };
     }
 
-    private static List<ResolvedAnnotation> ResolveAnnotations(ChartSpec spec, List<YAxisLayout> axes, XKind xKind, IReadOnlyList<string> categories,
+    private static List<ResolvedAnnotation> ResolveAnnotations(ChartDefinition spec, List<YAxisLayout> axes, XKind xKind, IReadOnlyList<string> categories,
         List<string> warnings, TimeConversion? time = null)
     {
         var result = new List<ResolvedAnnotation>();

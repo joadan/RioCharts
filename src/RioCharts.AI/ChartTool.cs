@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.AI;
 using RioCharts.Core;
 using RioCharts.Core.Layout;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 using RioCharts.Skia;
 
 namespace RioCharts.AI;
@@ -62,7 +62,7 @@ public sealed record ChartImageRequest
 
 /// <summary>
 /// What the tools return to the agent (as JSON): success, errors to fix, notes and a description
-/// of the chart. The image and the bound spec are left out of the JSON: create_chart gives them to
+/// of the chart. The image and the bound definition are left out of the JSON: create_chart gives them to
 /// the app, render_chart returns the image as a separate content block.
 /// </summary>
 public sealed record ChartToolResult
@@ -70,7 +70,7 @@ public sealed record ChartToolResult
     /// <summary>True when the chart was created; false when <see cref="Errors"/> lists what to fix.</summary>
     public bool Success { get; init; }
 
-    /// <summary>Problems with the spec, each with its path and what to do ("series[0].y: field 'temp' not found; available: ...").</summary>
+    /// <summary>Problems with the definition, each with its path and what to do ("series[0].y: field 'temp' not found; available: ...").</summary>
     public IReadOnlyList<string> Errors { get; init; } = [];
 
     /// <summary>Things the tool assumed or adjusted, e.g. "series[0].type: 'column' read as bar".</summary>
@@ -79,8 +79,8 @@ public sealed record ChartToolResult
     /// <summary>A text description of the chart (series, ranges, trend) the agent can use in its answer.</summary>
     public string? Summary { get; init; }
 
-    /// <summary>The spec as understood (normalized JSON), for saving or editing later.</summary>
-    public string? Spec { get; init; }
+    /// <summary>The definition as understood (normalized JSON), for saving or editing later.</summary>
+    public string? Definition { get; init; }
 
     /// <summary>render_chart: "png" or "svg".</summary>
     public string? Format { get; init; }
@@ -106,18 +106,18 @@ public sealed record ChartToolResult
     /// <summary>The chart as SVG (create_chart with <see cref="ChartToolOptions.RenderSvg"/>, or render_chart with format svg).</summary>
     [JsonIgnore] public string? Svg { get; init; }
 
-    /// <summary>The spec with concrete series (types resolved, groups expanded).</summary>
-    [JsonIgnore] public ChartSpec? BoundSpec { get; init; }
+    /// <summary>The definition with concrete series (types resolved, groups expanded).</summary>
+    [JsonIgnore] public ChartDefinition? BoundDefinition { get; init; }
 
     /// <summary>The data of each bound series, e.g. to show the chart with the Blazor component.</summary>
     [JsonIgnore] public IReadOnlyDictionary<string, Core.Data.SeriesData>? Data { get; init; }
 }
 
 /// <summary>
-/// The chart tools for AI agents. <c>create_chart</c> validates a JSON chart spec against the
-/// app's datasets (errors name the path and list the valid options, so the model can fix the spec
+/// The chart tools for AI agents. <c>create_chart</c> validates a JSON chart definition against the
+/// app's datasets (errors name the path and list the valid options, so the model can fix the definition
 /// and call again), renders it for the app to show and returns a description. <c>render_chart</c>
-/// takes the same spec and returns the image (PNG or SVG) to the agent itself. Use them as
+/// takes the same definition and returns the image (PNG or SVG) to the agent itself. Use them as
 /// Microsoft.Extensions.AI functions (<see cref="AsAIFunctions"/>) or through MCP
 /// (<see cref="RioChartsMcpTools"/>).
 /// </summary>
@@ -131,30 +131,30 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
 
     /// <summary>The render_chart description for the model.</summary>
     public const string RenderDescription =
-        "Renders a chart from a JSON spec (the same spec as create_chart) and returns the image to you as PNG or SVG, "
+        "Renders a chart from a JSON definition (the same definition as create_chart) and returns the image to you as PNG or SVG, "
         + "with a short description of the chart, or errors to fix (then call again). Use it when you need the image itself, "
         + "e.g. for a report, document, email or message; use create_chart to show a chart to the user. "
         + "Options: format (png|svg), width and height in pixels, theme (light|dark). "
-        + "Use inline \"data\" rows in the spec to chart numbers that are not in a dataset.";
+        + "Use inline \"data\" rows in the definition to chart numbers that are not in a dataset.";
 
     private readonly ChartToolOptions _options = options ?? new ChartToolOptions();
 
     /// <summary>
     /// Raised after every chart the tools make: each successful create_chart and render_chart, with
-    /// the image, bound spec and (render_chart with <see cref="ChartToolOptions.OutputDirectory"/>)
+    /// the image, bound definition and (render_chart with <see cref="ChartToolOptions.OutputDirectory"/>)
     /// the file, e.g. to show it to the user. <see cref="ChartToolResult.Tool"/> says which tool made
     /// it; a render_chart image can be SVG, with <see cref="ChartToolResult.Png"/> null.
     /// </summary>
     public event Action<ChartToolResult>? ChartCreated;
 
-    /// <summary>The tool description for the model: purpose, the datasets and their fields, the spec format and examples.</summary>
+    /// <summary>The tool description for the model: purpose, the datasets and their fields, the definition format and examples.</summary>
     public string Description => BuildDescription(dataSource.Describe());
 
-    /// <summary>Validates, binds and renders a spec (a JSON object, or a string holding one) for the app to show.</summary>
-    public async Task<ChartToolResult> CreateChartAsync(string spec, CancellationToken cancellationToken = default)
+    /// <summary>Validates, binds and renders a definition (a JSON object, or a string holding one) for the app to show.</summary>
+    public async Task<ChartToolResult> CreateChartAsync(string definition, CancellationToken cancellationToken = default)
     {
         var export = _options.Export;
-        var (result, layout) = await BindAsync(spec, export, ToolName, cancellationToken).ConfigureAwait(false);
+        var (result, layout) = await BindAsync(definition, export, ToolName, cancellationToken).ConfigureAwait(false);
         if (layout is null)
         {
             return result;
@@ -170,15 +170,15 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
     }
 
     /// <inheritdoc cref="CreateChartAsync(string, CancellationToken)"/>
-    public Task<ChartToolResult> CreateChartAsync(JsonElement spec, CancellationToken cancellationToken = default) =>
-        CreateChartAsync(SpecText(spec), cancellationToken);
+    public Task<ChartToolResult> CreateChartAsync(JsonElement definition, CancellationToken cancellationToken = default) =>
+        CreateChartAsync(DefinitionText(definition), cancellationToken);
 
     /// <summary>
-    /// Validates, binds and renders a spec as an image for the agent (render_chart): PNG or SVG at
+    /// Validates, binds and renders a definition as an image for the agent (render_chart): PNG or SVG at
     /// the requested size and theme, also saved to <see cref="ChartToolOptions.OutputDirectory"/>
     /// when that is set. Raises <see cref="ChartCreated"/>.
     /// </summary>
-    public async Task<ChartToolResult> RenderChartAsync(string spec, ChartImageRequest? request = null, CancellationToken cancellationToken = default)
+    public async Task<ChartToolResult> RenderChartAsync(string definition, ChartImageRequest? request = null, CancellationToken cancellationToken = default)
     {
         request ??= new ChartImageRequest();
         var requestErrors = CheckRequest(request);
@@ -188,7 +188,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         }
 
         var export = ExportFor(request);
-        var (result, layout) = await BindAsync(spec, export, RenderToolName, cancellationToken).ConfigureAwait(false);
+        var (result, layout) = await BindAsync(definition, export, RenderToolName, cancellationToken).ConfigureAwait(false);
         if (layout is null)
         {
             return result;
@@ -201,7 +201,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         if (_options.OutputDirectory is { } directory)
         {
             Directory.CreateDirectory(directory);
-            file = Path.GetFullPath(Path.Combine(directory, FileNameFor(request, result.BoundSpec?.Title)));
+            file = Path.GetFullPath(Path.Combine(directory, FileNameFor(request, result.BoundDefinition?.Title)));
             if (png is not null)
             {
                 await System.IO.File.WriteAllBytesAsync(file, png, cancellationToken).ConfigureAwait(false);
@@ -227,29 +227,29 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
     }
 
     /// <inheritdoc cref="RenderChartAsync(string, ChartImageRequest?, CancellationToken)"/>
-    public Task<ChartToolResult> RenderChartAsync(JsonElement spec, ChartImageRequest? request = null, CancellationToken cancellationToken = default) =>
-        RenderChartAsync(SpecText(spec), request, cancellationToken);
+    public Task<ChartToolResult> RenderChartAsync(JsonElement definition, ChartImageRequest? request = null, CancellationToken cancellationToken = default) =>
+        RenderChartAsync(DefinitionText(definition), request, cancellationToken);
 
     /// <summary>
-    /// Turns a spec into code for a Blazor app (get_razor): checks it against the datasets like
+    /// Turns a definition into code for a Blazor app (get_razor): checks it against the datasets like
     /// render_chart, then returns the &lt;RioChart&gt; markup, a record for the rows (from the
     /// dataset's fields) and, for inline data, the rows as a C# list. So an agent can design a chart
     /// with render_chart, look at it, and then put the same chart in the codebase.
     /// </summary>
-    /// <param name="spec">The chart spec (JSON).</param>
+    /// <param name="definition">The chart definition (JSON).</param>
     /// <param name="itemType">The C# type of the rows. Default: from the dataset name ("sales" → "Sale").</param>
     /// <param name="itemsName">The variable that holds the rows. Default: the dataset name.</param>
     /// <param name="cancellationToken">Cancels loading the datasets.</param>
-    public async Task<ChartCodeResult> GetRazorAsync(string spec, string? itemType = null, string? itemsName = null, CancellationToken cancellationToken = default)
+    public async Task<ChartCodeResult> GetRazorAsync(string definition, string? itemType = null, string? itemsName = null, CancellationToken cancellationToken = default)
     {
-        var parsed = ChartSpecJson.Parse(spec);
+        var parsed = ChartDefinitionJson.Parse(definition);
         if (!parsed.Success)
         {
             return new ChartCodeResult { Errors = [.. parsed.Errors.Select(e => e.ToString())], Warnings = parsed.Warnings };
         }
 
-        var chart = parsed.Spec!;
-        var bound = await ChartSpecBinder.BindAsync(chart, dataSource, cancellationToken).ConfigureAwait(false);
+        var chart = parsed.Definition!;
+        var bound = await ChartDefinitionBinder.BindAsync(chart, dataSource, cancellationToken).ConfigureAwait(false);
         var warnings = parsed.Warnings.Concat(bound.Warnings).ToList();
         if (!bound.Success)
         {
@@ -273,21 +273,21 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         {
             Success = true,
             Warnings = warnings,
-            Razor = ChartRazor.FromSpec(chart, type, items),
+            Razor = ChartRazor.FromDefinition(chart, type, items),
             ItemType = dataset is null ? null : ChartRazor.ItemRecord(dataset, type),
             Items = inline ? ChartRazor.ItemsList(dataset!, type, items) : null,
         };
     }
 
     /// <inheritdoc cref="GetRazorAsync(string, string?, string?, CancellationToken)"/>
-    public Task<ChartCodeResult> GetRazorAsync(JsonElement spec, string? itemType = null, string? itemsName = null, CancellationToken cancellationToken = default) =>
-        GetRazorAsync(SpecText(spec), itemType, itemsName, cancellationToken);
+    public Task<ChartCodeResult> GetRazorAsync(JsonElement definition, string? itemType = null, string? itemsName = null, CancellationToken cancellationToken = default) =>
+        GetRazorAsync(DefinitionText(definition), itemType, itemsName, cancellationToken);
 
     /// <summary>The datasets and fields the model can chart, as text.</summary>
     public string ListDatasets() => DescribeDatasets(dataSource.Describe());
 
-    /// <summary>The JSON schema of a spec, for models that want the full detail.</summary>
-    public static string GetSchema() => ChartSpecJson.Schema().ToJsonString(new JsonSerializerOptions { WriteIndented = false });
+    /// <summary>The JSON schema of a definition, for models that want the full detail.</summary>
+    public static string GetSchema() => ChartDefinitionJson.Schema().ToJsonString(new JsonSerializerOptions { WriteIndented = false });
 
     /// <summary>The tools as Microsoft.Extensions.AI functions: create_chart, render_chart, list_datasets and get_chart_schema.</summary>
     public IList<AITool> AsAIFunctions() =>
@@ -295,13 +295,13 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         AsAIFunction(),
         AsRenderFunction(),
         AIFunctionFactory.Create(ListDatasets, "list_datasets", "Lists the datasets that charts can use, with their fields and types."),
-        AIFunctionFactory.Create(GetSchema, "get_chart_schema", "Returns the full JSON schema of a chart spec (every option with a description)."),
+        AIFunctionFactory.Create(GetSchema, "get_chart_schema", "Returns the full JSON schema of a chart definition (every option with a description)."),
     ];
 
     /// <summary>create_chart as a Microsoft.Extensions.AI function.</summary>
     public AIFunction AsAIFunction() => AIFunctionFactory.Create(
-        ([Description("The chart spec: a JSON object as described in the tool description.")] JsonElement spec, CancellationToken cancellationToken) =>
-            CreateChartAsync(spec, cancellationToken),
+        ([Description("The chart definition: a JSON object as described in the tool description.")] JsonElement definition, CancellationToken cancellationToken) =>
+            CreateChartAsync(definition, cancellationToken),
         ToolName,
         Description);
 
@@ -311,7 +311,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
     /// image itself, e.g. to attach to an answer, a report or an email.
     /// </summary>
     public AIFunction AsRenderFunction() => AIFunctionFactory.Create(
-        async ([Description("The chart spec: a JSON object as described for create_chart.")] JsonElement spec,
+        async ([Description("The chart definition: a JSON object as described for create_chart.")] JsonElement definition,
                [Description("png (default) or svg.")] ChartImageFormat format = ChartImageFormat.Png,
                [Description("Width in pixels, 100 to 4000. Default 800.")] int? width = null,
                [Description("Height in pixels, 100 to 4000. Default 400.")] int? height = null,
@@ -320,7 +320,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
                CancellationToken cancellationToken = default) =>
         {
             var request = new ChartImageRequest { Format = format, Width = width, Height = height, Theme = theme, FileName = fileName };
-            var result = await RenderChartAsync(spec, request, cancellationToken).ConfigureAwait(false);
+            var result = await RenderChartAsync(definition, request, cancellationToken).ConfigureAwait(false);
             return (IList<AIContent>)ToAIContents(result);
         },
         RenderToolName,
@@ -346,30 +346,30 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         result.File is null ? fallback : Path.GetFileName(result.File);
 
     private async Task<(ChartToolResult Result, ChartLayoutResult? Layout)> BindAsync(
-        string spec, ExportOptions export, string toolName, CancellationToken cancellationToken)
+        string definition, ExportOptions export, string toolName, CancellationToken cancellationToken)
     {
-        var parsed = ChartSpecJson.Parse(spec);
+        var parsed = ChartDefinitionJson.Parse(definition);
         if (!parsed.Success)
         {
             return (Failure(parsed.Errors.Select(e => e.ToString()), parsed.Warnings, toolName), null);
         }
 
-        var bound = await ChartSpecBinder.BindAsync(parsed.Spec!, dataSource, cancellationToken).ConfigureAwait(false);
+        var bound = await ChartDefinitionBinder.BindAsync(parsed.Definition!, dataSource, cancellationToken).ConfigureAwait(false);
         var warnings = parsed.Warnings.Concat(bound.Warnings).ToList();
         if (!bound.Success)
         {
             return (Failure(bound.Errors.Select(e => e.ToString()), warnings, toolName), null);
         }
 
-        var layout = ChartExport.Layout(bound.Spec, bound.Data, export);
+        var layout = ChartExport.Layout(bound.Definition, bound.Data, export);
         warnings.AddRange(layout.Warnings);
         var result = new ChartToolResult
         {
             Success = true,
             Warnings = warnings,
             Summary = layout.Scene.Description,
-            Spec = ChartSpecJson.Serialize(parsed.Spec!),
-            BoundSpec = bound.Spec,
+            Definition = ChartDefinitionJson.Serialize(parsed.Definition!),
+            BoundDefinition = bound.Definition,
             Data = bound.Data,
         };
         return (result, layout);
@@ -438,19 +438,19 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         return (clean.Length > 80 ? clean[..80] : clean) + extension;
     }
 
-    private static string SpecText(JsonElement spec) =>
-        spec.ValueKind == JsonValueKind.String ? spec.GetString() ?? "" : spec.GetRawText();
+    private static string DefinitionText(JsonElement definition) =>
+        definition.ValueKind == JsonValueKind.String ? definition.GetString() ?? "" : definition.GetRawText();
 
     private static ChartToolResult Failure(IEnumerable<string> errors, IEnumerable<string> warnings, string toolName) => new()
     {
         Success = false,
-        Errors = [.. errors, $"Fix these and call {toolName} again with the corrected spec."],
+        Errors = [.. errors, $"Fix these and call {toolName} again with the corrected definition."],
         Warnings = [.. warnings],
     };
 
     /// <summary>
     /// A self-contained description of render_chart for servers that offer it without create_chart
-    /// (e.g. the riocharts-mcp command-line server): the spec format and examples, and a pointer to
+    /// (e.g. the riocharts-mcp command-line server): the definition format and examples, and a pointer to
     /// list_datasets instead of a dataset list (datasets may change while the server runs).
     /// </summary>
     public static string StandaloneRenderDescription { get; } = BuildDescription(null, renderOnly: true);
@@ -460,21 +460,21 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         var sb = new StringBuilder();
         if (renderOnly)
         {
-            sb.AppendLine("Renders a chart from a JSON spec as a PNG or SVG image, returns it to you with a short description of the chart, and saves it as a file (the path is in \"file\"). On errors, fix the spec and call again.");
-            sb.AppendLine("Arguments: spec, and optionally format (png|svg, default png), width and height in pixels (default 800 × 400), theme (light|dark), fileName.");
+            sb.AppendLine("Renders a chart from a JSON definition as a PNG or SVG image, returns it to you with a short description of the chart, and saves it as a file (the path is in \"file\"). On errors, fix the definition and call again.");
+            sb.AppendLine("Arguments: definition, and optionally format (png|svg, default png), width and height in pixels (default 800 × 400), theme (light|dark), fileName.");
             sb.AppendLine();
-            sb.AppendLine("Data: call list_datasets for the datasets (CSV and JSON files) and their fields, or put small data inline in the spec as \"data\" rows.");
+            sb.AppendLine("Data: call list_datasets for the datasets (CSV and JSON files) and their fields, or put small data inline in the definition as \"data\" rows.");
         }
         else
         {
-            sb.AppendLine("Creates a chart from a JSON spec. The chart is shown to the user; you get back a short description of it, or errors to fix (then call again).");
+            sb.AppendLine("Creates a chart from a JSON definition. The chart is shown to the user; you get back a short description of it, or errors to fix (then call again).");
             sb.AppendLine();
             sb.AppendLine("Datasets you can chart:");
             sb.Append(DescribeDatasets(datasets ?? []));
         }
 
         sb.AppendLine();
-        sb.AppendLine("Spec (only series with x and y are required; everything else has good defaults):");
+        sb.AppendLine("Definition (only series with x and y are required; everything else has good defaults):");
         sb.AppendLine("{ \"dataset\": \"<id>\", \"title\": \"...\", \"series\": [ { \"type\": \"line|area|bar|pie|radialBar|auto\", \"x\": \"<field>\", \"y\": \"<numeric field>\",");
         sb.AppendLine("    \"name\"?, \"groupBy\"?: \"<field: one series per value>\", \"aggregate\"?: \"sum|average|min|max|count|last\",");
         sb.AppendLine("    \"timeBucket\"?: \"minute|hour|day|week|month|quarter|year|auto\", \"filter\"?: [ { \"field\", \"op\": \"eq|ne|gt|gte|lt|lte|contains\", \"value\" } ],");
@@ -491,7 +491,7 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
         sb.AppendLine("Tips: time on x gives a line; categories give bars; shares of a whole give a donut (\"auto\" picks). Use timeBucket + aggregate for long time ranges, sort + limit for top-N, groupBy for one line per channel or category. Call get_chart_schema for every option.");
         if (!renderOnly)
         {
-            sb.AppendLine("To get the image yourself (PNG or SVG, e.g. for a report), call render_chart with the same spec.");
+            sb.AppendLine("To get the image yourself (PNG or SVG, e.g. for a report), call render_chart with the same definition.");
         }
 
         return sb.ToString();
@@ -535,10 +535,10 @@ public sealed class ChartTool(IChartDataSource dataSource, ChartToolOptions? opt
 /// <summary>The result of <see cref="ChartTool.GetRazorAsync(string, string?, string?, CancellationToken)"/>: code for a Blazor app, or errors to fix.</summary>
 public sealed record ChartCodeResult
 {
-    /// <summary>True when the spec was valid and the code was made.</summary>
+    /// <summary>True when the definition was valid and the code was made.</summary>
     public bool Success { get; init; }
 
-    /// <summary>What to fix in the spec.</summary>
+    /// <summary>What to fix in the definition.</summary>
     public IReadOnlyList<string> Errors { get; init; } = [];
 
     /// <summary>Things to check.</summary>
@@ -559,7 +559,7 @@ public sealed record ChartCodeResult
         var sb = new StringBuilder();
         if (!Success)
         {
-            sb.AppendLine("The spec has errors; fix them and call again:");
+            sb.AppendLine("The definition has errors; fix them and call again:");
             foreach (var e in Errors)
             {
                 sb.Append("- ").AppendLine(e);
@@ -579,7 +579,7 @@ public sealed record ChartCodeResult
 
             if (Items is not null)
             {
-                sb.AppendLine("The rows (the spec's inline data):");
+                sb.AppendLine("The rows (the definition's inline data):");
                 sb.AppendLine("```csharp").AppendLine(Items).AppendLine("```");
                 sb.AppendLine();
             }

@@ -30,14 +30,14 @@
     [Fact]
     public void A_spec_can_be_compact()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Compact = true,
             Data = [new Dictionary<string, object?> { ["t"] = 1.0, ["v"] = 2.0 }, new Dictionary<string, object?> { ["t"] = 2.0, ["v"] = 3.0 }],
-            Series = [new SeriesSpec { Id = "s", X = "t", Y = "v" }],
+            Series = [new SeriesOptions { Id = "s", X = "t", Y = "v" }],
         };
 
-        var cut = Render<RioChart<object>>(@<RioChart TItem="object" Spec="spec" Height="24" />);
+        var cut = Render<RioChart<object>>(@<RioChart TItem="object" Definition="spec" Height="24" />);
 
         Assert.Empty(cut.FindAll("svg.rio-chart-svg text"));
         Assert.Equal($"0 0 {Width} 24", cut.Find("svg.rio-chart-svg").GetAttribute("viewBox"));

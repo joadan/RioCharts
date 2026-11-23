@@ -1,9 +1,9 @@
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Docs;
 
-/// <summary>Datasets the JSON spec playground can chart.</summary>
-public static class SpecDatasets
+/// <summary>Datasets the JSON definition playground can chart.</summary>
+public static class DefinitionDatasets
 {
     public static IReadOnlyDictionary<string, ChartDataset> ByName { get; } = Create().ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 

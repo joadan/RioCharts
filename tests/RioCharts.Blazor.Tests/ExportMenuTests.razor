@@ -148,7 +148,7 @@
     [Fact]
     public void Csv_uses_the_x_axis_title_and_every_series()
     {
-        var axis = new AxisSpec { Title = "Time" };
+        var axis = new AxisOptions { Title = "Time" };
         string[] hidden = ["toronto"];
         var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" XAxis="axis" HiddenSeries="hidden">
             <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />

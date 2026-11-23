@@ -20,7 +20,7 @@ public static partial class ChartLayout
     /// the columns and its y values the colors: one hue, more opaque for higher values, over the chart
     /// surface (so it works in light and dark themes and in exports). The legend is a color scale.
     /// </summary>
-    private static ChartLayoutResult ComputeHeatmap(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles,
+    private static ChartLayoutResult ComputeHeatmap(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles,
         TimeConversion? time)
     {
         var culture = options.Culture;
@@ -292,7 +292,7 @@ public static partial class ChartLayout
     }
 
     /// <summary>"Chart "Title" with 7 series. Lowest 12 at Sun 04:00, highest 312 at Fri 20:00."</summary>
-    private static string DescribeHeatmap(ChartSpec spec, List<Resolved> rows, Func<SeriesData, int, string> xLabel, Func<double, string> format,
+    private static string DescribeHeatmap(ChartDefinition spec, List<Resolved> rows, Func<SeriesData, int, string> xLabel, Func<double, string> format,
         ChartTexts texts, CultureInfo culture, int rowCount)
     {
         var summary = string.IsNullOrWhiteSpace(spec.Title)

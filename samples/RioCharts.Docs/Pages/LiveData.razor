@@ -26,7 +26,7 @@
 <p>Buffers keep at most <code>Capacity</code> points (100 000 by default) and, with a <code>timeWindow</code>, only the latest span of time.</p>
 
 @code {
-    private static readonly AxisSpec Visitors = new() { Title = "Visitors" };
+    private static readonly AxisOptions Visitors = new() { Title = "Visitors" };
     private readonly SeriesBuffer _web = new(timeWindow: TimeSpan.FromMinutes(2));
     private readonly SeriesBuffer _app = new(timeWindow: TimeSpan.FromMinutes(2));
     private readonly Random _random = new(7);

@@ -1,18 +1,18 @@
 using System.Text.Json.Serialization.Metadata;
 using RioCharts.Core;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
-/// <summary>Spec JSON with source-generated metadata (trimming and native AOT safe).</summary>
+/// <summary>Definition JSON with source-generated metadata (trimming and native AOT safe).</summary>
 public class SpecJsonTests
 {
     [Fact]
     public void Missing_properties_keep_their_defaults()
     {
-        var spec = ChartSpecJson.Parse("""
+        var spec = ChartDefinitionJson.Parse("""
             { "series": [ { "x": "t", "y": "v" } ], "annotations": [ { "value": 21 } ], "tooltip": { "shared": false }, "yAxes": [ { "id": "kw" } ] }
-            """).Spec!;
+            """).Definition!;
 
         Assert.Equal(SeriesType.Line, spec.Series[0].Type);
         Assert.Equal(CurveType.Linear, spec.Series[0].Curve);
@@ -31,7 +31,7 @@ public class SpecJsonTests
         var found = new HashSet<Type>();
         void Walk(Type type)
         {
-            if (!ChartSpecJson.Options.TryGetTypeInfo(type, out var info))
+            if (!ChartDefinitionJson.Options.TryGetTypeInfo(type, out var info))
             {
                 return;
             }
@@ -49,26 +49,26 @@ public class SpecJsonTests
             }
         }
 
-        Walk(typeof(ChartSpec));
+        Walk(typeof(ChartDefinition));
 
-        Assert.Equal(found.OrderBy(t => t.Name), ChartSpecJson.TypesWithDefaults.OrderBy(t => t.Name));
+        Assert.Equal(found.OrderBy(t => t.Name), ChartDefinitionJson.TypesWithDefaults.OrderBy(t => t.Name));
     }
 
     [Fact]
     public void Specs_built_in_code_with_object_values_serialize()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Data = [new Dictionary<string, object?> { ["t"] = new DateTime(2026, 11, 16), ["v"] = 20.5, ["station"] = "Station 1", ["on"] = true, ["n"] = 3 }],
-            Series = [new SeriesSpec { Id = "s", X = "t", Y = "v" }],
-            Annotations = [new AnnotationSpec { Type = AnnotationType.Point, X = new DateTime(2026, 11, 16), Y = 20.5m }],
+            Series = [new SeriesOptions { Id = "s", X = "t", Y = "v" }],
+            Annotations = [new Annotation { Type = AnnotationType.Point, X = new DateTime(2026, 11, 16), Y = 20.5m }],
         };
 
-        var json = ChartSpecJson.Serialize(spec);
+        var json = ChartDefinitionJson.Serialize(spec);
 
         Assert.Contains("\"2026-11-16T00:00:00\"", json, StringComparison.Ordinal);
         Assert.Contains("\"station\": \"Station 1\"", json, StringComparison.Ordinal);
         Assert.Contains("\"type\": \"point\"", json, StringComparison.Ordinal);
-        Assert.Equal(20.5, ChartSpecJson.Parse(json).Spec!.Data![0]["v"] switch { System.Text.Json.JsonElement e => e.GetDouble(), var o => Convert.ToDouble(o) });
+        Assert.Equal(20.5, ChartDefinitionJson.Parse(json).Definition!.Data![0]["v"] switch { System.Text.Json.JsonElement e => e.GetDouble(), var o => Convert.ToDouble(o) });
     }
 }

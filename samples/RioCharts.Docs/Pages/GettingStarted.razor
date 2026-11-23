@@ -99,9 +99,9 @@
         Android and iOS have not been tested yet.
     </li>
     <li>
-        <strong>Trimming and native AOT:</strong> the libraries are marked AOT-compatible and publish without trimming warnings. JSON specs use
+        <strong>Trimming and native AOT:</strong> the libraries are marked AOT-compatible and publish without trimming warnings. JSON definitions use
         source-generated serialization, so Blazor WebAssembly, trimmed servers and native AOT apps (also with Skia export and the AI tool) work
-        as they do in development. Read specs with <code>ChartSpecJson.Parse</code>; it fills in defaults that the generated serializer
+        as they do in development. Read definitions with <code>ChartDefinitionJson.Parse</code>; it fills in defaults that the generated serializer
         cannot.
     </li>
 </ul>
@@ -138,7 +138,7 @@
         dotnet tool install -g RioCharts.Mcp --prerelease
         """;
 
-    private static readonly AxisSpec Sessions = new() { Title = "Sessions" };
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions" };
     private static readonly SeriesData _columns = Columns();
 
     private static SeriesData Columns()
@@ -162,7 +162,7 @@
         """;
 
     private const string SeveralCode = """
-        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Sessions" })">
+        <RioChart TItem="Reading" YAxis="@(new AxisOptions { Title = "Sessions" })">
             <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" />
             <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>

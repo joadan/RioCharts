@@ -50,7 +50,7 @@
 </Example>
 
 @code {
-    private static readonly LegendSpec _right = new() { Position = LegendPosition.Right };
+    private static readonly LegendOptions _right = new() { Position = LegendPosition.Right };
     private static readonly List<Share> _channels = [new("Web", 214), new("App", 96), new("Marketplace", 38)];
     private static readonly List<Share> _lastYear = [new("Web", 251), new("App", 71), new("Marketplace", 22)];
 
@@ -61,7 +61,7 @@
         """;
 
     private const string DonutCode = """
-        <RioChart TItem="Share" Legend="new LegendSpec { Position = LegendPosition.Right }">
+        <RioChart TItem="Share" Legend="new LegendOptions { Position = LegendPosition.Right }">
             <DonutSeries Items="revenue" XValue="s => s.Name" YValue="s => s.Value" Format="0 k€" />
         </RioChart>
         """;

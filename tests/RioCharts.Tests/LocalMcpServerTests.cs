@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using RioCharts.AI;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 using RioCharts.Mcp;
 
 namespace RioCharts.Tests;

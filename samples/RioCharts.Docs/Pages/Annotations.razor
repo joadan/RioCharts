@@ -40,7 +40,7 @@
 </Example>
 
 @code {
-    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
     private static readonly DateTime _saleStart = Start.AddHours(16), _saleEnd = Start.AddHours(23), _now = Start.AddHours(44);
     private static readonly DateTime _maintenanceStart = Start.AddHours(26), _maintenanceEnd = Start.AddHours(28);
     private static readonly DateTime _peak = Start.AddHours(20), _newsletter = Start.AddHours(31);
@@ -48,7 +48,7 @@
     private string? _clicked;
 
     private const string AllCode = """
-        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })" OnAnnotationClick="e => clicked = e.Label">
+        <RioChart TItem="Reading" YAxis="@(new AxisOptions { Title = "Sessions per 15 min" })" OnAnnotationClick="e => clicked = e.Label">
             <ReferenceLine Value="200" Label="Target" />
             <ReferenceBand Axis="AnnotationAxis.X" From="saleStart" To="saleEnd" Label="Evening sale" />
             <ReferenceBand Axis="AnnotationAxis.X" From="maintenanceStart" To="maintenanceEnd" Label="Maintenance" Color="#d9480f" />

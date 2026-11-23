@@ -13,7 +13,7 @@
     Blazor-ApexCharts wraps the ApexCharts JavaScript library: your options go to JavaScript, which lays out and draws the chart.
     RioCharts lays out the chart in .NET and renders SVG through Blazor; a small JS module only measures text and handles the pointer.
     So there is no options object to send: the chart is configured with typed parameters, a change to a parameter or to
-    <code>Items</code> draws the chart again, and the same layout renders on the server (PNG/SVG export) and from JSON specs.
+    <code>Items</code> draws the chart again, and the same layout renders on the server (PNG/SVG export) and from JSON definitions.
 </p>
 
 <h2>Side by side</h2>
@@ -31,11 +31,12 @@
     <tr><td><code>PointColor</code></td><td><code>ColorValue</code>, plus <code>ColorBands</code> to color by value (a line turns red above a limit).</td></tr>
     <tr><td>Data labels in the options</td><td><code>DataLabels="true"</code> on the series.</td></tr>
     <tr><td>Range, candle and box plot series</td><td><code>RangeAreaSeries</code> (<code>LowValue</code> and <code>YValue</code>), <code>CandlestickSeries</code> (<code>OpenValue</code>, <code>HighValue</code>, <code>LowValue</code>, <code>CloseValue</code>, or raw readings with <code>Bucket</code>), <code>BoxPlotSeries</code> (raw values, or <code>Q1Value</code>, <code>MedianValue</code>, ...).</td></tr>
-    <tr><td>X and y axis options, several y axes</td><td><code>XAxis</code>, <code>YAxis</code> and <code>YAxes</code> (<code>AxisSpec</code>), and <code>YAxisId</code> on the series.</td></tr>
+    <tr><td>X and y axis options, several y axes</td><td><code>XAxis</code>, <code>YAxis</code> and <code>YAxes</code> (<code>AxisOptions</code>), and <code>YAxisId</code> on the series.</td></tr>
     <tr><td>Annotations in the options</td><td>Child components: <code>ReferenceLine</code>, <code>ReferenceBand</code>, <code>PointAnnotation</code>, <code>Callout</code>; a reference line can be dragged (<code>@@bind-Value</code>).</td></tr>
     <tr><td>Curve in the stroke options</td><td><code>Curve="CurveType.Monotone"</code> (or <code>Step</code>) on the series.</td></tr>
-    <tr><td>Stacking in the chart options</td><td><code>Stack="name"</code> on each series to stack.</td></tr>
-    <tr><td>Tooltip options, custom tooltip</td><td><code>Tooltip</code> (<code>TooltipSpec</code>), <code>TooltipValue</code> per series, or a <code>TooltipTemplate</code> with your own Razor.</td></tr>
+    <tr><td>Stacking in the chart options</td><td><code>Stack="name"</code> on each series to stack; <code>Stacking = StackMode.Percent</code> on the y axis for 100 % stacked.</td></tr>
+    <tr><td><code>ApexChartOptions</code> plus the series, built in code</td><td>A <a href="definitions">chart definition</a> (<code>ChartDefinition</code>): the whole chart in one object, series and their fields included, passed as <code>&lt;RioChart Definition&gt;</code>. Its parts are options: <code>AxisOptions</code>, <code>SeriesOptions</code>, <code>LegendOptions</code>, <code>TooltipOptions</code>.</td></tr>
+    <tr><td>Tooltip options, custom tooltip</td><td><code>Tooltip</code> (<code>TooltipOptions</code>), <code>TooltipValue</code> per series, or a <code>TooltipTemplate</code> with your own Razor.</td></tr>
     <tr><td>Chart group (synced charts)</td><td><code>Group="name"</code>: shared crosshair and zoom, and the plots line up.</td></tr>
     <tr><td>Zoom and the toolbar</td><td><code>Zoomable="true"</code> (drag, pinch, Ctrl+wheel, keyboard), <code>Exportable="true"</code> for PNG, SVG and CSV downloads.</td></tr>
     <tr><td>Colors and theme mode</td><td>CSS variables (<code>--rio-series-1</code> ... , <code>--rio-text</code>, ...); light and dark follow the page. See <a href="theming">Theming</a>.</td></tr>
@@ -51,7 +52,7 @@
     <li>Series render nothing themselves; the chart lays them out together. Selectors run once per data change, not per render.</li>
     <li>Large data is downsampled (LTTB) and can draw on a canvas layer (<code>SeriesLayer="SeriesLayer.Canvas"</code>); see <a href="large-data">Large data</a>.</li>
     <li>The same chart renders without a browser: <a href="server-export">server-side export</a> to SVG and PNG, and static SSR as plain SVG.</li>
-    <li>Charts can be written as <a href="specs">JSON specs</a>, which is how AI agents create them.</li>
+    <li>A chart definition can also be written as JSON, which is how AI agents create charts; see <a href="definitions">Chart definitions</a>.</li>
     <li>The chart's own texts (empty states, screen reader texts) come in eight languages; see <a href="languages">Languages and texts</a>.</li>
 </ul>
 

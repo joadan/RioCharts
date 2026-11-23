@@ -23,7 +23,7 @@ public class LargeDataTests
     {
         var names = Enumerable.Range(0, 3000).Select(i => $"Product {i}").ToArray();
         var values = Enumerable.Range(0, 3000).Select(i => i < 3 ? 5000.0 : 1 + i % 7).ToArray();
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie }] };
 
         var watch = Stopwatch.StartNew();
         var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["p"] = SeriesData.FromCategories(names, values) }, Options);
@@ -44,10 +44,10 @@ public class LargeDataTests
         var b = x.Select(v => v % 3 == 0 ? -2 : 5 + Math.Cos(v)).ToArray();
         b[7] = double.NaN;
         var c = x.Select(v => 3 + v % 4).ToArray();
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a", Type = SeriesType.Area, Stack = "s" }, new SeriesSpec { Id = "b", Type = SeriesType.Area, Stack = "s" },
-                new SeriesSpec { Id = "c", Type = SeriesType.Area, Stack = "s" }],
+            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Area, Stack = "s" }, new SeriesOptions { Id = "b", Type = SeriesType.Area, Stack = "s" },
+                new SeriesOptions { Id = "c", Type = SeriesType.Area, Stack = "s" }],
         };
 
         // Shared x: stacked per index. An extra point (value 0) on b only: stacked per x value.
@@ -82,7 +82,7 @@ public class LargeDataTests
             (x[i], y[i]) = (i, Math.Sin(i / 500.0));
         }
 
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(x, y) };
         ChartLayout.Compute(spec, data, Options); // warm-up
 
@@ -105,7 +105,7 @@ public class LargeDataTests
     [Fact]
     public void Dense_scatter_clouds_draw_fewer_markers_but_keep_every_outlier()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = SeriesType.Scatter }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "s", Type = SeriesType.Scatter }] };
         var data = new Dictionary<string, SeriesData> { ["s"] = Cloud(50_000, (5, 95), (95, 5), (90, 90)) };
 
         var layout = ChartLayout.Compute(spec, data, Options);
@@ -122,7 +122,7 @@ public class LargeDataTests
     [Fact]
     public void Small_scatter_series_draw_every_point()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = SeriesType.Scatter }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "s", Type = SeriesType.Scatter }] };
 
         var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["s"] = Cloud(500) }, Options);
 
@@ -132,7 +132,7 @@ public class LargeDataTests
     [Fact]
     public void The_trend_line_of_a_thinned_scatter_uses_all_points()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = SeriesType.Scatter, TrendLine = true }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "s", Type = SeriesType.Scatter, TrendLine = true }] };
         var data = new Dictionary<string, SeriesData> { ["s"] = Cloud(20_000, (10, 10), (90, 90)) };
         PathNode Trend(ChartLayoutResult l) => All(l.Scene.Series).OfType<PathNode>().Single(p => p.Class == "rio-trend");
 

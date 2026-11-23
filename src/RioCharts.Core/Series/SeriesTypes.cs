@@ -82,7 +82,7 @@ internal sealed class PixelPositions
 /// <summary>Everything a series type needs to draw itself.</summary>
 internal sealed class SeriesBuildContext
 {
-    public required SeriesSpec Spec { get; init; }
+    public required SeriesOptions Spec { get; init; }
     public required SeriesData Data { get; init; }
     public required string Color { get; init; }
     public required int ColorIndex { get; init; }
@@ -224,7 +224,7 @@ internal sealed class LineSeriesType : ISeriesType
     }
 
     /// <summary>
-    /// Dots on the first, last, lowest and highest value (<see cref="SeriesSpec.Highlight"/>), found
+    /// Dots on the first, last, lowest and highest value (<see cref="SeriesOptions.Highlight"/>), found
     /// in the data (not the downsampled points) within the visible range, outlined in the surface color.
     /// </summary>
     internal static void AddHighlights(SeriesBuildContext c)
@@ -407,11 +407,11 @@ internal sealed class ScatterSeriesType : ISeriesType
     public bool IncludesZero => false;
     public bool UsesSlots => false;
 
-    /// <summary>Marker radius from <see cref="SeriesSpec.MarkerSize"/> (a diameter, default 5 px).</summary>
+    /// <summary>Marker radius from <see cref="SeriesOptions.MarkerSize"/> (a diameter, default 5 px).</summary>
     /// <summary>Most markers drawn in one square cell a marker radius wide, once a series is thinned.</summary>
     internal const int MarkersPerCell = 3;
 
-    internal static double Radius(SeriesSpec spec) => Math.Clamp((spec.MarkerSize is > 0 and var size ? size : 5) / 2, 1, 30);
+    internal static double Radius(SeriesOptions spec) => Math.Clamp((spec.MarkerSize is > 0 and var size ? size : 5) / 2, 1, 30);
 
     public void Build(SeriesBuildContext c)
     {

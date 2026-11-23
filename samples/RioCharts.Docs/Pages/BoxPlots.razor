@@ -51,7 +51,7 @@
     </ChildContent>
 </Example>
 
-<h2>In JSON specs</h2>
+<h2>In JSON definitions</h2>
 <p>
     <code>"type": "boxPlot"</code> (also <code>"box"</code>) with <code>x</code> and <code>y</code> computes the boxes from the rows' y values
     per x. With <code>q1</code> and <code>q3</code> (and <code>low</code>, <code>high</code>), each row is a box and <code>y</code> its median.
@@ -59,8 +59,8 @@
 </p>
 
 @code {
-    private static readonly AxisSpec Euros = new() { Title = "Order value, €" };
-    private static readonly AxisSpec Milliseconds = new() { Title = "ms" };
+    private static readonly AxisOptions Euros = new() { Title = "Order value, €" };
+    private static readonly AxisOptions Milliseconds = new() { Title = "ms" };
     private static readonly List<OrderValue> Web = OrderValues.Where(o => o.Channel == "Web").ToList();
     private static readonly List<OrderValue> App = OrderValues.Where(o => o.Channel == "App").ToList();
     private IReadOnlyCollection<OrderValue> _orders = [];

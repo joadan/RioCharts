@@ -1,14 +1,14 @@
 @page "/spec"
 @using RioCharts.AI
-@using RioCharts.Core.Specs
+@using RioCharts.Core.Definitions
 
-<PageTitle>RioCharts spec playground</PageTitle>
+<PageTitle>RioCharts definition playground</PageTitle>
 
 <header class="top">
     <div>
-        <h1>Spec playground</h1>
+        <h1>Definition playground</h1>
         <p class="lead">
-            JSON chart specs, as an AI agent would write them: <code>&lt;RioChart Spec="spec" Datasets="datasets" /&gt;</code>.
+            JSON chart definitions, as an AI agent would write them: <code>&lt;RioChart Definition="definition" Datasets="datasets" /&gt;</code>.
             <a href="/">Back to the demo</a> · <a href="/ai/schema.json" target="_blank">JSON schema</a> ·
             <a href="/ai/tool.txt" target="_blank">create_chart tool description</a> · MCP server: <code>http://localhost:5030/mcp</code>
         </p>
@@ -18,7 +18,7 @@
 <main class="rio-theme-light">
     <div class="spec-layout">
         <section>
-            <h2>Spec</h2>
+            <h2>Definition</h2>
             <div class="examples">
                 @foreach (var (name, json) in Examples)
                 {
@@ -35,7 +35,7 @@
             <h2>Chart</h2>
             @if (_spec is not null)
             {
-                <RioChart TItem="object" Spec="_spec" Datasets="DemoDatasets.ByName" Height="340" Zoomable="true" @ref="_chart" />
+                <RioChart TItem="object" Definition="_spec" Datasets="DemoDatasets.ByName" Height="340" Zoomable="true" @ref="_chart" />
             }
 
             @if (_errors.Count > 0)
@@ -129,7 +129,7 @@
     ];
 
     private string _json = "";
-    private ChartSpec? _spec;
+    private ChartDefinition? _spec;
     private List<string> _errors = [];
     private List<string> _warnings = [];
     private string? _razor;
@@ -145,19 +145,19 @@
 
     private void Render()
     {
-        var parsed = ChartSpecJson.Parse(_json);
+        var parsed = ChartDefinitionJson.Parse(_json);
         _errors = parsed.Errors.Select(e => e.ToString()).ToList();
         _warnings = [.. parsed.Warnings];
-        _spec = parsed.Spec;
+        _spec = parsed.Definition;
         _razor = null;
         if (_spec is null)
         {
             return;
         }
 
-        var bound = ChartSpecBinder.Bind(_spec, DemoDatasets.ByName);
+        var bound = ChartDefinitionBinder.Bind(_spec, DemoDatasets.ByName);
         _errors.AddRange(bound.Errors.Select(e => e.ToString()));
         _warnings.AddRange(bound.Warnings);
-        _razor = ChartRazor.FromSpec(_spec, "Row", "rows");
+        _razor = ChartRazor.FromDefinition(_spec, "Row", "rows");
     }
 }

@@ -12,7 +12,7 @@ public class Milestone2Tests
 {
     private static readonly LayoutOptions Options = new() { Width = 600, Height = 300, Culture = CultureInfo.InvariantCulture };
 
-    private static ChartLayoutResult Layout(ChartSpec spec, Dictionary<string, SeriesData> data, LayoutOptions? options = null) =>
+    private static ChartLayoutResult Layout(ChartDefinition spec, Dictionary<string, SeriesData> data, LayoutOptions? options = null) =>
         ChartLayout.Compute(spec, data, options ?? Options);
 
     private static IEnumerable<Node> All(Node node) => node is GroupNode g ? g.Children.SelectMany(All).Prepend(g) : [node];
@@ -27,12 +27,12 @@ public class Milestone2Tests
     [Fact]
     public void Stacked_bars_extend_the_domain_to_the_sum_and_share_a_slot()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Series =
             [
-                new SeriesSpec { Id = "a", Type = SeriesType.Bar, Stack = "s" },
-                new SeriesSpec { Id = "b", Type = SeriesType.Bar, Stack = "s" },
+                new SeriesOptions { Id = "a", Type = SeriesType.Bar, Stack = "s" },
+                new SeriesOptions { Id = "b", Type = SeriesType.Bar, Stack = "s" },
             ],
         };
         var data = new Dictionary<string, SeriesData>
@@ -53,12 +53,12 @@ public class Milestone2Tests
     [Fact]
     public void Hiding_a_stacked_series_closes_the_stack()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Series =
             [
-                new SeriesSpec { Id = "a", Type = SeriesType.Area, Stack = "s" },
-                new SeriesSpec { Id = "b", Type = SeriesType.Area, Stack = "s" },
+                new SeriesOptions { Id = "a", Type = SeriesType.Area, Stack = "s" },
+                new SeriesOptions { Id = "b", Type = SeriesType.Area, Stack = "s" },
             ],
         };
         var data = new Dictionary<string, SeriesData>
@@ -75,12 +75,12 @@ public class Milestone2Tests
     [Fact]
     public void Negative_values_stack_downwards()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Series =
             [
-                new SeriesSpec { Id = "a", Type = SeriesType.Bar, Stack = "s" },
-                new SeriesSpec { Id = "b", Type = SeriesType.Bar, Stack = "s" },
+                new SeriesOptions { Id = "a", Type = SeriesType.Bar, Stack = "s" },
+                new SeriesOptions { Id = "b", Type = SeriesType.Bar, Stack = "s" },
             ],
         };
         var data = new Dictionary<string, SeriesData>
@@ -110,13 +110,13 @@ public class Milestone2Tests
     [Fact]
     public void Series_on_a_second_axis_get_their_own_domain_on_the_right()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            YAxes = [new AxisSpec { Id = "energy", Title = "kWh" }],
+            YAxes = [new AxisOptions { Id = "energy", Title = "kWh" }],
             Series =
             [
-                new SeriesSpec { Id = "temp" },
-                new SeriesSpec { Id = "kwh", Type = SeriesType.Bar, YAxisId = "energy" },
+                new SeriesOptions { Id = "temp" },
+                new SeriesOptions { Id = "kwh", Type = SeriesType.Bar, YAxisId = "energy" },
             ],
         };
         var data = new Dictionary<string, SeriesData>
@@ -140,7 +140,7 @@ public class Milestone2Tests
     [Fact]
     public void Unknown_axis_id_falls_back_with_a_warning()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", YAxisId = "nope" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", YAxisId = "nope" }] };
 
         var result = Layout(spec, new() { ["a"] = SeriesData.From([0.0, 1], [1.0, 2]) });
 
@@ -154,15 +154,15 @@ public class Milestone2Tests
     public void Reference_line_expands_the_domain_but_a_band_does_not()
     {
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([0.0, 1], [20.0, 22]) };
-        var line = Layout(new ChartSpec
+        var line = Layout(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a" }],
-            Annotations = [new AnnotationSpec { Value = 30, Label = "Limit" }],
+            Series = [new SeriesOptions { Id = "a" }],
+            Annotations = [new Annotation { Value = 30, Label = "Limit" }],
         }, data);
-        var band = Layout(new ChartSpec
+        var band = Layout(new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a" }],
-            Annotations = [new AnnotationSpec { Type = AnnotationType.Band, From = 40, To = 50 }],
+            Series = [new SeriesOptions { Id = "a" }],
+            Annotations = [new Annotation { Type = AnnotationType.Band, From = 40, To = 50 }],
         }, data);
 
         Assert.True(line.YScale.DomainMax >= 30);
@@ -179,11 +179,11 @@ public class Milestone2Tests
         {
             ["a"] = SeriesData.From(Enumerable.Range(0, 48).Select(h => start.AddHours(h)).ToArray(), Enumerable.Range(0, 48).Select(h => (double)h).ToArray()),
         };
-        var json = JsonSerializer.Deserialize<AnnotationSpec>("""{ "type": "Band", "axis": "X", "from": "2026-03-01T06:00", "to": "2026-03-01T09:00", "label": "Fault" }""", JsonSerializerOptions.Web)!;
-        var spec = new ChartSpec
+        var json = JsonSerializer.Deserialize<Annotation>("""{ "type": "Band", "axis": "X", "from": "2026-03-01T06:00", "to": "2026-03-01T09:00", "label": "Fault" }""", JsonSerializerOptions.Web)!;
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a" }],
-            Annotations = [json, new AnnotationSpec { Axis = AnnotationAxis.X, Value = start.AddHours(24), Id = "midnight" }],
+            Series = [new SeriesOptions { Id = "a" }],
+            Annotations = [json, new Annotation { Axis = AnnotationAxis.X, Value = start.AddHours(24), Id = "midnight" }],
         };
 
         var result = Layout(spec, data, Options with { InteractiveAnnotations = true });
@@ -199,10 +199,10 @@ public class Milestone2Tests
     [Fact]
     public void Invalid_annotation_values_are_reported()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a" }],
-            Annotations = [new AnnotationSpec { Value = "warm" }],
+            Series = [new SeriesOptions { Id = "a" }],
+            Annotations = [new Annotation { Value = "warm" }],
         };
 
         var result = Layout(spec, new() { ["a"] = SeriesData.From([0.0, 1], [1.0, 2]) });
@@ -216,7 +216,7 @@ public class Milestone2Tests
     public void Data_labels_are_drawn_and_never_overlap()
     {
         var n = 60;
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", DataLabels = true }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", DataLabels = true }] };
         var data = new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.From(Enumerable.Range(0, n).Select(i => (double)i).ToArray(), Enumerable.Range(0, n).Select(i => 1000.0 + i).ToArray()),
@@ -246,7 +246,7 @@ public class Milestone2Tests
     public void Bar_data_labels_at_the_ends_of_the_axis_have_room(double[] values)
     {
         // Narrow bars: the labels do not fit inside, so they need room beyond the bar's end.
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" }] };
         var categories = values.Select((_, i) => $"M{i}").ToArray();
         var options = Options with { Width = 400, Height = 240 };
 
@@ -259,7 +259,7 @@ public class Milestone2Tests
     [Fact]
     public void Bar_data_labels_add_one_step_only_where_a_label_needs_room()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar, DataLabels = true, Format = "0 k€" }] };
         double[] values = [-18, -7, 12, 21, 26, 19, 4, -11, 15, 24, 37, 52];
         var categories = values.Select((_, i) => $"M{i}").ToArray();
 
@@ -273,10 +273,10 @@ public class Milestone2Tests
     [Fact]
     public void Bar_data_labels_keep_a_fixed_axis_range()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Y = new AxisSpec { Min = -20, Max = 60 },
-            Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar, DataLabels = true }],
+            Y = new AxisOptions { Min = -20, Max = 60 },
+            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar, DataLabels = true }],
         };
 
         var result = Layout(spec, new() { ["a"] = SeriesData.FromCategories(["a", "b"], [-18.0, 58]) }, Options with { Width = 400, Height = 240 });
@@ -291,7 +291,7 @@ public class Milestone2Tests
     public void Tooltip_model_has_formatted_values_per_drawn_point()
     {
         var start = new DateTime(2026, 3, 1, 8, 0, 0);
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Name = "London", Format = "0.0" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Name = "London", Format = "0.0" }] };
         var data = new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.From([start, start.AddMinutes(15)], [21.0, 21.25]),
@@ -310,9 +310,9 @@ public class Milestone2Tests
     [Fact]
     public void Grouped_bar_hits_share_the_x_position()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar }, new SeriesSpec { Id = "b", Type = SeriesType.Bar }],
+            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar }, new SeriesOptions { Id = "b", Type = SeriesType.Bar }],
         };
         var data = new Dictionary<string, SeriesData>
         {

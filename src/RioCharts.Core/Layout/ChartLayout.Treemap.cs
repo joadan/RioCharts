@@ -52,7 +52,7 @@ public static partial class ChartLayout
     /// groups and items, laid out with the squarified algorithm. The legend lists the top-level
     /// groups, which also pick the colors; hiding one leaves it out.
     /// </summary>
-    private static ChartLayoutResult ComputeTreemap(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
+    private static ChartLayoutResult ComputeTreemap(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
     {
         var culture = options.Culture;
         var texts = options.Texts ?? ChartTexts.For(culture);

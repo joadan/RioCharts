@@ -106,7 +106,7 @@
             <code>ColorBands</code> colors a line by its value: here response times turn red above 120 ms, exactly where the line crosses
             the limit, also between two readings. Bands take <code>Above</code>, <code>Below</code> or both; later bands win where they
             overlap. On areas the fill follows, on bars and scatter points each one takes the color of its band, and the tooltip dot
-            matches. In JSON specs: <code>"colorBands": [{ "above": 120, "color": "--rio-negative" }]</code>.
+            matches. In JSON definitions: <code>"colorBands": [{ "above": 120, "color": "--rio-negative" }]</code>.
         </p>
     </Description>
     <ChildContent>
@@ -133,7 +133,7 @@
     <Description>
         <p>
             <code>RangeAreaSeries</code> fills a band between a low and a high value per x: here the lowest and highest revenue on each date over
-            the last three years, around the average line. The tooltip shows "low – high". In a JSON spec it is <code>"type": "rangeArea"</code>
+            the last three years, around the average line. The tooltip shows "low – high". In a JSON definition it is <code>"type": "rangeArea"</code>
             with <code>"low"</code> and <code>"y"</code> fields; with <code>timeBucket</code> the band keeps the lowest low and highest high.
         </p>
     </Description>
@@ -163,8 +163,8 @@
 </Example>
 
 @code {
-    private static readonly AxisSpec Percent = new() { Title = "%" };
-    private static readonly AxisSpec Milliseconds = new() { Title = "Response time, ms" };
+    private static readonly AxisOptions Percent = new() { Title = "%" };
+    private static readonly AxisOptions Milliseconds = new() { Title = "Response time, ms" };
 
     private const string BandsCode = """
         <RioChart Items="responseTimes">
@@ -173,10 +173,10 @@
             <ReferenceLine Value="120" Label="Limit" />
         </RioChart>
         """;
-    private static readonly AxisSpec StockAxis = new() { Title = "Items" };
-    private static readonly AxisSpec Euros = new() { Title = "€ per 15 min" };
-    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
-    private static readonly AxisSpec RevenueAxis = new() { Title = "Revenue per day" };
+    private static readonly AxisOptions StockAxis = new() { Title = "Items" };
+    private static readonly AxisOptions Euros = new() { Title = "€ per 15 min" };
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisOptions RevenueAxis = new() { Title = "Revenue per day" };
     private static readonly List<Reading> _empty = [];
     private static readonly List<Reading> _one = [new(Start, 120)];
     private static readonly List<Reading> _flat = Enumerable.Range(0, 24).Select(h => new Reading(Start.AddHours(h), 200)).ToList();
@@ -187,25 +187,25 @@
         """;
 
     private const string GapsCode = """
-        <RioChart Items="conversion" YAxis="@(new AxisSpec { Title = "%" })">
+        <RioChart Items="conversion" YAxis="@(new AxisOptions { Title = "%" })">
             <LineSeries Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" />  @* Value is double? *@
         </RioChart>
         """;
 
     private const string IrregularCode = """
         @* Readings logged on change: no fixed interval, different timestamps per series. *@
-        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Items" })">
+        <RioChart TItem="Reading" YAxis="@(new AxisOptions { Title = "Items" })">
             <LineSeries Items="stock" Name="Stock" XValue="r => r.Time" YValue="r => r.Value" Format="0 'in stock'" />
             <LineSeries Items="reorderLevel" Name="Reorder level" XValue="r => r.Time" YValue="r => r.Value" Format="0" Curve="CurveType.Step" />
         </RioChart>
         """;
 
-    private static readonly AxisSpec UsersAxis = new() { Title = "Concurrent users", Format = "0" };
+    private static readonly AxisOptions UsersAxis = new() { Title = "Concurrent users", Format = "0" };
 
     private const string NumericCode = """
         @* public record LoadStep(double Users, double MedianMs, double P95Ms); *@
-        <RioChart Items="loadTest" XAxis="@(new AxisSpec { Title = "Concurrent users", Format = "0" })"
-                  YAxis="@(new AxisSpec { Title = "Response time, ms" })">
+        <RioChart Items="loadTest" XAxis="@(new AxisOptions { Title = "Concurrent users", Format = "0" })"
+                  YAxis="@(new AxisOptions { Title = "Response time, ms" })">
             <LineSeries Name="Median" XValue="s => s.Users" YValue="s => s.MedianMs" Format="0 ms" Curve="CurveType.Monotone" />
             <LineSeries Name="95th percentile" XValue="s => s.Users" YValue="s => s.P95Ms" Format="0 ms" Curve="CurveType.Monotone" />
             <ReferenceLine Value="120" Label="Limit" />
@@ -213,23 +213,23 @@
         </RioChart>
         """;
 
-    private static readonly AxisSpec NetAxis = new() { Title = "k€ per day" };
+    private static readonly AxisOptions NetAxis = new() { Title = "k€ per day" };
 
     private const string NegativeCode = """
-        <RioChart Items="netCashFlow" YAxis="@(new AxisSpec { Title = "k€ per day" })">
+        <RioChart Items="netCashFlow" YAxis="@(new AxisOptions { Title = "k€ per day" })">
             <AreaSeries Name="Net cash flow" XValue="r => r.Time" YValue="r => r.Value" Format="+#,0.0 k€;−#,0.0 k€;0 k€"
                         ColorBands="@([new ColorBand { Below = 0, Color = "--rio-negative" }])" />
         </RioChart>
         """;
 
     private const string AreaCode = """
-        <RioChart Items="revenue" YAxis="@(new AxisSpec { Title = "€ per 15 min" })">
+        <RioChart Items="revenue" YAxis="@(new AxisOptions { Title = "€ per 15 min" })">
             <AreaSeries Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
         </RioChart>
         """;
 
     private const string StackedCode = """
-        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Sessions per 15 min" })">
+        <RioChart TItem="Reading" YAxis="@(new AxisOptions { Title = "Sessions per 15 min" })">
             <AreaSeries Items="search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
             <AreaSeries Items="social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
             <AreaSeries Items="email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Stack="channels" />
@@ -237,7 +237,7 @@
         """;
 
     private const string RangeCode = """
-        <RioChart Items="revenueHistory" YAxis="@(new AxisSpec { Title = "Revenue per day" })">
+        <RioChart Items="revenueHistory" YAxis="@(new AxisOptions { Title = "Revenue per day" })">
             <RangeAreaSeries Name="Last 3 years" XValue="d => d.Date" LowValue="d => d.Low" HighValue="d => d.High"
                              Format="#,0 €" Curve="CurveType.Monotone" />
             <LineSeries Name="Average" XValue="d => d.Date" YValue="d => d.Average" Format="#,0 €" Curve="CurveType.Monotone" />

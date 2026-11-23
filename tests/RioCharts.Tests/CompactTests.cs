@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 using RioCharts.Skia;
 using SkiaSharp;
 
@@ -39,15 +39,15 @@ public class CompactTests
     private static SeriesData Temps(params double[] values) =>
         SeriesData.From(values.Select((_, i) => Start.AddHours(i)).ToArray(), values);
 
-    private static ChartLayoutResult Layout(ChartSpec spec, Dictionary<string, SeriesData> data, double width = 160, double height = 32) =>
+    private static ChartLayoutResult Layout(ChartDefinition spec, Dictionary<string, SeriesData> data, double width = 160, double height = 32) =>
         ChartLayout.Compute(spec, data, new LayoutOptions { Width = width, Height = height, Culture = CultureInfo.InvariantCulture });
 
-    private static ChartSpec Sparkline(SeriesType type = SeriesType.Line, PointHighlight highlight = PointHighlight.None, string? format = null) => new()
+    private static ChartDefinition Sparkline(SeriesType type = SeriesType.Line, PointHighlight highlight = PointHighlight.None, string? format = null) => new()
     {
         Compact = true,
         Title = "Temperature",
-        Y = new AxisSpec { Title = "°C" },
-        Series = [new SeriesSpec { Id = "t", Name = "London", Type = type, Highlight = highlight, Format = format }],
+        Y = new AxisOptions { Title = "°C" },
+        Series = [new SeriesOptions { Id = "t", Name = "London", Type = type, Highlight = highlight, Format = format }],
     };
 
     [Fact]
@@ -114,7 +114,7 @@ public class CompactTests
     {
         var spec = Sparkline() with
         {
-            Annotations = [new AnnotationSpec { Type = AnnotationType.Band, From = 20, To = 23, Label = "Normal" }],
+            Annotations = [new Annotation { Type = AnnotationType.Band, From = 20, To = 23, Label = "Normal" }],
         };
 
         var layout = Layout(spec, new() { ["t"] = Temps(18, 21) });
@@ -142,7 +142,7 @@ public class CompactTests
     [Fact]
     public void Highlight_works_on_normal_charts_and_is_one_dot_when_points_coincide()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "t", Highlight = PointHighlight.Last | PointHighlight.Max }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "t", Highlight = PointHighlight.Last | PointHighlight.Max }] };
 
         var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["t"] = Temps(18, 19, 22) }, new LayoutOptions { Width = 600, Height = 300 });
 
@@ -169,17 +169,17 @@ public class CompactTests
     [InlineData("[\"min\", \"max\"]", PointHighlight.Min | PointHighlight.Max)]
     public void Json_spec_reads_compact_and_highlight(string highlight, PointHighlight expected)
     {
-        var result = ChartSpecJson.Parse($$"""{ "compact": true, "series": [ { "type": "line", "x": "time", "y": "temp", "highlight": {{highlight}} } ] }""");
+        var result = ChartDefinitionJson.Parse($$"""{ "compact": true, "series": [ { "type": "line", "x": "time", "y": "temp", "highlight": {{highlight}} } ] }""");
 
         Assert.Empty(result.Errors);
-        Assert.True(result.Spec!.Compact);
-        Assert.Equal(expected, result.Spec.Series[0].Highlight);
+        Assert.True(result.Definition!.Compact);
+        Assert.Equal(expected, result.Definition.Series[0].Highlight);
     }
 
     [Fact]
     public void Json_spec_explains_an_unknown_highlight()
     {
-        var result = ChartSpecJson.Parse("""{ "series": [ { "type": "line", "x": "time", "y": "temp", "highlight": "latest" } ] }""");
+        var result = ChartDefinitionJson.Parse("""{ "series": [ { "type": "line", "x": "time", "y": "temp", "highlight": "latest" } ] }""");
 
         var error = Assert.Single(result.Errors);
         Assert.Equal("series[0].highlight", error.Path);
@@ -189,9 +189,9 @@ public class CompactTests
     [Fact]
     public void Razor_export_writes_compact_and_highlight()
     {
-        var spec = ChartSpecJson.Parse("""{ "compact": true, "series": [ { "type": "line", "x": "time", "y": "temp", "highlight": "last, max" } ] }""").Spec!;
+        var spec = ChartDefinitionJson.Parse("""{ "compact": true, "series": [ { "type": "line", "x": "time", "y": "temp", "highlight": "last, max" } ] }""").Definition!;
 
-        var razor = ChartRazor.FromSpec(spec, "Reading", "readings");
+        var razor = ChartRazor.FromDefinition(spec, "Reading", "readings");
 
         Assert.Contains(" Compact=\"true\" Height=\"32\"", razor);
         Assert.Contains(" Highlight=\"PointHighlight.Last | PointHighlight.Max\"", razor);

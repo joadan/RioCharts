@@ -12,9 +12,9 @@ public class LegendTests
 
     private static readonly LayoutOptions Options = new() { Width = 640, Height = 360, Culture = CultureInfo.InvariantCulture };
 
-    private static readonly ChartSpec Pie = new()
+    private static readonly ChartDefinition Pie = new()
     {
-        Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.03, Format = "0 MWh" }],
+        Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.03, Format = "0 MWh" }],
     };
 
     private static readonly Dictionary<string, SeriesData> Energy = new()
@@ -69,9 +69,9 @@ public class LegendTests
     public void Series_items_summarize_their_series()
     {
         var start = new DateTime(2026, 11, 16);
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "s", Name = "London", Format = "0.0 °C" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+            Series = [new SeriesOptions { Id = "s", Name = "London", Format = "0.0 °C" }, new SeriesOptions { Id = "e", Name = "Toronto" }],
         };
         var data = new Dictionary<string, SeriesData>
         {
@@ -90,7 +90,7 @@ public class LegendTests
     [Fact]
     public void Radial_bar_items_show_the_value()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "h", Type = SeriesType.RadialBar, Max = 100, Format = "0'%'" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "h", Type = SeriesType.RadialBar, Max = 100, Format = "0'%'" }] };
         var data = new Dictionary<string, SeriesData> { ["h"] = SeriesData.FromCategories(["North", "South"], [87, 41]) };
 
         var layout = ChartLayout.Compute(spec, data, Options);

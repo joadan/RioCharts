@@ -6,7 +6,7 @@ namespace RioCharts.Blazor;
 
 /// <summary>
 /// Base for annotation components. Like series, they render nothing themselves: they register
-/// an <see cref="AnnotationSpec"/> with the chart.
+/// an <see cref="Annotation"/> with the chart.
 /// </summary>
 public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDisposable
 {
@@ -30,15 +30,15 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
     /// <summary>Draw below or above the series. Default: bands below, the rest above.</summary>
     [Parameter] public AnnotationLayer? Layer { get; set; }
 
-    internal AnnotationSpec Spec { get; private set; } = new();
+    internal Annotation Spec { get; private set; } = new();
 
-    AnnotationSpec IAnnotationSource.Spec => Spec;
+    Annotation IAnnotationSource.Spec => Spec;
 
-    /// <summary>The annotation's spec from the current parameters.</summary>
-    protected abstract AnnotationSpec CreateSpec();
+    /// <summary>The annotation from the current parameters.</summary>
+    protected abstract Annotation CreateAnnotation();
 
-    /// <summary>A spec of the given type with the parameters every annotation shares.</summary>
-    protected AnnotationSpec Common(AnnotationType type) => new()
+    /// <summary>A definition of the given type with the parameters every annotation shares.</summary>
+    protected Annotation Common(AnnotationType type) => new()
     {
         Id = Id,
         Type = type,
@@ -51,7 +51,7 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
 
     private bool _registered;
 
-    /// <summary>Registers the annotation with the chart, or updates it when its spec changed.</summary>
+    /// <summary>Registers the annotation with the chart, or updates it when its definition changed.</summary>
     protected override void OnParametersSet()
     {
         if (Chart is null)
@@ -59,7 +59,7 @@ public abstract class AnnotationBase : ComponentBase, IAnnotationSource, IDispos
             throw new InvalidOperationException($"{GetType().Name} must be placed inside a <RioChart>.");
         }
 
-        var spec = CreateSpec();
+        var spec = CreateAnnotation();
         if (!_registered || spec != Spec)
         {
             Spec = spec;
@@ -108,7 +108,7 @@ public sealed class ReferenceLine<TValue> : AnnotationBase
     [Parameter] public bool Draggable { get; set; }
 
     /// <inheritdoc />
-    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Line) with
+    protected override Annotation CreateAnnotation() => Common(AnnotationType.Line) with
     {
         Value = Value,
         Axis = Axis,
@@ -140,7 +140,7 @@ public sealed class ReferenceBand : AnnotationBase
     [Parameter] public LabelPosition? LabelPosition { get; set; }
 
     /// <inheritdoc />
-    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Band) with
+    protected override Annotation CreateAnnotation() => Common(AnnotationType.Band) with
     {
         From = From,
         To = To,
@@ -162,7 +162,7 @@ public sealed class PointAnnotation : AnnotationBase
     [Parameter, EditorRequired] public double Y { get; set; }
 
     /// <inheritdoc />
-    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Point) with { X = X, Y = Y };
+    protected override Annotation CreateAnnotation() => Common(AnnotationType.Point) with { X = X, Y = Y };
 }
 
 /// <summary>
@@ -184,7 +184,7 @@ public sealed class Callout : AnnotationBase
     [Parameter] public double? OffsetY { get; set; }
 
     /// <inheritdoc />
-    protected override AnnotationSpec CreateSpec() => Common(AnnotationType.Callout) with { X = X, Y = Y, OffsetX = OffsetX, OffsetY = OffsetY };
+    protected override Annotation CreateAnnotation() => Common(AnnotationType.Callout) with { X = X, Y = Y, OffsetX = OffsetX, OffsetY = OffsetY };
 }
 
 /// <summary>Converts a dragged value (double or DateTime) to the type of the bound value.</summary>

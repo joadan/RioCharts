@@ -33,12 +33,12 @@ public static class ChartDescriber
     /// <param name="xKind">The kind of x axis.</param>
     /// <param name="culture">Culture for numbers and dates.</param>
     /// <param name="texts">The chart's own texts. Null: <see cref="ChartTexts.For"/> the culture.</param>
-    public static string Describe(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+    public static string Describe(ChartDefinition spec, IReadOnlyList<(SeriesOptions Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
         ChartTexts? texts = null) =>
         Describe(spec, series, xKind, culture, texts ?? ChartTexts.For(culture), d => Facts(d, xKind));
 
-    /// <summary><see cref="Describe(ChartSpec, IReadOnlyList{ValueTuple{SeriesSpec, SeriesData, bool}}, XKind, CultureInfo, ChartTexts?)"/> with each series' <see cref="SeriesFacts"/> computed by the caller (once per layout).</summary>
-    internal static string Describe(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+    /// <summary><see cref="Describe(ChartDefinition, IReadOnlyList{ValueTuple{SeriesOptions, SeriesData, bool}}, XKind, CultureInfo, ChartTexts?)"/> with each series' <see cref="SeriesFacts"/> computed by the caller (once per layout).</summary>
+    internal static string Describe(ChartDefinition spec, IReadOnlyList<(SeriesOptions Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
         ChartTexts texts, Func<SeriesData, SeriesFacts> facts)
     {
         var sb = new StringBuilder();
@@ -83,12 +83,12 @@ public static class ChartDescriber
     /// its range, last value and trend, formatted like the tooltips, e.g.
     /// "Checkout: 182 ms to 208 ms, last 194 ms, rising."
     /// </summary>
-    public static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+    public static string DescribeCompact(ChartDefinition spec, IReadOnlyList<(SeriesOptions Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
         ChartTexts? texts = null) =>
         DescribeCompact(spec, series, xKind, culture, texts ?? ChartTexts.For(culture), d => Facts(d, xKind));
 
-    /// <summary><see cref="DescribeCompact(ChartSpec, IReadOnlyList{ValueTuple{SeriesSpec, SeriesData, bool}}, XKind, CultureInfo, ChartTexts?)"/> with facts computed by the caller.</summary>
-    internal static string DescribeCompact(ChartSpec spec, IReadOnlyList<(SeriesSpec Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
+    /// <summary><see cref="DescribeCompact(ChartDefinition, IReadOnlyList{ValueTuple{SeriesOptions, SeriesData, bool}}, XKind, CultureInfo, ChartTexts?)"/> with facts computed by the caller.</summary>
+    internal static string DescribeCompact(ChartDefinition spec, IReadOnlyList<(SeriesOptions Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
         ChartTexts texts, Func<SeriesData, SeriesFacts> facts)
     {
         var sb = new StringBuilder();
@@ -120,11 +120,11 @@ public static class ChartDescriber
     /// to 208 ms, last 194 ms, rising" (no last value or trend on category axes). Null without data.
     /// Used by compact charts and the legend's tooltips.
     /// </summary>
-    public static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts? texts = null) =>
+    public static string? DescribeSeries(ChartDefinition spec, SeriesOptions s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts? texts = null) =>
         DescribeSeries(spec, s, d, xKind, culture, texts ?? ChartTexts.For(culture), Facts(d, xKind));
 
-    /// <summary><see cref="DescribeSeries(ChartSpec, SeriesSpec, SeriesData, XKind, CultureInfo, ChartTexts?)"/> with the series' facts computed by the caller.</summary>
-    internal static string? DescribeSeries(ChartSpec spec, SeriesSpec s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts texts, SeriesFacts stats)
+    /// <summary><see cref="DescribeSeries(ChartDefinition, SeriesOptions, SeriesData, XKind, CultureInfo, ChartTexts?)"/> with the series' facts computed by the caller.</summary>
+    internal static string? DescribeSeries(ChartDefinition spec, SeriesOptions s, SeriesData d, XKind xKind, CultureInfo culture, ChartTexts texts, SeriesFacts stats)
     {
         if (stats.Count == 0)
         {

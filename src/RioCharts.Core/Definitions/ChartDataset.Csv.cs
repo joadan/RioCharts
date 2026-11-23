@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace RioCharts.Core.Specs;
+namespace RioCharts.Core.Definitions;
 
 public sealed partial class ChartDataset
 {

@@ -56,7 +56,7 @@ Check it with `riocharts-mcp --help`. To update after code changes, pack again a
 - "Here are today's orders: 08:00 12, 09:00 18, 10:00 25. Make a line chart." (inline data, no file needed)
 
 The agent gets the image back, a short description of the chart, and the path of the saved file.
-If the spec is wrong it gets errors that name the problem and the valid options, and tries again.
+If the definition is wrong it gets errors that name the problem and the valid options, and tries again.
 
 In a Blazor project, the agent can also put a chart in the code:
 

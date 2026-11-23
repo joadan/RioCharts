@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <!-- Trimming and native AOT: turns on the analyzers and marks the assembly trimmable. -->
     <IsAotCompatible>true</IsAotCompatible>
-    <Description>AI chart creation for RioCharts: a create_chart tool for agents (Microsoft.Extensions.AI AIFunction and MCP server tools) that validates a JSON chart spec against your datasets with actionable errors, renders it on the server and summarizes it; plus the JSON schema and spec-to-Razor export.</Description>
+    <Description>AI chart creation for RioCharts: a create_chart tool for agents (Microsoft.Extensions.AI AIFunction and MCP server tools) that validates a JSON chart definition against your datasets with actionable errors, renders it on the server and summarizes it; plus the JSON schema and spec-to-Razor export.</Description>
     <PackageTags>charts;dataviz;ai;agents;mcp;json-schema</PackageTags>
   </PropertyGroup>
 

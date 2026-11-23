@@ -3,26 +3,26 @@ using System.Text;
 using System.Text.Json;
 using RioCharts.Core.Data;
 
-namespace RioCharts.Core.Specs;
+namespace RioCharts.Core.Definitions;
 
-/// <summary>A spec bound to data: concrete series (types resolved, groups expanded) and their columns.</summary>
-public sealed record SpecBindResult(ChartSpec Spec, IReadOnlyDictionary<string, SeriesData> Data, IReadOnlyList<SpecError> Errors, IReadOnlyList<string> Warnings)
+/// <summary>A definition bound to data: concrete series (types resolved, groups expanded) and their columns.</summary>
+public sealed record DefinitionBindResult(ChartDefinition Definition, IReadOnlyDictionary<string, SeriesData> Data, IReadOnlyList<DefinitionError> Errors, IReadOnlyList<string> Warnings)
 {
-    /// <summary>True when the spec was bound without errors.</summary>
+    /// <summary>True when the definition was bound without errors.</summary>
     public bool Success => Errors.Count == 0;
 }
 
 /// <summary>
-/// Binds series that name dataset fields (<see cref="SeriesSpec.X"/>, <see cref="SeriesSpec.Y"/>)
+/// Binds series that name dataset fields (<see cref="SeriesOptions.X"/>, <see cref="SeriesOptions.Y"/>)
 /// to data: checks the fields (errors list what is available), applies filter, time bucket,
 /// aggregate, groupBy, sort and limit, and resolves <see cref="SeriesType.Auto"/>.
 /// </summary>
-public static class ChartSpecBinder
+public static class ChartDefinitionBinder
 {
     private const string InlineDataset = "inline";
 
-    /// <summary>Loads the datasets the spec refers to from the source, then binds.</summary>
-    public static async Task<SpecBindResult> BindAsync(ChartSpec spec, IChartDataSource source, CancellationToken cancellationToken = default)
+    /// <summary>Loads the datasets the definition refers to from the source, then binds.</summary>
+    public static async Task<DefinitionBindResult> BindAsync(ChartDefinition spec, IChartDataSource source, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(spec);
         ArgumentNullException.ThrowIfNull(source);
@@ -40,24 +40,24 @@ public static class ChartSpecBinder
     }
 
     /// <summary>Binds against datasets already in memory (by name, case-insensitive).</summary>
-    public static SpecBindResult Bind(ChartSpec spec, IReadOnlyDictionary<string, ChartDataset> datasets, IReadOnlyList<string>? available = null)
+    public static DefinitionBindResult Bind(ChartDefinition spec, IReadOnlyDictionary<string, ChartDataset> datasets, IReadOnlyList<string>? available = null)
     {
         ArgumentNullException.ThrowIfNull(spec);
-        var errors = new List<SpecError>();
+        var errors = new List<DefinitionError>();
         var warnings = new List<string>();
         var lookup = new Dictionary<string, ChartDataset>(datasets, StringComparer.OrdinalIgnoreCase);
         available ??= [.. lookup.Keys];
         if (spec.Data is { Count: > 0 } rows)
         {
-            if (rows.Count > ChartSpecJson.MaxInlineRows)
+            if (rows.Count > ChartDefinitionJson.MaxInlineRows)
             {
-                errors.Add(new SpecError("data", $"at most {ChartSpecJson.MaxInlineRows} inline rows (got {rows.Count}); refer to a dataset id instead."));
+                errors.Add(new DefinitionError("data", $"at most {ChartDefinitionJson.MaxInlineRows} inline rows (got {rows.Count}); refer to a dataset id instead."));
             }
 
             lookup[InlineDataset] = ChartDataset.FromRows(InlineDataset, rows);
         }
 
-        var series = new List<SeriesSpec>();
+        var series = new List<SeriesOptions>();
         var data = new Dictionary<string, SeriesData>(StringComparer.Ordinal);
         var usedIds = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < spec.Series.Count; i++)
@@ -67,27 +67,27 @@ public static class ChartSpecBinder
 
         if (spec.Series.Count == 0)
         {
-            errors.Add(new SpecError("series", "add at least one series, e.g. {\"type\":\"line\",\"x\":\"time\",\"y\":\"value\"}."));
+            errors.Add(new DefinitionError("series", "add at least one series, e.g. {\"type\":\"line\",\"x\":\"time\",\"y\":\"value\"}."));
         }
-        else if (series.Count > ChartSpecJson.MaxSeries)
+        else if (series.Count > ChartDefinitionJson.MaxSeries)
         {
-            errors.Add(new SpecError("series", $"the spec makes {series.Count} series; at most {ChartSpecJson.MaxSeries}. Use groupBy on a field with fewer values, or a filter."));
+            errors.Add(new DefinitionError("series", $"the definition makes {series.Count} series; at most {ChartDefinitionJson.MaxSeries}. Use groupBy on a field with fewer values, or a filter."));
         }
 
         var bound = spec with { Series = series };
-        return new SpecBindResult(bound, data, errors, warnings);
+        return new DefinitionBindResult(bound, data, errors, warnings);
     }
 
     private readonly record struct Point(object X, double? Y, double? Low = null, string? Color = null);
 
-    private static void BindSeries(ChartSpec chart, SeriesSpec s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
-        List<SeriesSpec> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<SpecError> errors, List<string> warnings)
+    private static void BindSeries(ChartDefinition chart, SeriesOptions s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
+        List<SeriesOptions> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
     {
         var errorsBefore = errors.Count;
         var datasetName = s.Dataset ?? chart.Dataset ?? (datasets.ContainsKey(InlineDataset) ? InlineDataset : null);
         if (datasetName is null)
         {
-            errors.Add(new SpecError($"{path}.dataset",
+            errors.Add(new DefinitionError($"{path}.dataset",
                 available.Count > 0
                     ? $"no data: set \"dataset\" on the chart or the series (available: {string.Join(", ", available)}) or give inline \"data\"."
                     : "no data: give inline \"data\" rows or a dataset id."));
@@ -96,7 +96,7 @@ public static class ChartSpecBinder
 
         if (!datasets.TryGetValue(datasetName, out var dataset))
         {
-            errors.Add(new SpecError(s.Dataset is null ? "dataset" : $"{path}.dataset",
+            errors.Add(new DefinitionError(s.Dataset is null ? "dataset" : $"{path}.dataset",
                 $"dataset '{datasetName}' not found; available: {(available.Count > 0 ? string.Join(", ", available) : "none")}."));
             return;
         }
@@ -110,7 +110,7 @@ public static class ChartSpecBinder
         {
             if (x is null)
             {
-                errors.Add(new SpecError($"{path}.x", $"set the x field; available: {Describe(dataset.Fields)}."));
+                errors.Add(new DefinitionError($"{path}.x", $"set the x field; available: {Describe(dataset.Fields)}."));
             }
             else
             {
@@ -133,7 +133,7 @@ public static class ChartSpecBinder
             }
             else
             {
-                errors.Add(new SpecError($"{path}.y", numbers.Count == 0
+                errors.Add(new DefinitionError($"{path}.y", numbers.Count == 0
                     ? $"dataset '{dataset.Name}' has no numeric field; use aggregate \"count\" to count rows."
                     : $"set the y field; numeric fields: {string.Join(", ", numbers.Select(f => f.Name))}."));
             }
@@ -146,11 +146,11 @@ public static class ChartSpecBinder
         }
         else if (s.Type == SeriesType.Candlestick && s.Open is not null)
         {
-            errors.Add(new SpecError($"{path}.low", "precomputed candles need open, high and low (y is the close); leave out open, high and low to make candles from the y values per timeBucket."));
+            errors.Add(new DefinitionError($"{path}.low", "precomputed candles need open, high and low (y is the close); leave out open, high and low to make candles from the y values per timeBucket."));
         }
         else if (s.Type == SeriesType.RangeArea)
         {
-            errors.Add(new SpecError($"{path}.low", $"a range area needs the field with the low values (y is the high value); numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
+            errors.Add(new DefinitionError($"{path}.low", $"a range area needs the field with the low values (y is the high value); numeric fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Number).Select(f => f.Name))}."));
         }
 
         // Box plots: precomputed boxes (q1 and q3, with low and high for the whiskers), or raw y values per x.
@@ -162,7 +162,7 @@ public static class ChartSpecBinder
             high = s.High is null ? null : Find(dataset, s.High, $"{path}.high", FieldType.Number, errors);
             if (s.Open is not null && s.High is null)
             {
-                errors.Add(new SpecError($"{path}.high", "precomputed candles need open, high and low (y is the close); leave out open, high and low to make candles from the y values per timeBucket."));
+                errors.Add(new DefinitionError($"{path}.high", "precomputed candles need open, high and low (y is the close); leave out open, high and low to make candles from the y values per timeBucket."));
             }
         }
 
@@ -173,14 +173,14 @@ public static class ChartSpecBinder
             high = s.High is null ? null : Find(dataset, s.High, $"{path}.high", FieldType.Number, errors);
             if ((s.Q1 is null) != (s.Q3 is null))
             {
-                errors.Add(new SpecError($"{path}.{(s.Q1 is null ? "q1" : "q3")}",
+                errors.Add(new DefinitionError($"{path}.{(s.Q1 is null ? "q1" : "q3")}",
                     "precomputed boxes need both q1 and q3 (y is the median, low and high the whisker ends); leave out q1, q3, low and high to compute the boxes from the y values."));
             }
         }
 
         var groupBy = s.GroupBy is null ? null : Find(dataset, s.GroupBy, $"{path}.groupBy", null, errors);
         var colorField = s.ColorField is null ? null : Find(dataset, s.ColorField, $"{path}.colorField", FieldType.Text, errors);
-        var filters = new List<(FilterSpec Spec, DataField Field)>();
+        var filters = new List<(Filter Spec, DataField Field)>();
         for (var f = 0; f < (s.Filter?.Count ?? 0); f++)
         {
             var filter = s.Filter![f];
@@ -192,7 +192,7 @@ public static class ChartSpecBinder
 
         if (s.TimeBucket is not null && x is not null && x.Type != FieldType.Time)
         {
-            errors.Add(new SpecError($"{path}.timeBucket", $"needs a time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()}."));
+            errors.Add(new DefinitionError($"{path}.timeBucket", $"needs a time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()}."));
         }
 
         if (x is null || (y is null && !count) || errors.Count > errorsBefore)
@@ -210,9 +210,9 @@ public static class ChartSpecBinder
         var groups = groupBy is null
             ? [(Key: (string?)null, Rows: rows)]
             : rows.GroupBy(r => Text(groupBy.Values[r]) ?? "(none)").Select(g => (Key: (string?)g.Key, Rows: g.ToList())).ToList();
-        if (groups.Count > ChartSpecJson.MaxSeries)
+        if (groups.Count > ChartDefinitionJson.MaxSeries)
         {
-            errors.Add(new SpecError($"{path}.groupBy", $"'{groupBy!.Name}' has {groups.Count} values; at most {ChartSpecJson.MaxSeries} series. Filter it first."));
+            errors.Add(new DefinitionError($"{path}.groupBy", $"'{groupBy!.Name}' has {groups.Count} values; at most {ChartDefinitionJson.MaxSeries} series. Filter it first."));
             return;
         }
 
@@ -231,7 +231,7 @@ public static class ChartSpecBinder
 
         if (candleBucket is not null && x.Type != FieldType.Time)
         {
-            errors.Add(new SpecError($"{path}.x", $"candles from raw values need a time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()} (or give open, high and low)."));
+            errors.Add(new DefinitionError($"{path}.x", $"candles from raw values need a time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()} (or give open, high and low)."));
             return;
         }
 
@@ -307,7 +307,7 @@ public static class ChartSpecBinder
     }
 
     /// <summary>Treemap: the path fields joined into one text field per row ("Europe/Sweden/Stockholm"); null when a field is missing.</summary>
-    private static DataField? TreePath(ChartDataset dataset, IReadOnlyList<string> fields, string? separator, string path, List<SpecError> errors)
+    private static DataField? TreePath(ChartDataset dataset, IReadOnlyList<string> fields, string? separator, string path, List<DefinitionError> errors)
     {
         var found = fields.Select((f, k) => Find(dataset, f, $"{path}.path[{k}]", null, errors)).ToList();
         if (found.Any(f => f is null))
@@ -410,13 +410,13 @@ public static class ChartSpecBinder
 
     // ---------- Fields ----------
 
-    private static DataField? Find(ChartDataset dataset, string name, string path, FieldType? required, List<SpecError> errors)
+    private static DataField? Find(ChartDataset dataset, string name, string path, FieldType? required, List<DefinitionError> errors)
     {
         var field = dataset.Field(name) ?? dataset.Field(name.Replace(" ", "", StringComparison.Ordinal).Replace("_", "", StringComparison.Ordinal));
         if (field is null)
         {
             var close = dataset.Fields.FirstOrDefault(f => Distance(f.Name.ToLowerInvariant(), name.ToLowerInvariant()) <= 2);
-            errors.Add(new SpecError(path, $"field '{name}' not found in '{dataset.Name}'"
+            errors.Add(new DefinitionError(path, $"field '{name}' not found in '{dataset.Name}'"
                 + (close is not null ? $" (did you mean '{close.Name}'?)" : "") + $"; available: {Describe(dataset.Fields)}."));
             return null;
         }
@@ -425,7 +425,7 @@ public static class ChartSpecBinder
         {
             var kind = type.ToString().ToLowerInvariant();
             var matching = string.Join(", ", dataset.Fields.Where(f => f.Type == type).Select(f => f.Name));
-            errors.Add(new SpecError(path, $"field '{field.Name}' is {field.Type.ToString().ToLowerInvariant()}, not {kind}; "
+            errors.Add(new DefinitionError(path, $"field '{field.Name}' is {field.Type.ToString().ToLowerInvariant()}, not {kind}; "
                 + $"{kind} fields: {(matching.Length > 0 ? matching : "none")}."));
             return null;
         }
@@ -439,7 +439,7 @@ public static class ChartSpecBinder
     private static string Describe(IEnumerable<DataField> fields) =>
         string.Join(", ", fields.Select(f => $"{f.Name} ({f.Type.ToString().ToLowerInvariant()})"));
 
-    private static bool Matches(object? value, FilterSpec filter)
+    private static bool Matches(object? value, Filter filter)
     {
         var target = filter.Value is JsonElement json ? json.ValueKind switch
         {

@@ -52,7 +52,7 @@ built-in texts in eight languages.
 bots, with real font metrics and light or dark themes:
 
 ```csharp
-var spec = new ChartSpec { Title = "Sessions", Series = [new SeriesSpec { Id = "web", Name = "Web" }] };
+var spec = new ChartDefinition { Title = "Sessions", Series = [new SeriesOptions { Id = "web", Name = "Web" }] };
 var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(times, values) };
 byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320 });
 ```
@@ -60,7 +60,7 @@ byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Heig
 ## AI agents
 
 **In your app.** `RioCharts.AI` gives your agent `create_chart` and `render_chart` tools, as
-Microsoft.Extensions.AI functions or MCP server tools. The agent writes a small JSON spec against
+Microsoft.Extensions.AI functions or MCP server tools. The agent writes a small JSON definition against
 your datasets; the tool validates it, renders it and describes it:
 
 ```csharp

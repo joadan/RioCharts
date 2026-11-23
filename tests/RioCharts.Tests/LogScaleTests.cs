@@ -5,7 +5,7 @@ using RioCharts.Core.Formatting;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scales;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -17,7 +17,7 @@ public class LogScaleTests
 
     private static IEnumerable<Node> All(Scene scene) => All(scene.Static).Concat(All(scene.Series)).Concat(All(scene.Overlay));
 
-    private static ChartSpec LogSpec(params SeriesSpec[] series) => new() { Y = new AxisSpec { Scale = ScaleType.Log }, Series = series };
+    private static ChartDefinition LogSpec(params SeriesOptions[] series) => new() { Y = new AxisOptions { Scale = ScaleType.Log }, Series = series };
 
     private static SeriesData Numbers(params double[] y) => SeriesData.From(Enumerable.Range(0, y.Length).Select(i => (double)i).ToArray(), y);
 
@@ -111,7 +111,7 @@ public class LogScaleTests
     [Fact]
     public void Log_axis_spans_the_data_in_powers_of_ten()
     {
-        var result = ChartLayout.Compute(LogSpec(new SeriesSpec { Id = "a" }), new Dictionary<string, SeriesData> { ["a"] = Numbers(3, 40, 900, 25_000, 410_000) }, Options);
+        var result = ChartLayout.Compute(LogSpec(new SeriesOptions { Id = "a" }), new Dictionary<string, SeriesData> { ["a"] = Numbers(3, 40, 900, 25_000, 410_000) }, Options);
 
         Assert.True(result.YScale.IsLog);
         Assert.Equal(1, result.YScale.DomainMin);
@@ -123,8 +123,8 @@ public class LogScaleTests
     [Fact]
     public void Zero_and_negative_values_are_gaps_with_a_warning()
     {
-        var spec = LogSpec(new SeriesSpec { Id = "a" });
-        spec = spec with { Annotations = [new AnnotationSpec { Value = 0, Label = "Zero" }] };
+        var spec = LogSpec(new SeriesOptions { Id = "a" });
+        spec = spec with { Annotations = [new Annotation { Value = 0, Label = "Zero" }] };
 
         var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Numbers(5, 0, 50, -2, 500) }, Options);
 
@@ -138,7 +138,7 @@ public class LogScaleTests
     [Fact]
     public void Bars_on_a_log_axis_start_at_its_bottom()
     {
-        var spec = LogSpec(new SeriesSpec { Id = "a", Type = SeriesType.Bar, DataLabels = true });
+        var spec = LogSpec(new SeriesOptions { Id = "a", Type = SeriesType.Bar, DataLabels = true });
 
         var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(["a", "b", "c"], [8, 300, 9_000]) }, Options);
         var bars = All(result.Scene.Series).OfType<RectNode>().ToList();
@@ -152,7 +152,7 @@ public class LogScaleTests
     [Fact]
     public void Stacked_areas_on_a_log_axis_render()
     {
-        var spec = LogSpec(new SeriesSpec { Id = "a", Type = SeriesType.Area, Stack = "s" }, new SeriesSpec { Id = "b", Type = SeriesType.Area, Stack = "s" });
+        var spec = LogSpec(new SeriesOptions { Id = "a", Type = SeriesType.Area, Stack = "s" }, new SeriesOptions { Id = "b", Type = SeriesType.Area, Stack = "s" });
 
         var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Numbers(5, 50, 500), ["b"] = Numbers(10, 100, 1000) }, Options);
 
@@ -167,7 +167,7 @@ public class LogScaleTests
     [InlineData(new[] { 0.0, -1 })]
     public void Edge_cases_on_a_log_axis_render_cleanly(double[] values)
     {
-        var result = ChartLayout.Compute(LogSpec(new SeriesSpec { Id = "a" }), new Dictionary<string, SeriesData> { ["a"] = Numbers(values) }, Options);
+        var result = ChartLayout.Compute(LogSpec(new SeriesOptions { Id = "a" }), new Dictionary<string, SeriesData> { ["a"] = Numbers(values) }, Options);
 
         Assert.True(result.YScale.DomainMin > 0);
         Assert.True(result.YScale.DomainMax > result.YScale.DomainMin);
@@ -179,8 +179,8 @@ public class LogScaleTests
     {
         var data = new Dictionary<string, SeriesData> { ["a"] = Numbers(3, 40, 900) };
 
-        var set = ChartLayout.Compute(new ChartSpec { Y = new AxisSpec { Scale = ScaleType.Log, Min = 2, Max = 5000 }, Series = [new SeriesSpec { Id = "a" }] }, data, Options);
-        var zero = ChartLayout.Compute(new ChartSpec { Y = new AxisSpec { Scale = ScaleType.Log, Min = 0 }, Series = [new SeriesSpec { Id = "a" }] }, data, Options);
+        var set = ChartLayout.Compute(new ChartDefinition { Y = new AxisOptions { Scale = ScaleType.Log, Min = 2, Max = 5000 }, Series = [new SeriesOptions { Id = "a" }] }, data, Options);
+        var zero = ChartLayout.Compute(new ChartDefinition { Y = new AxisOptions { Scale = ScaleType.Log, Min = 0 }, Series = [new SeriesOptions { Id = "a" }] }, data, Options);
 
         Assert.Equal((2d, 5000d), (set.YScale.DomainMin, set.YScale.DomainMax));
         Assert.Equal(1, zero.YScale.DomainMin);
@@ -189,7 +189,7 @@ public class LogScaleTests
     [Fact]
     public void A_log_x_axis_is_linear_with_a_warning()
     {
-        var spec = new ChartSpec { X = new AxisSpec { Scale = ScaleType.Log }, Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { X = new AxisOptions { Scale = ScaleType.Log }, Series = [new SeriesOptions { Id = "a" }] };
 
         var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Numbers(1, 2, 3) }, Options);
 
@@ -200,7 +200,7 @@ public class LogScaleTests
     [Fact]
     public void A_draggable_line_on_a_log_axis_drags_in_log_units()
     {
-        var spec = LogSpec(new SeriesSpec { Id = "a" }) with { Annotations = [new AnnotationSpec { Id = "limit", Value = 100, Draggable = true }] };
+        var spec = LogSpec(new SeriesOptions { Id = "a" }) with { Annotations = [new Annotation { Id = "limit", Value = 100, Draggable = true }] };
 
         var result = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Numbers(3, 40, 900) }, Options);
         var handle = Assert.Single(result.DragHandles);
@@ -214,9 +214,9 @@ public class LogScaleTests
     [Fact]
     public void Json_specs_take_a_log_scale()
     {
-        var parsed = ChartSpecJson.Parse("""{ "y": { "scale": "log" }, "series": [{ "id": "a" }] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "y": { "scale": "log" }, "series": [{ "id": "a" }] }""");
 
         Assert.Empty(parsed.Errors);
-        Assert.Equal(ScaleType.Log, parsed.Spec!.Y.Scale);
+        Assert.Equal(ScaleType.Log, parsed.Definition!.Y.Scale);
     }
 }

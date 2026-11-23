@@ -8,38 +8,38 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using RioCharts.Core.Data;
 
-namespace RioCharts.Core.Specs;
+namespace RioCharts.Core.Definitions;
 
-/// <summary>A problem in a spec: where (a JSON path such as <c>series[0].y</c>) and what to do about it.</summary>
-public sealed record SpecError(string Path, string Message)
+/// <summary>A problem in a definition: where (a JSON path such as <c>series[0].y</c>) and what to do about it.</summary>
+public sealed record DefinitionError(string Path, string Message)
 {
     /// <summary>"path: message".</summary>
     public override string ToString() => $"{Path}: {Message}";
 }
 
-/// <summary>The result of reading a JSON spec: the spec (null when it could not be read), errors and notes.</summary>
-public sealed record SpecParseResult(ChartSpec? Spec, IReadOnlyList<SpecError> Errors, IReadOnlyList<string> Warnings)
+/// <summary>The result of reading a JSON definition: the definition (null when it could not be read), errors and notes.</summary>
+public sealed record DefinitionParseResult(ChartDefinition? Definition, IReadOnlyList<DefinitionError> Errors, IReadOnlyList<string> Warnings)
 {
-    /// <summary>True when the spec was read without errors.</summary>
-    public bool Success => Spec is not null && Errors.Count == 0;
+    /// <summary>True when the definition was read without errors.</summary>
+    public bool Success => Definition is not null && Errors.Count == 0;
 }
 
 /// <summary>
-/// JSON for chart specs: tolerant reading (any letter case, unknown fields ignored, common
+/// JSON for chart definitions: tolerant reading (any letter case, unknown fields ignored, common
 /// synonyms such as "column" or "doughnut"), strict errors that name the path and the valid
 /// options, compact writing, and the JSON schema with descriptions for AI agents.
 /// </summary>
-public static class ChartSpecJson
+public static class ChartDefinitionJson
 {
-    /// <summary>The most series a JSON spec may have.</summary>
+    /// <summary>The most series a JSON definition may have.</summary>
     public const int MaxSeries = 20;
-    /// <summary>The most inline data rows a JSON spec may have.</summary>
+    /// <summary>The most inline data rows a JSON definition may have.</summary>
     public const int MaxInlineRows = 1000;
-    /// <summary>The most annotations a JSON spec may have.</summary>
+    /// <summary>The most annotations a JSON definition may have.</summary>
     public const int MaxAnnotations = 50;
 
     /// <summary>
-    /// camelCase names and enum values, nulls and defaults left out when writing. Read specs with
+    /// camelCase names and enum values, nulls and defaults left out when writing. Read definitions with
     /// <see cref="Parse"/>: the source-generated metadata cannot keep the defaults of properties
     /// missing from the JSON, so Parse fills them in first.
     /// </summary>
@@ -47,7 +47,7 @@ public static class ChartSpecJson
 
     private static JsonSerializerOptions CreateOptions()
     {
-        // Source-generated metadata (ChartSpecJsonContext): no reflection, so trimming and native AOT keep working.
+        // Source-generated metadata (ChartDefinitionJsonContext): no reflection, so trimming and native AOT keep working.
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
             WriteIndented = true,
@@ -55,7 +55,7 @@ public static class ChartSpecJson
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
-            TypeInfoResolver = ChartSpecJsonContext.Default.WithAddedModifier(SkipDefaults),
+            TypeInfoResolver = ChartDefinitionJsonContext.Default.WithAddedModifier(SkipDefaults),
         };
 
         // camelCase enum values ("line", "monotone"); generic converters need no runtime code generation.
@@ -80,31 +80,31 @@ public static class ChartSpecJson
         return options;
     }
 
-    private static JsonTypeInfo<ChartSpec> SpecInfo => (JsonTypeInfo<ChartSpec>)Options.GetTypeInfo(typeof(ChartSpec));
+    private static JsonTypeInfo<ChartDefinition> SpecInfo => (JsonTypeInfo<ChartDefinition>)Options.GetTypeInfo(typeof(ChartDefinition));
 
     // ---------- Writing ----------
 
-    /// <summary>The spec as compact JSON (only what differs from the defaults).</summary>
-    public static string Serialize(ChartSpec spec) => JsonSerializer.Serialize(spec, SpecInfo);
+    /// <summary>The definition as compact JSON (only what differs from the defaults).</summary>
+    public static string Serialize(ChartDefinition spec) => JsonSerializer.Serialize(spec, SpecInfo);
 
     /// <summary>
-    /// The spec types, created with their defaults. Source generation treats init-only properties
+    /// The definition types, created with their defaults. Source generation treats init-only properties
     /// as constructor arguments, so it has no CreateObject for them and would write default(T) for
     /// a property missing from the JSON (an annotation's axis would become x, a tooltip disabled).
     /// </summary>
     private static readonly Dictionary<Type, Func<object>> Factories = new()
     {
-        [typeof(ChartSpec)] = () => new ChartSpec(),
-        [typeof(AxisSpec)] = () => new AxisSpec(),
-        [typeof(LegendSpec)] = () => new LegendSpec(),
-        [typeof(TooltipSpec)] = () => new TooltipSpec(),
-        [typeof(SeriesSpec)] = () => new SeriesSpec(),
-        [typeof(AnnotationSpec)] = () => new AnnotationSpec(),
-        [typeof(FilterSpec)] = () => new FilterSpec(),
+        [typeof(ChartDefinition)] = () => new ChartDefinition(),
+        [typeof(AxisOptions)] = () => new AxisOptions(),
+        [typeof(LegendOptions)] = () => new LegendOptions(),
+        [typeof(TooltipOptions)] = () => new TooltipOptions(),
+        [typeof(SeriesOptions)] = () => new SeriesOptions(),
+        [typeof(Annotation)] = () => new Annotation(),
+        [typeof(Filter)] = () => new Filter(),
         [typeof(ColorBand)] = () => new ColorBand(),
     };
 
-    /// <summary>The spec types with defaults (for a test that every object type in a spec is listed).</summary>
+    /// <summary>The definition types with defaults (for a test that every object type in a definition is listed).</summary>
     internal static IEnumerable<Type> TypesWithDefaults => Factories.Keys;
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, JsonObject> DefaultNodes = new();
@@ -115,7 +115,7 @@ public static class ChartSpecJson
         if (info.Kind == JsonTypeInfoKind.Object && node is JsonObject obj)
         {
             var defaults = Factories.TryGetValue(info.Type, out var create)
-                ? DefaultNodes.GetOrAdd(info.Type, t => (JsonObject)JsonSerializer.SerializeToNode(create(), ChartSpecJsonContext.Default.GetTypeInfo(t)!)!)
+                ? DefaultNodes.GetOrAdd(info.Type, t => (JsonObject)JsonSerializer.SerializeToNode(create(), ChartDefinitionJsonContext.Default.GetTypeInfo(t)!)!)
                 : null;
             foreach (var property in info.Properties)
             {
@@ -176,7 +176,7 @@ public static class ChartSpecJson
 
     // ---------- Schema ----------
 
-    /// <summary>The JSON schema of a chart spec, with a description for every property.</summary>
+    /// <summary>The JSON schema of a chart definition, with a description for every property.</summary>
     public static JsonNode Schema()
     {
         var schema = SpecInfo.GetJsonSchemaAsNode(new JsonSchemaExporterOptions
@@ -199,7 +199,7 @@ public static class ChartSpecJson
         if (schema is JsonObject root)
         {
             root.Insert(0, "$schema", "https://json-schema.org/draft/2020-12/schema");
-            root.Insert(1, "title", "RioCharts chart spec");
+            root.Insert(1, "title", "RioCharts chart definition");
             root.Insert(2, "description",
                 "A chart: series read x and y fields from a dataset (or inline data); everything else has sensible defaults. "
                 + "Minimal example: {\"dataset\":\"shop\",\"series\":[{\"type\":\"line\",\"x\":\"timestamp\",\"y\":\"sessions\"}]}");
@@ -210,10 +210,10 @@ public static class ChartSpecJson
 
     // ---------- Reading ----------
 
-    /// <summary>Reads a spec, accepting common variations; problems come back as errors, never exceptions.</summary>
-    public static SpecParseResult Parse(string json)
+    /// <summary>Reads a definition, accepting common variations; problems come back as errors, never exceptions.</summary>
+    public static DefinitionParseResult Parse(string json)
     {
-        var errors = new List<SpecError>();
+        var errors = new List<DefinitionError>();
         var warnings = new List<string>();
         JsonNode? node;
         try
@@ -223,30 +223,30 @@ public static class ChartSpecJson
         }
         catch (JsonException e)
         {
-            return new SpecParseResult(null, [new SpecError("$", $"not valid JSON ({e.Message})")], warnings);
+            return new DefinitionParseResult(null, [new DefinitionError("$", $"not valid JSON ({e.Message})")], warnings);
         }
 
         if (node is not JsonObject root)
         {
-            return new SpecParseResult(null, [new SpecError("$", "a spec is a JSON object, e.g. {\"series\":[{\"type\":\"line\",\"x\":\"time\",\"y\":\"value\"}]}")], warnings);
+            return new DefinitionParseResult(null, [new DefinitionError("$", "a definition is a JSON object, e.g. {\"series\":[{\"type\":\"line\",\"x\":\"time\",\"y\":\"value\"}]}")], warnings);
         }
 
         Normalize(root, errors, warnings);
         if (errors.Count > 0)
         {
-            return new SpecParseResult(null, errors, warnings);
+            return new DefinitionParseResult(null, errors, warnings);
         }
 
         try
         {
             FillDefaults(root, SpecInfo);
             var spec = root.Deserialize(SpecInfo);
-            return new SpecParseResult(spec, errors, warnings);
+            return new DefinitionParseResult(spec, errors, warnings);
         }
         catch (JsonException e)
         {
-            errors.Add(new SpecError(e.Path?.TrimStart('$', '.') is { Length: > 0 } p ? p : "$", ReadableJsonError(e)));
-            return new SpecParseResult(null, errors, warnings);
+            errors.Add(new DefinitionError(e.Path?.TrimStart('$', '.') is { Length: > 0 } p ? p : "$", ReadableJsonError(e)));
+            return new DefinitionParseResult(null, errors, warnings);
         }
     }
 
@@ -377,8 +377,8 @@ public static class ChartSpecJson
         ["<="] = "lte", ["le"] = "lte", ["contains"] = "contains", ["like"] = "contains",
     };
 
-    /// <summary>Fixes the shape and vocabulary of a spec in place, collecting errors for what cannot be read.</summary>
-    private static void Normalize(JsonObject root, List<SpecError> errors, List<string> warnings)
+    /// <summary>Fixes the shape and vocabulary of a definition in place, collecting errors for what cannot be read.</summary>
+    private static void Normalize(JsonObject root, List<DefinitionError> errors, List<string> warnings)
     {
         // A single series given flat ({ "type": "line", "x": ..., "y": ... }) or as an object.
         if (root["series"] is null && (root.ContainsKey("x") || root.ContainsKey("y")))
@@ -406,14 +406,14 @@ public static class ChartSpecJson
         {
             if (series.Count > MaxSeries)
             {
-                errors.Add(new SpecError("series", $"at most {MaxSeries} series (got {series.Count}); use groupBy only on fields with few values."));
+                errors.Add(new DefinitionError("series", $"at most {MaxSeries} series (got {series.Count}); use groupBy only on fields with few values."));
             }
 
             for (var i = 0; i < series.Count; i++)
             {
                 if (series[i] is not JsonObject s)
                 {
-                    errors.Add(new SpecError($"series[{i}]", "each series is an object, e.g. {\"type\":\"line\",\"x\":\"time\",\"y\":\"value\"}"));
+                    errors.Add(new DefinitionError($"series[{i}]", "each series is an object, e.g. {\"type\":\"line\",\"x\":\"time\",\"y\":\"value\"}"));
                     continue;
                 }
 
@@ -430,7 +430,7 @@ public static class ChartSpecJson
                     }
                     else
                     {
-                        errors.Add(new SpecError($"series[{i}].type",
+                        errors.Add(new DefinitionError($"series[{i}].type",
                             $"'{typeName}' is not supported; valid: line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, pie, radialBar, radar, treemap, auto (also column, donut, stackedBar, spline, gauge, points, spider)."));
                     }
                 }
@@ -478,12 +478,12 @@ public static class ChartSpecJson
 
         if (root["data"] is JsonArray rows && rows.Count > MaxInlineRows)
         {
-            errors.Add(new SpecError("data", $"at most {MaxInlineRows} inline rows (got {rows.Count}); refer to a dataset id instead."));
+            errors.Add(new DefinitionError("data", $"at most {MaxInlineRows} inline rows (got {rows.Count}); refer to a dataset id instead."));
         }
 
         if (root["annotations"] is JsonArray annotations && annotations.Count > MaxAnnotations)
         {
-            errors.Add(new SpecError("annotations", $"at most {MaxAnnotations} annotations (got {annotations.Count})."));
+            errors.Add(new DefinitionError("annotations", $"at most {MaxAnnotations} annotations (got {annotations.Count})."));
         }
 
         if (root["stacking"] is { } rootStacking)
@@ -560,7 +560,7 @@ public static class ChartSpecJson
         }
     }
 
-    private static void Vocabulary(JsonObject? obj, string property, Dictionary<string, string> words, string path, List<SpecError> errors)
+    private static void Vocabulary(JsonObject? obj, string property, Dictionary<string, string> words, string path, List<DefinitionError> errors)
     {
         if (obj?[property] is not JsonValue value || !value.TryGetValue<string>(out var text))
         {
@@ -573,7 +573,7 @@ public static class ChartSpecJson
         }
         else
         {
-            errors.Add(new SpecError(path, $"'{text}' is not valid; use one of: {string.Join(", ", words.Values.Distinct())}."));
+            errors.Add(new DefinitionError(path, $"'{text}' is not valid; use one of: {string.Join(", ", words.Values.Distinct())}."));
         }
     }
 
@@ -581,7 +581,7 @@ public static class ChartSpecJson
     /// highlight: "last", "last, max" or ["last", "max"] (any letter case); written back as the
     /// comma-separated names the enum reads.
     /// </summary>
-    private static void Highlights(JsonObject series, string path, List<SpecError> errors)
+    private static void Highlights(JsonObject series, string path, List<DefinitionError> errors)
     {
         var node = series["highlight"];
         IEnumerable<string>? parts = node switch
@@ -601,7 +601,7 @@ public static class ChartSpecJson
             var match = Enum.GetNames<PointHighlight>().FirstOrDefault(n => Key(n) == Key(part));
             if (match is null)
             {
-                errors.Add(new SpecError(path, $"'{part}' is not valid; use one or more of: last, first, min, max (e.g. \"last, max\")."));
+                errors.Add(new DefinitionError(path, $"'{part}' is not valid; use one or more of: last, first, min, max (e.g. \"last, max\")."));
                 return;
             }
 
@@ -611,7 +611,7 @@ public static class ChartSpecJson
         series["highlight"] = names.Count == 0 ? "None" : string.Join(", ", names.Distinct());
     }
 
-    private static void CheckEnum<TEnum>(JsonNode? parent, string property, string path, List<SpecError> errors)
+    private static void CheckEnum<TEnum>(JsonNode? parent, string property, string path, List<DefinitionError> errors)
         where TEnum : struct, Enum
     {
         if (parent is not JsonObject obj || obj[property] is not JsonValue value || !value.TryGetValue<string>(out var text))
@@ -622,7 +622,7 @@ public static class ChartSpecJson
         var match = Enum.GetNames<TEnum>().FirstOrDefault(n => Key(n) == Key(text));
         if (match is null)
         {
-            errors.Add(new SpecError(path, $"'{text}' is not valid; use one of: {string.Join(", ", Enum.GetNames<TEnum>().Select(JsonNamingPolicy.CamelCase.ConvertName))}."));
+            errors.Add(new DefinitionError(path, $"'{text}' is not valid; use one of: {string.Join(", ", Enum.GetNames<TEnum>().Select(JsonNamingPolicy.CamelCase.ConvertName))}."));
         }
         else
         {
@@ -632,11 +632,11 @@ public static class ChartSpecJson
 }
 
 /// <summary>
-/// Source-generated JSON metadata for specs. The primitive types are for the <c>object?</c> values
-/// in specs built in code (inline data rows, annotation positions); parsed specs hold JsonElements.
+/// Source-generated JSON metadata for definitions. The primitive types are for the <c>object?</c> values
+/// in definitions built in code (inline data rows, annotation positions); parsed definitions hold JsonElements.
 /// </summary>
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
-[JsonSerializable(typeof(ChartSpec))]
+[JsonSerializable(typeof(ChartDefinition))]
 [JsonSerializable(typeof(JsonElement))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(double))]
@@ -649,4 +649,4 @@ public static class ChartSpecJson
 [JsonSerializable(typeof(DateTimeOffset))]
 [JsonSerializable(typeof(DateOnly))]
 [JsonSerializable(typeof(TimeOnly))]
-internal sealed partial class ChartSpecJsonContext : JsonSerializerContext;
+internal sealed partial class ChartDefinitionJsonContext : JsonSerializerContext;

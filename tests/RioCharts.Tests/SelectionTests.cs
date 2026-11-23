@@ -31,7 +31,7 @@ public class SelectionTests
     [Fact]
     public void Selected_range_is_a_band_across_the_plot()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
         var layout = ChartLayout.Compute(spec, Line, Options with { SelectedRange = (3, 1) }); // either order
 
         var band = All<RectNode>(Group(layout.Scene, "selection:range")!).Single();
@@ -44,7 +44,7 @@ public class SelectionTests
     [Fact]
     public void Selected_range_outside_the_view_or_without_data_draws_nothing()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
 
         var zoomed = ChartLayout.Compute(spec, Line, Options with { XRange = (0, 1), SelectedRange = (3, 4) });
         var empty = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(ReadOnlySpan<double>.Empty, ReadOnlySpan<double>.Empty) }, Options with { SelectedRange = (0, 1) });
@@ -58,7 +58,7 @@ public class SelectionTests
     [Fact]
     public void Selected_points_get_markers_except_gaps_and_unknown_indexes()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
         var selected = new Dictionary<string, IReadOnlyCollection<int>> { ["a"] = [4, 1, 2, 99, -1, 1], ["nope"] = [0] };
 
         var layout = ChartLayout.Compute(spec, Line, Options with { SelectedPoints = selected });
@@ -71,7 +71,7 @@ public class SelectionTests
     [Fact]
     public void Selected_points_of_hidden_series_are_not_drawn()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
         var selected = new Dictionary<string, IReadOnlyCollection<int>> { ["a"] = [0] };
 
         var layout = ChartLayout.Compute(spec, Line, Options with { SelectedPoints = selected, HiddenSeries = new HashSet<string> { "a" } });
@@ -82,12 +82,12 @@ public class SelectionTests
     [Fact]
     public void Selected_stacked_bar_is_outlined_around_its_own_segment()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Series =
             [
-                new SeriesSpec { Id = "a", Type = SeriesType.Bar, Stack = "s" },
-                new SeriesSpec { Id = "b", Type = SeriesType.Bar, Stack = "s" },
+                new SeriesOptions { Id = "a", Type = SeriesType.Bar, Stack = "s" },
+                new SeriesOptions { Id = "b", Type = SeriesType.Bar, Stack = "s" },
             ],
         };
         var data = new Dictionary<string, SeriesData>

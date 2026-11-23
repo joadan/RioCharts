@@ -57,10 +57,10 @@
 </div>
 
 @code {
-    private readonly AxisSpec _hourAxis = new() { Title = "Hour" };
+    private readonly AxisOptions _hourAxis = new() { Title = "Hour" };
 
     private const string WeekCode = """
-        <RioChart TItem="HourCount" Title="Sessions per hour, last month" XAxis="@(new AxisSpec { Title = "Hour" })">
+        <RioChart TItem="HourCount" Title="Sessions per hour, last month" XAxis="@(new AxisOptions { Title = "Hour" })">
             @foreach (var (day, hours) in weekTraffic)
             {
                 <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" Format="#,0" />

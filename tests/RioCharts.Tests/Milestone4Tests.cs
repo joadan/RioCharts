@@ -15,7 +15,7 @@ public class Milestone4Tests
     public void Visible_range_sets_the_x_domain_and_the_y_axis_fits_the_visible_data()
     {
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([0.0, 1, 2, 3, 4, 5], [1.0, 2, 3, 100, 200, 300]) };
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
 
         var all = ChartLayout.Compute(spec, data, Options);
         var zoomed = ChartLayout.Compute(spec, data, Options with { XRange = (0, 2) });
@@ -34,7 +34,7 @@ public class Milestone4Tests
         const int n = 100_000;
         var x = Enumerable.Range(0, n).Select(i => (double)i).ToArray();
         var y = x.Select(v => Math.Sin(v / 50)).ToArray();
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(x, y) };
 
         var zoomed = ChartLayout.Compute(spec, data, Options with { XRange = (1000, 1400) });
@@ -131,13 +131,13 @@ public class Milestone4Tests
         {
             ["a"] = SeriesData.From(Enumerable.Range(0, 24).Select(h => start.AddHours(h)).ToArray(), Enumerable.Range(0, 24).Select(h => 20.0 + h % 3).ToArray()),
         };
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a" }],
+            Series = [new SeriesOptions { Id = "a" }],
             Annotations =
             [
-                new AnnotationSpec { Type = AnnotationType.Point, X = start.AddHours(5), Y = 30.0, Label = "Alarm" },
-                new AnnotationSpec { Type = AnnotationType.Callout, X = "2026-03-01T10:00", Y = 21.0, Label = "Sensor replaced" },
+                new Annotation { Type = AnnotationType.Point, X = start.AddHours(5), Y = 30.0, Label = "Alarm" },
+                new Annotation { Type = AnnotationType.Callout, X = "2026-03-01T10:00", Y = 21.0, Label = "Sensor replaced" },
             ],
         };
 
@@ -157,10 +157,10 @@ public class Milestone4Tests
     public void Draggable_lines_report_a_handle_with_their_scale()
     {
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([0.0, 10], [10.0, 30]) };
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "a" }],
-            Annotations = [new AnnotationSpec { Id = "sp", Value = 21, Draggable = true }, new AnnotationSpec { Value = 15 }],
+            Series = [new SeriesOptions { Id = "a" }],
+            Annotations = [new Annotation { Id = "sp", Value = 21, Draggable = true }, new Annotation { Value = 15 }],
         };
 
         var result = ChartLayout.Compute(spec, data, Options);
@@ -181,7 +181,7 @@ public class Milestone4Tests
         // Stockholm leaves summer time on 2026-10-25 at 03:00 local (01:00 UTC): 02:00 happens twice.
         var utc = Enumerable.Range(0, 8).Select(h => new DateTimeOffset(2026, 10, 24, 22, 0, 0, TimeSpan.Zero).AddHours(h)).ToArray();
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(utc, utc.Select((_, i) => (double)i).ToArray()) };
-        var spec = new ChartSpec { TimeZone = "Europe/Stockholm", Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { TimeZone = "Europe/Stockholm", Series = [new SeriesOptions { Id = "a" }] };
 
         var result = ChartLayout.Compute(spec, data, Options with { ViewerTimeZone = "Europe/Stockholm" });
         var s = result.Tooltip.Series[0];
@@ -199,7 +199,7 @@ public class Milestone4Tests
         var times = new[] { new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.FromHours(5)), new DateTimeOffset(2026, 1, 1, 13, 0, 0, TimeSpan.FromHours(5)) };
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(times, [1.0, 2]) };
 
-        var result = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "a" }] }, data, Options);
+        var result = ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] }, data, Options);
 
         Assert.Equal("01/01/2026 12:00", result.Tooltip.Series[0].XLabels[0]);
         Assert.Null(result.Time);
@@ -210,7 +210,7 @@ public class Milestone4Tests
     {
         var local = new[] { new DateTime(2026, 7, 1, 12, 0, 0), new DateTime(2026, 7, 1, 13, 0, 0) }; // Kind Unspecified
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(local, [1.0, 2]) };
-        var spec = new ChartSpec { TimeZone = "Europe/Stockholm", UnspecifiedTimes = UnspecifiedTimes.DisplayZone, Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { TimeZone = "Europe/Stockholm", UnspecifiedTimes = UnspecifiedTimes.DisplayZone, Series = [new SeriesOptions { Id = "a" }] };
 
         var result = ChartLayout.Compute(spec, data, Options with { ViewerTimeZone = "America/New_York" });
 
@@ -227,7 +227,7 @@ public class Milestone4Tests
     {
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([new DateTime(2026, 1, 1)], [1.0]) };
 
-        var result = ChartLayout.Compute(new ChartSpec { TimeZone = "Mars/Olympus", Series = [new SeriesSpec { Id = "a" }] }, data, Options);
+        var result = ChartLayout.Compute(new ChartDefinition { TimeZone = "Mars/Olympus", Series = [new SeriesOptions { Id = "a" }] }, data, Options);
 
         Assert.Null(result.Time);
         Assert.Contains(result.Warnings, w => w.StartsWith("timeZone", StringComparison.Ordinal));
@@ -238,10 +238,10 @@ public class Milestone4Tests
     [Fact]
     public void Canvas_writer_turns_series_groups_into_draw_operations()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "l" }, new SeriesSpec { Id = "b", Type = SeriesType.Bar }],
-            Annotations = [new AnnotationSpec { Value = 1.5 }],
+            Series = [new SeriesOptions { Id = "l" }, new SeriesOptions { Id = "b", Type = SeriesType.Bar }],
+            Annotations = [new Annotation { Value = 1.5 }],
         };
         var data = new Dictionary<string, SeriesData>
         {
@@ -263,7 +263,7 @@ public class Milestone4Tests
     [Fact]
     public void Visible_range_is_ignored_on_category_axes()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Type = SeriesType.Bar }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar }] };
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(["A", "B"], [1.0, 2]) };
 
         var result = ChartLayout.Compute(spec, data, Options with { XRange = (0, 1) });
@@ -277,7 +277,7 @@ public class Milestone4Tests
     public void Linked_charts_line_up_their_plots_with_the_largest_insets()
     {
         var x = new[] { 0.0, 1, 2 };
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a" }] };
         var narrow = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(x, [1.0, 2, 3]) };
         var wide = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From(x, [100_000.0, 200_000, 300_000]) };
 

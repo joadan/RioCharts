@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 using RioCharts.Skia;
 using SkiaSharp;
 
@@ -40,13 +40,13 @@ public class ScatterTests
 
     private static SeriesData SalesVsOutdoor() => SeriesData.From(Outdoor, Outdoor.Select(t => Math.Round(22 - 0.25 * t, 1)).ToArray());
 
-    private static ChartSpec Spec(bool trend = false, double? size = null) => new()
+    private static ChartDefinition Spec(bool trend = false, double? size = null) => new()
     {
-        X = new AxisSpec { Title = "Outdoor °C" },
-        Series = [new SeriesSpec { Id = "s", Name = "Hot drinks", Type = SeriesType.Scatter, TrendLine = trend, MarkerSize = size, Format = "0.0 k" }],
+        X = new AxisOptions { Title = "Outdoor °C" },
+        Series = [new SeriesOptions { Id = "s", Name = "Hot drinks", Type = SeriesType.Scatter, TrendLine = trend, MarkerSize = size, Format = "0.0 k" }],
     };
 
-    private static ChartLayoutResult Layout(ChartSpec spec, SeriesData data, LayoutOptions? options = null) =>
+    private static ChartLayoutResult Layout(ChartDefinition spec, SeriesData data, LayoutOptions? options = null) =>
         ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["s"] = data }, options ?? Options);
 
     [Fact]
@@ -77,13 +77,13 @@ public class ScatterTests
     [Fact]
     public void The_tooltip_finds_the_nearest_point_not_the_nearest_x()
     {
-        var withLine = Spec() with { Series = [.. Spec().Series, new SeriesSpec { Id = "l", Name = "Curve" }] };
+        var withLine = Spec() with { Series = [.. Spec().Series, new SeriesOptions { Id = "l", Name = "Curve" }] };
         var data = new Dictionary<string, SeriesData> { ["s"] = SalesVsOutdoor(), ["l"] = SeriesData.From([-10.0, 20], [24.5, 17]) };
 
         var layout = ChartLayout.Compute(withLine, data, Options);
 
         Assert.False(layout.Tooltip.Shared);
-        Assert.True(Layout(Spec() with { Series = [new SeriesSpec { Id = "s" }] }, SalesVsOutdoor()).Tooltip.Shared); // lines stay shared
+        Assert.True(Layout(Spec() with { Series = [new SeriesOptions { Id = "s" }] }, SalesVsOutdoor()).Tooltip.Shared); // lines stay shared
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class ScatterTests
     [Fact]
     public void Legend_has_a_dot_and_a_summary()
     {
-        var spec = Spec() with { Series = [.. Spec().Series, new SeriesSpec { Id = "l", Name = "Forecast" }] };
+        var spec = Spec() with { Series = [.. Spec().Series, new SeriesOptions { Id = "l", Name = "Forecast" }] };
         var data = new Dictionary<string, SeriesData> { ["s"] = SalesVsOutdoor(), ["l"] = SeriesData.From([-10.0, 20], [24.5, 17]) };
 
         var layout = ChartLayout.Compute(spec, data, Options);
@@ -141,15 +141,15 @@ public class ScatterTests
     [InlineData("scatterPlot")]
     public void Json_specs_read_scatter(string type)
     {
-        var parsed = ChartSpecJson.Parse($$"""{ "series": [ { "type": "{{type}}", "x": "outdoor", "y": "sales", "markerSize": 3, "trendLine": true } ] }""");
+        var parsed = ChartDefinitionJson.Parse($$"""{ "series": [ { "type": "{{type}}", "x": "outdoor", "y": "sales", "markerSize": 3, "trendLine": true } ] }""");
 
         Assert.Empty(parsed.Errors);
-        var s = parsed.Spec!.Series[0];
+        var s = parsed.Definition!.Series[0];
         Assert.Equal(SeriesType.Scatter, s.Type);
         Assert.Equal(3, s.MarkerSize);
         Assert.True(s.TrendLine);
-        Assert.Contains("<ScatterSeries", ChartRazor.FromSpec(parsed.Spec, "Reading", "readings"), StringComparison.Ordinal);
-        Assert.Contains(" MarkerSize=\"3\" TrendLine=\"true\"", ChartRazor.FromSpec(parsed.Spec, "Reading", "readings"), StringComparison.Ordinal);
+        Assert.Contains("<ScatterSeries", ChartRazor.FromDefinition(parsed.Definition, "Reading", "readings"), StringComparison.Ordinal);
+        Assert.Contains(" MarkerSize=\"3\" TrendLine=\"true\"", ChartRazor.FromDefinition(parsed.Definition, "Reading", "readings"), StringComparison.Ordinal);
     }
 
     [Fact]

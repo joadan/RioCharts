@@ -37,7 +37,7 @@ public static partial class ChartLayout
     }
 
     /// <summary>Whether auto-compact lays the chart out as a compact chart (too small for any axis labels).</summary>
-    private static bool AutoCompacts(ChartSpec spec, LayoutOptions options) =>
+    private static bool AutoCompacts(ChartDefinition spec, LayoutOptions options) =>
         spec.AutoCompact && !spec.Compact
         && (options.Width < AutoCompactWidth * options.FontSize / 12 || options.Height < AutoCompactHeight * options.FontSize / 12);
 
@@ -46,6 +46,6 @@ public static partial class ChartLayout
         position == LegendPosition.Right && chrome.RightLegendToTop ? LegendPosition.Top : position;
 
     /// <summary>An automatic legend that would take more than 30% of the height is left out.</summary>
-    private static bool LegendTooTall(ChartSpec spec, double legendHeight, double height) =>
+    private static bool LegendTooTall(ChartDefinition spec, double legendHeight, double height) =>
         spec.AutoCompact && spec.Legend.Mode == LegendMode.Auto && legendHeight > height * 0.3;
 }

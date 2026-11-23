@@ -47,7 +47,7 @@
             distances: 10 to 100 is as tall as 100k to 1M. Here the visits per page in a month: on a linear axis the start page
             flattens everything else, on a log axis every page can be read. Ticks are powers of ten (with 2 and 5 between them when
             the range is short); bars start at the bottom of the axis. Zero and negative values have no place on a log axis: they
-            are left out, with a warning. In JSON specs: <code>"y": { "scale": "log" }</code>.
+            are left out, with a warning. In JSON definitions: <code>"y": { "scale": "log" }</code>.
         </p>
     </Description>
     <ChildContent>
@@ -85,18 +85,18 @@
 </Example>
 
 @code {
-    private static readonly AxisSpec SessionsAxis = new() { Title = "Sessions per hour" };
-    private static readonly AxisSpec OrdersPerHour = new() { Title = "Orders per hour" };
-    private static readonly IReadOnlyList<AxisSpec> _ordersAxis = [new() { Id = "orders", Title = "Orders" }];
-    private static readonly AxisSpec _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
+    private static readonly AxisOptions SessionsAxis = new() { Title = "Sessions per hour" };
+    private static readonly AxisOptions OrdersPerHour = new() { Title = "Orders per hour" };
+    private static readonly IReadOnlyList<AxisOptions> _ordersAxis = [new() { Id = "orders", Title = "Orders" }];
+    private static readonly AxisOptions _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
     private static readonly System.Globalization.CultureInfo _german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
     private string? _zone = "Europe/Stockholm";
     private bool _log = true;
-    private static readonly AxisSpec Visits = new() { Title = "Visits per month" };
-    private static readonly AxisSpec VisitsLog = Visits with { Scale = ScaleType.Log };
+    private static readonly AxisOptions Visits = new() { Title = "Visits per month" };
+    private static readonly AxisOptions VisitsLog = Visits with { Scale = ScaleType.Log };
 
     private const string LogCode = """
-        <RioChart Items="pageVisits" YAxis="@(new AxisSpec { Title = "Visits per month", Scale = ScaleType.Log })">
+        <RioChart Items="pageVisits" YAxis="@(new AxisOptions { Title = "Visits per month", Scale = ScaleType.Log })">
             <BarSeries Name="Visits" XValue="p => p.Name" YValue="p => p.Value" Format="#,0" DataLabels="true" />
         </RioChart>
         """;
@@ -117,7 +117,7 @@
         """;
 
     private const string TwoAxesCode = """
-        <RioChart TItem="Reading" YAxis="@(new AxisSpec { Title = "Sessions per hour" })" YAxes="@([new AxisSpec { Id = "orders", Title = "Orders" }])">
+        <RioChart TItem="Reading" YAxis="@(new AxisOptions { Title = "Sessions per hour" })" YAxes="@([new AxisOptions { Id = "orders", Title = "Orders" }])">
             <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" />
             <LineSeries Items="sessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>
@@ -125,7 +125,7 @@
 
     private const string FormatCode = """
         <RioChart TItem="Sales" Culture="CultureInfo.GetCultureInfo("de-DE")"
-               YAxis="@(new AxisSpec { Title = "EUR", Format = "C0", Min = 0 })">
+               YAxis="@(new AxisOptions { Title = "EUR", Format = "C0", Min = 0 })">
             <BarSeries Items="quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
         </RioChart>
         """;

@@ -8,7 +8,7 @@ namespace RioCharts.Core.Layout;
 public static partial class ChartLayout
 {
     /// <summary>The display zone conversion, or null when times are shown as given (the default).</summary>
-    private static TimeConversion? ResolveTime(ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, LayoutOptions options, List<string> warnings)
+    private static TimeConversion? ResolveTime(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, LayoutOptions options, List<string> warnings)
     {
         if (string.IsNullOrWhiteSpace(spec.TimeZone))
         {

@@ -43,10 +43,10 @@ the diff before committing.
 
 | Path | What |
 | --- | --- |
-| `src/RioCharts.Core` | Scales, ticks, layout, path builders, render-agnostic scene, hit-testing, the chart spec and JSON specs. No UI dependencies. |
+| `src/RioCharts.Core` | Scales, ticks, layout, path builders, render-agnostic scene, hit-testing, the chart definition and JSON definitions. No UI dependencies. |
 | `src/RioCharts.Blazor` | `<RioChart>` and the series components, the SVG scene renderer and the JS module. |
 | `src/RioCharts.Skia` | PNG and SVG export with SkiaSharp (`ChartExport`). |
-| `src/RioCharts.AI` | `create_chart` and `render_chart` for agents (Microsoft.Extensions.AI and MCP), spec → Razor. |
+| `src/RioCharts.AI` | `create_chart` and `render_chart` for agents (Microsoft.Extensions.AI and MCP), definition → Razor. |
 | `src/RioCharts.Mcp` | `riocharts-mcp`: the local MCP server (stdio, .NET tool). |
 | `tests/RioCharts.Tests` | xUnit tests for Core, Skia, AI and MCP, and the visual snapshots. |
 | `tests/RioCharts.Blazor.Tests` | bUnit tests for `<RioChart>`, and the agent guide. |

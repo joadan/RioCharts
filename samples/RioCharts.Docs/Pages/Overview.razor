@@ -57,7 +57,7 @@
             </div>
             <div class="output">
                 <h3>From AI agents</h3>
-                <p>Agents chart data from a JSON spec: <code>create_chart</code> in your app, or <code>riocharts-mcp</code> for coding agents.</p>
+                <p>Agents chart data from a JSON definition: <code>create_chart</code> in your app, or <code>riocharts-mcp</code> for coding agents.</p>
                 <a class="output-package" href="https://www.nuget.org/packages/RioCharts.Mcp" target="_blank" rel="noopener"><code>RioCharts.Mcp (riocharts-mcp)</code></a>
                 <CodeBlock Language="json" Code="@AgentCode" />
                 <a href="ai">AI agents and MCP <span aria-hidden="true">→</span></a>
@@ -201,11 +201,11 @@
             "aggregate": "sum" }] }
         """;
 
-    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
     private static readonly DateTime SaleStart = Start.AddHours(18);
     private static readonly DateTime SaleEnd = Start.AddHours(22);
-    private static readonly LegendSpec NoLegend = new() { Mode = LegendMode.Hide };
-    private static readonly TooltipSpec NoTooltip = new() { Enabled = false };
+    private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
+    private static readonly TooltipOptions NoTooltip = new() { Enabled = false };
 
     private const string QuickCode = """
         <RioChart Items="orders">
@@ -227,7 +227,7 @@
             """<svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4" /></svg>"""),
         new("large-data", "Large data", "Plain arrays, LTTB downsampling and a canvas layer for hundreds of thousands of points.",
             """<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg>"""),
-        new("specs", "JSON specs and AI", "A serializable chart spec that agents can write, with a create_chart tool for MCP.",
+        new("definitions", "Chart definitions and AI", "A serializable chart definition that agents can write, with a create_chart tool for MCP.",
             """<svg viewBox="0 0 24 24"><path d="M8 4H6a2 2 0 0 0-2 2v4l-2 2 2 2v4a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2h-2" /></svg>"""),
     ];
 
@@ -235,7 +235,7 @@
 
     private static readonly Package[] Packages =
     [
-        new("RioCharts.Core", "Scales, ticks, layout, the chart spec and JSON specs."),
+        new("RioCharts.Core", "Scales, ticks, layout, the chart definition and JSON definitions."),
         new("RioCharts.Blazor", "The <RioChart> component, series, annotations and the SVG renderer."),
         new("RioCharts.Skia", "Server-side export to SVG and PNG, for reports and e-mail."),
         new("RioCharts.AI", "The create_chart tool for agents: Microsoft.Extensions.AI and MCP."),

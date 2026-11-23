@@ -220,9 +220,9 @@
     top left corner, and <code>PixelToValue(x, y)</code> the value at a position. <code>Layout</code> exposes the scales and the hit-test index.</p>
 
 @code {
-    private static readonly AxisSpec Sessions = new() { Title = "Sessions per 15 min" };
-    private static readonly AxisSpec Euros = new() { Title = "€ per 15 min" };
-    private static readonly AxisSpec Minutes = new() { Title = "min" };
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisOptions Euros = new() { Title = "€ per 15 min" };
+    private static readonly AxisOptions Minutes = new() { Title = "min" };
     private IReadOnlyCollection<string> _hidden = [];
     private PointClickEventArgs<Reading>? _point;
     private ChartRange? _range;

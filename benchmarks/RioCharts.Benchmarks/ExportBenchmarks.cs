@@ -14,7 +14,7 @@ namespace RioCharts.Benchmarks;
 [MemoryDiagnoser]
 public class ExportBenchmarks
 {
-    private ChartSpec _spec = null!;
+    private ChartDefinition _spec = null!;
     private Dictionary<string, SeriesData> _data = null!;
     private ExportOptions _options = null!;
     private ChartLayoutResult _layout = null!;

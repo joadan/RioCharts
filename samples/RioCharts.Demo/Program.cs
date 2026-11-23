@@ -1,5 +1,5 @@
 using RioCharts.AI;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 using RioCharts.Demo;
 using RioCharts.Demo.Components;
 

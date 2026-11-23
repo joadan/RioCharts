@@ -47,15 +47,15 @@
     [Fact]
     public void Spec_errors_are_listed()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Data = [new Dictionary<string, object?> { ["time"] = "2026-11-16T00:00:00", ["temp"] = 20.5 }],
-            Series = [new SeriesSpec { Id = "t", X = "time", Y = "tmep" }],
+            Series = [new SeriesOptions { Id = "t", X = "time", Y = "tmep" }],
         };
 
-        var cut = Render<RioChart<object>>(@<RioChart TItem="object" Spec="spec" />);
+        var cut = Render<RioChart<object>>(@<RioChart TItem="object" Definition="spec" />);
 
-        Assert.NotEmpty(cut.Instance.SpecErrors);
+        Assert.NotEmpty(cut.Instance.DefinitionErrors);
         Assert.Contains("tmep", cut.Find(".rio-spec-errors").TextContent);
     }
 

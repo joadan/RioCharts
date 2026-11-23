@@ -1,15 +1,15 @@
-@* A chart built in code | A ChartSpec (the same model as JSON specs) with datasets instead of child components, e.g. for charts chosen at runtime. Fields are camelCase property names. *@
-@using RioCharts.Core.Specs
+@* A chart built in code | A ChartDefinition (the same model as a chart definition in JSON) with datasets instead of child components, e.g. for charts chosen at runtime. Fields are camelCase property names. *@
+@using RioCharts.Core.Definitions
 
-<RioChart TItem="object" Spec="spec" Datasets="datasets" Height="280" />
+<RioChart TItem="object" Definition="chart" Datasets="datasets" Height="280" />
 
 @code {
     private sealed record Sale(string Region, double Amount);
 
-    private readonly ChartSpec spec = new()
+    private readonly ChartDefinition chart = new()
     {
         Title = "Sales per region",
-        Series = [new SeriesSpec { Id = "sales", Type = SeriesType.Bar, Dataset = "sales", X = "region", Y = "amount", Aggregate = Aggregate.Sum }],
+        Series = [new SeriesOptions { Id = "sales", Type = SeriesType.Bar, Dataset = "sales", X = "region", Y = "amount", Aggregate = Aggregate.Sum }],
     };
 
     private readonly Dictionary<string, ChartDataset> datasets = new()

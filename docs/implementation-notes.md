@@ -64,7 +64,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   matched by exact x value (or category). Positive values stack up and negative values down.
   Hidden series leave the stack. Stacked bars are square with a 1 px gap; stacked areas fill
   between their base and top. Percent stacking: see "100 % stacking".
-- **Multiple Y axes.** `ChartSpec.YAxes` adds axes (right side by default, outward when there are
+- **Multiple Y axes.** `ChartDefinition.YAxes` adds axes (right side by default, outward when there are
   several). The first axis with visible series owns the grid and the zero line; the others choose
   a domain with the same number of nice steps, so their labels sit on its grid lines. An axis whose
   series are all hidden is not shown. Zeros of different axes are not aligned.
@@ -85,12 +85,12 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   makes room for the labels of unstacked bars: when the highest or lowest bar's label would not fit
   between the bar's end and the plot edge, the domain gets one more tick step on that side (same
   step, so ticks stay round; up to three rounds, as a wider domain has fewer pixels per unit). An
-  axis `Min` or `Max` set in the spec is kept. Horizontal bars put a label that does not fit
+  axis `Min` or `Max` set in the definition is kept. Horizontal bars put a label that does not fit
   outside inside the bar instead.
-- **Annotations** are `AnnotationSpec` records (`<ReferenceLine>` and `<ReferenceBand>`
+- **Annotations** are `Annotation` records (`<ReferenceLine>` and `<ReferenceBand>`
   components, or `RioChart.Annotations`). Values are `object`: numbers, `DateTime`,
   `DateTimeOffset`, `DateOnly`, category names, or strings (ISO 8601 times, numbers) so JSON
-  specs work. Labels stay inside the plot. Hover text is an SVG `<title>`; they become focusable
+  definitions work. Labels stay inside the plot. Hover text is an SVG `<title>`; they become focusable
   buttons only when `OnAnnotationClick` is set. Point annotations and callouts are milestone 4.
 
 ## Milestone 3
@@ -124,7 +124,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 
 ## Milestone 4
 
-- **Zoom state** is view state, not part of `ChartSpec`: `LayoutOptions.XRange` (data units,
+- **Zoom state** is view state, not part of `ChartDefinition`: `LayoutOptions.XRange` (data units,
   milliseconds for time). The chart keeps it in C# and clamps it to the data extent
   (`ChartLayoutResult.XExtent`); a range covering all data means "not zoomed". Category axes
   do not zoom.
@@ -167,7 +167,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   (`@bind-Value` or `OnAnnotationChanged`).
 - **Time zones.** `SeriesData` keeps each time's UTC offset when the input had one
   (`DateTimeOffset`, `DateTime` with Kind Utc or Local) in `TimeOffsets`; without a display zone it
-  is ignored. With `ChartSpec.TimeZone`, the layout converts time data to instants
+  is ignored. With `ChartDefinition.TimeZone`, the layout converts time data to instants
   (`TimeConversion`): known offsets are used; other times follow `UnspecifiedTimes` (UTC by default,
   with a warning when it is not set). Ticks are generated on wall-clock time in the zone and
   converted back; a tick that repeats (autumn) is kept once, one in the spring gap moves to the
@@ -206,20 +206,20 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 
 ## Milestone 6
 
-- **One model.** JSON specs are `ChartSpec` with data bindings added (`ChartSpec.Dataset`, `Data`;
-  `SeriesSpec.Dataset`, `X`, `Y` and the transforms). `ChartSpecBinder` turns them into the
+- **One model.** JSON definitions are `ChartDefinition` with data bindings added (`ChartDefinition.Dataset`, `Data`;
+  `SeriesOptions.Dataset`, `X`, `Y` and the transforms). `ChartDefinitionBinder` turns them into the
   ordinary model (concrete series, generated ids, `groupBy` expanded) plus `SeriesData`, which
   then goes through the same layout as the components. The binder lives in Core so the Blazor
-  `<Chart Spec>` and the AI tool share it.
+  `<RioChart Definition>` and the AI tool share it.
 - **Tolerant reading** happens on the JSON before deserializing: letter case, comments and
   trailing commas, a single series object or top-level x/y, and synonyms (column, stackedBar,
   doughnut/donut/ring → pie with innerRadius 0.6, spline/smooth → monotone, gauge → radialBar,
   avg/mean, daily/monthly, asc/desc, >=, ...). Unknown fields are ignored. Unknown enum values
   are errors listing the valid ones. Limits: 20 series (after groupBy), 1000 inline rows, 50
   annotations.
-- **Errors** are `SpecError(path, message)`. Field errors list the dataset's fields with their
+- **Errors** are `DefinitionError(path, message)`. Field errors list the dataset's fields with their
   types and suggest a close name ("did you mean 'airTemp'?"). Parsing errors come first; binding
-  errors appear once the spec parses, so a model fixes problems in two rounds at most.
+  errors appear once the definition parses, so a model fixes problems in two rounds at most.
 - **Defaults the binder fills in** (reported as warnings): x = the first time, else text field;
   y = the only numeric field; aggregate average with a timeBucket; sum when a text x repeats.
 - **"auto"**: time or numeric x → line (bar with a time bucket); text x → bar, or a donut when
@@ -229,13 +229,13 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   from the values (mixed columns become text; ISO 8601 strings become times; quoted numbers stay
   text). `ChartDataset.FromItems` uses reflection (camelCase property names): fine for setup,
   not for hot paths.
-- **create_chart** takes the spec as a JSON object (or a string holding one) and returns success,
+- **create_chart** takes the definition as a JSON object (or a string holding one) and returns success,
   errors, warnings, a summary (the chart's text description) and the normalized spec. The PNG,
-  SVG and bound spec are for the app (`ChartCreated`) and are not sent to the model; over MCP
+  SVG and bound definition are for the app (`ChartCreated`) and are not sent to the model; over MCP
   the PNG is returned as an image block. The tool description lists the datasets with their
-  fields and descriptions, the spec shape and three examples; the full schema is a separate tool
+  fields and descriptions, the definition shape and three examples; the full schema is a separate tool
   (`get_chart_schema`) to keep the description short.
-- **render_chart** takes the same spec plus `format` (png or svg), `width`, `height` (100 to
+- **render_chart** takes the same definition plus `format` (png or svg), `width`, `height` (100 to
   `MaxImageSize`, default 4000), `theme` (light or dark) and `fileName`, and returns the image to
   the agent: as `DataContent` (image/png or image/svg+xml) after the result JSON for
   Microsoft.Extensions.AI, and over MCP as an image block (PNG) or an embedded text resource with
@@ -249,7 +249,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **riocharts-mcp** (`src/RioCharts.Mcp`) is a stdio MCP server packed as a .NET tool. It offers
   render_chart, list_datasets and get_chart_schema, plus get_razor and get_usage for coding agents
   (see "Guide for coding agents"); with no app to show a chart, create_chart makes no sense. render_chart there uses `ChartTool.StandaloneRenderDescription`, which carries
-  the spec format and points to list_datasets instead of listing datasets, since files may change
+  the definition format and points to list_datasets instead of listing datasets, since files may change
   while the server runs. Logging goes to stderr; stdout is the protocol. Images always go to
   `--out` (default `./charts` under the agent's working directory). There is no `--data` default:
   scanning the working directory would list unrelated JSON files.
@@ -259,16 +259,16 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   headers become `column<n>` and duplicates get `_2`. `FolderDataSource` reads `.csv`, `.tsv` and
   `.json` (an array of objects, or an object with one array) in one folder, caches by write time
   and size, skips files over 100 MB and lists unreadable files with the reason and no fields.
-- **Spec → Razor** writes component markup with field names as PascalCase properties; transforms
+- **Definition → Razor** writes component markup with field names as PascalCase properties; transforms
   that components do not do become comments to implement in the query. An `aggregate` without a
   `timeBucket` becomes the series' `Aggregate` parameter.
 - **Not yet:** a time zone-aware `timeBucket` (buckets are on wall-clock time), declarative joins,
-  and streaming specs.
+  and streaming definitions.
 
 ## Aggregating series components
 
-- Design.md lists aggregate only as a declarative spec transform. The series components also
-  have it, modelled on Blazor-ApexCharts' `YAggregate`: `Aggregate` (the enum the specs use) and
+- Design.md lists aggregate only as a declarative definition transform. The series components also
+  have it, modelled on Blazor-ApexCharts' `YAggregate`: `Aggregate` (the enum the definitions use) and
   `YAggregate` (`Func<IReadOnlyList<TItem>, double?>`, which wins when both are set).
 - Items group by the x value as `XValue` returns it: strings ordinally, times exactly (no
   bucketing; two timestamps a millisecond apart are two points), numbers by value (1 and 1.0 are
@@ -277,15 +277,15 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   `DataVersion`, or a change of `Aggregate`, `Bucket` or of whether `YAggregate` is set). Changing the
   `YAggregate` function alone does not reprocess, the same as `YValue`. `Data` (columnar) and
   `Buffer` (live) are not aggregated.
-- **Time buckets on components:** Design.md has time buckets only as a spec transform (and for
+- **Time buckets on components:** Design.md has time buckets only as a definition transform (and for
   candles). Line, area and bar series also take `Bucket`; the grouping lives in `SeriesBase`
   (`XBucket`, `SeriesData.FromTimeBuckets`), and `CandlestickSeries` uses the same path instead of
-  wrapping `XValue`. A bucket without `Aggregate` or `YAggregate` averages, as JSON specs do. Other
+  wrapping `XValue`. A bucket without `Aggregate` or `YAggregate` averages, as JSON definitions do. Other
   series types (scatter, heatmap, range area, box plot, pies) don't take it yet.
 - **`TimeBucket.Auto`:** picked once per data change from the span of the x values (min to max),
   never from the chart's width or zoom, so it stays in the data step and selectors still run once.
   The pick is the calendar bucket whose approximate count (span ÷ its length; a month is 30.44
-  days) is closest to 50 on a log scale; an empty or zero span gives Day. In JSON specs it is
+  days) is closest to 50 on a log scale; an empty or zero span gives Day. In JSON definitions it is
   resolved over all of a series' filtered rows before `groupBy`, so every group gets the same
   bucket, and a warning says which one. `TimeBuckets.Floor` throws for `Auto`, since one value
   can't pick it.
@@ -328,7 +328,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 ## Benchmarks
 
 - `benchmarks/RioCharts.Benchmarks` (BenchmarkDotNet) measures public APIs only: Core layout,
-  data and spec work, and Skia export. The Blazor side (SVG render tree, interop payloads) and the
+  data and definition work, and Skia export. The Blazor side (SVG render tree, interop payloads) and the
   JS module are not benchmarked. Not run in CI (timings on shared runners are too noisy); the
   project is in the solution, so CI builds it. `benchmarks/README.md` holds a baseline from one
   machine, to compare changes on the same machine rather than as absolute numbers.
@@ -395,7 +395,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 ## Compact charts
 
 - **No separate component.** Design.md's "compact modes: sparklines" is `Compact` on `RioChart`
-  and in the spec, so the JSON/AI spec and Skia export get it too. The height is not changed
+  and in the definition, so the JSON/AI definition and Skia export get it too. The height is not changed
   automatically; examples set it.
 - **Layout:** the same `ChartLayout.Compute` pass with the chrome left out: no title, legend,
   axis labels or titles, grid (unless an axis sets `GridLines`), baseline (except a zero line for
@@ -426,7 +426,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 
 - **`ChartTexts`** (Core) holds every text the chart writes itself: empty states, "Total", "Other",
   "Reset zoom", the download button, and the screen reader texts (description, axis and legend
-  names, series labels, keyboard help, the "3 of 12" position the JS module appends). Spec
+  names, series labels, keyboard help, the "3 of 12" position the JS module appends). Definition
   warnings and errors stay English: they are for developers.
 - **Built in:** English, Swedish, Norwegian (Bokmål, under "no" and "nb"; Nynorsk falls back to it
   through its parent "no"), Danish, Finnish, German, French, Spanish. The non-English texts were
@@ -453,20 +453,20 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 ## Trimming, native AOT and static rendering
 
 - **Analyzers:** Core, Blazor, Skia and AI set `IsAotCompatible` (trimmable, trim/AOT/single-file
-  analyzers on). The only warnings were reflection-based System.Text.Json in `ChartSpecJson` and
+  analyzers on). The only warnings were reflection-based System.Text.Json in `ChartDefinitionJson` and
   the AI tool's result JSON.
-- **Spec JSON** uses `ChartSpecJsonContext` (source-generated, Web defaults, plus primitive types
-  for the `object?` values of specs built in code). camelCase enum values come from generic
-  `JsonStringEnumConverter<T>` instances, one per spec enum, added to the options.
+- **Definition JSON** uses `ChartDefinitionJsonContext` (source-generated, Web defaults, plus primitive types
+  for the `object?` values of definitions built in code). camelCase enum values come from generic
+  `JsonStringEnumConverter<T>` instances, one per definition enum, added to the options.
 - **Init-only properties:** the generator treats them as constructor arguments. It has no
-  `CreateObject` for the spec records, cannot set them afterwards ("Setting init-only properties
+  `CreateObject` for the definition records, cannot set them afterwards ("Setting init-only properties
   is not supported in source generation mode") and writes `default(T)` for a property missing
   from the JSON, so an annotation's axis became x and `"tooltip": {}` turned the tooltip off.
   `Parse` therefore fills every missing property from a serialized default instance before
   deserializing, walking nested objects and lists through the generated metadata. The default
-  instances come from `Factories` (one entry per spec record). A test checks that every object type
-  reachable from `ChartSpec` has one. Changing the records to `set` would have avoided this but
-  made the spec mutable.
+  instances come from `Factories` (one entry per definition record). A test checks that every object type
+  reachable from `ChartDefinition` has one. Changing the records to `set` would have avoided this but
+  made the definition mutable.
 - **Skipping defaults when writing** uses the same factories (`JsonTypeInfo.CreateObject` is null
   for these types).
 - **Proof:** `tests/RioCharts.AotSmoke` (`PublishAot`, warnings as errors except NuGet audit
@@ -610,7 +610,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   (`AreaBetween`, used for stacks) draws the band. Fill 0.2, no outline, default layer 0 (below
   lines). Not stacked even with `Stack` set. Missing low or high: a gap.
 - **Aggregation:** in Blazor, `Aggregate`/`YAggregate` give the high end and the low end is the
-  lowest low per point. In specs, average and sum become min (low) and max (high), since averaging a
+  lowest low per point. In definitions, average and sum become min (low) and max (high), since averaging a
   band's ends would hide its extremes; other aggregates apply to both ends.
 - **Not yet:** an outline option, live data with lows, and error bars.
 
@@ -629,7 +629,7 @@ Design.md "Box plot" (milestone 7).
 - **Two ways in:** raw values (`BoxPlotSeries` with `XValue`/`YValue`, one item per value; items
   with the same x form a box, so clicking a box selects all its items) or precomputed boxes
   (`Q1Value`, `Q3Value`, `MedianValue`, `LowValue`, `HighValue`, optional `OutliersValue` and
-  `CountValue`, one item per box). JSON specs: `"type": "boxPlot"` (aliases box, boxAndWhisker,
+  `CountValue`, one item per box). JSON definitions: `"type": "boxPlot"` (aliases box, boxAndWhisker,
   whisker); with `q1` and `q3` each row is a box, otherwise boxes come from y per x. Raw values
   never trigger the "x repeats, using sum" aggregate.
 - **Drawing:** a band slot per series like grouped bars (never stacked, also with `Stack`), boxes
@@ -655,7 +655,7 @@ Design.md "Candlestick" (milestone 7).
   lowest, last); `Merge` joins candles.
 - **Raw readings:** `FromCandleBuckets` (and `CandlestickSeries` with `Bucket`, JSON with
   `timeBucket`, a day when not set) groups per `TimeBucket` on wall-clock time, sorted by time
-  inside each bucket. The bucket floor moved from the spec binder to the public
+  inside each bucket. The bucket floor moved from the definition binder to the public
   `TimeBuckets.Floor`, which now keeps the DateTime's `Kind` and returns a DateTime for a DateTime
   (the binder's version widened it to a DateTimeOffset with the machine's local offset). The component wraps `XValue` to
   floor it and keeps the caller's selector; a `DataSettings` hook in `SeriesBase` rebuilds the
@@ -692,7 +692,7 @@ Design.md "Radar" (milestone 7).
   formatted as labels), clockwise from 12 o'clock. A category that repeats in a series keeps its
   first value, with a warning.
 - **Scale:** linear from zero (from the smallest value when it is negative), nice ticks (3 to 6
-  rings depending on the radius); `ChartSpec.Y.Min`/`Max` fix it. Rings are polygons, or circles
+  rings depending on the radius); `ChartDefinition.Y.Min`/`Max` fix it. Rings are polygons, or circles
   with fewer than three spokes. Tick values sit just right of the first spoke, in the labels layer
   above the shapes on a backing in the surface color (opacity 0.8).
 - **Drawing:** a closed path per series, line 2 px (`StrokeWidth`) with fill opacity 0.14. With a
@@ -717,10 +717,10 @@ Design.md "Treemap" (milestone 7).
 - **Own layout path** (`ComputeTreemap`, `ChartLayout.Treemap.cs`), coordinate system
   `SpaceFilling`. One treemap series is drawn; other series are skipped with a warning.
 - **Hierarchy from paths:** the series stays plain category data whose names are paths
-  (`"Asia/India"`, split on `SeriesSpec.PathSeparator`, default "/"), so `SeriesData` needed no new
+  (`"Asia/India"`, split on `SeriesOptions.PathSeparator`, default "/"), so `SeriesData` needed no new
   column. Design.md's "node list with parent indices" is built per layout as a small tree.
   `TreemapSeries.ParentValue` turns a parent-child list into paths in the component (cycles and
-  unknown parents end the path). JSON: `SeriesSpec.Path` (the groups' fields) is joined into an x
+  unknown parents end the path). JSON: `SeriesOptions.Path` (the groups' fields) is joined into an x
   path by the binder. Repeated paths are added; a group's own value is ignored (warnings).
 - **Layout:** squarified (Bruls, Huizing, van Wijk), children largest first. A group gets a header
   (name left, total right when both fit) when its rectangle is at least 2.4 headers tall and 48 px
@@ -755,7 +755,7 @@ Design.md "Treemap" (milestone 7).
   headers do not block them. Shares in the tooltip stay shares of the whole tree. The component
   keeps the path: `TreemapPath` is a two-way bindable parameter (like `VisibleRange`),
   `DrillDownAsync` and `GetTreemapPath()` work from code, and `OnDrillDown` follows every change.
-- **Visible levels:** `SeriesSpec.VisibleLevels` limits how many levels are laid out below the
+- **Visible levels:** `SeriesOptions.VisibleLevels` limits how many levels are laid out below the
   group shown; a group at the last level is collapsed into a cell (its total, index -1, class
   `rio-treemap-collapsed`) that drills into itself, or with its top group when items drill. Only
   what is drawn changes: the tree, totals and shares are those of the whole data. Named after
@@ -787,7 +787,7 @@ What .NET 11 changed:
 ## Guide for coding agents
 
 Design.md has no section on this; it extends "Low priority: a short README note for
-Blazor-ApexCharts users" and the AI spec work toward agents that write app code.
+Blazor-ApexCharts users" and the AI definition work toward agents that write app code.
 
 - **llms-full.txt** (docs site) is generated, not written: `AgentGuideTests` in the Blazor tests
   builds it from `docs/llms/guide.md` (hand-written: setup, rules, which series, common mistakes)
@@ -806,13 +806,13 @@ Blazor-ApexCharts users" and the AI spec work toward agents that write app code.
   version. `Get(topic)` cuts one section by heading (a component, type or `##` heading, matched
   case-insensitively without markup, then by substring); no topic gives everything up to the
   reference plus the list of reference topics, about a third of the size.
-- **get_razor** (`ChartTool.GetRazorAsync`) checks the spec like render_chart, then returns
-  `ChartRazor.FromSpec` markup, a positional record for the rows from the dataset's fields
+- **get_razor** (`ChartTool.GetRazorAsync`) checks the definition like render_chart, then returns
+  `ChartRazor.FromDefinition` markup, a positional record for the rows from the dataset's fields
   (`ChartRazor.ItemRecord`: double, DateTime or DateTimeOffset, string; nullable when a field has
-  missing values; property names as FromSpec writes them) and, for inline data, the rows as a C#
+  missing values; property names as FromDefinition writes them) and, for inline data, the rows as a C#
   list (`ItemsList`, at most 100 rows). Type and variable names default to the dataset name
   ("web_orders" → `WebOrder`, `webOrders`). The record has every field of the dataset, not only
-  the ones the spec uses, so the app's own type is easy to match. Only riocharts-mcp offers it and
+  the ones the definition uses, so the app's own type is easy to match. Only riocharts-mcp offers it and
   get_usage; `WithRioChartsTools` (servers in apps, for end users) keeps its four tools.
 - Found while writing the examples: an event handler lambda on `<RioChart>` (`OnPointClick="e =>
   ..."`) stops Blazor from inferring `TItem`, even with `Items` set; the guide says to set `TItem`.
@@ -832,19 +832,19 @@ Not in Design.md; added on request ("a way to set a colour on a value").
   pies and radial bars use it as the category's color (the first one given in any ring), so the
   legend swatch, slice and tooltip agree; treemap items use it, groups keep their group color.
   Tooltip rows show the point's color (`TooltipSeries.PointColors`).
-- **Bands:** `SeriesSpec.ColorBands` (`ColorBand` with `Above`, `Below`, `Color`; a JSON spec
+- **Bands:** `SeriesOptions.ColorBands` (`ColorBand` with `Above`, `Below`, `Color`; a JSON definition
   record, so it has a `Factories` entry). Lines and areas are drawn once per value range of one
   color (`ColorBands.Ranges`), each copy in a group clipped to that range's pixels, so the color
   changes exactly at the edge, between points too; without bands one path as before (snapshots
   unchanged). The canvas layer gets each shape's enclosing clip (`CanvasOp.Cl`). Bars and scatter
   use `PointColor` (own color, else band, else series). The component keeps an equal list of
-  bands as the same instance, so an inline list does not change the spec each render.
+  bands as the same instance, so an inline list does not change the definition each render.
 - **Not yet:** heatmap, box plot, candlestick and radar (they have their own coloring), and
   rule-based colors from a field in JSON beyond bands.
 
 ## Horizontal bars
 
-- **A chart option, not a series type** (`ChartSpec.Horizontal`): orientation is a property of the
+- **A chart option, not a series type** (`ChartDefinition.Horizontal`): orientation is a property of the
   whole chart. JSON `"horizontalBar"` (and synonyms) maps to `bar` and sets the chart flag.
 - **Own layout path** (`ComputeHorizontal`): rows from the categories (or the distinct x values as
   labels), first on top; a nice value scale along the bottom (`spec.Y` gives title, format,
@@ -876,7 +876,7 @@ Not in Design.md; added on request ("a way to set a colour on a value").
   | Heatmap, 50 rows x 365 days | 25 ms | 7 MB |
   | Live buffer, 100k points: append + snapshot + layout | 4 ms | 2 MB |
   | `SeriesData.From` 1M times / `FromItems` 1M items | 11 / 60 ms | 23 / 53 MB |
-  | Spec binding, 200k rows into day buckets per store | 30–70 ms | 20 MB |
+  | Definition binding, 200k rows into day buckets per store | 30–70 ms | 20 MB |
   | `ChartDataset.FromCsv`, 200k rows | 200–320 ms | 64 MB |
   | Skia PNG, 900 x 360 at 2x | 45–85 ms | 0.5 MB |
   | Blazor static render, 1M items | 100 ms | 54 MB |
@@ -955,11 +955,11 @@ The rest of Design.md "Programmatic interaction".
 
 ## Public API surface
 
-- Reviewed before the first release. Public: the spec model, data types, scales, formatters, the
+- Reviewed before the first release. Public: the definition model, data types, scales, formatters, the
   scene types (renderers in other packages and custom renderers draw them), `ChartLayout`, and
   each package's entry points. Internal: SVG/canvas writers and the scene renderer component in
-  Blazor, Skia's color and path helpers, `ChartSpecJson.Options` (deserializing with it skips the
-  defaults fix-up that `Parse` does) and the components' `Spec`.
+  Blazor, Skia's color and path helpers, `ChartDefinitionJson.Options` (deserializing with it skips the
+  defaults fix-up that `Parse` does) and the components' options.
 - **JS callbacks:** the module calls a private `JsCallbacks` object (`DotNetObjectReference`), so
   the `[JSInvokable]` entry points are not methods on `RioChart`. The method names are unchanged.
 - **`SvgSceneRenderer`** is internal, and Razor only resolves public components as tags, so
@@ -973,9 +973,9 @@ The rest of Design.md "Programmatic interaction".
 Design.md has named stack groups but no percent stacking; `docs/chart-types.md` listed it as a
 candidate.
 
-- **On the axis, not the series.** `AxisSpec.Stacking = StackMode.Percent` (`"y": {"stacking":
+- **On the axis, not the series.** `AxisOptions.Stacking = StackMode.Percent` (`"y": {"stacking":
   "percent"}`). All stacks on an axis add up the same way, and the axis labels change with it, so
-  the setting lives there; a series-level setting could disagree within a stack. JSON specs also
+  the setting lives there; a series-level setting could disagree within a stack. JSON definitions also
   take `"stacking"` on a series (moved to its axis, with a warning), at the top level (moved to
   `y`), the values `100%`, `normalize`, `expand`, `relative`, and the types `stackedBar100`,
   `percentStackedBar`, `100% stacked column`, `stackedArea100`.
@@ -991,5 +991,18 @@ candidate.
 - **Labels.** Axis ticks (and value annotations' labels) default to `P0` in the chart's culture
   (`50 %` in Swedish, `50%` in English); the axis `Format` overrides it. The tooltip shows the
   value in the series' format and its share: `10 (25 %)`. Data labels show the values, not shares.
-- Horizontal bars stack the same way on their value axis (`ChartSpec.Y`).
-- Spec → Razor writes `Stacking = StackMode.Percent` in the y axis' `AxisSpec`.
+- Horizontal bars stack the same way on their value axis (`ChartDefinition.Y`).
+- Definition → Razor writes `Stacking = StackMode.Percent` in the y axis' `AxisOptions`.
+
+## Naming: chart definitions and options
+
+Design.md calls the serializable chart model a "spec" (`ChartSpec`, `<RioChart Spec>`, JSON
+specs), after Vega-Lite. The code calls it a **chart definition**: "spec" read like a
+requirements document, and "JSON spec" named the format rather than the thing (a definition built
+in C# involves no JSON). Its parts are **options** (`AxisOptions`, `SeriesOptions`,
+`LegendOptions`, `TooltipOptions`), which read naturally as the settings of a part and are
+familiar from ApexCharts' `ChartOptions`; annotations and filters describe things rather than
+settings, so they are `Annotation` and `Filter`. The whole is not called options: unlike
+ApexCharts' `ChartOptions` it also holds the series, their fields and the data, and draws a
+chart on its own. The JSON format did not change; the AI tools' argument is `definition`.
+

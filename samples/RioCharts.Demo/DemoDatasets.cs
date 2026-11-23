@@ -1,8 +1,8 @@
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Demo;
 
-/// <summary>The datasets that JSON specs (and AI agents through MCP) can chart in the demo.</summary>
+/// <summary>The datasets that JSON definitions (and AI agents through MCP) can chart in the demo.</summary>
 public static class DemoDatasets
 {
     public static IReadOnlyList<ChartDataset> All { get; } = Create();

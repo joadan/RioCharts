@@ -54,21 +54,21 @@
 </p>
 
 @code {
-    private readonly AxisSpec _spendAxis = new() { Title = "Ad spend, €" };
-    private readonly AxisSpec _revenueAxis = new() { Title = "Revenue, €" };
-    private readonly AxisSpec _kmAxis = new() { Title = "Distance, km" };
-    private readonly AxisSpec _hoursAxis = new() { Title = "Hours" };
+    private readonly AxisOptions _spendAxis = new() { Title = "Ad spend, €" };
+    private readonly AxisOptions _revenueAxis = new() { Title = "Revenue, €" };
+    private readonly AxisOptions _kmAxis = new() { Title = "Distance, km" };
+    private readonly AxisOptions _hoursAxis = new() { Title = "Hours" };
 
     private const string AdsCode = """
         <RioChart Items="ads" Title="Revenue against ad spend, per day"
-                  XAxis="@(new AxisSpec { Title = "Ad spend, €" })" YAxis="@(new AxisSpec { Title = "Revenue, €" })">
+                  XAxis="@(new AxisOptions { Title = "Ad spend, €" })" YAxis="@(new AxisOptions { Title = "Revenue, €" })">
             <ScatterSeries Name="Search ads" XValue="a => a.SearchSpend" YValue="a => a.SearchRevenue" Format="#,0 €" TrendLine="true" />
             <ScatterSeries Name="Display ads" XValue="a => a.DisplaySpend" YValue="a => a.DisplayRevenue" Format="#,0 €" TrendLine="true" />
         </RioChart>
         """;
 
     private const string DeliveryCode = """
-        <RioChart Items="deliveries" XAxis="@(new AxisSpec { Title = "Distance, km" })" YAxis="@(new AxisSpec { Title = "Hours" })">
+        <RioChart Items="deliveries" XAxis="@(new AxisOptions { Title = "Distance, km" })" YAxis="@(new AxisOptions { Title = "Hours" })">
             <ScatterSeries Name="Delivery" XValue="d => d.Km" YValue="d => d.Hours" Format="0.0 'h'" MarkerSize="4" />
         </RioChart>
         """;

@@ -14,7 +14,7 @@ public static partial class ChartLayout
     /// zero shared by all spokes, and a closed shape per series. The legend lists series, as in
     /// cartesian charts; the tooltip is shared per spoke.
     /// </summary>
-    private static ChartLayoutResult ComputeRadar(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
+    private static ChartLayoutResult ComputeRadar(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
     {
         var culture = options.Culture;
         var texts = options.Texts ?? ChartTexts.For(culture);

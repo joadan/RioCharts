@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -18,16 +18,16 @@ public class RangeAreaTests
 
     private static int MoveTos(PathData path) => path.Commands.Count(c => c == PathCommand.MoveTo);
 
-    private static ChartSpec Spec(string? stack = null) => new()
+    private static ChartDefinition Spec(string? stack = null) => new()
     {
-        Series = [new SeriesSpec { Id = "r", Name = "Range", Type = SeriesType.RangeArea, Format = "0", Stack = stack }],
+        Series = [new SeriesOptions { Id = "r", Name = "Range", Type = SeriesType.RangeArea, Format = "0", Stack = stack }],
     };
 
     /// <summary>Low 10 12 8 9, high 20 24 18 21.</summary>
     private static SeriesData Band() =>
         SeriesData.From(Enumerable.Range(0, 4).Select(i => Start.AddDays(i)).ToArray(), [20.0, 24, 18, 21]).WithLow([10.0, 12, 8, 9]);
 
-    private static ChartLayoutResult Layout(SeriesData data, ChartSpec? spec = null) =>
+    private static ChartLayoutResult Layout(SeriesData data, ChartDefinition? spec = null) =>
         ChartLayout.Compute(spec ?? Spec(), new Dictionary<string, SeriesData> { ["r"] = data }, Options);
 
     [Fact]
@@ -98,24 +98,24 @@ public class RangeAreaTests
             ["time"] = Start.AddHours(h), ["min"] = 10.0 + h % 24, ["max"] = 30.0 + h % 24,
         });
         var datasets = new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) };
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "range", "x": "time", "low": "min", "y": "max", "timeBucket": "day" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "range", "x": "time", "low": "min", "y": "max", "timeBucket": "day" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, datasets);
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, datasets);
 
         Assert.Empty(bound.Errors);
         var data = bound.Data.Values.Single();
         Assert.Equal([10.0, 10], data.Low!); // the lowest low per day (not the average)
         Assert.Equal([53.0, 53], data.Y);    // the highest high
-        Assert.Contains(" LowValue=\"r => r.Min\"", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Contains(" LowValue=\"r => r.Min\"", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 
     [Fact]
     public void A_json_range_without_low_explains_what_is_missing()
     {
         var rows = new[] { (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["time"] = Start, ["max"] = 3.0 } };
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "rangeArea", "x": "time", "y": "max" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "rangeArea", "x": "time", "y": "max" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
         var error = Assert.Single(bound.Errors);
         Assert.Equal("series[0].low", error.Path);

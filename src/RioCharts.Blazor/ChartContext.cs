@@ -3,10 +3,10 @@ using RioCharts.Core.Data;
 
 namespace RioCharts.Blazor;
 
-/// <summary>A series as the chart sees it: its spec and its columnar data.</summary>
+/// <summary>A series as the chart sees it: its definition and its columnar data.</summary>
 internal interface ISeriesSource
 {
-    SeriesSpec Spec { get; }
+    SeriesOptions Spec { get; }
     SeriesData Data { get; }
 
     /// <summary>The input item at an index into the items list, or null for columnar data.</summary>
@@ -28,7 +28,7 @@ internal interface ISeriesSource
 /// <summary>An annotation component as the chart sees it.</summary>
 internal interface IAnnotationSource
 {
-    AnnotationSpec Spec { get; }
+    Annotation Spec { get; }
 
     /// <summary>The user dropped a draggable annotation at a new value.</summary>
     Task DraggedAsync(object value);
@@ -45,13 +45,13 @@ internal interface IChartContext
 
     void Unregister(ISeriesSource series);
 
-    /// <summary>The series' spec or data changed; the chart lays out again.</summary>
+    /// <summary>The series' options or data changed; the chart lays out again.</summary>
     void SeriesChanged(ISeriesSource series);
 
     /// <summary>A live buffer changed (any thread); the chart redraws at its refresh rate.</summary>
     void DataArrived();
 
-    /// <summary>Adds an annotation (once), or lays out again after its spec changed.</summary>
+    /// <summary>Adds an annotation (once), or lays out again after its definition changed.</summary>
     void AnnotationChanged(IAnnotationSource annotation);
 
     void Unregister(IAnnotationSource annotation);

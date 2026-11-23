@@ -19,15 +19,15 @@ var culture = CultureInfo.GetCultureInfo("en-US");
 
 // 1. Sessions per day over two weeks, against a goal.
 var days = Enumerable.Range(0, 14).Select(d => new DateTime(2026, 3, 2).AddDays(d)).ToArray();
-var sessions = (new ChartSpec
+var sessions = (new ChartDefinition
 {
     Title = "Sessions per day",
     Series =
     [
-        new SeriesSpec { Id = "web", Name = "Web", Type = SeriesType.Area, Curve = CurveType.Monotone },
-        new SeriesSpec { Id = "app", Name = "App", Type = SeriesType.Line, Curve = CurveType.Monotone, StrokeWidth = 2.5 },
+        new SeriesOptions { Id = "web", Name = "Web", Type = SeriesType.Area, Curve = CurveType.Monotone },
+        new SeriesOptions { Id = "app", Name = "App", Type = SeriesType.Line, Curve = CurveType.Monotone, StrokeWidth = 2.5 },
     ],
-    Annotations = [new AnnotationSpec { Value = 1000.0, Label = "Goal" }],
+    Annotations = [new Annotation { Value = 1000.0, Label = "Goal" }],
 }, new Dictionary<string, SeriesData>
 {
     ["web"] = SeriesData.From(days, [820, 880, 940, 910, 1010, 760, 700, 960, 1040, 1120, 1080, 1210, 900, 860]),
@@ -36,14 +36,14 @@ var sessions = (new ChartSpec
 
 // 2. Orders per quarter, stacked by channel.
 string[] quarters = ["Q1", "Q2", "Q3", "Q4"];
-var orders = (new ChartSpec
+var orders = (new ChartDefinition
 {
     Title = "Orders per quarter",
     Series =
     [
-        new SeriesSpec { Id = "shop", Name = "Web shop", Type = SeriesType.Bar, Stack = "o" },
-        new SeriesSpec { Id = "store", Name = "Stores", Type = SeriesType.Bar, Stack = "o" },
-        new SeriesSpec { Id = "market", Name = "Marketplaces", Type = SeriesType.Bar, Stack = "o" },
+        new SeriesOptions { Id = "shop", Name = "Web shop", Type = SeriesType.Bar, Stack = "o" },
+        new SeriesOptions { Id = "store", Name = "Stores", Type = SeriesType.Bar, Stack = "o" },
+        new SeriesOptions { Id = "market", Name = "Marketplaces", Type = SeriesType.Bar, Stack = "o" },
     ],
 }, new Dictionary<string, SeriesData>
 {
@@ -53,10 +53,10 @@ var orders = (new ChartSpec
 });
 
 // 3. Revenue by channel as a donut.
-var revenue = (new ChartSpec
+var revenue = (new ChartDefinition
 {
     Title = "Revenue by channel",
-    Series = [new SeriesSpec { Id = "r", Type = SeriesType.Pie, InnerRadius = 0.6, Format = "0 k€" }],
+    Series = [new SeriesOptions { Id = "r", Type = SeriesType.Pie, InnerRadius = 0.6, Format = "0 k€" }],
 }, new Dictionary<string, SeriesData>
 {
     ["r"] = SeriesData.FromCategories(["Web shop", "Stores", "Marketplaces", "Phone"], [420, 310, 150, 40]),
@@ -65,15 +65,15 @@ var revenue = (new ChartSpec
 // 4. Sessions per hour and weekday as a heatmap.
 string[] weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 var hours = Enumerable.Range(0, 24).Select(h => h.ToString("00", CultureInfo.InvariantCulture)).ToList();
-var heatmap = (new ChartSpec
+var heatmap = (new ChartDefinition
 {
     Title = "Sessions per hour",
-    Series = [.. weekdays.Select(d => new SeriesSpec { Id = d, Type = SeriesType.Heatmap, Format = "#,0" })],
+    Series = [.. weekdays.Select(d => new SeriesOptions { Id = d, Type = SeriesType.Heatmap, Format = "#,0" })],
 }, weekdays.Select((d, k) => (d, SeriesData.FromCategories(hours,
         Enumerable.Range(0, 24).Select(h => Math.Round(Math.Max(5, (k >= 5 ? 260 : 200) * Math.Max(0, Math.Sin((h - 6) / 18.0 * Math.PI)) + (h is >= 19 and <= 22 ? 90 : 0)))).ToArray())))
     .ToDictionary(t => t.d, t => t.Item2));
 
-(ChartSpec Spec, Dictionary<string, SeriesData> Data)[] charts = [sessions, orders, revenue, heatmap];
+(ChartDefinition Spec, Dictionary<string, SeriesData> Data)[] charts = [sessions, orders, revenue, heatmap];
 
 Write(ExportTheme.Light, "#d1d9e0", Path.Combine("assets", "readme-charts-light.png"));
 Write(ExportTheme.Dark, "#3d444d", Path.Combine("assets", "readme-charts-dark.png"));

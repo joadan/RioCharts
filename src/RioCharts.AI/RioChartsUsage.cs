@@ -31,14 +31,14 @@ public static class RioChartsUsage
 
             var sb = new StringBuilder(full[..reference].TrimEnd()).Append("\n\n## Reference\n\n");
             sb.Append("Ask for a topic to get one section: a component (e.g. \"RioChart\", \"LineSeries\", \"Parameters of every series\") ");
-            sb.Append("or a type (e.g. \"AxisSpec\", \"ColorBand\"). Topics: ");
+            sb.Append("or a type (e.g. \"AxisOptions\", \"ColorBand\"). Topics: ");
             sb.Append(string.Join(", ", Headings(full[reference..], "#### ").Select(h => h.Title)));
             return sb.Append(".\n").ToString();
         }
     }
 
     /// <summary>
-    /// One section of the guide, e.g. "LineSeries", "&lt;BarSeries&gt;", "AxisSpec", "Setup" or
+    /// One section of the guide, e.g. "LineSeries", "&lt;BarSeries&gt;", "AxisOptions", "Setup" or
     /// "Common mistakes" (case-insensitive; a component or type name, or a heading); null or empty
     /// gives <see cref="Overview"/>. An unknown topic gives the overview with a note.
     /// </summary>

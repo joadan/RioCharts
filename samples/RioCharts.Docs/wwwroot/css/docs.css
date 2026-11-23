@@ -1283,7 +1283,7 @@ table.docs tr:last-child td {
     margin-bottom: 12px;
 }
 
-/* The datasets the playground's specs can read: a tab per dataset, what it is, a few rows. */
+/* The datasets the playground's definitions can read: a tab per dataset, what it is, a few rows. */
 .spec-data {
     margin-bottom: 14px;
     border: 1px solid var(--doc-border);

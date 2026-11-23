@@ -4,11 +4,11 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
-/// <summary>Colors by value (SeriesSpec.ColorBands): lines change color where they cross a band edge.</summary>
+/// <summary>Colors by value (SeriesOptions.ColorBands): lines change color where they cross a band edge.</summary>
 public class ColorBandTests
 {
     private static readonly LayoutOptions Options = new() { Width = 600, Height = 300, Culture = CultureInfo.InvariantCulture };
@@ -29,7 +29,7 @@ public class ColorBandTests
 
     // Response times in ms: over 120 is slow, under 20 suspiciously fast.
     private static ChartLayoutResult Chart(SeriesType type, params ColorBand[] bands) => ChartLayout.Compute(
-        new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = type, ColorBands = bands }] },
+        new ChartDefinition { Series = [new SeriesOptions { Id = "s", Type = type, ColorBands = bands }] },
         new Dictionary<string, SeriesData> { ["s"] = SeriesData.FromCategories(Hours, [80.0, 140, 95, 10, 130, 60]) },
         Options);
 
@@ -76,7 +76,7 @@ public class ColorBandTests
     {
         var bars = Chart(SeriesType.Bar, new ColorBand { Above = 120, Color = Red });
         var own = ChartLayout.Compute(
-            new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = SeriesType.Bar, ColorBands = [new() { Above = 120, Color = Red }] }] },
+            new ChartDefinition { Series = [new SeriesOptions { Id = "s", Type = SeriesType.Bar, ColorBands = [new() { Above = 120, Color = Red }] }] },
             new Dictionary<string, SeriesData> { ["s"] = SeriesData.FromCategories(Hours, [80.0, 140, 95, 10, 130, 60]).WithColors([null, "#000", null, null, null, null]) },
             Options);
 
@@ -100,15 +100,15 @@ public class ColorBandTests
     [Fact]
     public void A_json_spec_takes_colorBands()
     {
-        var parsed = ChartSpecJson.Parse("""
+        var parsed = ChartDefinitionJson.Parse("""
             { "data": [ { "hour": "08", "ms": 80 }, { "hour": "09", "ms": 140 } ],
               "series": [ { "type": "line", "x": "hour", "y": "ms", "colorBands": [ { "above": 120, "color": "--rio-negative" } ] } ] }
             """);
 
         Assert.Empty(parsed.Errors);
-        var band = Assert.Single(parsed.Spec!.Series[0].ColorBands!);
+        var band = Assert.Single(parsed.Definition!.Series[0].ColorBands!);
         Assert.Equal((120.0, Red), (band.Above, band.Color));
         Assert.Contains("ColorBands=\"@(new ColorBand[] { new() { Above = 120, Color = \"--rio-negative\" } })\"",
-            ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+            ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 }

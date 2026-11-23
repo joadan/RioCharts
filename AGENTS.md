@@ -13,19 +13,19 @@ before adding or changing features. Record where the code differs from it in
   - `Paths/` — line/area path builders (linear, monotone, step).
   - `Scene/` — render-agnostic nodes, `PathData`, styles, theme tokens.
   - `Series/` — series type contract and line/area/bar types (internal).
-  - `Layout/` — `ChartLayout.Compute` (spec + data → scene), hit-test index, describer.
-  - `ChartSpec.cs` — the serializable chart model.
+  - `Layout/` — `ChartLayout.Compute` (definition + data → scene), hit-test index, describer.
+  - `ChartDefinition.cs` — the serializable chart model.
 - `src/RioCharts.Blazor/` — `RioChart.razor` (+ `.cs`, `.css`, `.js`), `Series.cs`, `Annotations.cs`, `Rendering/` (SVG writer and scene renderer).
 - `src/RioCharts.Skia/` — server-side export: `ChartExport`, `SvgExporter`, `SkiaRenderer`, `SkiaFonts`/`SkiaTextMeasurer`, `ExportTheme`.
-- `src/RioCharts.AI/` — AI chart creation: `ChartTool` (create_chart as AIFunction), `RioChartsMcpTools` (MCP), `ChartRazor` (spec → Razor).
+- `src/RioCharts.AI/` — AI chart creation: `ChartTool` (create_chart as AIFunction), `RioChartsMcpTools` (MCP), `ChartRazor` (definition → Razor).
 - `src/RioCharts.Mcp/` — `riocharts-mcp`, a local stdio MCP server packed as a .NET tool: `ServerOptions` (arguments), `LocalServer` (tools: render_chart, list_datasets, get_chart_schema, get_razor, get_usage).
-- `src/RioCharts.Core/Specs/` — JSON specs: `ChartSpecJson` (tolerant parse, schema), `ChartSpecBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
+- `src/RioCharts.Core/Definitions/` — JSON definitions: `ChartDefinitionJson` (tolerant parse, schema), `ChartDefinitionBinder` (fields, transforms, auto type), `ChartDataset` (also `FromCsv`), `IChartDataSource`, `FolderDataSource` (CSV/JSON files).
 - `tests/RioCharts.Tests/` — xUnit tests (Core, AI, MCP, Skia).
 - `tests/RioCharts.Tests/Snapshots/` — visual snapshots (SVG) of reference charts from `SnapshotTests.cs`. A layout change that alters them fails with `name.received.svg` next to the snapshot: look at both, then accept with `RIOCHARTS_ACCEPT_SNAPSHOTS=1 dotnet test` and review the diff. New chart types get a reference chart there.
 - `tests/RioCharts.AotSmoke/` — console app published with native AOT (`.github/workflows/aot.yml`); exits 0 when its checks pass. Locally without a C++ linker: `dotnet publish tests/RioCharts.AotSmoke -c Release -f net10.0 -r win-x64 --self-contained -p:PublishAot=false -p:PublishTrimmed=true` (and `-f net11.0`).
 - `docs/llms/guide.md` — the guide for coding agents. `AgentGuideTests` (Blazor tests) builds `samples/RioCharts.Docs/wwwroot/llms-full.txt` from it, the example components in `tests/RioCharts.Blazor.Tests/Guide/` (compiled and rendered there) and the XML docs of every component parameter; RioCharts.AI embeds that file (`RioChartsUsage`, get_usage). A changed parameter or doc comment fails the test: accept with `RIOCHARTS_ACCEPT_SNAPSHOTS=1 dotnet test`. `llms.txt` next to it is written by hand.
 - `tests/RioCharts.Blazor.Tests/` — bUnit component tests for `<RioChart>`; `ChartTestBase` fakes the JS module in strict mode, so add a setup when the component calls a new JS function.
-- `benchmarks/RioCharts.Benchmarks/` — BenchmarkDotNet: layout (line, zoomed, bars, pie), items to columns, LTTB, SVG/PNG export, JSON spec parse/CSV/bind. Run in Release: `dotnet run -c Release --project benchmarks/RioCharts.Benchmarks -- --filter *Layout*` (`--job short` for a quick look). Compare before and after a change to a hot path; the baseline is in `benchmarks/README.md`.
+- `benchmarks/RioCharts.Benchmarks/` — BenchmarkDotNet: layout (line, zoomed, bars, pie), items to columns, LTTB, SVG/PNG export, JSON definition parse/CSV/bind. Run in Release: `dotnet run -c Release --project benchmarks/RioCharts.Benchmarks -- --filter *Layout*` (`--job short` for a quick look). Compare before and after a change to a hot path; the baseline is in `benchmarks/README.md`.
 - `samples/RioCharts.Demo/` — Blazor Server demo (http://localhost:5030).
 - `samples/RioCharts.Mcp.Sample/` — sample data (CSV/JSON) and agent config for trying `riocharts-mcp`; not a .NET project. Its `.mcp.json` applies only when an agent is opened in that folder.
 - `samples/RioCharts.Docs/` — docs site, Blazor WebAssembly (http://localhost:5031); `.github/workflows/docs.yml` publishes it to GitHub Pages. Add new features there with a live example.
@@ -60,7 +60,7 @@ not a reason to branch on the framework.
 ## Conventions
 
 - Core never emits SVG or references Blazor. It produces scene nodes; renderers convert them.
-- Series render nothing themselves; they register a `SeriesSpec` and `SeriesData` with the chart.
+- Series render nothing themselves; they register a `SeriesOptions` and `SeriesData` with the chart.
 - Selectors run once per data change, never per render. Never diff list contents on render.
 - Format every number written into SVG with `SvgWriter.N` (invariant culture). User-visible labels use the chart's culture.
 - Colors in the scene are theme tokens (`ThemeTokens`) or CSS colors; never hard-code theme colors in Core.
@@ -68,7 +68,7 @@ not a reason to branch on the framework.
 - Edge cases (empty, single point, equal values, gaps) must render a clean state, never throw.
 - Keep the JS module tiny: measurement and high-frequency interaction only.
 - Temperatures in examples are in °C.
-- Libraries are `IsAotCompatible`: keep the build free of IL2xxx/IL3xxx warnings. JSON goes through source-generated contexts (`ChartSpecJsonContext`, `ChartToolJsonContext`), never reflection. A new spec record type needs an entry in `ChartSpecJson.Factories`.
+- Libraries are `IsAotCompatible`: keep the build free of IL2xxx/IL3xxx warnings. JSON goes through source-generated contexts (`ChartDefinitionJsonContext`, `ChartToolJsonContext`), never reflection. A new definition record type needs an entry in `ChartDefinitionJson.Factories`.
 - JS interop arguments are primitives, `byte[]` or element/.NET references only: payloads are records in `Rendering/Interop.cs`, sent as source-generated UTF-8 JSON (`InteropJson.Bytes`) and read with `json()` in the JS module. Never pass anonymous or other objects (they break trimmed WebAssembly apps; a bUnit test checks).
 - Blazor features that need JS check `Live` (interactive and rendered interactively), not `Interactive` alone.
 - Text a chart writes itself (empty states, buttons, screen reader text) comes from `ChartTexts`, never a string literal; add a key with English and all built-in languages. Warnings and errors for developers stay English.

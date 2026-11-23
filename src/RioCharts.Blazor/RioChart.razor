@@ -57,10 +57,10 @@
             }
         </div>
     }
-    @if (SpecErrors.Count > 0)
+    @if (DefinitionErrors.Count > 0)
     {
         <ul class="rio-spec-errors" role="alert">
-            @foreach (var error in SpecErrors.Take(5))
+            @foreach (var error in DefinitionErrors.Take(5))
             {
                 <li><code>@error.Path</code> @error.Message</li>
             }

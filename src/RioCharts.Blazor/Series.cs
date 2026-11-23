@@ -6,7 +6,7 @@ namespace RioCharts.Blazor;
 
 /// <summary>
 /// Base for series components. A series renders nothing itself: it turns its parameters into
-/// a <see cref="SeriesSpec"/> and columnar <see cref="SeriesData"/> and registers with the chart.
+/// a <see cref="SeriesOptions"/> and columnar <see cref="SeriesData"/> and registers with the chart.
 /// Data is reprocessed only when <see cref="Items"/> or <see cref="Data"/> is a new reference or
 /// <see cref="DataVersion"/> changes; changing a list in place does not trigger an update.
 /// </summary>
@@ -84,7 +84,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     private IReadOnlyList<ColorBand>? _bands;
 
     // The same bands as last time keep their list, so a list written inline (new each render) does
-    // not change the spec and lay the chart out again. A few small records, not data.
+    // not change the definition and lay the chart out again. A few small records, not data.
     private IReadOnlyList<ColorBand>? StableBands()
     {
         if (ColorBands is null || _bands is null || !ColorBands.SequenceEqual(_bands))
@@ -143,9 +143,9 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     string? ISeriesSource.FormatTooltipValue(TooltipPointInfo point) =>
         TooltipValue?.Invoke(TooltipBuilder.Point<TItem>(point, this));
 
-    /// <summary>The series' spec from the current parameters; derived series add their own settings.</summary>
+    /// <summary>The series' options from the current parameters; derived series add their own settings.</summary>
     /// <param name="id">The id the chart assigned to the series.</param>
-    protected virtual SeriesSpec CreateSpec(string id) => new()
+    protected virtual SeriesOptions CreateOptions(string id) => new()
     {
         Id = id,
         Type = Type,
@@ -165,9 +165,9 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     IReadOnlyList<int> ISeriesSource.InputIndexes(int sourceIndex) =>
         _groups is null ? [sourceIndex] : sourceIndex >= 0 && sourceIndex < _groups.Count ? _groups[sourceIndex] : [];
 
-    internal SeriesSpec Spec { get; private set; } = new() { Id = "" };
+    internal SeriesOptions Spec { get; private set; } = new() { Id = "" };
 
-    SeriesSpec ISeriesSource.Spec => Spec;
+    SeriesOptions ISeriesSource.Spec => Spec;
 
     SeriesData ISeriesSource.Data
     {
@@ -252,7 +252,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             _lastAggregate = aggregateKey;
             _groups = null;
             var bucket = XBucket;
-            // Per bucket without an aggregate: the average, as in JSON specs.
+            // Per bucket without an aggregate: the average, as in JSON definitions.
             var aggregate = YAggregate ?? (Aggregate is { } a ? Aggregation.For(a, YValue)
                 : bucket is not null && YValue is not null ? Aggregation.For(Core.Aggregate.Average, YValue) : null);
             if (Data is not null)
@@ -291,7 +291,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             changed = true;
         }
 
-        var spec = CreateSpec(_id);
+        var spec = CreateOptions(_id);
         if (spec != Spec)
         {
             Spec = spec;
@@ -354,7 +354,7 @@ public sealed class LineSeries<TItem> : SeriesBase<TItem>
     private protected override TimeBucket? XBucket => Bucket;
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
 
 /// <summary>Area series, filled down to zero.</summary>
@@ -383,7 +383,7 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     private protected override TimeBucket? XBucket => Bucket;
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
 }
 
 /// <summary>
@@ -402,7 +402,7 @@ public sealed class ScatterSeries<TItem> : SeriesBase<TItem>
     protected override SeriesType Type => SeriesType.Scatter;
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { MarkerSize = MarkerSize, TrendLine = TrendLine };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { MarkerSize = MarkerSize, TrendLine = TrendLine };
 }
 
 /// <summary>
@@ -419,7 +419,7 @@ public sealed class HeatmapSeries<TItem> : SeriesBase<TItem>
     protected override SeriesType Type => SeriesType.Heatmap;
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Max = Max };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Max = Max };
 }
 
 /// <summary>
@@ -452,7 +452,7 @@ public sealed class RangeAreaSeries<TItem> : SeriesBase<TItem>
     }
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with { Curve = Curve };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Curve = Curve };
 
     private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
     {
@@ -683,7 +683,7 @@ public class PieSeries<TItem> : SeriesBase<TItem>
     protected override SeriesType Type => SeriesType.Pie;
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
     {
         InnerRadius = InnerRadius,
         StartAngle = StartAngle,
@@ -747,7 +747,7 @@ public sealed class TreemapSeries<TItem> : SeriesBase<TItem>
     private protected override object? DataSettings => (ParentValue is not null, PathSeparator);
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
     {
         PathSeparator = PathSeparator,
         GroupSmallSlices = GroupSmallItems,
@@ -807,7 +807,7 @@ public sealed class RadialBarSeries<TItem> : SeriesBase<TItem>
     protected override SeriesType Type => SeriesType.RadialBar;
 
     /// <inheritdoc />
-    protected override SeriesSpec CreateSpec(string id) => base.CreateSpec(id) with
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
     {
         Max = Max,
         InnerRadius = InnerRadius,

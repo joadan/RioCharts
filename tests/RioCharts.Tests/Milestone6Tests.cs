@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -21,11 +21,11 @@ public class Milestone6Tests
 
     private static readonly Dictionary<string, ChartDataset> Datasets = new() { ["weather"] = Weather };
 
-    private static SpecBindResult Bind(string json)
+    private static DefinitionBindResult Bind(string json)
     {
-        var parsed = ChartSpecJson.Parse(json);
+        var parsed = ChartDefinitionJson.Parse(json);
         Assert.True(parsed.Success, string.Join("; ", parsed.Errors));
-        return ChartSpecBinder.Bind(parsed.Spec!, Datasets);
+        return ChartDefinitionBinder.Bind(parsed.Definition!, Datasets);
     }
 
     // ---------- Parsing ----------
@@ -36,10 +36,10 @@ public class Milestone6Tests
         var result = Bind("""{ "dataset": "weather", "series": [{ "type": "line", "x": "timestamp", "y": "airTemp" }] }""");
 
         Assert.True(result.Success);
-        var series = Assert.Single(result.Spec.Series);
+        var series = Assert.Single(result.Definition.Series);
         Assert.Equal("Air temp", series.Name);
         Assert.Equal(48, result.Data[series.Id].Count);
-        var layout = ChartLayout.Compute(result.Spec, result.Data, new LayoutOptions { Culture = CultureInfo.InvariantCulture });
+        var layout = ChartLayout.Compute(result.Definition, result.Data, new LayoutOptions { Culture = CultureInfo.InvariantCulture });
         Assert.True(layout.HasData);
         Assert.Equal(XKind.Time, layout.XKind);
     }
@@ -47,7 +47,7 @@ public class Milestone6Tests
     [Fact]
     public void Parsing_is_tolerant_of_case_synonyms_unknown_fields_and_shapes()
     {
-        var parsed = ChartSpecJson.Parse("""
+        var parsed = ChartDefinitionJson.Parse("""
             {
               "Dataset": "weather", "comment": "ignored", // comments too
               "series": { "TYPE": "Doughnut", "x": "station", "y": "rain", "aggregate": "total" },
@@ -56,11 +56,11 @@ public class Milestone6Tests
             """);
 
         Assert.True(parsed.Success, string.Join("; ", parsed.Errors));
-        var s = Assert.Single(parsed.Spec!.Series);
+        var s = Assert.Single(parsed.Definition!.Series);
         Assert.Equal(SeriesType.Pie, s.Type);
         Assert.Equal(0.6, s.InnerRadius);
         Assert.Equal(Aggregate.Sum, s.Aggregate);
-        Assert.Equal(LegendPosition.Right, parsed.Spec.Legend.Position);
+        Assert.Equal(LegendPosition.Right, parsed.Definition.Legend.Position);
         Assert.Contains(parsed.Warnings, w => w.Contains("doughnut", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -68,11 +68,11 @@ public class Milestone6Tests
     [InlineData("""{ "series": [{ "type": "sankey", "x": "a", "y": "b" }] }""", "series[0].type", "valid: line, area, bar, scatter")]
     [InlineData("""{ "series": [{ "x": "a", "y": "b", "timeBucket": "fortnight" }] }""", "series[0].timeBucket", "hour")]
     [InlineData("""{ "legend": { "mode": "sometimes" } }""", "legend.mode", "auto, show, hide")]
-    [InlineData("""[1, 2]""", "$", "a spec is a JSON object")]
+    [InlineData("""[1, 2]""", "$", "a definition is a JSON object")]
     [InlineData("""{ "series": [ """, "$", "not valid JSON")]
     public void Invalid_specs_get_actionable_errors(string json, string path, string hint)
     {
-        var parsed = ChartSpecJson.Parse(json);
+        var parsed = ChartDefinitionJson.Parse(json);
 
         Assert.False(parsed.Success);
         var error = Assert.Single(parsed.Errors);
@@ -86,22 +86,22 @@ public class Milestone6Tests
         var series = string.Join(",", Enumerable.Range(0, 25).Select(i => $$"""{"x":"a","y":"b{{i}}"}"""));
         var rows = string.Join(",", Enumerable.Range(0, 1001).Select(i => $$"""{"a":{{i}}}"""));
 
-        Assert.Contains(ChartSpecJson.Parse($$"""{"series":[{{series}}]}""").Errors, e => e.Path == "series");
-        Assert.Contains(ChartSpecJson.Parse($$"""{"data":[{{rows}}],"series":[{"x":"a","y":"a"}]}""").Errors, e => e.Path == "data");
+        Assert.Contains(ChartDefinitionJson.Parse($$"""{"series":[{{series}}]}""").Errors, e => e.Path == "series");
+        Assert.Contains(ChartDefinitionJson.Parse($$"""{"data":[{{rows}}],"series":[{"x":"a","y":"a"}]}""").Errors, e => e.Path == "data");
     }
 
     [Fact]
     public void Specs_round_trip_compactly()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Title = "Rain",
             Dataset = "weather",
-            Series = [new SeriesSpec { Type = SeriesType.Bar, X = "timestamp", Y = "rain", TimeBucket = TimeBucket.Day, Aggregate = Aggregate.Sum }],
+            Series = [new SeriesOptions { Type = SeriesType.Bar, X = "timestamp", Y = "rain", TimeBucket = TimeBucket.Day, Aggregate = Aggregate.Sum }],
         };
 
-        var json = ChartSpecJson.Serialize(spec);
-        var back = ChartSpecJson.Parse(json).Spec!;
+        var json = ChartDefinitionJson.Serialize(spec);
+        var back = ChartDefinitionJson.Parse(json).Definition!;
 
         Assert.DoesNotContain("legend", json); // defaults are left out
         Assert.DoesNotContain("yAxes", json);
@@ -114,12 +114,12 @@ public class Milestone6Tests
     [Fact]
     public void Schema_describes_every_property_with_enums_as_strings()
     {
-        var schema = ChartSpecJson.Schema();
+        var schema = ChartDefinitionJson.Schema();
         var series = schema["properties"]!["series"]!;
         var item = series["items"]!;
         var type = item["properties"]!["type"]!;
 
-        Assert.Equal("RioCharts chart spec", (string?)schema["title"]);
+        Assert.Equal("RioCharts chart definition", (string?)schema["title"]);
         Assert.NotNull(series["description"]);
         Assert.Contains("auto", type["enum"]!.AsArray().Select(n => (string?)n));
         Assert.NotNull(type["description"]);
@@ -131,8 +131,8 @@ public class Milestone6Tests
     [Fact]
     public void Unknown_fields_and_datasets_list_what_is_available()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "weather", "series": [{ "x": "timestamp", "y": "airTemps" }, { "dataset": "nope", "x": "a", "y": "b" }] }""");
-        var result = ChartSpecBinder.Bind(parsed.Spec!, Datasets);
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "weather", "series": [{ "x": "timestamp", "y": "airTemps" }, { "dataset": "nope", "x": "a", "y": "b" }] }""");
+        var result = ChartDefinitionBinder.Bind(parsed.Definition!, Datasets);
 
         Assert.False(result.Success);
         var field = result.Errors.Single(e => e.Path == "series[0].y");
@@ -144,9 +144,9 @@ public class Milestone6Tests
     [Fact]
     public void Y_must_be_numeric()
     {
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "weather", "series": [{ "x": "timestamp", "y": "station" }] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "weather", "series": [{ "x": "timestamp", "y": "station" }] }""");
 
-        var error = Assert.Single(ChartSpecBinder.Bind(parsed.Spec!, Datasets).Errors);
+        var error = Assert.Single(ChartDefinitionBinder.Bind(parsed.Definition!, Datasets).Errors);
 
         Assert.Equal("series[0].y", error.Path);
         Assert.Contains("number fields: airTemp, rain", error.Message);
@@ -161,8 +161,8 @@ public class Milestone6Tests
             """);
 
         Assert.True(result.Success, string.Join("; ", result.Errors));
-        Assert.Equal(["Station 1", "Station 2"], result.Spec.Series.Select(s => s.Name));
-        var first = result.Data[result.Spec.Series[0].Id];
+        Assert.Equal(["Station 1", "Station 2"], result.Definition.Series.Select(s => s.Name));
+        var first = result.Data[result.Definition.Series[0].Id];
         Assert.Equal(2, first.Count); // two days
         // Station 1 has even hours; rain >= 20 keeps hours 10..46 → day 1: 10+12+...+22, day 2: 24+26+...+46 (+10 each)
         Assert.Equal(Enumerable.Range(10, 14).Where(h => h % 2 == 0).Sum(h => 10.0 + h), first.Y[0]);
@@ -177,7 +177,7 @@ public class Milestone6Tests
             """);
 
         Assert.True(result.Success, string.Join("; ", result.Errors));
-        var s = Assert.Single(result.Spec.Series);
+        var s = Assert.Single(result.Definition.Series);
         Assert.Equal(SeriesType.Pie, s.Type); // shares of 100: auto picks a donut
         Assert.Equal(0.6, s.InnerRadius);
         Assert.Contains(result.Warnings, w => w.StartsWith("series[0].x", StringComparison.Ordinal));
@@ -189,9 +189,9 @@ public class Milestone6Tests
         var line = Bind("""{ "dataset": "weather", "series": [{ "type": "auto", "x": "timestamp", "y": "airTemp" }] }""");
         var ranked = Bind("""{ "dataset": "weather", "series": [{ "type": "auto", "x": "station", "y": "rain", "aggregate": "max", "sort": "desc", "limit": 1 }] }""");
 
-        Assert.Equal(SeriesType.Line, line.Spec.Series[0].Type);
-        Assert.Equal(SeriesType.Bar, ranked.Spec.Series[0].Type);
-        var data = ranked.Data[ranked.Spec.Series[0].Id];
+        Assert.Equal(SeriesType.Line, line.Definition.Series[0].Type);
+        Assert.Equal(SeriesType.Bar, ranked.Definition.Series[0].Type);
+        var data = ranked.Data[ranked.Definition.Series[0].Id];
         Assert.Equal(["Station 2"], data.Categories);
         Assert.Equal(57, data.Y[0]);
     }
@@ -200,12 +200,12 @@ public class Milestone6Tests
     public async Task Binding_loads_datasets_from_a_data_source()
     {
         var source = new InMemoryDataSource([Weather]);
-        var spec = ChartSpecJson.Parse("""{ "dataset": "WEATHER", "series": [{ "x": "timestamp", "y": "rain", "aggregate": "count", "timeBucket": "day" }] }""").Spec!;
+        var spec = ChartDefinitionJson.Parse("""{ "dataset": "WEATHER", "series": [{ "x": "timestamp", "y": "rain", "aggregate": "count", "timeBucket": "day" }] }""").Definition!;
 
-        var result = await ChartSpecBinder.BindAsync(spec, source);
+        var result = await ChartDefinitionBinder.BindAsync(spec, source);
 
         Assert.True(result.Success, string.Join("; ", result.Errors));
-        Assert.Equal([24.0, 24.0], result.Data[result.Spec.Series[0].Id].Y);
+        Assert.Equal([24.0, 24.0], result.Data[result.Definition.Series[0].Id].Y);
     }
 
     [Fact]

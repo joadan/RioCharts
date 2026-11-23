@@ -17,7 +17,7 @@ public static partial class ChartLayout
     /// The polar pass: pie and donut rings (one ring per series, slices per category) or radial
     /// bars (one track per category). The legend lists categories; hiding one removes its slice.
     /// </summary>
-    private static ChartLayoutResult ComputePolar(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
+    private static ChartLayoutResult ComputePolar(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
     {
         var culture = options.Culture;
         var texts = options.Texts ?? ChartTexts.For(culture);

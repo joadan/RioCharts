@@ -4,11 +4,11 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
-/// <summary>Per-point colors (SeriesData.Colors, ColorValue on the components, "colorField" in specs).</summary>
+/// <summary>Per-point colors (SeriesData.Colors, ColorValue on the components, "colorField" in definitions).</summary>
 public class PointColorTests
 {
     private static readonly LayoutOptions Options = new() { Width = 600, Height = 300, Culture = CultureInfo.InvariantCulture };
@@ -27,7 +27,7 @@ public class PointColorTests
     }
 
     private static ChartLayoutResult Chart(SeriesType type, SeriesData data) =>
-        ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "s", Type = type }] }, new Dictionary<string, SeriesData> { ["s"] = data }, Options);
+        ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "s", Type = type }] }, new Dictionary<string, SeriesData> { ["s"] = data }, Options);
 
     // Orders per day; Thursday is over the limit.
     private static SeriesData Orders() => SeriesData.FromCategories(Days, [80.0, 95, 70, 130, 90]).WithColors([null, null, null, Late, null]);
@@ -46,7 +46,7 @@ public class PointColorTests
     [Fact]
     public void Horizontal_bars_scatter_and_lines_use_it()
     {
-        var horizontal = ChartLayout.Compute(new ChartSpec { Horizontal = true, Series = [new SeriesSpec { Id = "s", Type = SeriesType.Bar }] },
+        var horizontal = ChartLayout.Compute(new ChartDefinition { Horizontal = true, Series = [new SeriesOptions { Id = "s", Type = SeriesType.Bar }] },
             new Dictionary<string, SeriesData> { ["s"] = Orders() }, Options);
         var scatter = Chart(SeriesType.Scatter, SeriesData.FromColumns([1.0, 2, 3, 4], [5.0, 6, 7, 8], XKind.Numeric).WithColors([null, "#d6485a", null, "#d6485a"]));
         var line = Chart(SeriesType.Line, Orders());
@@ -103,12 +103,12 @@ public class PointColorTests
     {
         var rows = new[] { ("Mon", 80.0, ""), ("Thu", 70.0, Late), ("Thu", 60.0, "#000"), ("Fri", 90.0, "") }
             .Select(r => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["day"] = r.Item1, ["orders"] = r.Item2, ["status"] = r.Item3 });
-        var parsed = ChartSpecJson.Parse("""{ "dataset": "d", "series": [ { "type": "bar", "x": "day", "y": "orders", "aggregate": "sum", "colorField": "status" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "dataset": "d", "series": [ { "type": "bar", "x": "day", "y": "orders", "aggregate": "sum", "colorField": "status" } ] }""");
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset> { ["d"] = ChartDataset.FromRows("d", rows) });
 
         Assert.Empty(bound.Errors);
         Assert.Equal(["", Late, ""], bound.Data.Values.Single().Colors!.Select(c => c ?? ""));
-        Assert.Contains("ColorValue=\"r => r.Status\"", ChartRazor.FromSpec(parsed.Spec!, "Row", "rows"), StringComparison.Ordinal);
+        Assert.Contains("ColorValue=\"r => r.Status\"", ChartRazor.FromDefinition(parsed.Definition!, "Row", "rows"), StringComparison.Ordinal);
     }
 }

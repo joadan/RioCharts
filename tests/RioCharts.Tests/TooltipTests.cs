@@ -21,7 +21,7 @@ public class TooltipTests
     private sealed class FakeSeries(string id, SeriesData data, IReadOnlyList<Reading> items, Func<TooltipPoint<Reading>, string?>? tooltipValue)
         : ISeriesSource
     {
-        public SeriesSpec Spec { get; } = new() { Id = id, Name = id };
+        public SeriesOptions Spec { get; } = new() { Id = id, Name = id };
         public SeriesData Data { get; } = data;
         public object? ItemAt(int inputIndex) => inputIndex >= 0 && inputIndex < items.Count ? items[inputIndex] : null;
         public IReadOnlyList<int> InputIndexes(int sourceIndex) => [sourceIndex];
@@ -40,9 +40,9 @@ public class TooltipTests
             ["temp"] = new FakeSeries("temp", temp, Readings, tempValue),
             ["forecast"] = new FakeSeries("forecast", forecast, Readings, null),
         };
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "temp", Name = "Temperature" }, new SeriesSpec { Id = "forecast", Name = "Forecast" }],
+            Series = [new SeriesOptions { Id = "temp", Name = "Temperature" }, new SeriesOptions { Id = "forecast", Name = "Forecast" }],
         };
         var layout = ChartLayout.Compute(spec, data, new LayoutOptions { Culture = CultureInfo.InvariantCulture });
         return (layout, data, sources);
@@ -122,7 +122,7 @@ public class TooltipTests
         {
             ["energy"] = new FakeSeries("energy", shares, [], p => $"{p.X}: {p.Y} kWh"),
         };
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "energy", Type = SeriesType.Pie }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "energy", Type = SeriesType.Pie }] };
         var layout = ChartLayout.Compute(spec, data, new LayoutOptions { Culture = CultureInfo.InvariantCulture });
 
         var model = TooltipBuilder.Customize<Reading>(layout.Tooltip, data.GetValueOrDefault, sources.GetValueOrDefault, layout.Time, null);
@@ -142,13 +142,13 @@ public class TooltipTests
             ["forecast"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Forecast),
             ["bars"] = SeriesData.FromItems(Readings, r => r.Time, r => r.Temp),
         };
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Series =
             [
-                new SeriesSpec { Id = "outdoor" },
-                new SeriesSpec { Id = "forecast", Curve = CurveType.Step },
-                new SeriesSpec { Id = "bars", Type = SeriesType.Bar, Curve = CurveType.Step },
+                new SeriesOptions { Id = "outdoor" },
+                new SeriesOptions { Id = "forecast", Curve = CurveType.Step },
+                new SeriesOptions { Id = "bars", Type = SeriesType.Bar, Curve = CurveType.Step },
             ],
         };
 

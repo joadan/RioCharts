@@ -18,10 +18,10 @@ public class LayoutSharedWorkTests
     private static SeriesData Hourly(int n, Func<int, double> value) =>
         SeriesData.From(Enumerable.Range(0, n).Select(i => Start.AddHours(i)).ToArray(), Enumerable.Range(0, n).Select(value).ToArray());
 
-    private static ChartSpec TwoLines() => new()
+    private static ChartDefinition TwoLines() => new()
     {
         Title = "Weather stations",
-        Series = [new SeriesSpec { Id = "s", Name = "London" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+        Series = [new SeriesOptions { Id = "s", Name = "London" }, new SeriesOptions { Id = "e", Name = "Toronto" }],
     };
 
     [Fact]

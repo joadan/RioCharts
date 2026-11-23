@@ -41,7 +41,7 @@
     </ChildContent>
 </Example>
 
-<h2>In JSON specs</h2>
+<h2>In JSON definitions</h2>
 <p>
     <code>"type": "candlestick"</code> (also <code>"ohlc"</code>, <code>"candle"</code>) with a time <code>x</code>, <code>y</code> and a
     <code>timeBucket</code> makes candles from the rows' y values per bucket (a day when not set). With <code>open</code>, <code>high</code>
@@ -49,8 +49,8 @@
 </p>
 
 @code {
-    private static readonly AxisSpec Celsius = new() { Title = "°C" };
-    private static readonly AxisSpec PerMwh = new() { Title = "€/MWh" };
+    private static readonly AxisOptions Celsius = new() { Title = "°C" };
+    private static readonly AxisOptions PerMwh = new() { Title = "€/MWh" };
 
     private const string ReadingsCode = """
         <RioChart TItem="Reading" Items="readings" Zoomable="true">

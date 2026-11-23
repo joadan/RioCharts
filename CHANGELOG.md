@@ -5,23 +5,37 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
-- 100 % stacked charts: `AxisSpec.Stacking = StackMode.Percent` on the y axis stacks its bar,
+- **Breaking:** the chart model is now called a *chart definition*, and its parts are options.
+  Renamed: `ChartSpec` → `ChartDefinition`, `AxisSpec` → `AxisOptions`, `SeriesSpec` →
+  `SeriesOptions`, `LegendSpec` → `LegendOptions`, `TooltipSpec` → `TooltipOptions`,
+  `AnnotationSpec` → `Annotation`, `FilterSpec` → `Filter`, `ChartSpecJson` →
+  `ChartDefinitionJson`, `ChartSpecBinder` → `ChartDefinitionBinder`, `SpecParseResult` /
+  `SpecBindResult` / `SpecError` → `DefinitionParseResult` / `DefinitionBindResult` /
+  `DefinitionError` (their `Spec` property is now `Definition`), and the namespace
+  `RioCharts.Core.Specs` → `RioCharts.Core.Definitions`. On `<RioChart>`: `Spec` → `Definition`,
+  `SpecErrors` → `DefinitionErrors`, `GetSpec()` → `GetDefinition()`. `ChartRazor.FromSpec` →
+  `FromDefinition`; `ChartToolResult.Spec` → `Definition`; series and annotation components
+  override `CreateOptions` / `CreateAnnotation` instead of `CreateSpec`. The create_chart,
+  render_chart and get_razor tools take a `definition` argument instead of `spec`. The JSON
+  format itself is unchanged. The docs page moved to `/definitions` (`/specs` still works).
+
+- 100 % stacked charts: `AxisOptions.Stacking = StackMode.Percent` on the y axis stacks its bar,
   line and area series to 100 %, showing each series' share per x value (horizontal bars too).
   Series without a `Stack` name are stacked together; the axis is labelled in percent and the
-  tooltip shows the value and its share. JSON specs: `"y": {"stacking": "percent"}`, or the types
+  tooltip shows the value and its share. JSON definitions: `"y": {"stacking": "percent"}`, or the types
   `stackedBar100` and `stackedArea100`. Docs: a "100 % stacked bars" example on Bars and stacking.
 - Time buckets on line, area and bar series: `Bucket="TimeBucket.Day"` (or Minute, Hour, Week,
   Month, Quarter, Year) groups items with a time x into one point per bucket, at the bucket's
-  start, combined with `Aggregate` (average when not set, as in JSON specs) or `YAggregate`.
-  Before, only candlesticks and JSON specs had buckets; series components grouped only items with
+  start, combined with `Aggregate` (average when not set, as in JSON definitions) or `YAggregate`.
+  Before, only candlesticks and JSON definitions had buckets; series components grouped only items with
   exactly the same x. A click gives the bucket's items, as for other aggregated points.
 - `TimeBucket.Auto` picks the bucket from the data's time span: the one that gives closest to 50
   buckets (weeks for a year of daily data, hours for a day). It works for line, area, bar and
-  candlestick series and in JSON specs (`"timeBucket": "auto"`, which adds a warning saying what
+  candlestick series and in JSON definitions (`"timeBucket": "auto"`, which adds a warning saying what
   it chose). New in Core: `TimeBuckets.ForSpan`, `TimeBuckets.Resolve` and
   `SeriesData.FromTimeBuckets`; `TimeBuckets.Floor` now also takes a `DateOnly` and throws for
   `Auto` (resolve it first).
-- Spec → Razor writes `Bucket` and `Aggregate` for line, area and bar series with a `timeBucket`
+- Definition → Razor writes `Bucket` and `Aggregate` for line, area and bar series with a `timeBucket`
   instead of a comment to do it in the query.
 - Docs: a "Bars per time bucket" example on Bars and stacking, with a switch between hour, day and
   auto; `docs/chart-types.md` lists supported and candidate chart types.
@@ -29,7 +43,7 @@ changes are called out under **Breaking**.
 - **Breaking:** `LinearScale` (RioCharts.Core.Scales) is renamed `ContinuousScale`: it now also
   does log axes, so the old name no longer fit. Only the name changes (`ChartLayoutResult.XScale`,
   `YScale` and `YScales` have the new type); code that names the type needs the new name.
-- Logarithmic y axes: `AxisSpec.Scale = ScaleType.Log` (`"scale": "log"` in JSON specs) for data
+- Logarithmic y axes: `AxisOptions.Scale = ScaleType.Log` (`"scale": "log"` in JSON definitions) for data
   that spans several powers of ten. Ticks are powers of ten (with 2 and 5 between them for short
   ranges), labelled 0.01, 1, 1k, 5M. Bars and areas start at the bottom of the axis; values of zero
   or below are left out (gaps) with a warning. Draggable reference lines drag in log units. Not for

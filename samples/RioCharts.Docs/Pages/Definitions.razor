@@ -1,17 +1,18 @@
+@page "/definitions"
 @page "/specs"
-@using RioCharts.Core.Specs
+@using RioCharts.Core.Definitions
 
-<PageTitle>JSON specs · RioCharts</PageTitle>
+<PageTitle>Chart definitions · RioCharts</PageTitle>
 
-<h1>JSON specs</h1>
+<h1>Chart definitions</h1>
 <p class="lead">
-    A chart can also be a small JSON spec that names a dataset and its fields: easy for AI agents to write, easy to save. The same spec renders
-    with <code>&lt;RioChart Spec="spec" Datasets="datasets" /&gt;</code>, on the server, or through the <a href="ai">create_chart tool</a>.
-    Edit the spec below; it is parsed, validated and drawn in your browser.
+    A chart can also be a chart definition: a small JSON object that names a dataset and its fields: easy for AI agents to write, easy to save. The same definition renders
+    with <code>&lt;RioChart Definition="definition" Datasets="datasets" /&gt;</code>, on the server, or through the <a href="ai">create_chart tool</a>.
+    Edit the definition below; it is parsed, validated and drawn in your browser.
 </p>
 <p>
-    The spec holds no data itself: it refers to a <strong>dataset</strong> by name and to its <strong>fields</strong> (columns) by name.
-    Your app passes the datasets in (see <a href="specs#datasets">where the data comes from</a>), or a small spec carries its own rows in
+    The definition holds no data itself: it refers to a <strong>dataset</strong> by name and to its <strong>fields</strong> (columns) by name.
+    Your app passes the datasets in (see <a href="definitions#datasets">where the data comes from</a>), or a small definition carries its own rows in
     <code>"data"</code>. The panel above the editor shows the datasets this page has.
 </p>
 
@@ -32,14 +33,14 @@
             {
                 var active = ds.Name == shown.Name;
                 <button role="tab" aria-selected="@(active ? "true" : "false")" class="@(active ? "active" : null)" @onclick="() => _picked = ds.Name">
-                    <code>@ds.Name</code>@if (ds.Name == UsedDataset()) {<span class="spec-data-used">used by the spec</span>}
+                    <code>@ds.Name</code>@if (ds.Name == UsedDataset()) {<span class="spec-data-used">used by the definition</span>}
                 </button>
             }
         </div>
         <p class="spec-data-about">
             @if (shown.Name == "inline")
             {
-                <text>Rows written in the spec itself (<code>"data": [ ... ]</code>), for a few values an agent already has.</text>
+                <text>Rows written in the definition itself (<code>"data": [ ... ]</code>), for a few values an agent already has.</text>
             }
             else
             {
@@ -80,13 +81,13 @@
        highlighted copy sets the height, so they stay aligned without scroll syncing. *@
     <div class="spec-editor">
         <pre aria-hidden="true"><code>@((MarkupString)_highlighted)</code></pre>
-        <textarea spellcheck="false" aria-label="Chart spec (JSON)" @bind="_json" @bind:event="oninput" @bind:after="Render"></textarea>
+        <textarea spellcheck="false" aria-label="Chart definition (JSON)" @bind="_json" @bind:event="oninput" @bind:after="Render"></textarea>
     </div>
 
     <div class="example-live">
         @if (_spec is not null)
         {
-            <RioChart TItem="object" Spec="_spec" Datasets="SpecDatasets.ByName" Height="320" Zoomable="true" />
+            <RioChart TItem="object" Definition="_spec" Datasets="DefinitionDatasets.ByName" Height="320" Zoomable="true" />
         }
     </div>
 
@@ -112,11 +113,11 @@
 </div>
 </section>
 
-<h2>What a spec can say</h2>
+<h2>What a definition can say</h2>
 <table class="docs">
     <tr><th>Series option</th><th>Meaning</th></tr>
     <tr><td><code>type</code></td><td>line, area, bar, scatter, heatmap, rangeArea, boxPlot, candlestick, pie, radialBar, radar, treemap, or <code>auto</code> (time → line, categories → bar, shares of 100 % → donut). Synonyms such as column, doughnut, spline and spider are accepted.</td></tr>
-    <tr><td><code>dataset</code></td><td>Which dataset to read, on the chart or per series; leave it out when the spec has inline <code>data</code> rows.</td></tr>
+    <tr><td><code>dataset</code></td><td>Which dataset to read, on the chart or per series; leave it out when the definition has inline <code>data</code> rows.</td></tr>
     <tr><td><code>x</code>, <code>y</code></td><td>Field names in that dataset: x is the time, category or number along the axis, y the value.</td></tr>
     <tr><td><code>low</code>, <code>high</code>, <code>q1</code>, <code>q3</code>, <code>open</code>, <code>path</code></td><td>Extra fields some types read: a range area's low values; a box plot's precomputed quartiles and whiskers; a candlestick's open, high and low; a treemap's group fields (<code>"path": ["region", "country"]</code>).</td></tr>
     <tr><td><code>colorBands</code></td><td>Colors by value: <code>[{ "above": 120, "color": "--rio-negative" }]</code>; a line changes color where it crosses into a band, bars and points take their band's color.</td></tr>
@@ -128,20 +129,20 @@
 </table>
 <p>
     Everything else (axes, annotations, legend, time zone...) is the same model as the components. Errors name the path and list what is valid,
-    e.g. <code>series[0].y: field 'visits' not found in 'shop'; available: timestamp (time), channel (text), ...</code>, so an agent can fix the spec and try again.
-    <code>ChartSpecJson.Schema()</code> returns the JSON schema with a description of every option.
+    e.g. <code>series[0].y: field 'visits' not found in 'shop'; available: timestamp (time), channel (text), ...</code>, so an agent can fix the definition and try again.
+    <code>ChartDefinitionJson.Schema()</code> returns the JSON schema with a description of every option.
 </p>
 
 <h2 id="datasets">Where the data comes from</h2>
 <p>
     A dataset is a named table: one value per row for each field. Field types (time, number, text) are read from the values, and an
     optional description tells an agent what the data means. Build them from your own rows, from CSV, or let an
-    <code>IChartDataSource</code> load them when a spec asks (e.g. <code>FolderDataSource</code> for a folder of CSV and JSON files).
+    <code>IChartDataSource</code> load them when a definition asks (e.g. <code>FolderDataSource</code> for a folder of CSV and JSON files).
 </p>
 <CodeBlock Language="csharp" Code="@DatasetsCode" />
 <CodeBlock Language="razor" Code="@ChartCode" />
 
-<h3>The spec as read</h3>
+<h3>The definition as read</h3>
 @if (_normalized is not null)
 {
     <CodeBlock Language="json" Code="@_normalized" />
@@ -226,15 +227,15 @@
         """;
 
     private const string ChartCode = """
-        <RioChart Spec="spec" Datasets="datasets" />
+        <RioChart Definition="definition" Datasets="datasets" />
         """;
 
     private string? _picked;
 
-    /// <summary>The playground's datasets, plus the spec's inline rows when it has some.</summary>
+    /// <summary>The playground's datasets, plus the definition's inline rows when it has some.</summary>
     private IEnumerable<ChartDataset> Datasets()
     {
-        foreach (var ds in SpecDatasets.ByName.Values)
+        foreach (var ds in DefinitionDatasets.ByName.Values)
         {
             yield return ds;
         }
@@ -245,7 +246,7 @@
         }
     }
 
-    /// <summary>The dataset the spec reads (its own, its first series', or its inline rows).</summary>
+    /// <summary>The dataset the definition reads (its own, its first series', or its inline rows).</summary>
     private string? UsedDataset() =>
         _spec?.Data is { Count: > 0 } ? "inline" : _spec?.Dataset ?? _spec?.Series.Select(s => s.Dataset).FirstOrDefault(d => d is not null);
 
@@ -272,7 +273,7 @@
 
     private string _json = "";
     private string _highlighted = "";
-    private ChartSpec? _spec;
+    private ChartDefinition? _spec;
     private string? _normalized;
     private List<string> _errors = [];
     private List<string> _warnings = [];
@@ -290,14 +291,14 @@
     {
         // The trailing space keeps a final empty line as tall as the textarea's.
         _highlighted = CodeHighlighter.ToHtml(_json, "json") + " ";
-        var parsed = ChartSpecJson.Parse(_json);
+        var parsed = ChartDefinitionJson.Parse(_json);
         _errors = parsed.Errors.Select(e => e.ToString()).ToList();
         _warnings = [.. parsed.Warnings];
-        _spec = parsed.Spec;
-        _normalized = _spec is null ? null : ChartSpecJson.Serialize(_spec);
+        _spec = parsed.Definition;
+        _normalized = _spec is null ? null : ChartDefinitionJson.Serialize(_spec);
         if (_spec is not null)
         {
-            var bound = ChartSpecBinder.Bind(_spec, SpecDatasets.ByName);
+            var bound = ChartDefinitionBinder.Bind(_spec, DefinitionDatasets.ByName);
             _errors.AddRange(bound.Errors.Select(e => e.ToString()));
             _warnings.AddRange(bound.Warnings);
         }

@@ -189,7 +189,7 @@ public partial class RioChart<TItem>
     {
         range = _selectedRange is null ? null : ToRange(_selectedRange);
         points = null;
-        if (range is not null || _rangeItemsPending || _selected.Count == 0 || Spec is not null)
+        if (range is not null || _rangeItemsPending || _selected.Count == 0 || Definition is not null)
         {
             return;
         }
@@ -229,7 +229,7 @@ public partial class RioChart<TItem>
     {
         var items = new List<TItem>();
         var seen = new HashSet<TItem>();
-        if (Spec is not null)
+        if (Definition is not null)
         {
             return items;
         }

@@ -112,7 +112,7 @@ public sealed class ChartLayoutResult
     /// <summary>The legend items, in order.</summary>
     public required IReadOnlyList<LegendEntry> Legend { get; init; }
 
-    /// <summary>Problems found in the spec or data, for developers (English).</summary>
+    /// <summary>Problems found in the definition or data, for developers (English).</summary>
     public required IReadOnlyList<string> Warnings { get; init; }
 
     /// <summary>The kind of x axis used.</summary>
@@ -169,7 +169,7 @@ public static partial class ChartLayout
 
     private sealed class Resolved
     {
-        public required SeriesSpec Spec { get; init; }
+        public required SeriesOptions Spec { get; init; }
         public required SeriesData Data { get; init; }
         public required int ColorIndex { get; init; }
         public required string Color { get; init; }
@@ -198,7 +198,7 @@ public static partial class ChartLayout
     /// <param name="spec">The chart.</param>
     /// <param name="data">Data per series id.</param>
     /// <param name="options">Size, fonts and culture; null for the defaults.</param>
-    public static ChartLayoutResult Compute(ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, LayoutOptions? options = null)
+    public static ChartLayoutResult Compute(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, LayoutOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(spec);
         options ??= new LayoutOptions();
@@ -249,7 +249,7 @@ public static partial class ChartLayout
             };
             if (s.Type == SeriesType.RangeArea && d.Low is null && d.Count > 0)
             {
-                warnings.Add($"series '{s.Id}': a range area needs low values (LowValue, or \"low\" in a spec); nothing is drawn.");
+                warnings.Add($"series '{s.Id}': a range area needs low values (LowValue, or \"low\" in a definition); nothing is drawn.");
             }
 
             if (s.Type == SeriesType.Candlestick && d.Candles is null && d.Count > 0)
@@ -266,7 +266,7 @@ public static partial class ChartLayout
             r.StackGroup = StackGroupOf(r, i, warnings);
             if ((d.Kind == XKind.Category || r.Type.UsesSlots) && s.Type != SeriesType.Treemap && RepeatsX(d) is { } repeated)
             {
-                warnings.Add($"series '{s.Id}': x value {repeated} appears more than once; the points are drawn on top of each other. Combine them with an aggregate (Aggregate or YAggregate on a series component, 'aggregate' in a spec).");
+                warnings.Add($"series '{s.Id}': x value {repeated} appears more than once; the points are drawn on top of each other. Combine them with an aggregate (Aggregate or YAggregate on a series component, 'aggregate' in a definition).");
             }
 
             resolved.Add(r);
@@ -1111,7 +1111,7 @@ public static partial class ChartLayout
         return true;
     }
 
-    private static (double Min, double Max, double BarSpacing) XExtent(List<Resolved> series, AxisSpec axis, XKind kind, bool hasBars,
+    private static (double Min, double Max, double BarSpacing) XExtent(List<Resolved> series, AxisOptions axis, XKind kind, bool hasBars,
         IEnumerable<ResolvedAnnotation> annotations)
     {
         double min = double.PositiveInfinity, max = double.NegativeInfinity;

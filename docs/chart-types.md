@@ -21,9 +21,9 @@ on what Excel and the common chart libraries offer and what dashboards and repor
 - **Medium**: a new series type that reuses existing scales, layout and hit-testing.
 - **Large**: a new layout, coordinate system or data model.
 
-**Complexity** is what it adds for good: to the public API (components, parameters, spec
+**Complexity** is what it adds for good: to the public API (components, parameters, definition
 fields), to the concepts a user has to learn, and to code that other features must keep working
-with (stacking, zoom, tooltips, keyboard navigation, the describer, export, the AI spec):
+with (stacking, zoom, tooltips, keyboard navigation, the describer, export, the AI definition):
 - **Low**: a few parameters; contained in its own series type.
 - **Medium**: a new concept or data shape, or options that several series types must support.
 - **High**: a new data model or layout that other features must special-case.
@@ -35,7 +35,7 @@ Rules of thumb:
 
 ## Supported
 
-| Type | Series / spec type | Notes |
+| Type | Series / definition type | Notes |
 |---|---|---|
 | Line | `LineSeries` / `line` | Linear, monotone and step curves. Also `spline`. |
 | Area | `AreaSeries` / `area` | Stacking groups, 100 % stacked. |
@@ -46,7 +46,7 @@ Rules of thumb:
 | Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. |
 | Candlestick | `CandlestickSeries` / `candlestick` | OHLC. |
 | Pie / donut | `PieSeries`, `DonutSeries` / `pie` | A donut is a pie with an inner radius. |
-| Radial bar | `RadialBarSeries` / `radialBar` | The spec parser also accepts `gauge` as an alias for this. |
+| Radial bar | `RadialBarSeries` / `radialBar` | The definition parser also accepts `gauge` as an alias for this. |
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
 | Sparkline | compact mode on any chart | Not a series type. |
@@ -55,7 +55,7 @@ Rules of thumb:
 
 | Type | Status | Popularity | Effort | Complexity | What it's for | Notes / why not yet |
 |---|---|---|---|---|---|---|
-| Histogram | Candidate | High | Medium | Medium | The distribution of raw values | Mostly a binning transform (Core and `ChartSpecBinder`) plus bars without gaps. Adds bin options and a numeric-bin axis concept. |
+| Histogram | Candidate | High | Medium | Medium | The distribution of raw values | Mostly a binning transform (Core and `ChartDefinitionBinder`) plus bars without gaps. Adds bin options and a numeric-bin axis concept. |
 | Waterfall | Candidate | Medium–High | Medium | Low | How a start value becomes an end value (budget, result per month) | Stacked bars with an invisible base, plus total bars and connector lines. Uses the positive/negative theme tokens. Contained in one series type. |
 | Bubble | Candidate | Medium | Small | Low | Scatter with a third measure | A size column on a sqrt scale on `ScatterSeries`; needs a size legend and overlap handling (draw large first). |
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |

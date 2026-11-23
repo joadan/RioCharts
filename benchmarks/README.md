@@ -1,6 +1,6 @@
 # RioCharts benchmarks
 
-BenchmarkDotNet benchmarks of the public APIs: Core layout, data and spec work, and Skia export.
+BenchmarkDotNet benchmarks of the public APIs: Core layout, data and definition work, and Skia export.
 The Blazor render tree and the JS module are not covered.
 
 ```
@@ -18,7 +18,7 @@ result you want to rely on.
 | `CategoryLayoutBenchmarks` | Grouped and stacked bars (3 × 30 categories), a pie with data labels |
 | `DataBenchmarks` | `SeriesData.FromItems` (what a series does when its items change), LTTB to 1,600 points |
 | `ExportBenchmarks` | `ChartExport`: scene to SVG, spec to SVG, spec to PNG (800 × 400, scale 1) |
-| `SpecBenchmarks` | `ChartSpecJson.Parse`, `ChartDataset.FromCsv`, `ChartSpecBinder.Bind` (group by, day buckets, average) |
+| `SpecBenchmarks` | `ChartDefinitionJson.Parse`, `ChartDataset.FromCsv`, `ChartDefinitionBinder.Bind` (group by, day buckets, average) |
 
 ## Baseline
 

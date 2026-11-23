@@ -13,7 +13,7 @@ public sealed record ServerOptions
         Usage: riocharts-mcp [options]
 
           --data <folder>     CSV and JSON files to offer as datasets (one per file). Default: none;
-                              the agent puts small data inline in the spec.
+                              the agent puts small data inline in the definition.
           --out <folder>      Where images are saved. Default: ./charts
           --width <px>        Default image width. Default: 800
           --height <px>       Default image height. Default: 400

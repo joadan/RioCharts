@@ -141,10 +141,10 @@ public partial class RioChart<TItem>
     public string ExportCsv(CsvOptions? options = null)
     {
         EnsureLayout();
-        var series = CurrentSpec().Series
+        var series = CurrentDefinition().Series
             .Select(s => (s.DisplayName, DataOf(s.Id) ?? SeriesData.Empty))
             .ToList();
-        return ChartCsv.Write(series, options ?? new CsvOptions { XHeader = CurrentSpec().X.Title ?? "x" });
+        return ChartCsv.Write(series, options ?? new CsvOptions { XHeader = CurrentDefinition().X.Title ?? "x" });
     }
 
     /// <summary>

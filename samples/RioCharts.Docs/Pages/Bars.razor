@@ -31,7 +31,7 @@
         <p>
             <code>Stacking = StackMode.Percent</code> on the y axis stacks its bar, line and area series to 100 %, so each
             month shows the product groups' shares. Series without a <code>Stack</code> name are stacked together. The tooltip
-            shows the value and its share; hide a series in the legend and the others fill its share. In JSON specs:
+            shows the value and its share; hide a series in the legend and the others fill its share. In JSON definitions:
             <code>"y": { "stacking": "percent" }</code> or the type <code>"stackedBar100"</code>.
         </p>
     </Description>
@@ -70,7 +70,7 @@
             <code>Bucket</code> groups items with a time x per minute, hour, day, week, month, quarter or year (on their wall-clock
             time) and draws one bar at the start of each bucket, combined with <code>Aggregate</code> (the average when not set).
             <code>TimeBucket.Auto</code> picks the bucket from the data's time span, aiming for about 50 bars: hours for these two
-            days of revenue, weeks for a year. Lines and areas take <code>Bucket</code> too. In JSON specs:
+            days of revenue, weeks for a year. Lines and areas take <code>Bucket</code> too. In JSON definitions:
             <code>"timeBucket": "auto"</code>.
         </p>
     </Description>
@@ -102,7 +102,7 @@
         <p>
             <code>Horizontal="true"</code> turns the bars sideways: categories down the side, first on top, so a sorted list reads as a
             ranking and long names have room (very long ones are shortened, the tooltip has them in full). <code>YAxis</code> formats the
-            values; reference lines such as a target are drawn across the rows. In a JSON spec: <code>"type": "horizontalBar"</code> or
+            values; reference lines such as a target are drawn across the rows. In a JSON definition: <code>"type": "horizontalBar"</code> or
             <code>"horizontal": true</code>.
         </p>
     </Description>
@@ -121,7 +121,7 @@
             the rising one. Return a theme token (<code>"--rio-negative"</code>, <code>"--rio-series-3"</code>: they follow light and dark
             themes) or any CSS color, and <code>null</code> to keep the series color. It works on every series: bars, scatter markers, pie
             slices, radial bars and treemap items take the color, lines and areas mark the point with a dot. Aggregated points take their
-            first item's color. In JSON specs, <code>"colorField"</code> names the field that holds the colors.
+            first item's color. In JSON definitions, <code>"colorField"</code> names the field that holds the colors.
         </p>
         <p>Color should not be the only signal: here the target line and the tooltip say it too.</p>
     </Description>
@@ -161,10 +161,10 @@
 </Example>
 
 @code {
-    private static readonly AxisSpec OrdersAxis = new() { Title = "Orders per day" };
-    private static readonly AxisSpec KiloEuros = new() { Title = "k€" };
-    private static readonly AxisSpec PercentAxis = new() { Stacking = StackMode.Percent };
-    private static readonly TooltipSpec _single = new() { Shared = false };
+    private static readonly AxisOptions OrdersAxis = new() { Title = "Orders per day" };
+    private static readonly AxisOptions KiloEuros = new() { Title = "k€" };
+    private static readonly AxisOptions PercentAxis = new() { Stacking = StackMode.Percent };
+    private static readonly TooltipOptions _single = new() { Shared = false };
     private static readonly List<Share> _ranking = [.. CategoryRevenue.OrderByDescending(s => s.Value)];
     private PointClickEventArgs<Ticket>? _tickets;
     private static readonly TimeBucket[] Buckets = [TimeBucket.Hour, TimeBucket.Day, TimeBucket.Auto];
@@ -187,7 +187,7 @@
         """;
 
     private const string PercentCode = """
-        <RioChart TItem="Monthly" YAxis="@(new AxisSpec { Stacking = StackMode.Percent })">
+        <RioChart TItem="Monthly" YAxis="@(new AxisOptions { Stacking = StackMode.Percent })">
             <BarSeries Items="mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Format="0 k€" />
             <BarSeries Items="mix" Name="Clothing" XValue="m => m.Month" YValue="m => m.Clothing" Format="0 k€" />
             <BarSeries Items="mix" Name="Gear" XValue="m => m.Month" YValue="m => m.Gear" Format="0 k€" />
@@ -217,7 +217,7 @@
         """;
 
     private const string HorizontalCode = """
-        <RioChart Items="categories.OrderByDescending(c => c.Revenue)" Horizontal="true" YAxis="@(new AxisSpec { Title = "k€" })"
+        <RioChart Items="categories.OrderByDescending(c => c.Revenue)" Horizontal="true" YAxis="@(new AxisOptions { Title = "k€" })"
                   Title="Revenue per category, this year">
             <BarSeries Name="Revenue" XValue="c => c.Name" YValue="c => c.Revenue" Format="0 k€" DataLabels="true" />
             <ReferenceLine Value="200" Label="Target" />
@@ -233,14 +233,14 @@
         """;
 
     private const string NegativeCode = """
-        <RioChart Items="monthlyResult" YAxis="@(new AxisSpec { Title = "k€" })">
+        <RioChart Items="monthlyResult" YAxis="@(new AxisOptions { Title = "k€" })">
             <BarSeries Name="Result" XValue="m => m.Name" YValue="m => m.Value" Format="0 k€" DataLabels="true"
                        ColorValue="@(m => m.Value < 0 ? "--rio-negative" : null)" />
         </RioChart>
         """;
 
     private const string SingleCode = """
-        <RioChart TItem="Sales" Tooltip="new TooltipSpec { Shared = false }">
+        <RioChart TItem="Sales" Tooltip="new TooltipOptions { Shared = false }">
             <BarSeries ... DataLabels="true" />
         </RioChart>
         """;

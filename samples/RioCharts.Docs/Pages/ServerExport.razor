@@ -25,17 +25,17 @@
 </table>
 
 <div class="callout">
-    Charts made with components can be exported too: <code>ChartExport.ToPng(chart.Layout.Scene)</code>, or serialize <code>chart.GetSpec()</code> and render it later.
+    Charts made with components can be exported too: <code>ChartExport.ToPng(chart.Layout.Scene)</code>, or serialize <code>chart.GetDefinition()</code> and render it later.
 </div>
 
 @code {
     private const string Code = """
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Title = "Orders per day",
-            Y = new AxisSpec { Title = "Orders" },
-            Series = [new SeriesSpec { Id = "orders", Name = "Orders", Curve = CurveType.Monotone }],
-            Annotations = [new AnnotationSpec { Value = 250, Label = "Target" }],
+            Y = new AxisOptions { Title = "Orders" },
+            Series = [new SeriesOptions { Id = "orders", Name = "Orders", Curve = CurveType.Monotone }],
+            Annotations = [new Annotation { Value = 250, Label = "Target" }],
         };
         var data = new Dictionary<string, SeriesData> { ["orders"] = SeriesData.From(days, orders) };
 

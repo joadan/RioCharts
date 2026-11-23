@@ -4,10 +4,10 @@ using System.Text.Json.Serialization;
 namespace RioCharts.Core;
 
 /// <summary>
-/// The chart model. Plain, serializable data: Razor components and (later) JSON specs both
-/// compile to this. Data is not part of the spec; it is passed separately by series id.
+/// The chart model. Plain, serializable data: Razor components and (later) JSON definitions both
+/// compile to this. Data is not part of the definition; it is passed separately by series id.
 /// </summary>
-public sealed record ChartSpec
+public sealed record ChartDefinition
 {
     /// <summary>Optional chart title.</summary>
     [Description("Optional chart title.")]
@@ -27,31 +27,31 @@ public sealed record ChartSpec
 
     /// <summary>Horizontal axis.</summary>
     [Description("Horizontal axis.")]
-    public AxisSpec X { get; init; } = new();
+    public AxisOptions X { get; init; } = new();
 
     /// <summary>Primary vertical axis (id "y" unless set). Drawn on the left and owns the grid lines.</summary>
     [Description("Primary vertical axis (id \"y\" unless set). Drawn on the left and owns the grid lines.")]
-    public AxisSpec Y { get; init; } = new();
+    public AxisOptions Y { get; init; } = new();
 
     /// <summary>Additional vertical axes, e.g. a second unit. Drawn on the right unless Position is Left. Series bind to them with yAxisId.</summary>
     [Description("Additional vertical axes, e.g. a second unit. Drawn on the right unless Position is Left. Series bind to them with yAxisId.")]
-    public IReadOnlyList<AxisSpec> YAxes { get; init; } = [];
+    public IReadOnlyList<AxisOptions> YAxes { get; init; } = [];
 
     /// <summary>Legend settings. By default it is shown only when there is more than one series.</summary>
     [Description("Legend settings. By default it is shown only when there is more than one series.")]
-    public LegendSpec Legend { get; init; } = new();
+    public LegendOptions Legend { get; init; } = new();
 
     /// <summary>Tooltip settings. On by default, with one tooltip per x position across series.</summary>
     [Description("Tooltip settings. On by default, with one tooltip per x position across series.")]
-    public TooltipSpec Tooltip { get; init; } = new();
+    public TooltipOptions Tooltip { get; init; } = new();
 
     /// <summary>Series to draw, in order. Colors are assigned from the palette in this order.</summary>
     [Description("Series to draw, in order. Colors are assigned from the palette in this order.")]
-    public IReadOnlyList<SeriesSpec> Series { get; init; } = [];
+    public IReadOnlyList<SeriesOptions> Series { get; init; } = [];
 
     /// <summary>Reference lines and bands, e.g. a target or an incident period.</summary>
     [Description("Reference lines and bands, e.g. a target or an incident period.")]
-    public IReadOnlyList<AnnotationSpec> Annotations { get; init; } = [];
+    public IReadOnlyList<Annotation> Annotations { get; init; } = [];
 
     /// <summary>Display time zone: "UTC", "local" (the viewer's zone) or an IANA id such as "Europe/Stockholm". Null shows times as given. Times are then plotted on instants and labelled in this zone.</summary>
     [Description("Display time zone: \"UTC\", \"local\" (the viewer's zone) or an IANA id such as \"Europe/Stockholm\". Null shows times as given. Times are then plotted on instants and labelled in this zone.")]
@@ -71,7 +71,7 @@ public sealed record ChartSpec
 }
 
 /// <summary>Settings for one axis: title, range, scale, label format and grid lines.</summary>
-public sealed record AxisSpec
+public sealed record AxisOptions
 {
     /// <summary>Axis id that series and annotations refer to (vertical axes only). The primary vertical axis defaults to "y".</summary>
     [Description("Axis id that series and annotations refer to (vertical axes only). The primary vertical axis defaults to \"y\".")]
@@ -114,7 +114,7 @@ public sealed record AxisSpec
 }
 
 /// <summary>Legend settings: when to show it and where.</summary>
-public sealed record LegendSpec
+public sealed record LegendOptions
 {
     /// <summary>Auto shows the legend only when there is more than one series.</summary>
     [Description("Auto shows the legend only when there is more than one series.")]
@@ -125,7 +125,7 @@ public sealed record LegendSpec
 }
 
 /// <summary>Tooltip settings.</summary>
-public sealed record TooltipSpec
+public sealed record TooltipOptions
 {
     /// <summary>Show a tooltip and crosshair when hovering the plot.</summary>
     [Description("Show a tooltip and crosshair when hovering the plot.")]
@@ -137,12 +137,12 @@ public sealed record TooltipSpec
 }
 
 /// <summary>
-/// One series: its type, where its data comes from (fields and transforms in JSON specs) and how it looks.
+/// One series: its type, where its data comes from (fields and transforms in JSON definitions) and how it looks.
 /// </summary>
-public sealed record SeriesSpec
+public sealed record SeriesOptions
 {
-    /// <summary>Unique id of the series. Optional in JSON specs (generated from the y field).</summary>
-    [Description("Unique id of the series. Optional in JSON specs (generated from the y field).")]
+    /// <summary>Unique id of the series. Optional in JSON definitions (generated from the y field).</summary>
+    [Description("Unique id of the series. Optional in JSON definitions (generated from the y field).")]
     public string Id { get; init; } = "";
 
     /// <summary>Chart type: line, area, bar, pie (donut with innerRadius), radialBar, or auto to pick from the data.</summary>
@@ -163,7 +163,7 @@ public sealed record SeriesSpec
 
     /// <summary>Keep only rows that match all of these conditions.</summary>
     [Description("Keep only rows that match all of these conditions.")]
-    public IReadOnlyList<FilterSpec>? Filter { get; init; }
+    public IReadOnlyList<Filter>? Filter { get; init; }
 
     /// <summary>Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span) and aggregate y per bucket.</summary>
     [Description("Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span) and aggregate y per bucket.")]
@@ -302,7 +302,7 @@ public sealed record SeriesSpec
 /// A reference line or band. Values are in data units of the axis: numbers, times
 /// (DateTime, DateTimeOffset, DateOnly or an ISO 8601 string) or category names.
 /// </summary>
-public sealed record AnnotationSpec
+public sealed record Annotation
 {
     /// <summary>Optional id, reported in click events.</summary>
     [Description("Optional id, reported in click events.")]
@@ -385,7 +385,7 @@ public enum SeriesType
     /// <summary>A bar per point, for comparing categories (or time buckets).</summary>
     Bar,
 
-    /// <summary>Slices of a circle, for shares of a whole; a donut with <see cref="SeriesSpec.InnerRadius"/>.</summary>
+    /// <summary>Slices of a circle, for shares of a whole; a donut with <see cref="SeriesOptions.InnerRadius"/>.</summary>
     Pie,
 
     /// <summary>A circular bar per category, each on its own track.</summary>
@@ -412,7 +412,7 @@ public enum SeriesType
     /// <summary>Rectangles sized by value, nested by group (a path such as "Europe/Sweden/Stockholm"), for how a total splits into many parts.</summary>
     Treemap,
 
-    /// <summary>JSON specs: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
+    /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,
 }
 
@@ -521,13 +521,13 @@ public enum LegendPosition
 [JsonConverter(typeof(JsonStringEnumConverter<AnnotationType>))]
 public enum AnnotationType
 {
-    /// <summary>A reference line at <see cref="AnnotationSpec.Value"/> (e.g. a sales target).</summary>
+    /// <summary>A reference line at <see cref="Annotation.Value"/> (e.g. a sales target).</summary>
     Line,
 
-    /// <summary>A shaded band from <see cref="AnnotationSpec.From"/> to <see cref="AnnotationSpec.To"/> (e.g. a campaign period).</summary>
+    /// <summary>A shaded band from <see cref="Annotation.From"/> to <see cref="Annotation.To"/> (e.g. a campaign period).</summary>
     Band,
 
-    /// <summary>A marker at <see cref="AnnotationSpec.X"/>, <see cref="AnnotationSpec.Y"/>.</summary>
+    /// <summary>A marker at <see cref="Annotation.X"/>, <see cref="Annotation.Y"/>.</summary>
     Point,
 
     /// <summary>A point marker with its label in a text box offset from the point.</summary>
@@ -590,7 +590,7 @@ public sealed record ColorBand
 }
 
 /// <summary>A condition on a field, e.g. { "field": "channel", "op": "eq", "value": "Web" }.</summary>
-public sealed record FilterSpec
+public sealed record Filter
 {
     /// <summary>Field name.</summary>
     [Description("Field name.")]
@@ -605,7 +605,7 @@ public sealed record FilterSpec
     public object? Value { get; init; }
 }
 
-/// <summary>Comparison of a <see cref="FilterSpec"/>.</summary>
+/// <summary>Comparison of a <see cref="Filter"/>.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<FilterOp>))]
 public enum FilterOp
 {

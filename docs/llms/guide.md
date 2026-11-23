@@ -33,14 +33,14 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - `Items` goes on the chart (shared by all series) or on each series. `TItem` is inferred from `Items`; set `TItem` on `<RioChart>` when only the series have `Items` or when the chart has event handlers (`OnPointClick`, ...).
 - `XValue` returns the x value: `DateTime`/`DateTimeOffset` give a time axis, numbers a linear axis, strings a category axis (categories keep the order of the items).
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
-- Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisSpec { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON specs). Values of zero or below are left out.
+- Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). No need to group in the query.
 - Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
 - Size: the chart fills its container's width; `Height` is 300 px by default.
 - Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture).
 - Colors: CSS colors or theme variables, e.g. `Color="#2563eb"` or `Color="--rio-negative"`. The palette and light/dark theme come from CSS variables (`--rio-series-1` ... `--rio-series-10`, `--rio-text`, ...).
-- Namespaces beyond the two usings: `RioCharts.Core.Data` (`SeriesData`, `SeriesBuffer`), `RioCharts.Core.Specs` (`ChartDataset`, `ChartSpecJson`).
+- Namespaces beyond the two usings: `RioCharts.Core.Data` (`SeriesData`, `SeriesBuffer`), `RioCharts.Core.Definitions` (`ChartDataset`, `ChartDefinitionJson`).
 
 ## Choosing a series
 
@@ -49,7 +49,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Change over time, trends | `LineSeries` | `XValue`, `YValue`, `Curve` |
 | Volume over time, parts of a total over time | `AreaSeries` | `Stack` to stack |
 | Compare categories | `BarSeries` | `Aggregate`, `Stack`, `Horizontal="true"` on the chart |
-| Shares per x value (100 % stacked) | `BarSeries`, `AreaSeries` | `YAxis="@(new AxisSpec { Stacking = StackMode.Percent })"` on the chart |
+| Shares per x value (100 % stacked) | `BarSeries`, `AreaSeries` | `YAxis="@(new AxisOptions { Stacking = StackMode.Percent })"` on the chart |
 | Min to max band | `RangeAreaSeries` | `LowValue`, `YValue` |
 | Relation between two numbers | `ScatterSeries` | `XValue` and `YValue` numeric, `TrendLine` |
 | Shares of a whole | `PieSeries`, `DonutSeries` | `GroupSmallSlices` |
@@ -77,7 +77,7 @@ Each example is a complete component file. These exact files are compiled and re
 - An event handler lambda (`OnPointClick="e => clicked = e"`) without `TItem`: Blazor cannot infer `TItem` through it and reports errors such as "Cannot convert lambda expression". Set `TItem="YourType"` on `<RioChart>`.
 - Blazor-ApexCharts names: there is no `ApexPointSeries` or `SeriesType` parameter; each type is its own component (`<BarSeries>`, `<LineSeries>`, ...). `XValue`, `YValue`, `YAggregate` work as in ApexCharts.
 - Setting a width: not needed, the chart follows its container. Set `Height` for another height.
-- Types not found (`SeriesData`, `SeriesBuffer`, `ChartDataset`): add `@using RioCharts.Core.Data` or `@using RioCharts.Core.Specs`.
+- Types not found (`SeriesData`, `SeriesBuffer`, `ChartDataset`): add `@using RioCharts.Core.Data` or `@using RioCharts.Core.Definitions`.
 - Hard-coded colors for light and dark: use theme variables such as `--rio-negative` and `--rio-positive`; they follow the theme.
 
 ## Reference
@@ -90,6 +90,6 @@ Every public component and its parameters, from the XML docs. Types in `RioChart
 
 - Getting started: https://riocharts.com/getting-started
 - All chart types with live examples: https://riocharts.com/lines-and-areas
-- JSON specs and the playground: https://riocharts.com/specs
-- AI agents and MCP (`riocharts-mcp` renders charts to PNG and turns specs into Razor): https://riocharts.com/ai
+- Chart definitions (JSON) and the playground: https://riocharts.com/definitions
+- AI agents and MCP (`riocharts-mcp` renders charts to PNG and turns definitions into Razor): https://riocharts.com/ai
 - Source: https://github.com/joadan/RioCharts

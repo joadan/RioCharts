@@ -10,12 +10,12 @@ namespace RioCharts.Core.Layout;
 public static partial class ChartLayout
 {
     /// <summary>
-    /// Horizontal bars (<see cref="ChartSpec.Horizontal"/>): categories down the left side, first on
-    /// top, values along the bottom (<see cref="ChartSpec.Y"/> formats them). Several bar series are
-    /// grouped side by side in each row, or stacked with <see cref="SeriesSpec.Stack"/>. Value lines and
+    /// Horizontal bars (<see cref="ChartDefinition.Horizontal"/>): categories down the left side, first on
+    /// top, values along the bottom (<see cref="ChartDefinition.Y"/> formats them). Several bar series are
+    /// grouped side by side in each row, or stacked with <see cref="SeriesOptions.Stack"/>. Value lines and
     /// bands from the annotations are drawn across the rows.
     /// </summary>
-    private static ChartLayoutResult ComputeHorizontal(ChartSpec spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles,
+    private static ChartLayoutResult ComputeHorizontal(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles,
         TimeConversion? time)
     {
         var culture = options.Culture;
@@ -111,7 +111,7 @@ public static partial class ChartLayout
         var percent = drawn.Any(r => r.Percent);
         var valueFormat = spec.Y.Format ?? (percent ? "P0" : null);
 
-        var lines = new List<(AnnotationSpec Spec, double A, double B)>();
+        var lines = new List<(Annotation Spec, double A, double B)>();
         foreach (var (a, i) in spec.Annotations.Select((a, i) => (a, i)))
         {
             if (a.Axis != AnnotationAxis.Y || a.Type is not (AnnotationType.Line or AnnotationType.Band))

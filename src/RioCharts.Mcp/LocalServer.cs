@@ -3,7 +3,7 @@ using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RioCharts.AI;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Mcp;
 
@@ -34,14 +34,14 @@ public static class LocalServer
         return
         [
             McpServerTool.Create(
-                ([Description("The chart spec as a JSON object.")] JsonElement spec,
+                ([Description("The chart definition as a JSON object.")] JsonElement definition,
                  [Description("png (default) or svg.")] ChartImageFormat format = ChartImageFormat.Png,
                  [Description("Width in pixels, 100 to 4000.")] int? width = null,
                  [Description("Height in pixels, 100 to 4000.")] int? height = null,
                  [Description("light or dark.")] string? theme = null,
                  [Description("File name to save as (no folder). Default: from the title.")] string? fileName = null,
                  CancellationToken cancellationToken = default) =>
-                    tools.RenderChart(spec, format, width, height, theme, fileName, cancellationToken),
+                    tools.RenderChart(definition, format, width, height, theme, fileName, cancellationToken),
                 new McpServerToolCreateOptions
                 {
                     Name = ChartTool.RenderToolName,
@@ -62,31 +62,31 @@ public static class LocalServer
                 new McpServerToolCreateOptions
                 {
                     Name = "get_chart_schema",
-                    Title = "Chart spec schema",
-                    Description = "Returns the JSON schema of a chart spec, with a description of every option.",
+                    Title = "Chart definition schema",
+                    Description = "Returns the JSON schema of a chart definition, with a description of every option.",
                     ReadOnly = true,
                 }),
             McpServerTool.Create(
-                async ([Description("The chart spec as a JSON object (the same spec as render_chart).")] JsonElement spec,
+                async ([Description("The chart definition as a JSON object (the same definition as render_chart).")] JsonElement definition,
                        [Description("The C# type of the rows, e.g. \"Sale\". Default: from the dataset name.")] string? itemType = null,
                        [Description("The variable or expression that holds the rows, e.g. \"sales\". Default: the dataset name.")] string? itemsName = null,
                        CancellationToken cancellationToken = default) =>
                 {
-                    var result = await tool.GetRazorAsync(spec, itemType, itemsName, cancellationToken).ConfigureAwait(false);
+                    var result = await tool.GetRazorAsync(definition, itemType, itemsName, cancellationToken).ConfigureAwait(false);
                     return new CallToolResult { Content = [new TextContentBlock { Text = result.ToMarkdown() }], IsError = !result.Success };
                 },
                 new McpServerToolCreateOptions
                 {
                     Name = "get_razor",
-                    Title = "Chart spec to Blazor code",
-                    Description = "Turns a chart spec into code for a Blazor app with the RioCharts.Blazor package: the <RioChart> markup, "
+                    Title = "Chart definition to Blazor code",
+                    Description = "Turns a chart definition into code for a Blazor app with the RioCharts.Blazor package: the <RioChart> markup, "
                         + "a C# record for the rows (from the dataset's fields) and, for inline data, the rows as a list. "
-                        + "Design the chart with render_chart and look at it first, then call this with the same spec. "
+                        + "Design the chart with render_chart and look at it first, then call this with the same definition. "
                         + "For writing RioCharts code by hand, call get_usage.",
                     ReadOnly = true,
                 }),
             McpServerTool.Create(
-                ([Description("Optional: one section, e.g. a component (\"RioChart\", \"LineSeries\"), a type (\"AxisSpec\") or a heading (\"Common mistakes\"). Empty: the overview.")] string? topic = null) =>
+                ([Description("Optional: one section, e.g. a component (\"RioChart\", \"LineSeries\"), a type (\"AxisOptions\") or a heading (\"Common mistakes\"). Empty: the overview.")] string? topic = null) =>
                     RioChartsUsage.Get(topic),
                 new McpServerToolCreateOptions
                 {

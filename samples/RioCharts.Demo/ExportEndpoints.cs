@@ -34,7 +34,7 @@ public static class ExportEndpoints
         });
     }
 
-    private static (ChartSpec Spec, Dictionary<string, SeriesData> Data) Traffic()
+    private static (ChartDefinition Spec, Dictionary<string, SeriesData> Data) Traffic()
     {
         var start = new DateTime(2026, 11, 16);
         var times = Enumerable.Range(0, 2 * 96).Select(i => start.AddMinutes(15 * i)).ToArray();
@@ -43,20 +43,20 @@ public static class ExportEndpoints
         var app = times.Select((_, i) => Math.Round(98 + 75 * Cycle(i))).ToArray();
         var marketplace = times.Select((_, i) => Math.Round(55 + 35 * Cycle(i))).ToArray();
 
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
             Title = "Sessions per channel (rendered on the server)",
-            Y = new AxisSpec { Title = "Sessions" },
+            Y = new AxisOptions { Title = "Sessions" },
             Series =
             [
-                new SeriesSpec { Id = "web", Name = "Web", Curve = CurveType.Monotone },
-                new SeriesSpec { Id = "app", Name = "App", Curve = CurveType.Monotone },
-                new SeriesSpec { Id = "marketplace", Name = "Marketplace" },
+                new SeriesOptions { Id = "web", Name = "Web", Curve = CurveType.Monotone },
+                new SeriesOptions { Id = "app", Name = "App", Curve = CurveType.Monotone },
+                new SeriesOptions { Id = "marketplace", Name = "Marketplace" },
             ],
             Annotations =
             [
-                new AnnotationSpec { Type = AnnotationType.Band, From = 200, To = 260, Label = "High traffic" },
-                new AnnotationSpec { Value = 150, Label = "Campaign goal 150" },
+                new Annotation { Type = AnnotationType.Band, From = 200, To = 260, Label = "High traffic" },
+                new Annotation { Value = 150, Label = "Campaign goal 150" },
             ],
         };
 

@@ -2,12 +2,12 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using RioCharts.Core;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.AI;
 
 /// <summary>
-/// Turns a spec (e.g. one an agent built) into Razor component markup, so a developer can move
+/// Turns a definition (e.g. one an agent built) into Razor component markup, so a developer can move
 /// the chart into the codebase. Fields become properties of an item type (camelCase → PascalCase);
 /// transforms that components do not do (filter, groupBy...) become comments to implement in the
 /// query; an aggregate per x value or time bucket becomes the series' <c>Aggregate</c> and <c>Bucket</c>.
@@ -15,7 +15,7 @@ namespace RioCharts.AI;
 public static class ChartRazor
 {
     // The vertical axis settings the export writes: title and stacking.
-    private static string AxisProperties(AxisSpec axis) => string.Join(", ", new[]
+    private static string AxisProperties(AxisOptions axis) => string.Join(", ", new[]
     {
         axis.Title is { } title ? $"Title = {Str(title)}" : null,
         axis.Stacking != StackMode.Normal ? $"Stacking = StackMode.{axis.Stacking}" : null,
@@ -23,7 +23,7 @@ public static class ChartRazor
 
     /// <param name="itemType">The C# type of the rows, e.g. "Reading".</param>
     /// <param name="itemsName">The expression that holds the rows, e.g. "readings".</param>
-    public static string FromSpec(ChartSpec spec, string itemType = "Row", string itemsName = "rows")
+    public static string FromDefinition(ChartDefinition spec, string itemType = "Row", string itemsName = "rows")
     {
         ArgumentNullException.ThrowIfNull(spec);
         var sb = new StringBuilder();
@@ -35,18 +35,18 @@ public static class ChartRazor
 
         if (AxisProperties(spec.Y) is { Length: > 0 } yAxis)
         {
-            sb.Append($" YAxis=\"@(new AxisSpec {{ {yAxis} }})\"");
+            sb.Append($" YAxis=\"@(new AxisOptions {{ {yAxis} }})\"");
         }
 
         if (spec.X.Title is { } xTitle)
         {
-            sb.Append($" XAxis=\"@(new AxisSpec {{ Title = {Str(xTitle)} }})\"");
+            sb.Append($" XAxis=\"@(new AxisOptions {{ Title = {Str(xTitle)} }})\"");
         }
 
         if (spec.YAxes.Count > 0)
         {
             sb.Append(" YAxes=\"@([").Append(string.Join(", ", spec.YAxes.Select(a =>
-                $"new AxisSpec {{ Id = {Str(a.Id ?? "")}{(AxisProperties(a) is { Length: > 0 } more ? ", " + more : "")} }}"))).Append("])\"");
+                $"new AxisOptions {{ Id = {Str(a.Id ?? "")}{(AxisProperties(a) is { Length: > 0 } more ? ", " + more : "")} }}"))).Append("])\"");
         }
 
         if (spec.TimeZone is { } zone)
@@ -72,7 +72,7 @@ public static class ChartRazor
         sb.AppendLine(">");
         foreach (var a in spec.Annotations)
         {
-            sb.Append("    ").AppendLine(Annotation(a));
+            sb.Append("    ").AppendLine(AnnotationMarkup(a));
         }
 
         foreach (var s in spec.Series)
@@ -281,7 +281,7 @@ public static class ChartRazor
         return sb.ToString();
     }
 
-    private static string Annotation(AnnotationSpec a)
+    private static string AnnotationMarkup(Annotation a)
     {
         var axis = a.Axis == AnnotationAxis.X ? " Axis=\"AnnotationAxis.X\"" : "";
         var label = a.Label is null ? "" : $" Label=\"{Attr(a.Label)}\"";
@@ -323,7 +323,7 @@ public static class ChartRazor
     private static string Number(double value) => value.ToString("0.####", CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// A C# record for a dataset's rows, with the property names <see cref="FromSpec"/> uses, e.g.
+    /// A C# record for a dataset's rows, with the property names <see cref="FromDefinition"/> uses, e.g.
     /// <c>public sealed record Sale(DateTime Date, string Region, double Amount);</c>. Numbers are
     /// <c>double</c>, times <c>DateTime</c> (or <c>DateTimeOffset</c>), text <c>string</c>;
     /// nullable when the field has missing values.

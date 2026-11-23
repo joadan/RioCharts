@@ -44,7 +44,7 @@ public partial class TextsTests
         Assert.Same(polish, ChartTexts.For(CultureInfo.GetCultureInfo("pl-PL")));
         Assert.Equal("Reset zoom", polish.ResetZoom); // not set: English
 
-        var layout = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "t" }] }, new Dictionary<string, SeriesData> { ["t"] = SeriesData.Empty },
+        var layout = ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "t" }] }, new Dictionary<string, SeriesData> { ["t"] = SeriesData.Empty },
             new LayoutOptions { Culture = CultureInfo.GetCultureInfo("pl-PL") });
         Assert.Contains(All(layout.Scene.Overlay), n => n is TextNode { Text: "Brak danych" });
     }
@@ -77,11 +77,11 @@ public partial class TextsTests
     [Fact]
     public void Counts_pick_the_one_or_other_form()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "a", Name = "Stockholm" }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Name = "Stockholm" }] };
         var sv = CultureInfo.GetCultureInfo("sv-SE");
 
         var one = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["a"] = Temps(20) }, new LayoutOptions { Culture = sv });
-        var two = ChartLayout.Compute(spec with { Series = [.. spec.Series, new SeriesSpec { Id = "b", Name = "Göteborg" }] },
+        var two = ChartLayout.Compute(spec with { Series = [.. spec.Series, new SeriesOptions { Id = "b", Name = "Göteborg" }] },
             new Dictionary<string, SeriesData> { ["a"] = Temps(20, 21), ["b"] = Temps(22, 22) }, new LayoutOptions { Culture = sv });
 
         Assert.StartsWith("Diagram med 1 serie. Stockholm: 1 värde,", one.Scene.Description);
@@ -91,7 +91,7 @@ public partial class TextsTests
     [Fact]
     public void Compact_summary_in_Swedish()
     {
-        var spec = new ChartSpec { Compact = true, Series = [new SeriesSpec { Id = "t", Name = "Uppsala", Format = "0.0 °C" }] };
+        var spec = new ChartDefinition { Compact = true, Series = [new SeriesOptions { Id = "t", Name = "Uppsala", Format = "0.0 °C" }] };
 
         var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["t"] = Temps(18.2, 19.5, 20.1, 20.8) },
             new LayoutOptions { Width = 160, Height = 32, Culture = CultureInfo.GetCultureInfo("sv-SE") });
@@ -103,7 +103,7 @@ public partial class TextsTests
     public void A_broken_template_falls_back_to_English_instead_of_throwing()
     {
         var texts = ChartTexts.English with { LastValue = "senast {3}", ValueRange = "{0} till {1" };
-        var spec = new ChartSpec { Compact = true, Series = [new SeriesSpec { Id = "t", Name = "Uppsala" }] };
+        var spec = new ChartDefinition { Compact = true, Series = [new SeriesOptions { Id = "t", Name = "Uppsala" }] };
 
         var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["t"] = Temps(18, 21) },
             new LayoutOptions { Culture = CultureInfo.InvariantCulture, Texts = texts });
@@ -115,7 +115,7 @@ public partial class TextsTests
     [Fact]
     public void Pie_texts_follow_the_texts()
     {
-        var spec = new ChartSpec { Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6, GroupSmallSlices = 0.05 }] };
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6, GroupSmallSlices = 0.05 }] };
         var data = SeriesData.FromCategories(["Industri", "Bostäder", "Transporter", "Övrigt 1", "Övrigt 2"], [50, 30, 18, 1, 1]);
 
         var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["p"] = data },

@@ -14,11 +14,11 @@ public class Milestone3Tests
 
     private static IEnumerable<Node> All(Scene scene) => All(scene.Static).Concat(All(scene.Series)).Concat(All(scene.Overlay));
 
-    private static ChartLayoutResult Pie(double[] values, SeriesSpec? spec = null, LayoutOptions? options = null)
+    private static ChartLayoutResult Pie(double[] values, SeriesOptions? spec = null, LayoutOptions? options = null)
     {
         var names = values.Select((_, i) => "C" + (i + 1)).ToArray();
-        spec ??= new SeriesSpec { Id = "p", Type = SeriesType.Pie };
-        return ChartLayout.Compute(new ChartSpec { Series = [spec] }, new Dictionary<string, SeriesData> { [spec.Id] = SeriesData.FromCategories(names, values) }, options ?? Options);
+        spec ??= new SeriesOptions { Id = "p", Type = SeriesType.Pie };
+        return ChartLayout.Compute(new ChartDefinition { Series = [spec] }, new Dictionary<string, SeriesData> { [spec.Id] = SeriesData.FromCategories(names, values) }, options ?? Options);
     }
 
     private static List<PathNode> Slices(ChartLayoutResult r) => All(r.Scene).OfType<PathNode>().Where(p => p.Class == "rio-slice").ToList();
@@ -38,8 +38,8 @@ public class Milestone3Tests
     [Fact]
     public void Slices_and_radial_bars_are_keyed_like_their_legend_items()
     {
-        var pie = Pie([10, 20, 30, 1, 1], new SeriesSpec { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.05 });
-        var bars = Pie([10, 20, 30], new SeriesSpec { Id = "p", Type = SeriesType.RadialBar });
+        var pie = Pie([10, 20, 30, 1, 1], new SeriesOptions { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.05 });
+        var bars = Pie([10, 20, 30], new SeriesOptions { Id = "p", Type = SeriesType.RadialBar });
 
         // Legend hover highlights the group with the item's key (the ring "series:p" holds them).
         string[] Keys(ChartLayoutResult r) => [.. All(r.Scene).OfType<GroupNode>().Select(g => g.Key).OfType<string>().Where(k => k.StartsWith("series:", StringComparison.Ordinal))];
@@ -65,7 +65,7 @@ public class Milestone3Tests
     [Fact]
     public void Small_slices_are_grouped_into_other()
     {
-        var result = Pie([100, 100, 1, 1, 1], new SeriesSpec { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.05 });
+        var result = Pie([100, 100, 1, 1, 1], new SeriesOptions { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.05 });
 
         Assert.Equal(3, result.Tooltip.Slices.Count);
         var other = result.Tooltip.Slices.Single(s => s.Label == "Other");
@@ -75,7 +75,7 @@ public class Milestone3Tests
     [Fact]
     public void Donut_shows_the_total_in_the_middle()
     {
-        var result = Pie([10, 20, 30], new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 });
+        var result = Pie([10, 20, 30], new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 });
 
         Assert.Contains(All(result.Scene), n => n is TextNode { Class: "rio-center-value", Text: "60" });
         Assert.All(result.Tooltip.Slices, s => Assert.True(s.R0 > 0));
@@ -84,8 +84,8 @@ public class Milestone3Tests
     [Fact]
     public void Half_donut_fits_its_sweep_not_the_full_circle()
     {
-        var full = Pie([1, 1], new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }, Options with { Width = 400, Height = 200 });
-        var half = Pie([1, 1], new SeriesSpec { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6, StartAngle = -90, EndAngle = 90 },
+        var full = Pie([1, 1], new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6 }, Options with { Width = 400, Height = 200 });
+        var half = Pie([1, 1], new SeriesOptions { Id = "p", Type = SeriesType.Pie, InnerRadius = 0.6, StartAngle = -90, EndAngle = 90 },
             Options with { Width = 400, Height = 200 });
 
         Assert.True(half.Tooltip.Slices[0].R1 > full.Tooltip.Slices[0].R1 * 1.4);
@@ -120,9 +120,9 @@ public class Milestone3Tests
             ["outer"] = SeriesData.FromCategories(["A", "B"], [1.0, 2]),
             ["inner"] = SeriesData.FromCategories(["A", "B"], [2.0, 1]),
         };
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "outer", Type = SeriesType.Pie }, new SeriesSpec { Id = "inner", Type = SeriesType.Pie }],
+            Series = [new SeriesOptions { Id = "outer", Type = SeriesType.Pie }, new SeriesOptions { Id = "inner", Type = SeriesType.Pie }],
         };
 
         var result = ChartLayout.Compute(spec, data, Options);
@@ -137,8 +137,8 @@ public class Milestone3Tests
     [Fact]
     public void Radial_bars_fill_their_track_by_value()
     {
-        var spec = new SeriesSpec { Id = "r", Type = SeriesType.RadialBar, Max = 100 };
-        var result = ChartLayout.Compute(new ChartSpec { Series = [spec] },
+        var spec = new SeriesOptions { Id = "r", Type = SeriesType.RadialBar, Max = 100 };
+        var result = ChartLayout.Compute(new ChartDefinition { Series = [spec] },
             new Dictionary<string, SeriesData> { ["r"] = SeriesData.FromCategories(["North", "South"], [50.0, 100]) }, Options);
 
         var north = result.Tooltip.Slices[0];
@@ -153,9 +153,9 @@ public class Milestone3Tests
     [Fact]
     public void Polar_and_cartesian_series_do_not_mix()
     {
-        var spec = new ChartSpec
+        var spec = new ChartDefinition
         {
-            Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie }, new SeriesSpec { Id = "l" }],
+            Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie }, new SeriesOptions { Id = "l" }],
         };
         var data = new Dictionary<string, SeriesData>
         {

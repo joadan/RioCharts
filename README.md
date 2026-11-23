@@ -64,7 +64,7 @@ Coming from Blazor-ApexCharts? The concepts map closely: see
 bots, with real font metrics and light or dark themes:
 
 ```csharp
-var spec = new ChartSpec { Title = "Sessions", Series = [new SeriesSpec { Id = "web", Name = "Web" }] };
+var spec = new ChartDefinition { Title = "Sessions", Series = [new SeriesOptions { Id = "web", Name = "Web" }] };
 var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(times, values) };
 byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320 });
 ```
@@ -72,7 +72,7 @@ byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Heig
 ## AI agents
 
 **In your app.** `RioCharts.AI` gives your agent `create_chart` and `render_chart` tools, as
-Microsoft.Extensions.AI functions or MCP server tools. The agent writes a small JSON spec against
+Microsoft.Extensions.AI functions or MCP server tools. The agent writes a small JSON definition against
 your datasets; the tool validates it (errors name the path and the valid options), renders it and
 describes it:
 
@@ -127,7 +127,7 @@ All target .NET 10 (LTS) and .NET 11, and are previews: add `--prerelease`.
 ## Learn more
 
 - [Docs and live examples](https://riocharts.com/): every chart type and feature, running in your browser
-- [JSON specs](https://riocharts.com/specs): the chart model as JSON, with a playground
+- [Chart definitions](https://riocharts.com/definitions): the chart model as JSON, with a playground
 - [CHANGELOG.md](CHANGELOG.md): what changed, and breaking changes
 - [CONTRIBUTING.md](CONTRIBUTING.md): building, testing and the project layout
 - [Design.md](Design.md): the design behind it

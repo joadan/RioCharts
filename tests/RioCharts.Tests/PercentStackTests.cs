@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -16,9 +16,9 @@ public class PercentStackTests
 
     private static readonly string[] Quarters = ["Q1", "Q2"];
 
-    private static ChartSpec Percent(params SeriesSpec[] series) => new() { Y = new AxisSpec { Stacking = StackMode.Percent }, Series = series };
+    private static ChartDefinition Percent(params SeriesOptions[] series) => new() { Y = new AxisOptions { Stacking = StackMode.Percent }, Series = series };
 
-    private static SeriesSpec Bar(string id, string? stack = null) => new() { Id = id, Type = SeriesType.Bar, Stack = stack };
+    private static SeriesOptions Bar(string id, string? stack = null) => new() { Id = id, Type = SeriesType.Bar, Stack = stack };
 
     private static List<RectNode> Bars(ChartLayoutResult r, string id) =>
         All(r.Scene.Series).Where(n => n is GroupNode g && g.Key == "series:" + id).SelectMany(All).OfType<RectNode>().ToList();
@@ -76,7 +76,7 @@ public class PercentStackTests
     [Fact]
     public void Areas_with_different_x_values_stack_per_x()
     {
-        var spec = Percent(new SeriesSpec { Id = "a", Type = SeriesType.Area }, new SeriesSpec { Id = "b", Type = SeriesType.Area });
+        var spec = Percent(new SeriesOptions { Id = "a", Type = SeriesType.Area }, new SeriesOptions { Id = "b", Type = SeriesType.Area });
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.From([0.0, 1], [2.0, 2]), ["b"] = SeriesData.From([1.0, 2], [6.0, 3]) };
 
         var layout = ChartLayout.Compute(spec, data, Options);
@@ -104,7 +104,7 @@ public class PercentStackTests
     [Fact]
     public void Named_stacks_each_fill_the_axis_and_other_series_are_left_alone()
     {
-        var spec = Percent(Bar("a", "x"), Bar("b", "x"), Bar("c", "y"), new SeriesSpec { Id = "d", Type = SeriesType.Scatter });
+        var spec = Percent(Bar("a", "x"), Bar("b", "x"), Bar("c", "y"), new SeriesOptions { Id = "d", Type = SeriesType.Scatter });
         var data = new Dictionary<string, SeriesData>
         {
             ["a"] = SeriesData.FromCategories(Quarters, [1.0, 1]),
@@ -125,7 +125,7 @@ public class PercentStackTests
     {
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(Quarters, [10.0, 50]), ["b"] = SeriesData.FromCategories(Quarters, [30.0, 50]) };
 
-        var layout = ChartLayout.Compute(new ChartSpec { Series = [Bar("a"), Bar("b")] }, data, Options);
+        var layout = ChartLayout.Compute(new ChartDefinition { Series = [Bar("a"), Bar("b")] }, data, Options);
 
         Assert.NotEqual(Bars(layout, "a")[0].Bounds.X, Bars(layout, "b")[0].Bounds.X);
         Assert.Equal("10", layout.Tooltip.Series[0].Values[0]);
@@ -155,29 +155,29 @@ public class PercentStackTests
     [InlineData("""{ "series": [ { "type": "bar", "x": "q", "y": "v", "stacking": "percent" } ] }""")]
     public void Specs_ask_for_percent_stacking_in_several_ways(string json)
     {
-        var parsed = ChartSpecJson.Parse(json);
+        var parsed = ChartDefinitionJson.Parse(json);
 
         Assert.Empty(parsed.Errors);
-        Assert.Equal(StackMode.Percent, parsed.Spec!.Y.Stacking);
+        Assert.Equal(StackMode.Percent, parsed.Definition!.Y.Stacking);
     }
 
     [Fact]
     public void A_series_puts_its_stacking_on_its_own_axis()
     {
-        var parsed = ChartSpecJson.Parse("""
+        var parsed = ChartDefinitionJson.Parse("""
             { "yAxes": [ { "id": "share" } ],
               "series": [ { "type": "area", "x": "t", "y": "v", "yAxisId": "share", "stacking": "percent" } ] }
             """);
 
         Assert.Empty(parsed.Errors);
-        Assert.Equal(StackMode.Normal, parsed.Spec!.Y.Stacking);
-        Assert.Equal(StackMode.Percent, parsed.Spec.YAxes[0].Stacking);
+        Assert.Equal(StackMode.Normal, parsed.Definition!.Y.Stacking);
+        Assert.Equal(StackMode.Percent, parsed.Definition.YAxes[0].Stacking);
     }
 
     [Fact]
     public void Unknown_stacking_is_an_error_with_the_valid_values()
     {
-        var parsed = ChartSpecJson.Parse("""{ "y": { "stacking": "sideways" }, "series": [ { "type": "bar", "x": "q", "y": "v" } ] }""");
+        var parsed = ChartDefinitionJson.Parse("""{ "y": { "stacking": "sideways" }, "series": [ { "type": "bar", "x": "q", "y": "v" } ] }""");
 
         Assert.Contains(parsed.Errors, e => e.Path == "y.stacking" && e.Message.Contains("percent", StringComparison.Ordinal));
     }
@@ -185,10 +185,10 @@ public class PercentStackTests
     [Fact]
     public void Razor_export_writes_the_stacking()
     {
-        var spec = ChartSpecJson.Parse("""{ "y": { "title": "Share" }, "series": [ { "type": "stackedBar100", "x": "quarter", "y": "sales" } ] }""").Spec!;
+        var spec = ChartDefinitionJson.Parse("""{ "y": { "title": "Share" }, "series": [ { "type": "stackedBar100", "x": "quarter", "y": "sales" } ] }""").Definition!;
 
-        var razor = ChartRazor.FromSpec(spec, "Sale", "sales");
+        var razor = ChartRazor.FromDefinition(spec, "Sale", "sales");
 
-        Assert.Contains("YAxis=\"@(new AxisSpec { Title = \"Share\", Stacking = StackMode.Percent })\"", razor);
+        Assert.Contains("YAxis=\"@(new AxisOptions { Title = \"Share\", Stacking = StackMode.Percent })\"", razor);
     }
 }

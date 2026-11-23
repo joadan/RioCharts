@@ -4,9 +4,9 @@
 
 <h1>AI agents and MCP</h1>
 <p class="lead">
-    <code>RioCharts.AI</code> gives agents a <code>create_chart</code> tool. The agent writes a small <a href="specs">JSON spec</a> against your datasets;
+    <code>RioCharts.AI</code> gives agents a <code>create_chart</code> tool. The agent writes a small <a href="definitions">JSON definition</a> against your datasets;
     the tool validates it, renders it on the server and returns a short description, or errors that name the path and the valid options so the
-    model can fix the spec and call again. The image goes to your app; <code>render_chart</code> returns it to the agent instead.
+    model can fix the definition and call again. The image goes to your app; <code>render_chart</code> returns it to the agent instead.
 </p>
 
 <h2>Install</h2>
@@ -15,7 +15,7 @@
 
 <h2>Your data</h2>
 <CodeBlock Language="csharp" Code="@DataCode" />
-<p>The tool description lists each dataset with its fields, types and descriptions, the spec format and a few examples. Querying and access control stay in your app.</p>
+<p>The tool description lists each dataset with its fields, types and descriptions, the definition format and a few examples. Querying and access control stay in your app.</p>
 
 <h2>Microsoft.Extensions.AI</h2>
 <CodeBlock Language="csharp" Code="@AiCode" />
@@ -27,7 +27,7 @@
 <h2>Images for the agent</h2>
 <p>
     <code>create_chart</code> shows a chart to the user. When the agent needs the image itself, for a report, an email or a document,
-    it calls <code>render_chart</code> with the same spec plus <code>format</code> (<code>png</code> or <code>svg</code>), <code>width</code>,
+    it calls <code>render_chart</code> with the same definition plus <code>format</code> (<code>png</code> or <code>svg</code>), <code>width</code>,
     <code>height</code> and <code>theme</code>. The image comes back as content: <code>DataContent</code> with Microsoft.Extensions.AI, an image block
     (PNG) or an embedded <code>image/svg+xml</code> resource (SVG) over MCP.
 </p>
@@ -63,7 +63,7 @@
     </li>
     <li>
         <code>riocharts-mcp</code> has two tools for it. <code>get_usage</code> returns the same guide: the overview, or one component or type with a
-        <code>topic</code>. <code>get_razor</code> turns a spec into code: the agent designs the chart with <code>render_chart</code>, looks at the
+        <code>topic</code>. <code>get_razor</code> turns a definition into code: the agent designs the chart with <code>render_chart</code>, looks at the
         image, then gets the <code>&lt;RioChart&gt;</code> markup, a record for the rows (from the dataset's fields) and, for inline data, the rows as a
         C# list.
     </li>
@@ -124,7 +124,7 @@
         var tool = new ChartTool(source, new ChartToolOptions { OutputDirectory = "charts" });
 
         // The model calls render_chart with e.g.
-        // {"spec":{"dataset":"shop","title":"Revenue per day","series":[{"type":"bar","x":"timestamp","y":"revenue","timeBucket":"day","aggregate":"sum"}]},
+        // {"definition":{"dataset":"shop","title":"Revenue per day","series":[{"type":"bar","x":"timestamp","y":"revenue","timeBucket":"day","aggregate":"sum"}]},
         //  "format":"svg","width":640,"height":320}
 
         // Or from code:
@@ -148,7 +148,7 @@
         """;
 
     private const string RazorCode = """
-        // Turn a spec the agent built into component markup for the codebase:
-        string razor = ChartRazor.FromSpec(ChartSpecJson.Parse(json).Spec!, itemType: "Traffic", itemsName: "traffic");
+        // Turn a definition the agent built into component markup for the codebase:
+        string razor = ChartRazor.FromDefinition(ChartDefinitionJson.Parse(json).Definition!, itemType: "Traffic", itemsName: "traffic");
         """;
 }

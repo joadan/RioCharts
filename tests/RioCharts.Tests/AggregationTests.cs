@@ -3,7 +3,7 @@ using RioCharts.AI;
 using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -95,10 +95,10 @@ public class AggregationTests
         var categories = SeriesData.FromCategories(["A", "B", "A"], [1.0, 2, 3]);
         var times = SeriesData.From([0.0, 1, 1, 2], [1.0, 2, 3, 4]);
 
-        var bars = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "b", Type = SeriesType.Bar }] }, new Dictionary<string, SeriesData> { ["b"] = categories }, options);
-        var numericBars = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "b", Type = SeriesType.Bar }] }, new Dictionary<string, SeriesData> { ["b"] = times }, options);
-        var line = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "l" }] }, new Dictionary<string, SeriesData> { ["l"] = times }, options);
-        var grouped = ChartLayout.Compute(new ChartSpec { Series = [new SeriesSpec { Id = "b", Type = SeriesType.Bar }] },
+        var bars = ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "b", Type = SeriesType.Bar }] }, new Dictionary<string, SeriesData> { ["b"] = categories }, options);
+        var numericBars = ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "b", Type = SeriesType.Bar }] }, new Dictionary<string, SeriesData> { ["b"] = times }, options);
+        var line = ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "l" }] }, new Dictionary<string, SeriesData> { ["l"] = times }, options);
+        var grouped = ChartLayout.Compute(new ChartDefinition { Series = [new SeriesOptions { Id = "b", Type = SeriesType.Bar }] },
             new Dictionary<string, SeriesData> { ["b"] = SeriesData.FromGroups(Alarms, a => a.Store, g => g.Count) }, options);
 
         Assert.Contains(bars.Warnings, w => w.Contains("x value 'A' appears more than once", StringComparison.Ordinal));
@@ -110,13 +110,13 @@ public class AggregationTests
     [Fact]
     public void Razor_export_writes_the_aggregate_as_a_parameter()
     {
-        var spec = ChartSpecJson.Parse("""
+        var spec = ChartDefinitionJson.Parse("""
             { "series": [ { "type": "bar", "x": "store", "aggregate": "count" },
                           { "type": "bar", "x": "store", "y": "minutes", "aggregate": "sum" },
                           { "type": "bar", "x": "time", "y": "energy", "aggregate": "sum", "timeBucket": "day" } ] }
-            """).Spec!;
+            """).Definition!;
 
-        var razor = ChartRazor.FromSpec(spec, "Alarm", "alarms");
+        var razor = ChartRazor.FromDefinition(spec, "Alarm", "alarms");
 
         Assert.Contains("<BarSeries XValue=\"r => r.Store\" Aggregate=\"Aggregate.Count\" />", razor);
         Assert.Contains("<BarSeries XValue=\"r => r.Store\" YValue=\"r => r.Minutes\" Aggregate=\"Aggregate.Sum\" />", razor);

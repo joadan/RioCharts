@@ -50,17 +50,17 @@
     <li>Clicks, selection, the legend, highlighting and keyboard navigation work as for line charts.</li>
 </ul>
 
-<h2>In JSON specs</h2>
+<h2>In JSON definitions</h2>
 <p>
     <code>"type": "radar"</code> (also <code>"spider"</code>) with the measure as <code>x</code> and the value as <code>y</code>; use
     <code>groupBy</code> for one shape per product.
 </p>
 
 @code {
-    private static readonly AxisSpec Scores = new() { Max = 100 };
+    private static readonly AxisOptions Scores = new() { Max = 100 };
 
     private const string CompareCode = """
-        <RioChart TItem="LaptopScore" Items="scores" YAxis="new AxisSpec { Max = 100 }">
+        <RioChart TItem="LaptopScore" Items="scores" YAxis="new AxisOptions { Max = 100 }">
             <RadarSeries Name="New laptop" XValue="s => s.Measure" YValue="s => s.Laptop" />
             <RadarSeries Name="Old laptop" XValue="s => s.Measure" YValue="s => s.OldLaptop" />
             <RadarSeries Name="Class average" XValue="s => s.Measure" YValue="s => s.Average" />

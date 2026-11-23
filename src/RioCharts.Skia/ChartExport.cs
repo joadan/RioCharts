@@ -51,12 +51,12 @@ public sealed record ExportOptions
 }
 
 /// <summary>
-/// Server-side chart rendering: the same <see cref="ChartSpec"/> and data as the Blazor
+/// Server-side chart rendering: the same <see cref="ChartDefinition"/> and data as the Blazor
 /// components, laid out with real font metrics and written as SVG or PNG. No browser needed.
 /// </summary>
 /// <example>
 /// <code>
-/// var spec = new ChartSpec { Title = "Sessions", Series = [new SeriesSpec { Id = "web", Name = "Web" }] };
+/// var spec = new ChartDefinition { Title = "Sessions", Series = [new SeriesOptions { Id = "web", Name = "Web" }] };
 /// var data = new Dictionary&lt;string, SeriesData&gt; { ["web"] = SeriesData.From(times, values) };
 /// byte[] png = ChartExport.ToPng(spec, data, new ExportOptions { Width = 640, Height = 320 });
 /// </code>
@@ -67,7 +67,7 @@ public static class ChartExport
     private static readonly Lock FontsLock = new();
 
     /// <summary>Lays out the chart with Skia text measurement. The result holds the scene, scales and warnings.</summary>
-    public static ChartLayoutResult Layout(ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
+    public static ChartLayoutResult Layout(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
     {
         options ??= new ExportOptions();
         return ChartLayout.Compute(spec, data, new LayoutOptions
@@ -86,7 +86,7 @@ public static class ChartExport
     }
 
     /// <summary>The chart as a standalone SVG document.</summary>
-    public static string ToSvg(ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
+    public static string ToSvg(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
     {
         options ??= new ExportOptions();
         return ToSvg(Layout(spec, data, options).Scene, options);
@@ -100,7 +100,7 @@ public static class ChartExport
     }
 
     /// <summary>The chart as a PNG image, <see cref="ExportOptions.Scale"/> times the chart size.</summary>
-    public static byte[] ToPng(ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
+    public static byte[] ToPng(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
     {
         options ??= new ExportOptions();
         return ToPng(Layout(spec, data, options).Scene, options);
@@ -114,7 +114,7 @@ public static class ChartExport
     }
 
     /// <summary>Writes the chart as PNG to a stream (e.g. an HTTP response).</summary>
-    public static async Task WritePngAsync(Stream output, ChartSpec spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null,
+    public static async Task WritePngAsync(Stream output, ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         var png = ToPng(spec, data, options);

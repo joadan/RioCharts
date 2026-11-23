@@ -4,7 +4,7 @@ using RioCharts.Core;
 using RioCharts.Core.Data;
 using RioCharts.Core.Layout;
 using RioCharts.Core.Scene;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -19,17 +19,17 @@ public class AutoCompactTests
     private static SeriesData Temps(double offset) =>
         SeriesData.From(Enumerable.Range(0, 24).Select(i => Start.AddHours(i)).ToArray(), Enumerable.Range(0, 24).Select(i => offset + Math.Sin(i / 3.0)).ToArray());
 
-    private static readonly ChartSpec Full = new()
+    private static readonly ChartDefinition Full = new()
     {
         Title = "Weather stations",
-        X = new AxisSpec { Title = "Time" },
-        Y = new AxisSpec { Title = "°C" },
-        Series = [new SeriesSpec { Id = "s", Name = "London" }, new SeriesSpec { Id = "e", Name = "Toronto" }],
+        X = new AxisOptions { Title = "Time" },
+        Y = new AxisOptions { Title = "°C" },
+        Series = [new SeriesOptions { Id = "s", Name = "London" }, new SeriesOptions { Id = "e", Name = "Toronto" }],
     };
 
     private static readonly Dictionary<string, SeriesData> Data = new() { ["s"] = Temps(19), ["e"] = Temps(22) };
 
-    private static ChartLayoutResult Layout(double width, double height, ChartSpec? spec = null, double font = 12) =>
+    private static ChartLayoutResult Layout(double width, double height, ChartDefinition? spec = null, double font = 12) =>
         ChartLayout.Compute(spec ?? Full, Data, new LayoutOptions { Width = width, Height = height, FontSize = font, Culture = CultureInfo.InvariantCulture });
 
     /// <summary>What the chart shows: title, legend, x/y axis titles, x/y axis labels.</summary>
@@ -82,13 +82,13 @@ public class AutoCompactTests
     [Fact]
     public void A_legend_set_to_show_stays()
     {
-        Assert.Contains("legend", Shown(Layout(600, 120, Full with { Legend = new LegendSpec { Mode = LegendMode.Show } })));
+        Assert.Contains("legend", Shown(Layout(600, 120, Full with { Legend = new LegendOptions { Mode = LegendMode.Show } })));
     }
 
     [Fact]
     public void A_right_legend_moves_to_the_top_on_narrow_charts()
     {
-        var spec = Full with { Legend = new LegendSpec { Position = LegendPosition.Right } };
+        var spec = Full with { Legend = new LegendOptions { Position = LegendPosition.Right } };
 
         var wide = Layout(800, 300, spec);
         var narrow = Layout(350, 300, spec);
@@ -101,10 +101,10 @@ public class AutoCompactTests
     [Fact]
     public void A_legend_taller_than_a_third_of_the_chart_is_left_out()
     {
-        var series = Enumerable.Range(0, 12).Select(i => new SeriesSpec { Id = $"s{i}", Name = $"Weather station {i + 1}" }).ToList();
+        var series = Enumerable.Range(0, 12).Select(i => new SeriesOptions { Id = $"s{i}", Name = $"Weather station {i + 1}" }).ToList();
         var data = series.ToDictionary(s => s.Id, s => Temps(18));
 
-        var layout = ChartLayout.Compute(new ChartSpec { Series = series }, data, new LayoutOptions { Width = 320, Height = 260 });
+        var layout = ChartLayout.Compute(new ChartDefinition { Series = series }, data, new LayoutOptions { Width = 320, Height = 260 });
 
         Assert.DoesNotContain(All(layout.Scene), n => n.Class == "rio-legend");
     }
@@ -119,7 +119,7 @@ public class AutoCompactTests
     [Fact]
     public void Small_pies_leave_out_the_legend_and_then_the_title()
     {
-        var spec = new ChartSpec { Title = "Sales", Series = [new SeriesSpec { Id = "p", Type = SeriesType.Pie }] };
+        var spec = new ChartDefinition { Title = "Sales", Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie }] };
         var data = new Dictionary<string, SeriesData> { ["p"] = SeriesData.FromCategories(["Shoes", "Jackets", "Hats"], [50, 30, 20]) };
 
         var big = ChartLayout.Compute(spec, data, new LayoutOptions { Width = 400, Height = 300 });
@@ -135,12 +135,12 @@ public class AutoCompactTests
     [Fact]
     public void Json_and_razor_carry_the_setting()
     {
-        var parsed = ChartSpecJson.Parse("""{ "autoCompact": false, "series": [ { "x": "t", "y": "v" } ] }""").Spec!;
+        var parsed = ChartDefinitionJson.Parse("""{ "autoCompact": false, "series": [ { "x": "t", "y": "v" } ] }""").Definition!;
 
         Assert.False(parsed.AutoCompact);
-        Assert.True(ChartSpecJson.Parse("""{ "series": [ { "x": "t", "y": "v" } ] }""").Spec!.AutoCompact); // default on
-        Assert.DoesNotContain("autoCompact", ChartSpecJson.Serialize(new ChartSpec()), StringComparison.Ordinal);
-        Assert.Contains("\"autoCompact\": false", ChartSpecJson.Serialize(parsed), StringComparison.Ordinal);
-        Assert.Contains(" AutoCompact=\"false\"", ChartRazor.FromSpec(parsed, "Reading", "readings"), StringComparison.Ordinal);
+        Assert.True(ChartDefinitionJson.Parse("""{ "series": [ { "x": "t", "y": "v" } ] }""").Definition!.AutoCompact); // default on
+        Assert.DoesNotContain("autoCompact", ChartDefinitionJson.Serialize(new ChartDefinition()), StringComparison.Ordinal);
+        Assert.Contains("\"autoCompact\": false", ChartDefinitionJson.Serialize(parsed), StringComparison.Ordinal);
+        Assert.Contains(" AutoCompact=\"false\"", ChartRazor.FromDefinition(parsed, "Reading", "readings"), StringComparison.Ordinal);
     }
 }

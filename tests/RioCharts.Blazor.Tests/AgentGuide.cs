@@ -521,7 +521,7 @@ internal static partial class AgentGuide
         private static Dictionary<string, XElement> LoadDocs()
         {
             var docs = new Dictionary<string, XElement>(StringComparer.Ordinal);
-            foreach (var assembly in new[] { typeof(RioChart<>).Assembly, typeof(ChartSpec).Assembly })
+            foreach (var assembly in new[] { typeof(RioChart<>).Assembly, typeof(ChartDefinition).Assembly })
             {
                 var path = Path.ChangeExtension(assembly.Location, ".xml");
                 if (!File.Exists(path))

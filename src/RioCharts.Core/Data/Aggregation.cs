@@ -1,6 +1,6 @@
 namespace RioCharts.Core.Data;
 
-/// <summary>Built-in aggregates over a group of values (used by specs and series components).</summary>
+/// <summary>Built-in aggregates over a group of values (used by definitions and series components).</summary>
 public static class Aggregation
 {
     /// <summary>

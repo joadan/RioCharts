@@ -1,9 +1,9 @@
 using RioCharts.AI;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
-/// <summary>get_razor (a spec as Blazor code) and get_usage (the guide for coding agents).</summary>
+/// <summary>get_razor (a definition as Blazor code) and get_usage (the guide for coding agents).</summary>
 public class AgentCodeToolTests
 {
     private static readonly ChartTool Tool = new(new InMemoryDataSource(
@@ -50,7 +50,7 @@ public class AgentCodeToolTests
 
         Assert.False(result.Success);
         Assert.NotEmpty(result.Errors);
-        Assert.StartsWith("The spec has errors", result.ToMarkdown(), StringComparison.Ordinal);
+        Assert.StartsWith("The definition has errors", result.ToMarkdown(), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -76,7 +76,7 @@ public class AgentCodeToolTests
         Assert.Contains("`Curve`", line, StringComparison.Ordinal);
         Assert.DoesNotContain("<AreaSeries>", line, StringComparison.Ordinal);
         Assert.Equal(line, RioChartsUsage.Get("<LineSeries>"));
-        Assert.Contains("`Title`", RioChartsUsage.Get("axisspec"), StringComparison.Ordinal);
+        Assert.Contains("`Title`", RioChartsUsage.Get("axisoptions"), StringComparison.Ordinal);
         Assert.StartsWith("## Common mistakes", RioChartsUsage.Get("Common mistakes"), StringComparison.Ordinal);
         Assert.StartsWith("No section", RioChartsUsage.Get("Gauge"), StringComparison.Ordinal);
     }

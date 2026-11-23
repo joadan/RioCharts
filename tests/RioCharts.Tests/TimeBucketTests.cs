@@ -1,7 +1,7 @@
 using RioCharts.AI;
 using RioCharts.Core;
 using RioCharts.Core.Data;
-using RioCharts.Core.Specs;
+using RioCharts.Core.Definitions;
 
 namespace RioCharts.Tests;
 
@@ -102,13 +102,13 @@ public class TimeBucketTests
     public void Specs_take_an_auto_bucket_and_say_what_it_chose()
     {
         var rows = string.Join(",", Enumerable.Range(0, 365).Select(i => $$"""{"time":"{{Monday.AddDays(i):yyyy-MM-dd}}","amount":1}"""));
-        var parsed = ChartSpecJson.Parse($$"""
+        var parsed = ChartDefinitionJson.Parse($$"""
             { "data": [{{rows}}], "series": [ { "type": "bar", "x": "time", "y": "amount", "timeBucket": "automatic", "aggregate": "sum" } ] }
             """);
         Assert.Empty(parsed.Errors);
-        Assert.Equal(TimeBucket.Auto, parsed.Spec!.Series[0].TimeBucket);
+        Assert.Equal(TimeBucket.Auto, parsed.Definition!.Series[0].TimeBucket);
 
-        var bound = ChartSpecBinder.Bind(parsed.Spec!, new Dictionary<string, ChartDataset>());
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, new Dictionary<string, ChartDataset>());
 
         Assert.Empty(bound.Errors);
         Assert.Contains(bound.Warnings, w => w.Contains("timeBucket: auto chose week", StringComparison.Ordinal));
@@ -118,13 +118,13 @@ public class TimeBucketTests
     [Fact]
     public void Razor_export_writes_the_bucket_for_line_area_and_bar()
     {
-        var spec = ChartSpecJson.Parse("""
+        var spec = ChartDefinitionJson.Parse("""
             { "series": [ { "type": "bar", "x": "time", "y": "energy", "aggregate": "sum", "timeBucket": "day" },
                           { "type": "line", "x": "time", "y": "energy", "timeBucket": "auto" },
                           { "type": "scatter", "x": "time", "y": "energy", "aggregate": "max", "timeBucket": "hour" } ] }
-            """).Spec!;
+            """).Definition!;
 
-        var razor = ChartRazor.FromSpec(spec, "Reading", "readings");
+        var razor = ChartRazor.FromDefinition(spec, "Reading", "readings");
 
         Assert.Contains("<BarSeries XValue=\"r => r.Time\" YValue=\"r => r.Energy\" Aggregate=\"Aggregate.Sum\" Bucket=\"TimeBucket.Day\" />", razor);
         Assert.Contains("<LineSeries XValue=\"r => r.Time\" YValue=\"r => r.Energy\" Bucket=\"TimeBucket.Auto\" />", razor);

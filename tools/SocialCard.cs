@@ -24,14 +24,14 @@ var output = Path.Combine("samples", "RioCharts.Docs", "wwwroot", "social-card.p
 var days = Enumerable.Range(0, 14).Select(d => new DateTime(2026, 3, 2).AddDays(d)).ToArray();
 double[] web = [820, 880, 940, 910, 1010, 760, 700, 960, 1040, 1120, 1080, 1210, 900, 860];
 double[] app = [410, 450, 470, 500, 540, 610, 640, 560, 600, 650, 690, 720, 780, 820];
-var spec = new ChartSpec
+var spec = new ChartDefinition
 {
     Series =
     [
-        new SeriesSpec { Id = "web", Name = "Web", Type = SeriesType.Area, Curve = CurveType.Monotone },
-        new SeriesSpec { Id = "app", Name = "App", Type = SeriesType.Line, Curve = CurveType.Monotone, StrokeWidth = 3 },
+        new SeriesOptions { Id = "web", Name = "Web", Type = SeriesType.Area, Curve = CurveType.Monotone },
+        new SeriesOptions { Id = "app", Name = "App", Type = SeriesType.Line, Curve = CurveType.Monotone, StrokeWidth = 3 },
     ],
-    Annotations = [new AnnotationSpec { Value = 1000.0, Label = "Goal" }],
+    Annotations = [new Annotation { Value = 1000.0, Label = "Goal" }],
 };
 var data = new Dictionary<string, SeriesData> { ["web"] = SeriesData.From(days, web), ["app"] = SeriesData.From(days, app) };
 const int ChartWidth = 700, ChartHeight = 236;
