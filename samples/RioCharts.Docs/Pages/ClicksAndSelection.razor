@@ -1,0 +1,215 @@
+@page "/clicks-and-selection"
+
+<PageTitle>Clicks and selection · RioCharts</PageTitle>
+
+<h1>Clicks and selection</h1>
+<p class="lead">
+    Clicks and selections call back into .NET once, when they happen; hover feedback stays in the browser.
+</p>
+
+<Example Title="Point clicks" Code="@ClickCode">
+    <Description>
+        <p>Click a point to get its item in <code>OnPointClick</code>, with the series it belongs to.</p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions" OnPointClick="e => _point = e">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+        <p class="note">Clicked: @(_point is null ? "nothing yet" : $"{_point.SeriesName} {_point.Item?.Value:#,0} sessions at {_point.Item?.Time:g}")</p>
+    </ChildContent>
+</Example>
+
+<Example Title="Legend toggles" Code="@LegendCode">
+    <Description>
+        <p>
+            Hover or focus a legend item for a summary of its series (range, last value, trend; for slices the value and share). Click it to
+            hide the series; <code>@@bind-HiddenSeries</code> keeps the hidden series in your page.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions" @bind-HiddenSeries="_hidden">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+        <p class="note">Hidden: @(_hidden.Count == 0 ? "none" : string.Join(", ", _hidden)).</p>
+    </ChildContent>
+</Example>
+
+<Example Title="Highlight and show series from code" Code="@SeriesCode">
+    <Description>
+        <p>
+            Hover or focus a legend item, or one of the buttons below the chart, to fade the other series: <code>HighlightSeriesAsync(id)</code>.
+            Here <code>OnLegendClicking</code> cancels the usual toggle and shows only the clicked series instead, with
+            <code>ShowSeriesAsync</code>/<code>HideSeriesAsync</code> inside <code>ApplyAsync</code> so the chart draws once.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart @ref="_sourcesChart" TItem="Reading" Height="220" YAxis="Sessions" OnLegendClicking="ShowOnly">
+            <LineSeries Id="search" Items="Search" Name="Search" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Id="social" Items="Social" Name="Social" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Id="email" Items="Email" Name="Email" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </RioChart>
+        <p class="note">
+            @foreach (var (id, name) in Sources)
+            {
+                <button class="small" @onmouseenter="() => _sourcesChart!.HighlightSeriesAsync(id)" @onmouseleave="() => _sourcesChart!.HighlightSeriesAsync(null)"
+                        @onfocus="() => _sourcesChart!.HighlightSeriesAsync(id)" @onblur="() => _sourcesChart!.HighlightSeriesAsync(null)"
+                        @onclick="() => _sourcesChart!.ToggleSeriesAsync(id)">@name</button>
+            }
+            <button class="small" @onclick="ShowAll">Show all</button>
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="Selecting a range" Code="@RangeCode">
+    <Description>
+        <p>
+            <code>Selection="SelectionMode.Range"</code>: drag across the plot to select a range, click to clear it. Bind
+            <code>@@bind-SelectedRange</code> and <code>@@bind-SelectedItems</code>, or handle <code>OnSelectionChanged</code>.
+            A range selects the items of the visible series inside it.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="200" YAxis="Sessions" Selection="SelectionMode.Range"
+                  @bind-SelectedRange="_selectedRange" @bind-SelectedItems="_selectedReadings">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </RioChart>
+        <p class="note">
+            @if (_selectedRange is null)
+            {
+                <span>Drag across the chart to select a range.</span>
+            }
+            else
+            {
+                <span>@($"{_selectedRange.Min:g} – {_selectedRange.Max:g}"): @_selectedReadings.Count readings, @($"{_selectedReadings.Sum(r => r.Value ?? 0):#,0}") sessions.</span>
+                <button class="small" @onclick="() => _selectedRange = null">Clear</button>
+            }
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="Selecting points" Code="@PointsCode">
+    <Description>
+        <p>
+            <code>Selection="SelectionMode.Points"</code>: click a point or bar to select it, Ctrl/⌘ or Shift+click to add or remove one,
+            click beside the points to clear. <code>@@bind-SelectedItems</code> gets the items behind the selected points.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Ticket" Items="Tickets" Height="200" YAxis="Minutes" Selection="SelectionMode.Points" @bind-SelectedItems="_selectedTickets">
+            <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>
+        <p class="note">
+            @if (_selectedTickets.Count == 0)
+            {
+                <span>Click a bar to see its tickets.</span>
+            }
+            else
+            {
+                <span>@string.Join(", ", _selectedTickets.Select(t => $"{t.Subject} ({t.Minutes} min)"))</span>
+            }
+        </p>
+    </ChildContent>
+</Example>
+
+<h2>From code</h2>
+<p>Everything the user can do has an API: take a reference with <code>@@ref</code> and call <code>SelectItemsAsync</code>,
+    <code>SelectRangeAsync</code>, <code>ClearSelectionAsync</code>, <code>GetItemsInRange</code>, <code>ShowSeriesAsync</code>,
+    <code>HideSeriesAsync</code>, <code>ToggleSeriesAsync</code>, <code>HighlightSeriesAsync</code> or <code>Refresh</code>.
+    <code>ApplyAsync(async () => …)</code> groups several of them into one redraw. <code>OnLegendClicking</code> can change or cancel
+    what the user did. Zooming has its own API, on <a href="zoom">Zoom and pan</a>.</p>
+<p>To place your own elements over a chart, <code>ValueToPixel(x, y)</code> gives the position of a data value in CSS pixels from the chart's
+    top left corner, and <code>PixelToValue(x, y)</code> the value at a position. <code>Layout</code> exposes the scales and the hit-test index.</p>
+
+@code {
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisOptions Minutes = new() { Title = "min" };
+    private IReadOnlyCollection<string> _hidden = [];
+    private PointClickEventArgs<Reading>? _point;
+    private ChartRange? _selectedRange;
+    private IReadOnlyCollection<Reading> _selectedReadings = [];
+    private IReadOnlyCollection<Ticket> _selectedTickets = [];
+    private RioChart<Reading>? _sourcesChart;
+    private static readonly (string Id, string Name)[] Sources = [("search", "Search"), ("social", "Social"), ("email", "Email")];
+
+    // A legend click shows only that series (or all again when it already is the only one).
+    private async Task ShowOnly(LegendClickingEventArgs e)
+    {
+        e.Cancel = true;
+        var chart = _sourcesChart!;
+        var alone = Sources.All(s => chart.IsSeriesVisible(s.Id) == (s.Id == e.SeriesId));
+        await chart.ApplyAsync(async () =>
+        {
+            foreach (var (id, _) in Sources)
+            {
+                await (alone || id == e.SeriesId ? chart.ShowSeriesAsync(id) : chart.HideSeriesAsync(id));
+            }
+        });
+    }
+
+    private Task ShowAll() => _sourcesChart!.ApplyAsync(async () =>
+    {
+        foreach (var (id, _) in Sources)
+        {
+            await _sourcesChart.ShowSeriesAsync(id);
+        }
+    });
+
+    private const string ClickCode = """
+        <RioChart TItem="Reading" OnPointClick="e => clicked = e">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+
+        <p>@clicked?.SeriesName @clicked?.Item?.Value sessions at @clicked?.Item?.Time</p>
+        """;
+
+    private const string LegendCode = """
+        <RioChart TItem="Reading" @bind-HiddenSeries="hidden">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+
+        <p>Hidden: @string.Join(", ", hidden)</p>
+        """;
+
+    private const string SeriesCode = """
+        <RioChart @ref="chart" TItem="Reading" OnLegendClicking="ShowOnly">
+            <LineSeries Id="search" Items="search" Name="Search" ... />
+            <LineSeries Id="social" Items="social" Name="Social" ... />
+            <LineSeries Id="email" Items="email" Name="Email" ... />
+        </RioChart>
+
+        <button @onmouseenter="() => chart.HighlightSeriesAsync("social")"
+                @onmouseleave="() => chart.HighlightSeriesAsync(null)">Social</button>
+
+        @code {
+            async Task ShowOnly(LegendClickingEventArgs e)
+            {
+                e.Cancel = true; // instead of toggling: show only the clicked series
+                await chart.ApplyAsync(async () =>
+                {
+                    foreach (var id in ids)
+                        await (id == e.SeriesId ? chart.ShowSeriesAsync(id) : chart.HideSeriesAsync(id));
+                });
+            }
+        }
+        """;
+
+    private const string RangeCode = """
+        <RioChart TItem="Reading" Selection="SelectionMode.Range" @bind-SelectedRange="range" @bind-SelectedItems="readings">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+
+        <p>@readings.Count readings, @readings.Sum(r => r.Value) sessions</p>
+        """;
+
+    private const string PointsCode = """
+        <RioChart TItem="Ticket" Items="tickets" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+            <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+        </RioChart>
+
+        <p>@string.Join(", ", selected.Select(t => t.Subject))</p>
+        """;
+}

@@ -1,0 +1,146 @@
+@page "/tooltips"
+@page "/interaction"
+
+<PageTitle>Tooltips · RioCharts</PageTitle>
+
+<h1>Tooltips</h1>
+<p class="lead">
+    The chart sends its points to the browser once per layout; the crosshair and tooltip follow the pointer there without calling .NET
+    (unless the chart has a tooltip template), so charts stay responsive on Blazor Server too.
+</p>
+
+<Example Title="Shared tooltip" Code="@SharedCode">
+    <Description>
+        <p>One tooltip per x lists every series, with each value in its series' <code>Format</code>.</p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Custom tooltip text" Code="@FormatCode">
+    <Description>
+        <p>
+            <code>TooltipValue</code> on a series and <code>TooltipHeader</code> on the chart replace the text of the value and the header.
+            They get the hovered point (<code>X</code>, <code>Y</code>, <code>Item</code>, <code>Items</code>, the default text) and run once per
+            layout, not on pointer moves, so the tooltip stays fully in the browser. Return null to keep the default.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" YAxis="Sessions" TooltipHeader="@(p => p.X is DateTime t ? t.ToString("dddd HH:mm") : null)">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value"
+                        TooltipValue="@(p => $"{p.Y:#,0} sessions ({p.Y - AppSessions[p.Index].Value:#,0} more than the app)")" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Tooltip template" Code="@TemplateCode">
+    <Description>
+        <p>
+            <code>TooltipTemplate</code> renders any Razor inside the tooltip card. Its <code>context</code> has the <code>Header</code>, the
+            <code>X</code> value and the hovered <code>Points</code>, each with its items. The built-in classes (<code>rio-tooltip-head</code>,
+            <code>-row</code>, <code>-dot</code>, <code>-name</code>, <code>-value</code>) keep the default look.
+        </p>
+        <p>
+            The crosshair still follows the pointer in the browser, but the content is rendered by .NET when the hovered x changes: on Blazor
+            Server it lags one round trip behind. Prefer <code>TooltipValue</code> and <code>TooltipHeader</code> when text is enough.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Ticket" Items="Tickets" Height="240" YAxis="Minutes">
+            <ChildContent>
+                <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+            </ChildContent>
+            <TooltipTemplate>
+                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count tickets</div>
+                @foreach (var ticket in context.Points[0].Items)
+                {
+                    <div class="rio-tooltip-row">
+                        <span class="rio-tooltip-name">@ticket.Subject</span>
+                        <span class="rio-tooltip-value">@ticket.Minutes min</span>
+                    </div>
+                }
+            </TooltipTemplate>
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Tooltip from code" Code="@ShowTooltipCode">
+    <Description>
+        <p>
+            <code>ShowTooltipAsync(x)</code> shows the crosshair and tooltip at an x value as if the pointer were there, and linked charts follow;
+            <code>HideTooltipAsync()</code> hides it. Here, hovering a row of the table points it out in the chart.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart @ref="_ordersChart" TItem="Reading" Items="LastWeek" Height="200">
+            <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="#,0" />
+        </RioChart>
+        <table class="docs hover-table">
+            <thead><tr><th>Day</th><th>Orders</th></tr></thead>
+            <tbody>
+                @foreach (var day in LastWeek)
+                {
+                    <tr @onmouseenter="() => _ordersChart!.ShowTooltipAsync(day.Time)" @onmouseleave="() => _ordersChart!.HideTooltipAsync()">
+                        <td>@day.Time.ToString("ddd d MMM")</td><td class="num">@($"{day.Value:#,0}")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </ChildContent>
+</Example>
+
+@code {
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisOptions Minutes = new() { Title = "min" };
+    private RioChart<Reading>? _ordersChart;
+    private static readonly List<Reading> LastWeek = DailyOrders.TakeLast(7).ToList();
+
+    private const string SharedCode = """
+        <RioChart TItem="Reading">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+        """;
+
+    private const string FormatCode = """
+        <RioChart TItem="Reading" TooltipHeader="@(p => p.X is DateTime t ? t.ToString("dddd HH:mm") : null)">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value"
+                        TooltipValue="@(p => $"{p.Y:#,0} sessions ({p.Y - app[p.Index].Value:#,0} more than the app)")" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+        """;
+
+    private const string TemplateCode = """
+        <RioChart TItem="Ticket" Items="tickets">
+            <ChildContent>
+                <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
+            </ChildContent>
+            <TooltipTemplate>
+                <div class="rio-tooltip-head">@context.Header: @context.Points[0].Items.Count tickets</div>
+                @foreach (var ticket in context.Points[0].Items)
+                {
+                    <div class="rio-tooltip-row">
+                        <span class="rio-tooltip-name">@ticket.Subject</span>
+                        <span class="rio-tooltip-value">@ticket.Minutes min</span>
+                    </div>
+                }
+            </TooltipTemplate>
+        </RioChart>
+        """;
+
+    private const string ShowTooltipCode = """
+        <RioChart @ref="chart" TItem="Reading" Items="orders">
+            <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+
+        @foreach (var day in orders)
+        {
+            <tr @onmouseenter="() => chart.ShowTooltipAsync(day.Time)" @onmouseleave="() => chart.HideTooltipAsync()">…</tr>
+        }
+        """;
+}

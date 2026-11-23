@@ -32,7 +32,10 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 - [Compact charts](https://riocharts.com/compact): sparklines
 - [Axes and time](https://riocharts.com/axes)
 - [Annotations](https://riocharts.com/annotations)
-- [Tooltips, clicks and zoom](https://riocharts.com/interaction)
+- [Tooltips](https://riocharts.com/tooltips)
+- [Clicks and selection](https://riocharts.com/clicks-and-selection)
+- [Zoom and pan](https://riocharts.com/zoom)
+- [Keyboard access](https://riocharts.com/keyboard)
 - [Live data](https://riocharts.com/live-data)
 - [Large data](https://riocharts.com/large-data)
 - [Theming](https://riocharts.com/theming)

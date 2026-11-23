@@ -1,0 +1,76 @@
+@page "/zoom"
+
+<PageTitle>Zoom and pan · RioCharts</PageTitle>
+
+<h1>Zoom and pan</h1>
+<p class="lead">
+    Zoom previews run in the browser; only the finished zoom calls back into .NET, so zooming stays smooth on Blazor Server too.
+</p>
+
+<Example Title="Zoom and pan" Code="@ZoomCode">
+    <Description>
+        <p>
+            <code>Zoomable="true"</code>: drag to zoom, Shift+drag to pan, Ctrl/⌘+wheel to zoom at the pointer, double-click to reset.
+            On touch screens, pinch to zoom and move two fingers to pan. The y axis fits the visible data.
+            <code>@@bind-VisibleRange</code> reads and sets the visible x range.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions" Zoomable="true" @bind-VisibleRange="_range">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </RioChart>
+        <p class="note">
+            Visible: @(_range is null ? "all" : $"{_range.Min:g} – {_range.Max:g}")
+            <button class="small" @onclick="() => _range = ChartRange.Of(Start.AddHours(30), Start.AddHours(42))">Zoom to 17 Nov 06–18</button>
+        </p>
+    </ChildContent>
+</Example>
+
+<Example Title="Linked charts" Code="@LinkedCode">
+    <Description>
+        <p>
+            Charts in the same <code>Group</code> share the crosshair and the zoom, and line up their plots. Zoom either chart and the
+            other follows.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="200" YAxis="Sessions" Zoomable="true" Group="store">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
+        </RioChart>
+        <RioChart TItem="Reading" Height="150" YAxis="Euros" Zoomable="true" Group="store">
+            <AreaSeries Items="Revenue" Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 €" Curve="CurveType.Monotone" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>From code</h2>
+<p>Take a reference with <code>@@ref</code> and call <code>ZoomToAsync</code>, <code>PanAsync</code>, <code>ResetZoomAsync</code> or
+    <code>GetVisibleRange</code>. <code>OnZoomChanging</code> can change or cancel a zoom the user made. On the keyboard, <kbd>+</kbd>,
+    <kbd>−</kbd>, <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> and <kbd>0</kbd> zoom, pan and reset (see
+    <a href="keyboard">Keyboard access</a>).</p>
+
+@code {
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
+    private static readonly AxisOptions Euros = new() { Title = "€ per 15 min" };
+    private ChartRange? _range;
+
+    private const string ZoomCode = """
+        <RioChart TItem="Reading" Zoomable="true" @bind-VisibleRange="range">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+
+        <button @onclick="() => range = ChartRange.Of(from, to)">Zoom</button>
+        """;
+
+    private const string LinkedCode = """
+        <RioChart TItem="Reading" Zoomable="true" Group="store">
+            <LineSeries Items="web" ... />
+        </RioChart>
+        <RioChart TItem="Reading" Zoomable="true" Group="store">
+            <AreaSeries Items="revenue" ... />
+        </RioChart>
+        """;
+}

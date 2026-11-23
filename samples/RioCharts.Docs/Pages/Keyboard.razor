@@ -1,0 +1,62 @@
+@page "/keyboard"
+
+<PageTitle>Keyboard access · RioCharts</PageTitle>
+
+<h1>Keyboard access</h1>
+<p class="lead">
+    Every chart with data is a tab stop. Keyboard navigation runs in the browser; only finished zooms and <kbd>Enter</kbd> call .NET.
+</p>
+
+<Example Title="Moving between points" Code="@KeyboardCode">
+    <Description>
+        <p>
+            With the chart focused, <kbd>←</kbd> and <kbd>→</kbd> move between points, <kbd>↑</kbd> and <kbd>↓</kbd> between series
+            (on pies, every arrow moves between slices), <kbd>Home</kbd>, <kbd>End</kbd>, <kbd>Page Up</kbd> and <kbd>Page Down</kbd> jump.
+            The crosshair and tooltip follow, linked charts follow too, and screen readers hear each point (for example
+            "Mon 01:00: Web 177 sessions, App 114 sessions. 5 of 192"). <kbd>Enter</kbd> raises <code>OnPointClick</code> and
+            <kbd>Esc</kbd> leaves.
+        </p>
+        <p>Click the chart below or Tab to it, then use the arrow keys. <code>KeyboardNavigation="false"</code> turns it off.</p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions" OnPointClick="e => _keyPoint = e">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+        <p class="note">Selected with Enter: @(_keyPoint is null ? "nothing yet" : $"{_keyPoint.SeriesName} {_keyPoint.Item?.Value:#,0} sessions at {_keyPoint.Item?.Time:g}")</p>
+    </ChildContent>
+</Example>
+
+<Example Title="Zooming with the keyboard" Code="@ZoomCode">
+    <Description>
+        <p>
+            On <code>Zoomable</code> charts, <kbd>+</kbd> and <kbd>−</kbd> zoom around the focused point, <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd>
+            pans and <kbd>0</kbd> shows all data.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240" YAxis="Sessions" Zoomable="true">
+            <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+@code {
+    private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
+    private PointClickEventArgs<Reading>? _keyPoint;
+
+    private const string KeyboardCode = """
+        <RioChart TItem="Reading" OnPointClick="e => selected = e">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+        """;
+
+    private const string ZoomCode = """
+        <RioChart TItem="Reading" Zoomable="true">
+            <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+            <LineSeries Items="app" Name="App" XValue="r => r.Time" YValue="r => r.Value" Format="#,0 'sessions'" />
+        </RioChart>
+        """;
+}

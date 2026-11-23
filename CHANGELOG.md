@@ -5,6 +5,10 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Docs: the "Tooltips, clicks and zoom" page is split into four pages (Tooltips; Clicks and
+  selection; Zoom and pan; Keyboard access), with one feature per example. The old
+  `/interaction` address opens the Tooltips page.
+
 - The Reset zoom button is an icon (arrows out to the corners) like the download button, with
   `ChartTexts.ResetZoom` as its tooltip and accessible name. It moves to the top row, above the
   plot and next to the download button, when there is room there (a chart with a title, a top
