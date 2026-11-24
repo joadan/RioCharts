@@ -391,7 +391,7 @@ public static partial class ChartLayout
                 continue;
             }
 
-            var format = r.Spec.Format ?? r.Axis.Spec.Format;
+            var format = ValueFormat.Of(r.Spec.Format, r.Axis.Spec);
             var nodes = new List<Node>();
             foreach (var a in anchors)
             {

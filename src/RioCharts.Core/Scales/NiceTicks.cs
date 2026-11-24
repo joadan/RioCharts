@@ -22,9 +22,15 @@ public static class NiceTicks
     }
 
     /// <summary>Rounds a domain out to multiples of a nice step.</summary>
-    public static (double Min, double Max, double Step) NiceDomain(double min, double max, int targetCount)
+    public static (double Min, double Max, double Step) NiceDomain(double min, double max, int targetCount) => NiceDomain(min, max, targetCount, 0);
+
+    /// <summary>
+    /// Rounds a domain out to multiples of a nice step of at least <paramref name="minStep"/> (a power of ten, e.g. 1 for
+    /// whole numbers; 0 for no minimum).
+    /// </summary>
+    public static (double Min, double Max, double Step) NiceDomain(double min, double max, int targetCount, double minStep)
     {
-        var step = Step(max - min, targetCount);
+        var step = Math.Max(Step(max - min, targetCount), minStep);
         var niceMin = Math.Floor(min / step + 1e-9) * step;
         var niceMax = Math.Ceiling(max / step - 1e-9) * step;
         if (!(niceMax > niceMin))
@@ -33,7 +39,7 @@ public static class NiceTicks
         }
 
         // Rounding out can change the best step; recompute once.
-        step = Step(niceMax - niceMin, targetCount);
+        step = Math.Max(Step(niceMax - niceMin, targetCount), minStep);
         niceMin = Math.Floor(min / step + 1e-9) * step;
         niceMax = Math.Ceiling(max / step - 1e-9) * step;
         if (!(niceMax > niceMin))

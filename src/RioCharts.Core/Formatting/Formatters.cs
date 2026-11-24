@@ -54,6 +54,41 @@ public sealed class NumberFormatter
     }
 
     /// <summary>
+    /// Tick labels from a custom format string or function, else automatic (compact, decimals from the step).
+    /// </summary>
+    internal static Func<double, string> ForTicks(IReadOnlyList<double> ticks, double step, CultureInfo culture, ValueFormat format) =>
+        format.Function is { } function ? function : ForTicks(ticks, step, culture, format.Pattern);
+
+    /// <summary>Tick labels for a logarithmic axis from a custom format string or function, else automatic.</summary>
+    internal static Func<double, string> ForLogTicks(CultureInfo culture, ValueFormat format) =>
+        format.Function is { } function ? function : ForLogTicks(culture, format.Pattern);
+
+    /// <summary>
+    /// The smallest tick step a custom format can tell apart from zero: the lowest power of ten (from 1e-9) that it
+    /// writes differently from 0, e.g. 1 for "#,0", 0.01 for "P0" and 1000 for "#,0,k". Null without a custom format,
+    /// or when it writes every value alike. Ticks closer than this would get the same label (0, 1, 1, 2, 2).
+    /// </summary>
+    internal static double? MinStep(ValueFormat format, CultureInfo culture)
+    {
+        if (!format.IsCustom)
+        {
+            return null;
+        }
+
+        var zero = format.Format(0, culture);
+        for (var e = -9; e <= 15; e++)
+        {
+            var p = double.Parse($"1e{e}", CultureInfo.InvariantCulture);
+            if (format.Format(p, culture) != zero)
+            {
+                return e == -9 ? null : p;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Tick labels for a logarithmic axis. Its ticks span several powers of ten, so each is formatted on its own:
     /// compact from 1000 (1k, 20k, 5M) and with the decimals a small value needs (0.01, 0.5).
     /// </summary>
@@ -123,6 +158,29 @@ public sealed class NumberFormatter
     }
 }
 
+/// <summary>
+/// How values are written: a .NET format string (<see cref="Pattern"/>), a function (an axis'
+/// <see cref="AxisOptions.LabelFormatter"/>), or neither (automatic). A string converts to it.
+/// </summary>
+internal readonly record struct ValueFormat(string? Pattern, Func<double, string>? Function = null)
+{
+    public static implicit operator ValueFormat(string? pattern) => new(pattern);
+
+    /// <summary>A format string or function is set (not automatic).</summary>
+    public bool IsCustom => Function is not null || !string.IsNullOrEmpty(Pattern);
+
+    /// <summary>An axis' format: its label function, else its format string, else <paramref name="fallback"/>.</summary>
+    public static ValueFormat Of(AxisOptions? axis, string? fallback = null) =>
+        axis?.LabelFormatter is { } function ? new(null, function) : new(axis?.Format ?? fallback);
+
+    /// <summary>A series value's format: the series' own format string, else its axis' format.</summary>
+    public static ValueFormat Of(string? seriesFormat, AxisOptions? axis) =>
+        !string.IsNullOrEmpty(seriesFormat) ? new(seriesFormat) : Of(axis);
+
+    /// <summary>Formats a single value (see <see cref="ValueFormatter.Format(double, CultureInfo, string?, double)"/>).</summary>
+    public string Format(double value, CultureInfo culture, double compactFrom = 1e6) => ValueFormatter.Format(value, culture, this, compactFrom);
+}
+
 /// <summary>Single values for tooltips and data labels (not tied to a tick grid).</summary>
 public static class ValueFormatter
 {
@@ -164,6 +222,10 @@ public static class ValueFormatter
         var text = value.ToString(abs >= 100 ? "#,##0.#" : "#,##0.##", culture);
         return text == "-0" ? "0" : text;
     }
+
+    /// <summary>Formats a single value with a format string or function (a function is not used for NaN or infinity).</summary>
+    internal static string Format(double value, CultureInfo culture, ValueFormat format, double compactFrom = 1e6) =>
+        format.Function is { } function && double.IsFinite(value) ? function(value) : Format(value, culture, format.Pattern, compactFrom);
 
     /// <summary>An x value for tooltips: a time at the resolution of the data, a category or a number.</summary>
     public static Func<double, string> ForX(XKind kind, IEnumerable<double> values, CultureInfo culture, string? customFormat = null)

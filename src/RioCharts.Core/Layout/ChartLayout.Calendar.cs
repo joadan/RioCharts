@@ -93,7 +93,7 @@ public static partial class ChartLayout
         }
 
         var color = r.Spec.Color ?? ThemeTokens.Series(0);
-        var format = r.Spec.Format ?? spec.Y.Format;
+        var format = ValueFormat.Of(r.Spec.Format, spec.Y);
         string F(double v) => ValueFormatter.Format(v, culture, format);
         var mid = r.Spec.Midpoint is { } m && double.IsFinite(m) ? m : (double?)null;
         var below = r.Spec.BelowColor ?? ThemeTokens.Negative;

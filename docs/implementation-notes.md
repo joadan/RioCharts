@@ -229,7 +229,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   rectangles and CSS paint. This is JSON, not binary; the paths are already downsampled, so it
   stays small. The canvas sits over the SVG, scaled by `devicePixelRatio`, and clipped to the plot.
   So annotations and data labels sit under the series there, unlike in SVG mode. Colors are CSS
-  values resolved in the browser; the canvas repaints when a `class` or `data-theme` attribute
+  values resolved in the browser; the canvas repaints when a `class`, `data-theme` or `data-bs-theme` attribute
   changes anywhere in the page or the OS color scheme changes. Downsampling defaults to four times
   the plot width (at least 2000 points) in canvas mode. Pan previews by redrawing with an offset.
   There is no entry fade on the canvas.

@@ -812,7 +812,7 @@ internal sealed class DumbbellSeriesType : ISeriesType
     internal static void Dot(PathBuilder path, double x, double y, double r) => path.MoveTo(x, y - r).Arc(x, y, r, 0, Math.PI * 2).Close();
 
     /// <summary>The tooltip's value: "58 → 66 (+8)", or one end alone when the other is missing.</summary>
-    internal static string Text(double from, double to, System.Globalization.CultureInfo culture, string? format)
+    internal static string Text(double from, double to, System.Globalization.CultureInfo culture, Formatting.ValueFormat format)
     {
         string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
         if (!double.IsFinite(from))

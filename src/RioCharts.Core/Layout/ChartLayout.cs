@@ -1510,7 +1510,7 @@ public static partial class ChartLayout
         var n = hits.X.Length;
         var xLabels = new string[n];
         var values = new string[n];
-        var format = r.Spec.Format ?? r.Axis.Spec.Format;
+        var format = ValueFormat.Of(r.Spec.Format, r.Axis.Spec);
         var xTitle = r.Spec.Type == SeriesType.Scatter && !string.IsNullOrWhiteSpace(xAxisTitle) ? xAxisTitle : null;
         var boxParts = r.Spec.Type == SeriesType.BoxPlot && r.Data.Box is not null ? new string[n][] : null;
         var candleParts = r.Spec.Type == SeriesType.Candlestick && r.Data.Candles is not null && context.CandleGroups is { } cg && cg.Count == n ? new string[n][] : null;
@@ -1638,7 +1638,7 @@ public static partial class ChartLayout
 
     // The change in percent only with direction colors (prices): for values such as temperatures, a percentage depends
     // on where zero is and means nothing.
-    private static string[] CandlePartValues(CandleSummary c, CultureInfo culture, string? format, bool percent)
+    private static string[] CandlePartValues(CandleSummary c, CultureInfo culture, ValueFormat format, bool percent)
     {
         var change = c.Close - c.Open;
         var sign = change > 0 ? "+" : "";
@@ -1655,7 +1655,7 @@ public static partial class ChartLayout
     private static string[] BoxPartLabels(ChartTexts texts) =>
         [texts.BoxMax, texts.BoxUpperQuartile, texts.BoxMedian, texts.BoxLowerQuartile, texts.BoxMin, texts.BoxCount, texts.BoxOutliers];
 
-    private static string[] BoxPartValues(BoxColumns box, int i, double median, CultureInfo culture, string? format)
+    private static string[] BoxPartValues(BoxColumns box, int i, double median, CultureInfo culture, ValueFormat format)
     {
         string F(double v) => double.IsFinite(v) ? ValueFormatter.Format(v, culture, format) : "–";
         var outliers = box.OutliersOf(i);

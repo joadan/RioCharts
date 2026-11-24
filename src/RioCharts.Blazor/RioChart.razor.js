@@ -1779,7 +1779,7 @@ export function paint(container, scene) {
     paintCanvas(state, 0);
 }
 
-// Theme switches (a class or data-theme attribute, or the OS setting) change the CSS colors the
+// Theme switches (a class, data-theme or data-bs-theme attribute, or the OS setting) change the CSS colors the
 // canvas resolved: repaint.
 function watchTheme() {
     if (themeObserver) {
@@ -1788,7 +1788,7 @@ function watchTheme() {
 
     const repaint = () => requestAnimationFrame(() => canvasCharts.forEach(s => s.canvasScene && paintCanvas(s, 0)));
     themeObserver = new MutationObserver(repaint);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'], subtree: true });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'data-bs-theme'], subtree: true });
     if (window.matchMedia) {
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repaint);
     }

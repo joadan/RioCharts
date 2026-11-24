@@ -3,6 +3,31 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
+## Unreleased
+
+- Heatmaps with stepped colors: `ColorBands` on the first `HeatmapSeries` (`"colorBands"` in JSON) gives each cell the
+  solid color of the band its value is in (e.g. green, yellow and red ranges), and the legend lists the bands
+  ("< 50", "50–80", "> 80"). `ColorValue` (`"colorField"`) now also works on heatmaps: a cell's own solid color, which
+  wins over the scale and the bands. Data labels on light colors are dark. Docs: a "Stepped colors" example.
+- Shared chart defaults: cascade a `RioChartDefaults` (Culture, TimeZone, UnspecifiedTimes, Height, Legend, Tooltip,
+  XAxis, YAxis, Animate, KeyboardNavigation, Class) once, e.g. around the router, instead of repeating them on every
+  chart. A parameter set on the chart wins. Docs: a "Shared defaults" example on Getting started.
+- Axis label functions: `AxisOptions.LabelFormatter` (`Func<double, string>`) writes the labels of a numeric axis when
+  a format string is not enough, e.g. bytes as KB, MB or GB. Series on the axis without a `Format` of their own use it
+  for tooltips, data labels and the screen reader text too. Not part of JSON definitions. Docs: "Labels from a function"
+  on the Axes page.
+- Ticks follow the axis format's precision: they are never closer than the format can tell apart, so a maximum of 2
+  with `Format = "#,0"` gives 0, 1, 2 instead of `0 1 1 2 2`, and `"P0"` keeps whole percents. When every value is 0,
+  the axis now runs from 0 to 1 instead of −1 to 1. A behavior change for charts with these formats or data.
+- Screen reader summaries write values with the series' format (else the axis' format, else the automatic format), as
+  the tooltips do: "13 910 kWh" instead of `1,391E+04`. The `<desc>` text of most charts changes.
+- Bootstrap themes: charts follow `data-bs-theme="dark"` and `data-bs-theme="light"` on an ancestor, like `data-theme`,
+  so apps with Bootstrap's color mode toggle get the right chart colors (canvas charts repaint on the switch too).
+- RioCharts.Blazor depends on `Microsoft.AspNetCore.Components.Web` 10.0.0 for .NET 10 (was 10.0.12), the lowest
+  version it supports, so apps with central package management no longer have to raise their own ASP.NET Core pins.
+- Docs: `AxisOptions.Format` and the series' `Format` say how they relate: a series without a format uses its axis'
+  format; a series' format never changes the axis.
+
 ## 0.6.2-preview (2026-11-24)
 
 - **Breaking:** the sort enum `SortOrder` is now `ChartSort` (`Sort="ChartSort.Descending"`), since `SortOrder` also

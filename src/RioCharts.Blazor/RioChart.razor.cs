@@ -62,7 +62,7 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>The series and annotation components, e.g. &lt;LineSeries&gt; and &lt;ReferenceLine&gt;.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>Height in pixels. Default 300.</summary>
+    /// <summary>Height in pixels. Default 300, or the cascaded <see cref="RioChartDefaults"/>.</summary>
     [Parameter] public double Height { get; set; } = 300;
 
     /// <summary>Fixed width in pixels. Default: the container's width (responsive).</summary>
@@ -114,7 +114,7 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>With a TimeZone: how DateTime values with Kind Unspecified are read (UTC or the display zone).</summary>
     [Parameter] public UnspecifiedTimes? UnspecifiedTimes { get; set; }
 
-    /// <summary>Culture for labels. Default: the current culture.</summary>
+    /// <summary>Culture for labels. Default: the cascaded <see cref="RioChartDefaults"/>, else the current culture.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>
@@ -399,6 +399,79 @@ public partial class RioChart<TItem> : IChartContext
         if (!_disposed && _annotations.Remove(annotation))
         {
             Invalidate();
+        }
+    }
+
+    /// <summary>Defaults for every chart below, cascaded by the app (see <see cref="RioChartDefaults"/>).</summary>
+    [CascadingParameter] private RioChartDefaults? Defaults { get; set; }
+
+    /// <inheritdoc />
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        parameters.SetParameterProperties(this);
+        ApplyDefaults(parameters);
+        return base.SetParametersAsync(ParameterView.Empty);
+    }
+
+    // Parameters the chart does not set take the cascaded default, else the built-in one. Done on every
+    // parameter set, so a changed default reaches charts that do not set the parameter themselves.
+    private void ApplyDefaults(ParameterView parameters)
+    {
+        var d = Defaults;
+        bool Unset<T>(string name) => !parameters.TryGetValue<T>(name, out _);
+        if (Unset<double>(nameof(Height)))
+        {
+            Height = d?.Height ?? 300;
+        }
+
+        if (Unset<CultureInfo?>(nameof(Culture)))
+        {
+            Culture = d?.Culture;
+        }
+
+        if (Unset<string?>(nameof(TimeZone)))
+        {
+            TimeZone = d?.TimeZone;
+        }
+
+        if (Unset<UnspecifiedTimes?>(nameof(UnspecifiedTimes)))
+        {
+            UnspecifiedTimes = d?.UnspecifiedTimes;
+        }
+
+        if (Unset<AxisOptions?>(nameof(XAxis)))
+        {
+            XAxis = d?.XAxis;
+        }
+
+        if (Unset<AxisOptions?>(nameof(YAxis)))
+        {
+            YAxis = d?.YAxis;
+        }
+
+        if (Unset<LegendOptions?>(nameof(Legend)))
+        {
+            Legend = d?.Legend;
+        }
+
+        if (Unset<TooltipOptions?>(nameof(Tooltip)))
+        {
+            Tooltip = d?.Tooltip;
+        }
+
+        if (Unset<bool>(nameof(Animate)))
+        {
+            Animate = d?.Animate ?? true;
+        }
+
+        if (Unset<bool?>(nameof(KeyboardNavigation)))
+        {
+            KeyboardNavigation = d?.KeyboardNavigation;
+        }
+
+        if (Unset<string?>(nameof(Class)))
+        {
+            Class = d?.Class;
         }
     }
 

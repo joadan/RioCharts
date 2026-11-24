@@ -47,8 +47,10 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). With `TimeZone` on the chart, buckets follow that zone's calendar (a day is midnight to midnight there). No need to group in the query.
 - Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
 - Size: the chart fills its container's width; `Height` is 300 px by default.
-- Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture).
-- Colors: CSS colors or theme variables, e.g. `Color="#2563eb"` or `Color="--rio-negative"`. The palette and light/dark theme come from CSS variables (`--rio-series-1` ... `--rio-series-10`, `--rio-text`, ...).
+- Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture). A series without `Format` uses its axis' `Format` in tooltips, data labels and the screen reader text, so setting it on the axis alone is enough; a series' `Format` never changes the axis. Ticks are never closer than the format can tell apart (`"#,0"` gives whole numbers).
+- Labels a format string cannot write (bytes as KB/MB/GB, durations): `YAxis="@(new AxisOptions { LabelFormatter = v => ... })"`, a `Func<double, string>` that also writes the tooltips of series without a `Format`. Keep the values unscaled.
+- Settings shared by every chart (Culture, TimeZone, Height, Legend, Tooltip, XAxis, YAxis, Animate, Class): cascade a `RioChartDefaults` once, `<CascadingValue Value="chartDefaults" IsFixed="true">` around the router. A chart's own parameter wins; its `YAxis` replaces the default axis as a whole (`chartDefaults.YAxis with { Title = "kWh" }` keeps the rest).
+- Colors: CSS colors or theme variables, e.g. `Color="#2563eb"` or `Color="--rio-negative"`. The palette and light/dark theme come from CSS variables (`--rio-series-1` ... `--rio-series-10`, `--rio-text`, ...). The dark theme follows the OS, or an ancestor with `data-theme="dark"`, Bootstrap's `data-bs-theme="dark"` or class `dark` (and `light` the same way), so an app's theme toggle works without extra code.
 - Namespaces beyond the two usings: `RioCharts.Core.Data` (`SeriesData`, `SeriesBuffer`), `RioCharts.Core.Definitions` (`ChartDataset`, `ChartDefinitionJson`).
 
 ## Choosing a series
@@ -69,7 +71,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Stages narrowing down (visits → cart → purchase) | `FunnelSeries` | `XValue` (the stage), `YValue`; stages keep the items' order, each shows its share of the stage before; one funnel per chart |
 | Several measures per item | `RadarSeries` | one series per item |
 | A value per day over months or a year (orders, activity) | `CalendarSeries` | `XValue` a date or time; items on the same day add up (`Aggregate` to change), no `YValue` counts them; one calendar per chart |
-| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors) |
+| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors); `ColorBands` for stepped colors (green/yellow/red ranges, with a legend of the bands) |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
 | Two values per category (before/after, plan/actual) | `DumbbellSeries` | `XValue` the category, `FromValue` the first value, `YValue` the second; `Horizontal="true"` on the chart for rows |
@@ -277,6 +279,8 @@ A ChartDefinition (the same model as a chart definition in JSON) with datasets i
 - Animation options (ApexCharts `Animations`, Chart.js `animation`): there are none. Charts are not animated; the series only fade in on first render. `Animate="false"` turns that off.
 - Setting a width: not needed, the chart follows its container. Set `Height` for another height.
 - Types not found (`SeriesData`, `SeriesBuffer`, `ChartDataset`): add `@using RioCharts.Core.Data` or `@using RioCharts.Core.Definitions`.
+- Repeating `Culture`, `TimeZone`, `Height` or axis settings on every chart: cascade a `RioChartDefaults` instead.
+- Fake values to get stepped heatmap colors (ApexCharts `colorScale.ranges`): use `ColorBands` on the first `HeatmapSeries`.
 - Hard-coded colors for light and dark: use theme variables such as `--rio-negative` and `--rio-positive`; they follow the theme.
 
 ## Reference
@@ -292,7 +296,7 @@ A chart. Series are added as child components: `<RioChart Items="readings"><Line
 - `Items`: `IEnumerable<TItem>?` — Items shared by all series that do not set their own.
 - `ChildContent`: `RenderFragment?` — The series and annotation components, e.g. <LineSeries> and <ReferenceLine>.
 - `Title`: `string?` — Title shown above the chart.
-- `Height`: `double` = `300` — Height in pixels. Default 300.
+- `Height`: `double` = `300` — Height in pixels. Default 300, or the cascaded `RioChartDefaults`.
 - `Width`: `double?` — Fixed width in pixels. Default: the container's width (responsive).
 - `TreemapPath`: `string?` — Treemaps: the group shown (drill-down), as a path with the series' separator, e.g. `"Asia"` or `"Asia/India"`; null shows the whole tree. Maps: the area zoomed into, a continent (`"Europe"`) or a country (`"SE"`); null shows the world. Two-way bindable with `@bind-TreemapPath`, e.g. to keep it in the page's URL.
 - `Exportable`: `bool` — Shows a download button in the chart's top-right corner (on hover or focus) with a menu for SVG, PNG and CSV. The same exports are available from code: `RioChart.DownloadPngAsync` etc.
@@ -308,7 +312,7 @@ A chart. Series are added as child components: `<RioChart Items="readings"><Line
 - `Annotations`: `IReadOnlyList<Annotation>?` — Annotations as data (in addition to <ReferenceLine> and <ReferenceBand> children).
 - `TimeZone`: `string?` — Display time zone: "UTC", "local" (the viewer's browser zone) or an IANA id such as "Europe/Stockholm". Default: none, times are shown as given. With a zone, times are plotted on instants (no doubling back at DST changes) and labelled in that zone.
 - `UnspecifiedTimes`: `UnspecifiedTimes?` — With a TimeZone: how DateTime values with Kind Unspecified are read (UTC or the display zone).
-- `Culture`: `CultureInfo?` — Culture for labels. Default: the current culture.
+- `Culture`: `CultureInfo?` — Culture for labels. Default: the cascaded `RioChartDefaults`, else the current culture.
 - `Texts`: `ChartTexts?` — The chart's own texts ("Reset zoom", "No data available", the download menu, screen reader texts), e.g. `ChartTexts.Swedish with { ResetZoom = "Visa allt" }`. Default: a `ChartTexts` cascaded by the app, else `ChartTexts.For` the `RioChart.Culture` or, without one, the current UI culture.
 - `HiddenSeries`: `IReadOnlyCollection<string>?` — Ids of hidden series. Two-way bindable with `@bind-HiddenSeries`.
 - `Zoomable`: `bool` — Zoom and pan on the x axis: drag to zoom in, Shift+drag to pan, Ctrl/⌘+wheel to zoom at the pointer, pinch or two-finger drag on touch screens, double-click or the reset button to zoom out. Not for category axes.
@@ -393,13 +397,13 @@ Every series component below takes these, plus its own.
 - `Data`: `SeriesData?` — Columnar data (fast path for large series); used instead of Items when set.
 - `DataVersion`: `object?` — Change this to reprocess the data after changing Items in place.
 - `Color`: `string?` — CSS color. Defaults to the next palette color.
-- `ColorValue`: `Func<TItem, string?>?` — A color per item, e.g. `o => o.Late ? "--rio-negative" : null`: a CSS color or a theme token (tokens follow light and dark themes); null keeps the series color. Bars, scatter markers, pie slices, radial bars and treemap items take the color; lines and areas mark the point with a dot in it. Aggregated points take their first item's color. Runs once per data change, like the other selectors.
-- `ColorBands`: `IReadOnlyList<ColorBand>?` — Colors by value, e.g. `[new() { Above = 120, Color = "--rio-negative" }]`: a line or area changes color where it crosses into a band, a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; `SeriesBase.ColorValue` wins over bands.
+- `ColorValue`: `Func<TItem, string?>?` — A color per item, e.g. `o => o.Late ? "--rio-negative" : null`: a CSS color or a theme token (tokens follow light and dark themes); null keeps the series color. Bars, scatter markers, pie slices, radial bars, heatmap cells and treemap items take the color; lines and areas mark the point with a dot in it. Aggregated points take their first item's color. Runs once per data change, like the other selectors.
+- `ColorBands`: `IReadOnlyList<ColorBand>?` — Colors by value, e.g. `[new() { Above = 120, Color = "--rio-negative" }]`: a line or area changes color where it crosses into a band, a bar, scatter point or heatmap cell takes the color of the band its value is in. Later bands win where they overlap; `SeriesBase.ColorValue` wins over bands.
 - `ZIndex`: `int?` — Draw order override (default: areas, then bars, then lines).
 - `YAxisId`: `string?` — Id of the vertical axis to use (see `RioChart.YAxes`). Default: the primary axis.
 - `Stack`: `string?` — Stack group: series of the same type with the same stack name are stacked.
 - `DataLabels`: `bool?` — Show values on the chart. Default: off, except for pie, donut and radial bar.
-- `Format`: `string?` — .NET format string for values in tooltips and data labels, e.g. "0.0".
+- `Format`: `string?` — .NET format string for values in tooltips, data labels and the screen reader text, e.g. "0.0". Default: the format of the series' axis (its `Format` or `LabelFormatter`), else automatic. It does not change the axis labels: set the same format on the axis once, and leave it off the series.
 - `TooltipValue`: `Func<TooltipPoint<TItem>, string?>?` — Text for this series' value in the tooltip, e.g. `p => $"{p.Y:0} ms"` or `p => $"{p.Y:0} ms (target {p.Item!.Target} ms)"`; null keeps the default (`SeriesBase.Format`). Runs once per layout for the points that can be hovered, not on pointer moves.
 - `Buffer`: `SeriesBuffer?` — Live data (used instead of Items and Data when set). Append to it from any thread; the chart redraws at most every `RioChart.RefreshInterval` milliseconds.
 
@@ -445,7 +449,7 @@ Scatter series: a marker per point, for how two measures relate, e.g. delivery d
 
 #### `<HeatmapSeries>` (`HeatmapSeries<TItem>`)
 
-One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one color scale (the first row's Color, Format, Max, Midpoint and BelowColor).
+One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one color scale (the first row's Color, Format, Max, Midpoint, BelowColor and ColorBands). For stepped colors (e.g. green, yellow, red ranges) set `ColorBands`: each cell takes the solid color of its band and the legend lists the bands. `ColorValue` gives a cell its own solid color.
 
 - `Max`: `double?` — The value that gets the full color (e.g. 100 for percentages). Default: the highest value.
 - `Midpoint`: `double?` — Colors diverge from this value, e.g. 0 for changes or 20 for °C: values above it take the series color, values below it `HeatmapSeries.BelowColor`, stronger the further they are from it. Default: one color, stronger for higher values.
@@ -711,7 +715,8 @@ Settings for one axis: title, range, scale, label format and grid lines.
 - `Min`: `double?` — Fixed minimum. When null it comes from the data.
 - `Max`: `double?` — Fixed maximum. When null it comes from the data.
 - `Scale`: `ScaleType` — Scale type. Auto picks from the data: times give a time axis, numbers a linear axis, strings a band axis.
-- `Format`: `string?` — .NET format string for labels, e.g. "P0", "C0" or "yyyy-MM-dd". Null for automatic formatting.
+- `Format`: `string?` — .NET format string for labels, e.g. "P0", "C0" or "yyyy-MM-dd". Null for automatic formatting. On a value axis, series without a format of their own also use it for their tooltips and data labels (a series' Format wins). Ticks are never closer than the format can tell apart: with "#,0" they are whole numbers.
+- `LabelFormatter`: `Func<double, string>?` — A function that writes the labels of a numeric axis, e.g. bytes as "1.5 MB": used instead of `AxisOptions.Format`. Like Format, it also writes the tooltips and data labels of series on the axis that have no format of their own, and the screen reader text. Ticks stay on round steps (1, 2 or 5 times a power of ten), never closer than the function can tell apart from zero. Not used on time or category axes, and not part of JSON definitions.
 - `GridLines`: `bool?` — Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.
 - `LabelRotation`: `double?` — Angle of category labels on the x axis, in degrees from 0 to 90; they slope down to the left. Null (the default): horizontal when every label fits, otherwise 45 degrees. 0 keeps them horizontal and shows every n-th label when they do not all fit. Rotated labels still thin out when even they overlap.
 - `Position`: `AxisPosition` — Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.

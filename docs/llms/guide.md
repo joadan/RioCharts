@@ -47,8 +47,10 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). With `TimeZone` on the chart, buckets follow that zone's calendar (a day is midnight to midnight there). No need to group in the query.
 - Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
 - Size: the chart fills its container's width; `Height` is 300 px by default.
-- Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture).
-- Colors: CSS colors or theme variables, e.g. `Color="#2563eb"` or `Color="--rio-negative"`. The palette and light/dark theme come from CSS variables (`--rio-series-1` ... `--rio-series-10`, `--rio-text`, ...).
+- Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture). A series without `Format` uses its axis' `Format` in tooltips, data labels and the screen reader text, so setting it on the axis alone is enough; a series' `Format` never changes the axis. Ticks are never closer than the format can tell apart (`"#,0"` gives whole numbers).
+- Labels a format string cannot write (bytes as KB/MB/GB, durations): `YAxis="@(new AxisOptions { LabelFormatter = v => ... })"`, a `Func<double, string>` that also writes the tooltips of series without a `Format`. Keep the values unscaled.
+- Settings shared by every chart (Culture, TimeZone, Height, Legend, Tooltip, XAxis, YAxis, Animate, Class): cascade a `RioChartDefaults` once, `<CascadingValue Value="chartDefaults" IsFixed="true">` around the router. A chart's own parameter wins; its `YAxis` replaces the default axis as a whole (`chartDefaults.YAxis with { Title = "kWh" }` keeps the rest).
+- Colors: CSS colors or theme variables, e.g. `Color="#2563eb"` or `Color="--rio-negative"`. The palette and light/dark theme come from CSS variables (`--rio-series-1` ... `--rio-series-10`, `--rio-text`, ...). The dark theme follows the OS, or an ancestor with `data-theme="dark"`, Bootstrap's `data-bs-theme="dark"` or class `dark` (and `light` the same way), so an app's theme toggle works without extra code.
 - Namespaces beyond the two usings: `RioCharts.Core.Data` (`SeriesData`, `SeriesBuffer`), `RioCharts.Core.Definitions` (`ChartDataset`, `ChartDefinitionJson`).
 
 ## Choosing a series
@@ -69,7 +71,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Stages narrowing down (visits → cart → purchase) | `FunnelSeries` | `XValue` (the stage), `YValue`; stages keep the items' order, each shows its share of the stage before; one funnel per chart |
 | Several measures per item | `RadarSeries` | one series per item |
 | A value per day over months or a year (orders, activity) | `CalendarSeries` | `XValue` a date or time; items on the same day add up (`Aggregate` to change), no `YValue` counts them; one calendar per chart |
-| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors) |
+| Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors); `ColorBands` for stepped colors (green/yellow/red ranges, with a legend of the bands) |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
 | Two values per category (before/after, plan/actual) | `DumbbellSeries` | `XValue` the category, `FromValue` the first value, `YValue` the second; `Horizontal="true"` on the chart for rows |
@@ -98,6 +100,8 @@ Each example is a complete component file. These exact files are compiled and re
 - Animation options (ApexCharts `Animations`, Chart.js `animation`): there are none. Charts are not animated; the series only fade in on first render. `Animate="false"` turns that off.
 - Setting a width: not needed, the chart follows its container. Set `Height` for another height.
 - Types not found (`SeriesData`, `SeriesBuffer`, `ChartDataset`): add `@using RioCharts.Core.Data` or `@using RioCharts.Core.Definitions`.
+- Repeating `Culture`, `TimeZone`, `Height` or axis settings on every chart: cascade a `RioChartDefaults` instead.
+- Fake values to get stepped heatmap colors (ApexCharts `colorScale.ranges`): use `ColorBands` on the first `HeatmapSeries`.
 - Hard-coded colors for light and dark: use theme variables such as `--rio-negative` and `--rio-positive`; they follow the theme.
 
 ## Reference

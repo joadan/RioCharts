@@ -59,8 +59,8 @@
     }
 }
 
-/* Explicit app themes win over the OS preference. */
-:is([data-theme="dark"], .dark, .rio-theme-dark) .rio-chart {
+/* Explicit app themes (data-theme, Bootstrap's data-bs-theme, a dark/light class) win over the OS preference. */
+:is([data-theme="dark"], [data-bs-theme="dark"], .dark, .rio-theme-dark) .rio-chart {
     --_rio-text: #e6e8eb;
     --_rio-text-muted: #9aa1ab;
     --_rio-grid: #2b3038;
@@ -84,7 +84,7 @@
     --_rio-series-10: #a8acb4;
 }
 
-:is([data-theme="light"], .light, .rio-theme-light) .rio-chart {
+:is([data-theme="light"], [data-bs-theme="light"], .light, .rio-theme-light) .rio-chart {
     --_rio-text: #1f2328;
     --_rio-text-muted: #6b7280;
     --_rio-grid: #e9ebef;

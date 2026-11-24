@@ -80,7 +80,7 @@ public static partial class ChartLayout
             }
         }
 
-        var format = area?.Spec.Format ?? spec.Y.Format;
+        var format = ValueFormat.Of(area?.Spec.Format, spec.Y);
         string F(double v) => ValueFormatter.Format(v, culture, format, compactFrom: 1e5);
         var (vMin, vMax) = values.Count > 0 ? (values.Values.Min(v => v.Value), values.Values.Max(v => v.Value)) : (0d, 1d);
         if (area?.Spec.Max is { } fixedMax && fixedMax > vMin)
@@ -352,7 +352,7 @@ public static partial class ChartLayout
 
             seriesNodes.Add(new PathNode(circles.Build(), style) { Key = "series:" + r.Spec.Id, Class = "rio-series rio-series-mapbubble" });
             var byX = group.OrderBy(p => p.X).ToList();
-            var bubbleFormat = r.Spec.Format ?? spec.Y.Format;
+            var bubbleFormat = ValueFormat.Of(r.Spec.Format, spec.Y);
             tooltipSeries.Add(new TooltipSeries(r.Spec.Id, r.Spec.DisplayName, r.Color, SeriesType.MapBubble, 0, 0, 0,
                 [.. byX.Select(p => (float)p.X)], [.. byX.Select(p => (float)p.Y)], [.. byX.Select(p => p.Bubble.Index)],
                 [.. byX.Select(p => p.Bubble.Label)], [.. byX.Select(p => ValueFormatter.Format(p.Bubble.Value, culture, bubbleFormat, compactFrom: 1e5))])

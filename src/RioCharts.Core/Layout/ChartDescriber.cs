@@ -69,9 +69,11 @@ public static class ChartDescriber
                 continue;
             }
 
+            // Values as in the tooltips: the series' format, else its axis' format, else automatic.
             var (min, max) = (stats.Min, stats.Max);
+            var format = Formatting.ValueFormat.Of(s.Format, AxisOf(spec, s));
             sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LowestHighest), culture,
-                d.Y[min].ToString("G4", culture), FormatX(d.X[min], d, xKind, culture), d.Y[max].ToString("G4", culture), FormatX(d.X[max], d, xKind, culture)));
+                format.Format(d.Y[min], culture), FormatX(d.X[min], d, xKind, culture), format.Format(d.Y[max], culture), FormatX(d.X[max], d, xKind, culture)));
 
             if (stats.Trend != Trend.None)
             {
@@ -156,9 +158,8 @@ public static class ChartDescriber
             return null;
         }
 
-        var axis = s.YAxisId is { } id ? spec.YAxes.FirstOrDefault(a => a.Id == id) ?? spec.Y : spec.Y;
-        var format = s.Format ?? axis.Format;
-        string F(double v) => Formatting.ValueFormatter.Format(v, culture, format);
+        var format = Formatting.ValueFormat.Of(s.Format, AxisOf(spec, s));
+        string F(double v) => format.Format(v, culture);
         var (min, max) = (d.Y[stats.Min], d.Y[stats.Max]);
         var sb = new StringBuilder();
         if (s.Type == SeriesType.RangeArea && d.Low is { } lows)
@@ -240,6 +241,10 @@ public static class ChartDescriber
 
     private static string TrendText(Trend trend, ChartTexts texts) =>
         trend switch { Trend.Increasing => texts.Rising, Trend.Decreasing => texts.Falling, _ => texts.Stable };
+
+    /// <summary>The y axis a series is on: the one with its YAxisId, else the primary one.</summary>
+    private static AxisOptions AxisOf(ChartDefinition spec, SeriesOptions s) =>
+        s.YAxisId is { } id ? spec.YAxes.FirstOrDefault(a => a.Id == id) ?? spec.Y : spec.Y;
 
     private static string FormatX(double x, SeriesData data, XKind kind, CultureInfo culture) => kind switch
     {
