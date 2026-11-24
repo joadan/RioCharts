@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Selected points now show on horizontal bars, box plots, waterfalls and dumbbells, heatmap cells, pie and donut slices
+  and radial bars, as an outline. Before, clicks there selected items and raised the events but drew nothing. The grouped
+  "Other" slice is not outlined. Docs: a "Selection on any chart" example on the Clicks and selection page.
 - Log x axes: `Scale = ScaleType.Log` on `XAxis` (`"x": { "scale": "log" }` in JSON) for numbers under lines,
   areas and scatter points, also together with a log y axis. Points at x zero or below are left out with a
   warning; zoom, pan and range selection keep ratios. Bars keep a linear x axis, with a warning (before, any log

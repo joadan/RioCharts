@@ -1230,14 +1230,18 @@ Design.md "Programmatic interaction": selection (`@bind-SelectedItems`, `@bind-S
   scatter points, an outline around bars (its own segment when stacked). In the scene, not the JS
   hover layer, so it shows without JS, in exports and moves with the pan preview. A range shows as
   the band only, not as markers.
+- **Other layouts:** horizontal bars, box plots, waterfalls and dumbbells get the bar outline around
+  the shape the pointer hovers (each point's center, width and the row's cell height), heatmap cells
+  an outline just inside the cell, and pie and donut slices and radial bars an outline along their
+  edge, built from their tooltip slices (`SliceSelection`; the grouped "Other" slice is no single item
+  and is never outlined). Treemaps and radar charts had theirs already. Gauges show no selection.
 - **Item to point:** each layout maps the selected items to point indexes per series (through
   `InputIndexes`), O(points) per layout and only while points are selected.
 - **Tooltip from code:** .NET maps the x value to a pixel (scale or category band) and calls
   `showTooltip`; JS draws it like keyboard focus (shared rows, or the nearest point when the
   tooltip is not shared), and linked charts show the crosshair. .NET sends it again after each new
   layout, and JS puts it back when the pointer leaves, until `HideTooltipAsync`.
-- **Not yet:** drawing the selection on horizontal bars, heatmaps and pies (clicks there still
-  select and raise the events), point selection for columnar data (no items), selecting a range
+- **Not yet:** point selection for columnar data (no items), selecting a range
   with the keyboard or on touch screens, a shared selection across linked charts, and
   highlighting a series from code.
 
