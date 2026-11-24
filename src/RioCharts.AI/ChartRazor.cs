@@ -22,6 +22,7 @@ public static class ChartRazor
         axis.Position != AxisPosition.Auto ? $"Position = AxisPosition.{axis.Position}" : null,
         axis.Color is { } color ? $"Color = {Str(color)}" : null,
         axis.SeriesColor ? "SeriesColor = true" : null,
+        axis.TickBase is { } tickBase ? $"TickBase = {Number(tickBase)}" : null,
     }.OfType<string>());
 
     // The horizontal axis settings the export writes: title, label rotation and tooltip format.

@@ -3,6 +3,15 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
+## Unreleased
+
+- Color scale legends follow `Legend.Position`: with `LegendPosition.Bottom` (also from `RioChartDefaults`) the scale of
+  a heatmap, calendar heatmap or map, and a heatmap's color bands, sit below the chart instead of above it. `Right`
+  keeps them above (a scale is a wide strip).
+- `AxisOptions.TickBase` (`"tickBase"` in JSON): tick steps in units of a power of this base, e.g. 1024 for bytes, so
+  with a 1024-based `LabelFormatter` the ticks read 20 MB, 40 MB instead of 47.7 MB, 95.4 MB. Docs: the bytes example
+  on the Axes page now uses it.
+
 ## 0.7.6-preview (2026-11-24)
 
 - Fixed: charts with an axis `Format` (e.g. `"#,0"`) or a log axis crashed with a `FormatException` when the current

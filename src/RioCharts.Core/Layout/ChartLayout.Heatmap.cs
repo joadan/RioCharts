@@ -98,16 +98,22 @@ public static partial class ChartLayout
         }
 
         var showScale = !compact && hasData && spec.Legend.Mode != LegendMode.Hide && (chrome.Legend || spec.Legend.Mode == LegendMode.Show);
-        if (showScale)
-        {
-            statics.Add(bands is not null
-                ? BandLegend(PadLeft, y0, lineHeight + 4, Series.ColorBands.Ranges(bands, color), bands, F, measure, font, styles, texts.Legend)
+        GroupNode Scale(double y) => bands is not null
+                ? BandLegend(PadLeft, y, lineHeight + 4, Series.ColorBands.Ranges(bands, color), bands, F, measure, font, styles, texts.Legend)
                 : mid is { } md
-                ? DivergingLegend(PadLeft, y0, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
+                ? DivergingLegend(PadLeft, y, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
                     texts.Legend, HeatMinOpacity, "heat")
-                : HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend));
-            y0 += lineHeight + 4 + 8;
+                : HeatLegend(PadLeft, y, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend);
+
+        // The scale above the plot, or below it with Legend.Position = Bottom (Right keeps it above: it is a wide strip).
+        var scaleAtBottom = showScale && spec.Legend.Position == LegendPosition.Bottom;
+        if (showScale && !scaleAtBottom)
+        {
+            statics.Add(Scale(y0));
+            y0 += ScaleRow(lineHeight);
         }
+
+        var scaleBelow = scaleAtBottom ? ScaleRow(lineHeight) : 0;
 
         // ---------- Rows (y labels) ----------
         var rowNames = rows.Select(r => r.Spec.DisplayName).ToList();
@@ -118,7 +124,7 @@ public static partial class ChartLayout
         var plotLeft = compact ? 0 : PadLeft + (showYLabels ? labelWidth + LabelGap : 0);
         var plotRight = compact ? width : width - PadRight;
         var plotTop = compact ? 0 : y0;
-        var plotBottom = compact ? height : height - PadBottom - xTitleHeight - xLabelHeight;
+        var plotBottom = compact ? height : height - PadBottom - scaleBelow - xTitleHeight - xLabelHeight;
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)Math.Max(2, plotRight - plotLeft), (float)Math.Max(2, plotBottom - plotTop));
         var rowHeight = plot.Height / Math.Max(1, rows.Count);
 
@@ -280,6 +286,11 @@ public static partial class ChartLayout
                 Anchor.Middle) { Class = "rio-axis-title" });
         }
 
+        if (scaleAtBottom)
+        {
+            statics.Add(Scale(height - PadBottom - (lineHeight + 4)));
+        }
+
         var overlay = new List<Node>();
         if (!hasData && !compact)
         {
@@ -322,6 +333,9 @@ public static partial class ChartLayout
             HasData = hasData,
         };
     }
+
+    /// <summary>Height of a color scale legend's row, with its gap to the plot.</summary>
+    private static double ScaleRow(double lineHeight) => lineHeight + 4 + 8;
 
     /// <summary>The color scale: lowest value, a few steps of the hue, highest value.</summary>
     private static GroupNode HeatLegend(double x, double y, double height, string color, string low, string high, Text.ITextMeasurer measure, double font,

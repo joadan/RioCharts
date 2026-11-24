@@ -49,7 +49,8 @@
             When a format string is not enough, e.g. bytes that pick KB, MB or GB themselves, give the axis a <code>LabelFormatter</code>.
             It writes the tick labels, and the tooltips and data labels of series without a <code>Format</code> of their own, so the values
             can stay in bytes. Ticks stay on round steps. A series' <code>Format</code> falls back to its axis' format or function; the axis
-            never takes the series' format.
+            never takes the series' format. For units of 1024, set <code>TickBase = 1024</code> too: the steps are then round in KB, MB
+            or GB (20 MB, 40 MB) instead of round in bytes (47.7 MB, 95.4 MB).
         </p>
     </Description>
     <ChildContent>
@@ -181,7 +182,7 @@
     private static readonly AxisOptions OrdersPerHour = new() { Title = "Orders per hour" };
     private static readonly IReadOnlyList<AxisOptions> _ordersAxis = [new() { Id = "orders", Title = "Orders", SeriesColor = true }];
     private static readonly AxisOptions _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
-    private static readonly AxisOptions _bytesAxis = new() { Title = "Per hour", LabelFormatter = Bytes };
+    private static readonly AxisOptions _bytesAxis = new() { Title = "Per hour", LabelFormatter = Bytes, TickBase = 1024 };
     private static readonly List<Reading> _transfer = [.. Enumerable.Range(0, 48).Select(h =>
         new Reading(new DateTime(2026, 11, 16).AddHours(h), Math.Round(2.4e9 + 1.9e9 * Math.Sin((h - 9) / 3.8) + 4e8 * Math.Sin(h * 1.7))))];
 
@@ -189,9 +190,9 @@
     {
         string[] units = ["B", "KB", "MB", "GB", "TB"];
         var unit = 0;
-        while (Math.Abs(v) >= 1000 && unit < units.Length - 1)
+        while (Math.Abs(v) >= 1024 && unit < units.Length - 1)
         {
-            v /= 1000;
+            v /= 1024;
             unit++;
         }
 
@@ -269,7 +270,7 @@
         """;
 
     private const string BytesCode = """
-        <RioChart Items="transfer" YAxis="@(new AxisOptions { Title = "Per hour", LabelFormatter = Bytes })">
+        <RioChart Items="transfer" YAxis="@(new AxisOptions { Title = "Per hour", LabelFormatter = Bytes, TickBase = 1024 })">
             <AreaSeries Name="Transferred" XValue="r => r.Time" YValue="r => r.Value" />   @* Value in bytes *@
         </RioChart>
 
@@ -278,9 +279,9 @@
             {
                 string[] units = ["B", "KB", "MB", "GB", "TB"];
                 var unit = 0;
-                while (Math.Abs(v) >= 1000 && unit < units.Length - 1)
+                while (Math.Abs(v) >= 1024 && unit < units.Length - 1)
                 {
-                    v /= 1000;
+                    v /= 1024;
                     unit++;
                 }
 

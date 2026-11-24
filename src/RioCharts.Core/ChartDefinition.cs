@@ -136,6 +136,14 @@ public sealed record AxisOptions
     [JsonIgnore]
     public Func<double, string>? LabelFormatter { get; init; }
 
+    /// <summary>
+    /// Numeric axes: the base of the tick steps' unit. With 1024, for bytes, a step is 1, 2 or 5 × a power of ten of the
+    /// largest power of 1024 below it (e.g. 20 × 1024² bytes), so with a 1024-based <see cref="LabelFormatter"/> the ticks
+    /// read 20 MB, 40 MB, 60 MB instead of 47.7 MB, 95.4 MB. Null (or 1 and below): plain powers of ten. Not used on log axes.
+    /// </summary>
+    [Description("Numeric axes: the base of the tick steps' unit, e.g. 1024 for bytes (steps of 1, 2 or 5 × 10^k × 1024^n, so labels in KB/MB read round). Null: powers of ten.")]
+    public double? TickBase { get; init; }
+
     /// <summary>Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.</summary>
     [Description("Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.")]
     public bool? GridLines { get; init; }

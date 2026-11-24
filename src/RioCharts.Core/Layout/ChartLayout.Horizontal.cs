@@ -437,7 +437,7 @@ public static partial class ChartLayout
         var plotBottom = compact ? height - 1 : height - PadBottom - valueTitleHeight - valueLabelHeight;
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)Math.Max(2, plotRight - plotLeft), (float)Math.Max(2, plotBottom - plotTop));
 
-        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(vMin, vMax, Math.Clamp((int)(plot.Width / 90), 2, 10), NumberFormatter.MinStep(valueFormat, culture) ?? 0);
+        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(vMin, vMax, Math.Clamp((int)(plot.Width / 90), 2, 10), NumberFormatter.MinStep(valueFormat, culture) ?? 0, spec.Y.TickBase ?? 0);
         var valueScale = new ContinuousScale(spec.Y.Min ?? niceMin, spec.Y.Max ?? niceMax, plot.X, plot.Right);
         var ticks = NiceTicks.Ticks(valueScale.DomainMin, valueScale.DomainMax, step);
         var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, valueFormat);

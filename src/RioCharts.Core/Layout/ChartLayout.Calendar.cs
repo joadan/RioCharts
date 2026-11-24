@@ -120,13 +120,22 @@ public static partial class ChartLayout
             y0 += titleHeight + 6;
         }
 
-        if (!compact && hasData && spec.Legend.Mode != LegendMode.Hide && (chrome.Legend || spec.Legend.Mode == LegendMode.Show))
+        var showScale = !compact && hasData && spec.Legend.Mode != LegendMode.Hide && (chrome.Legend || spec.Legend.Mode == LegendMode.Show);
+        GroupNode Scale(double y) => mid is { } md
+            ? DivergingLegend(PadLeft, y, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
+                texts.Legend, HeatMinOpacity, "heat")
+            : HeatLegend(PadLeft, y, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend);
+
+        // Above the plot, or below it with Legend.Position = Bottom.
+        var scaleAtBottom = showScale && spec.Legend.Position == LegendPosition.Bottom;
+        if (showScale && !scaleAtBottom)
         {
-            statics.Add(mid is { } md
-                ? DivergingLegend(PadLeft, y0, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
-                    texts.Legend, HeatMinOpacity, "heat")
-                : HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend));
-            y0 += lineHeight + 4 + 8;
+            statics.Add(Scale(y0));
+            y0 += ScaleRow(lineHeight);
+        }
+        else if (scaleAtBottom)
+        {
+            statics.Add(Scale(height - PadBottom - (lineHeight + 4)));
         }
 
         // ---------- Blocks: the data's days, or one per calendar year ----------
@@ -160,7 +169,7 @@ public static partial class ChartLayout
         var plotLeft = compact ? 0 : PadLeft + (labelWidth > 0 ? labelWidth + LabelGap : 0);
         var plotRight = compact ? width : width - PadRight;
         var plotTop = compact ? 0 : y0;
-        var plotBottom = compact ? height : height - PadBottom;
+        var plotBottom = compact ? height : height - PadBottom - (scaleAtBottom ? ScaleRow(lineHeight) : 0);
         var monthRow = showMonths || years.Count > 0 ? lineHeight + 2 : 0;
         var blockGap = blocks.Count > 1 ? Math.Max(6, font * 0.8) : 0;
         var blockCount = Math.Max(1, blocks.Count);
