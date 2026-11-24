@@ -72,6 +72,21 @@ internal static class ChartDescriber
             // Values as in the tooltips: the series' format, else its axis' format, else automatic.
             var (min, max) = (stats.Min, stats.Max);
             var format = Formatting.ValueFormat.Of(s.Format, AxisOf(spec, s));
+            if (s.Type == SeriesType.Dumbbell && d.Low is { } first)
+            {
+                // Both ends of each dumbbell, in point order: "A 7 to 5, B 3 to 8".
+                var pairs = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i]) && double.IsFinite(first[i])).ToList();
+                sb.Append(": ").Append(string.Join(", ", pairs.Take(8).Select(i => FormatX(d.X[i], d, xKind, culture) + " "
+                    + texts.Fill(nameof(ChartTexts.ValueRange), culture, format.Format(first[i], culture), format.Format(d.Y[i], culture)))));
+                if (pairs.Count > 8)
+                {
+                    sb.Append(' ').Append(texts.Fill(nameof(ChartTexts.More), culture, pairs.Count - 8));
+                }
+
+                sb.Append('.');
+                continue;
+            }
+
             sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LowestHighest), culture,
                 format.Format(d.Y[min], culture), FormatX(d.X[min], d, xKind, culture), format.Format(d.Y[max], culture), FormatX(d.X[max], d, xKind, culture)));
 

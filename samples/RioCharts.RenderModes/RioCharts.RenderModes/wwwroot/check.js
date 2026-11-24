@@ -48,3 +48,53 @@ window.rioCheck = async function () {
     out.errorUi = getComputedStyle(document.getElementById('blazor-error-ui')).display !== 'none';
     return out;
 };
+
+// Keyboard and screen reader check for every chart on the page (the "types" page has one of each type): focuses each
+// chart, presses the arrow keys and Escape, and reports its accessible name, role, what the live region announced
+// and whether the tooltip followed.
+window.rioKeys = async function () {
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    for (let i = 0; i < 80 && !/interactive: True/.test(document.querySelector('[data-testid=mode]')?.textContent || ''); i++) {
+        await sleep(250);
+    }
+
+    await sleep(800);
+    const results = [];
+    for (const chart of document.querySelectorAll('.rio-chart')) {
+        const svg = chart.querySelector('.rio-chart-svg');
+        const live = chart.querySelector('.rio-live');
+        const tip = chart.querySelector('.rio-tooltip:not(.rio-legend-tip)');
+        const key = k => svg.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+        const row = {
+            type: chart.closest('[data-type]')?.dataset.type,
+            role: svg.getAttribute('role'),
+            label: svg.getAttribute('aria-label'),
+            tabindex: svg.getAttribute('tabindex'),
+            desc: svg.querySelector('desc')?.textContent.slice(0, 80),
+        };
+        if (svg.getAttribute('tabindex') === '0') {
+            svg.focus();
+            key('ArrowRight');
+            await sleep(250);
+            row.first = live?.textContent;
+            key('ArrowRight');
+            await sleep(250);
+            row.second = live?.textContent;
+            key('ArrowDown');
+            await sleep(250);
+            row.down = live?.textContent;
+            key('End');
+            await sleep(250);
+            row.end = live?.textContent;
+            row.tooltip = tip?.classList.contains('rio-tooltip-visible') ?? false;
+            key('Escape');
+            await sleep(250);
+            row.afterEscape = tip?.classList.contains('rio-tooltip-visible') ?? false;
+            svg.blur();
+        }
+
+        results.push(row);
+    }
+
+    return results;
+};

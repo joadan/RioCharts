@@ -137,6 +137,8 @@ public class MapTests
         }, new Dictionary<string, SeriesData> { ["b"] = Cities }, Options);
 
         Assert.Equal(4, layout.Tooltip.Series[0].X.Length);
+        // Screen readers hear the places, largest first (a map with only bubbles used to say just "Map.").
+        Assert.Equal("Map with 4 items: Stockholm 50, Gothenburg 30, Oslo 20, New York 10.", layout.Scene.Description);
     }
 
     [Fact]

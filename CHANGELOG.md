@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Screen reader text: a map with only bubbles now lists its places and values, largest first (it said just "Map."), and
+  a map with countries and bubbles lists both. A dumbbell chart now reads both ends of each dumbbell
+  ("Utrecht 33% to 41%, ...") instead of only the second values. The `<desc>` of these charts changes.
 - Fixed: `Zoomable` and `Selection="ChartSelectionMode.Range"` on a funnel or bullet chart turned on drag-zoom and range
   selection that did nothing; they now stay off there.
 - Fixed: the warning for a candlestick without candles named `SeriesData.FromCandleBuckets`, which is internal now.
