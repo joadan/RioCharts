@@ -75,7 +75,7 @@ public static partial class ChartLayout
             values[r] = (v, index);
         }
 
-        string FormatOf(Resolved r) => r.Spec.Format ?? spec.Y.Format ?? "";
+        ValueFormat FormatOf(Resolved r) => ValueFormat.Of(r.Spec.Format, spec.Y);
 
         // ---------- Legend: the series ----------
         var legendEntries = radar
@@ -237,7 +237,7 @@ public static partial class ChartLayout
             grid.Add(new PathNode(spokePath.Build(), new StyleRef("grid")) { Class = "rio-radar-spokes" });
 
             // Tick values along the first spoke (12 o'clock), just right of it.
-            var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, spec.Y.Format);
+            var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, ValueFormat.Of(spec.Y));
             // Drawn above the shapes on a light backing in the surface color, so a shape crossing the
             // first spoke does not cover them.
             styles.Add("radar-tick", new TextStyleDef { FontSize = (float)small, Fill = ThemeTokens.TextMuted });

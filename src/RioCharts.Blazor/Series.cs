@@ -68,7 +68,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>
     /// A color per item, e.g. <c>o =&gt; o.Late ? "--rio-negative" : null</c>: a CSS color or a
     /// theme token (tokens follow light and dark themes); null keeps the series color. Bars,
-    /// scatter markers, pie slices, radial bars and treemap items take the color; lines and areas
+    /// scatter markers, pie slices, radial bars, heatmap cells and treemap items take the color; lines and areas
     /// mark the point with a dot in it. Aggregated points take their first item's color. Runs once
     /// per data change, like the other selectors.
     /// </summary>
@@ -78,8 +78,8 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
 
     /// <summary>
     /// Colors by value, e.g. <c>[new() { Above = 120, Color = "--rio-negative" }]</c>: a line or
-    /// area changes color where it crosses into a band, a bar or scatter point takes the color of
-    /// the band its value is in. Later bands win where they overlap; <see cref="ColorValue"/> wins
+    /// area changes color where it crosses into a band, a bar, scatter point or heatmap cell takes the
+    /// color of the band its value is in. Later bands win where they overlap; <see cref="ColorValue"/> wins
     /// over bands.
     /// </summary>
     [Parameter] public IReadOnlyList<ColorBand>? ColorBands { get; set; }
@@ -110,7 +110,11 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>Show values on the chart. Default: off, except for pie, donut and radial bar.</summary>
     [Parameter] public bool? DataLabels { get; set; }
 
-    /// <summary>.NET format string for values in tooltips and data labels, e.g. "0.0".</summary>
+    /// <summary>
+    /// .NET format string for values in tooltips, data labels and the screen reader text, e.g. "0.0". Default: the format of
+    /// the series' axis (its <c>Format</c> or <c>LabelFormatter</c>), else automatic. It does not change the axis labels:
+    /// set the same format on the axis once, and leave it off the series.
+    /// </summary>
     [Parameter] public string? Format { get; set; }
 
     /// <summary>
@@ -580,7 +584,9 @@ public sealed class ScatterSeries<TItem> : ErrorBarSeriesBase<TItem>
 /// <summary>
 /// One row of a heatmap: its x values are the columns, its y values the cell colors (more opaque for
 /// higher values). Add one per row, e.g. per weekday; the Name labels the row. All rows share one
-/// color scale (the first row's Color, Format, Max, Midpoint and BelowColor).
+/// color scale (the first row's Color, Format, Max, Midpoint, BelowColor and ColorBands).
+/// For stepped colors (e.g. green, yellow, red ranges) set <c>ColorBands</c>: each cell takes the solid
+/// color of its band and the legend lists the bands. <c>ColorValue</c> gives a cell its own solid color.
 /// </summary>
 public sealed class HeatmapSeries<TItem> : SeriesBase<TItem>
 {

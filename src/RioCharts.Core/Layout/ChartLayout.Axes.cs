@@ -23,8 +23,8 @@ public static partial class ChartLayout
         /// <summary>Series stacked to 100 % use the axis (<see cref="StackMode.Percent"/>): shares from -1 to 1, labeled as percentages.</summary>
         public bool Percent { get; set; }
 
-        /// <summary>The label format: the axis' own, or percentages on a percent axis.</summary>
-        public string? Format => Spec.Format ?? (Percent ? "P0" : null);
+        /// <summary>The label format: the axis' own function or format string, or percentages on a percent axis.</summary>
+        public ValueFormat Format => ValueFormat.Of(Spec, Percent ? "P0" : null);
 
         /// <summary>True when at least one drawable series uses the axis.</summary>
         public bool Visible { get; set; }
@@ -272,9 +272,9 @@ public static partial class ChartLayout
 
         if (max == min)
         {
-            // All values equal: pad so the axis does not collapse.
+            // All values equal: pad so the axis does not collapse. All zero: 0 to 1, not -1 to 1.
             var pad = min == 0 ? 1 : Math.Abs(min) * 0.1;
-            if (axis.Spec.Min is null)
+            if (axis.Spec.Min is null && min != 0)
             {
                 min -= pad;
             }
@@ -290,7 +290,9 @@ public static partial class ChartLayout
             }
         }
 
-        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(min, max, target);
+        // Ticks no closer than the format tells apart (with "#,0": 0, 1, 2, not 0, 0.5, 1, 1.5, 2 shown as 0 1 1 2 2).
+        var minStep = NumberFormatter.MinStep(axis.Format, culture) ?? 0;
+        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(min, max, target, minStep);
 
         // Bar data labels go beyond the bar's end and are left out when they would leave the plot: when the highest or
         // lowest bar has no room for its label, the domain gets one more step on that side (the step stays, so the ticks
@@ -323,7 +325,7 @@ public static partial class ChartLayout
         // Secondary axes put their ticks on the grid axis' lines when they can.
         if (align is { Ticks.Count: > 1, Log: false } grid && axis.Spec.Min is null && axis.Spec.Max is null
             && grid.Ticks[0] == grid.DomainMin && grid.Ticks[^1] == grid.DomainMax
-            && NiceTicks.AlignedDomain(min, max, grid.Ticks.Count - 1) is { } aligned)
+            && NiceTicks.AlignedDomain(min, max, grid.Ticks.Count - 1) is { } aligned && aligned.Step >= minStep)
         {
             (niceMin, niceMax, step) = aligned;
         }
@@ -365,7 +367,7 @@ public static partial class ChartLayout
         }
 
         axis.Ticks = NiceTicks.LogTicks(axis.DomainMin, axis.DomainMax, target);
-        var format = NumberFormatter.ForLogTicks(culture, axis.Spec.Format);
+        var format = NumberFormatter.ForLogTicks(culture, ValueFormat.Of(axis.Spec));
         axis.Labels = axis.Ticks.Select(format).ToList();
         axis.LabelWidth = axis.Visible ? axis.Labels.Select(l => measure.Measure(l, font)).DefaultIfEmpty(0).Max() : 0;
     }
@@ -442,7 +444,7 @@ public static partial class ChartLayout
         {
             // Powers of ten (with 2 and 5 between them on short ranges), fewer until the labels fit. Like log y axes,
             // one per 28 px to start: the short labels of a log axis read well close together.
-            var format = NumberFormatter.ForLogTicks(culture, axis.Format);
+            var format = NumberFormatter.ForLogTicks(culture, ValueFormat.Of(axis));
             for (var target = Math.Clamp((int)(plotWidth / 28), 2, 12); target >= 1; target--)
             {
                 ticks = NiceTicks.LogTicks(scale.DomainMin, scale.DomainMax, target);
@@ -457,9 +459,9 @@ public static partial class ChartLayout
         {
             for (var target = Math.Clamp((int)(plotWidth / 70), 2, 12); target >= 1; target--)
             {
-                var step = NiceTicks.Step(scale.DomainMax - scale.DomainMin, target);
+                var step = Math.Max(NiceTicks.Step(scale.DomainMax - scale.DomainMin, target), NumberFormatter.MinStep(ValueFormat.Of(axis), culture) ?? 0);
                 ticks = NiceTicks.Ticks(scale.DomainMin, scale.DomainMax, step);
-                var format = NumberFormatter.ForTicks(ticks, step, culture, axis.Format);
+                var format = NumberFormatter.ForTicks(ticks, step, culture, ValueFormat.Of(axis));
                 labels = ticks.Select(format).ToList();
                 if (Fits(ticks, labels, scale, measure, font, chartWidth))
                 {

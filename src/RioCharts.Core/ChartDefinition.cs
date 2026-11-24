@@ -119,9 +119,22 @@ public sealed record AxisOptions
     [Description("Scale type. Auto picks from the data: times give a time axis, numbers a linear axis, strings a band axis.")]
     public ScaleType Scale { get; init; } = ScaleType.Auto;
 
-    /// <summary>.NET format string for labels, e.g. "P0", "C0" or "yyyy-MM-dd". Null for automatic formatting.</summary>
-    [Description(".NET format string for labels, e.g. \"P0\", \"C0\" or \"yyyy-MM-dd\". Null for automatic formatting.")]
+    /// <summary>
+    /// .NET format string for labels, e.g. "P0", "C0" or "yyyy-MM-dd". Null for automatic formatting. On a value axis, series
+    /// without a format of their own also use it for their tooltips and data labels (a series' Format wins). Ticks are
+    /// never closer than the format can tell apart: with "#,0" they are whole numbers.
+    /// </summary>
+    [Description(".NET format string for labels, e.g. \"P0\", \"C0\" or \"yyyy-MM-dd\". Null for automatic formatting. On a value axis, series without their own format use it for tooltips and data labels too.")]
     public string? Format { get; init; }
+
+    /// <summary>
+    /// A function that writes the labels of a numeric axis, e.g. bytes as "1.5 MB": used instead of <see cref="Format"/>.
+    /// Like Format, it also writes the tooltips and data labels of series on the axis that have no format of their own,
+    /// and the screen reader text. Ticks stay on round steps (1, 2 or 5 times a power of ten), never closer than the
+    /// function can tell apart from zero. Not used on time or category axes, and not part of JSON definitions.
+    /// </summary>
+    [JsonIgnore]
+    public Func<double, string>? LabelFormatter { get; init; }
 
     /// <summary>Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.</summary>
     [Description("Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.")]
@@ -381,8 +394,8 @@ public sealed record SeriesOptions
     [Description("Treemap: how many levels to draw at once below the group shown, e.g. 2; deeper groups show as one cell with their total and open on a click. Null: all levels.")]
     public int? VisibleLevels { get; init; }
 
-    /// <summary>Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.</summary>
-    [Description("Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar or scatter point takes the color of the band its value is in. Later bands win where they overlap; a point's own color (colorField) wins over bands.")]
+    /// <summary>Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar, scatter point or heatmap cell takes the color of the band its value is in (a heatmap's legend then lists the bands). Later bands win where they overlap; a point's own color (colorField) wins over bands.</summary>
+    [Description("Colors by value: a line or area changes color where it crosses into a band (e.g. red above 120), a bar, scatter point or heatmap cell takes the color of the band its value is in (a heatmap's legend then lists the bands). Later bands win where they overlap; a point's own color (colorField) wins over bands.")]
     public IReadOnlyList<ColorBand>? ColorBands { get; init; }
 
     /// <summary>The field with each row's own color (a CSS color such as "#d6485a", or a theme token such as "--rio-negative"); empty keeps the series color. Bars, scatter markers, slices and treemap items take it; lines and areas mark the point. Aggregated points take their first row's color.</summary>

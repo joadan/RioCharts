@@ -19,6 +19,8 @@ public static partial class ChartLayout
     /// Heatmap: every heatmap series is a row (top to bottom, named by the series), its x values are
     /// the columns and its y values the colors: one hue, more opaque for higher values, over the chart
     /// surface (so it works in light and dark themes and in exports). The legend is a color scale.
+    /// With color bands the cells take the solid color of their band (stepped colors) and the legend
+    /// lists the bands; a cell's own color (ColorValue) wins over both.
     /// </summary>
     private static ChartLayoutResult ComputeHeatmap(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles,
         TimeConversion? time)
@@ -55,7 +57,7 @@ public static partial class ChartLayout
         }
 
         var color = rows.FirstOrDefault()?.Spec.Color ?? ThemeTokens.Series(0);
-        var format = rows.FirstOrDefault()?.Spec.Format ?? spec.Y.Format;
+        var format = ValueFormat.Of(rows.FirstOrDefault()?.Spec.Format, spec.Y);
         string F(double v) => ValueFormatter.Format(v, culture, format);
 
         // With a midpoint the colors diverge: above it the row color, below it the below color, each side
@@ -66,8 +68,18 @@ public static partial class ChartLayout
             ? HeatMinOpacity + (1 - HeatMinOpacity) * DivergingStrength(v, md, vMin, vMax)
             : vMax > vMin ? HeatMinOpacity + (1 - HeatMinOpacity) * Math.Clamp((v - vMin) / (vMax - vMin), 0, 1) : 0.6;
         bool IsBelow(double v) => mid is { } md && v < md;
-        StyleRef CellStyle(double v)
+
+        // Stepped colors: the first row's bands color every cell, solid. A cell's own color wins.
+        var bands = rows.FirstOrDefault()?.Spec.ColorBands is { Count: > 0 } colorBands ? colorBands : null;
+        string? SolidColor(SeriesData d, int i) =>
+            d.Colors?[i] is { Length: > 0 } own ? own : bands is null ? null : Series.ColorBands.ColorOf(bands, d.Y[i]) ?? color;
+        StyleRef CellStyle(double v, string? solid)
         {
+            if (solid is not null)
+            {
+                return styles.Add($"heat-solid-{solid}", new Style { Fill = solid });
+            }
+
             var opacity = Math.Round(Opacity(v), 2);
             var key = opacity.ToString(CultureInfo.InvariantCulture);
             return IsBelow(v)
@@ -88,7 +100,9 @@ public static partial class ChartLayout
         var showScale = !compact && hasData && spec.Legend.Mode != LegendMode.Hide && (chrome.Legend || spec.Legend.Mode == LegendMode.Show);
         if (showScale)
         {
-            statics.Add(mid is { } md
+            statics.Add(bands is not null
+                ? BandLegend(PadLeft, y0, lineHeight + 4, Series.ColorBands.Ranges(bands, color), F, measure, font, styles, texts.Legend)
+                : mid is { } md
                 ? DivergingLegend(PadLeft, y0, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
                     texts.Legend, HeatMinOpacity, "heat")
                 : HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend));
@@ -175,6 +189,7 @@ public static partial class ChartLayout
         var tooltipSeries = new List<TooltipSeries>();
         styles.Add("heat-label", new TextStyleDef { FontSize = (float)Math.Max(9, font - 1), Fill = ThemeTokens.Text });
         styles.Add("heat-label-inverse", new TextStyleDef { FontSize = (float)Math.Max(9, font - 1), FontWeight = 500, Fill = ThemeTokens.DataLabelInverse });
+        styles.Add("heat-label-dark", new TextStyleDef { FontSize = (float)Math.Max(9, font - 1), FontWeight = 500, Fill = ThemeTokens.DataLabelDark });
         for (var row = 0; row < rows.Count; row++)
         {
             var r = rows[row];
@@ -193,8 +208,9 @@ public static partial class ChartLayout
                         continue;
                     }
 
-                    var opacity = Opacity(v);
-                    var style = CellStyle(v);
+                    var solid = SolidColor(d, i);
+                    var opacity = solid is null ? Opacity(v) : 1;
+                    var style = CellStyle(v, solid);
                     var cell = new RectF((float)(px - cellWidth / 2 + gap / 2), (float)(cy - rowHeight / 2 + gap / 2),
                         (float)Math.Max(0.5, cellWidth - gap), (float)Math.Max(0.5, rowHeight - gap));
                     cellNodes.Add(new RectNode(cell, style) { CornerRadius = gap > 0 ? 2 : 0 });
@@ -211,7 +227,8 @@ public static partial class ChartLayout
                         var text = F(v);
                         if (measure.Measure(text, font - 1) + 4 <= cellWidth && rowHeight >= font + 2)
                         {
-                            labelNodes.Add(new TextNode(text, new PointF((float)px, (float)cy), new TextStyle(opacity > 0.55 ? "heat-label-inverse" : "heat-label"),
+                            labelNodes.Add(new TextNode(text, new PointF((float)px, (float)cy), new TextStyle(solid is not null && IsLightColor(solid) ? "heat-label-dark"
+                                    : opacity > 0.55 ? "heat-label-inverse" : "heat-label"),
                                 Anchor.Middle) { Class = "rio-data-label" });
                         }
                     }
@@ -226,7 +243,9 @@ public static partial class ChartLayout
                 hits.X, hits.Y, hits.Index, [.. points.Select(p => XLabel(r.Data, p.Index))], [.. points.Select(p => F(r.Data.Y[p.Index]))])
             {
                 CellHeight = (float)rowHeight,
-                PointColors = mid is null ? null : [.. points.Select(p => IsBelow(r.Data.Y[p.Index]) ? below : color)],
+                PointColors = bands is not null || r.Data.Colors is not null
+                    ? [.. points.Select(p => SolidColor(r.Data, p.Index) ?? (IsBelow(r.Data.Y[p.Index]) ? below : color))]
+                    : mid is null ? null : [.. points.Select(p => IsBelow(r.Data.Y[p.Index]) ? below : color)],
             });
 
             if (showYLabels)
@@ -322,6 +341,63 @@ public static partial class ChartLayout
 
         nodes.Add(new TextNode(high, new PointF((float)(sx + HeatLegendSteps * step + 6), (float)cy), new TextStyle("legend-label"), Anchor.Start));
         return new GroupNode(nodes) { Class = "rio-legend rio-heat-legend", AriaLabel = $"{label}: {low} – {high}" };
+    }
+
+    /// <summary>
+    /// The legend of stepped colors: a swatch and the range of each band, low to high, e.g. "&lt; 50", "50–80", "&gt; 80".
+    /// </summary>
+    private static GroupNode BandLegend(double x, double y, double height, List<(double From, double To, string Color)> ranges, Func<double, string> format,
+        Text.ITextMeasurer measure, double font, StyleTable styles, string label)
+    {
+        var cy = y + height / 2;
+        var nodes = new List<Node>();
+        var names = new List<string>();
+        var at = x;
+        foreach (var (from, to, color) in ranges)
+        {
+            var name = double.IsInfinity(from) && double.IsInfinity(to) ? ""
+                : double.IsInfinity(from) ? "< " + format(to)
+                : double.IsInfinity(to) ? "> " + format(from)
+                : format(from) + "–" + format(to);
+            names.Add(name);
+            nodes.Add(new RectNode(new RectF((float)at, (float)(cy - 5), 14, 10), styles.Add($"heat-solid-{color}", new Style { Fill = color })) { CornerRadius = 2 });
+            at += 14 + 5;
+            if (name.Length > 0)
+            {
+                nodes.Add(new TextNode(name, new PointF((float)at, (float)cy), new TextStyle("legend-label"), Anchor.Start));
+                at += measure.Measure(name, font);
+            }
+
+            at += 14;
+        }
+
+        return new GroupNode(nodes) { Class = "rio-legend rio-heat-legend", AriaLabel = $"{label}: {string.Join(", ", names.Where(n => n.Length > 0))}" };
+    }
+
+    /// <summary>
+    /// True for colors where a label on top reads better dark: the light palette colors, and hex colors with a high
+    /// luminance (e.g. yellow #f2c14e). Other CSS colors and tokens count as dark.
+    /// </summary>
+    private static bool IsLightColor(string color)
+    {
+        if (ThemeTokens.IsLightSeries(color))
+        {
+            return true;
+        }
+
+        var hex = color.StartsWith('#') ? color[1..] : null;
+        if (hex is { Length: 3 })
+        {
+            hex = string.Concat(hex.Select(c => new string(c, 2)));
+        }
+
+        if (hex is not { Length: 6 } || !int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb))
+        {
+            return false;
+        }
+
+        var (r, g, b) = ((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
     }
 
     /// <summary>

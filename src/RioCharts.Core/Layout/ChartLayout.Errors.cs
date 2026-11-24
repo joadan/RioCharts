@@ -41,7 +41,7 @@ public static partial class ChartLayout
     }
 
     /// <summary>The error in a tooltip: " ± 1.2" when it is the same both ways, else " (10.1 – 14.6)".</summary>
-    private static string ErrorText(Resolved r, int i, CultureInfo culture, string? format)
+    private static string ErrorText(Resolved r, int i, CultureInfo culture, ValueFormat format)
     {
         var (low, high) = RawErrorAt(r, i);
         if (!double.IsFinite(low))

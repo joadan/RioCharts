@@ -1,0 +1,42 @@
+@inherits ChartTestBase
+
+@code {
+
+    private static readonly RioChartDefaults App = new()
+    {
+        Height = 260,
+        Culture = new System.Globalization.CultureInfo("sv-SE"),
+        YAxis = new AxisOptions { Title = "°C", Format = "0.0" },
+        Class = "app-chart",
+    };
+
+    [Fact]
+    public void Cascaded_defaults_apply_to_every_chart_below_and_the_chart_own_parameters_win()
+    {
+        var cut = Render(@<CascadingValue Value="App" IsFixed="true">
+            <RioChart TItem="Reading" Items="London"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+            <RioChart TItem="Reading" Items="London" Height="220" YAxis="@(new AxisOptions { Title = "Own" })">
+                <LineSeries Name="B" XValue="r => r.Time" YValue="r => r.Value" />
+            </RioChart>
+        </CascadingValue>);
+
+        var charts = cut.FindAll(".rio-chart");
+        Assert.Contains("height:260px", charts[0].GetAttribute("style"));
+        Assert.Contains("height:220px", charts[1].GetAttribute("style"));
+        Assert.Contains("app-chart", charts[0].ClassName);
+
+        var titles = cut.FindAll(".rio-axis-title").Select(t => t.TextContent).ToList();
+        Assert.Contains("°C", titles);
+        Assert.Contains("Own", titles);
+        Assert.StartsWith("Diagram med 1 serie", cut.FindAll("desc")[0].TextContent); // the default culture's texts
+        Assert.Contains("19,5", cut.FindAll("desc")[0].TextContent); // and its number format with the axis' "0.0"
+    }
+
+    [Fact]
+    public void Without_defaults_the_chart_keeps_its_built_in_ones()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>);
+
+        Assert.Contains("height:300px", cut.Find(".rio-chart").GetAttribute("style"));
+    }
+}

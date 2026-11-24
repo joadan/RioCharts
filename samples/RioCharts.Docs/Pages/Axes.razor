@@ -43,6 +43,22 @@
     </ChildContent>
 </Example>
 
+<Example Title="Labels from a function" Code="@BytesCode">
+    <Description>
+        <p>
+            When a format string is not enough, e.g. bytes that pick KB, MB or GB themselves, give the axis a <code>LabelFormatter</code>.
+            It writes the tick labels, and the tooltips and data labels of series without a <code>Format</code> of their own, so the values
+            can stay in bytes. Ticks stay on round steps. A series' <code>Format</code> falls back to its axis' format or function; the axis
+            never takes the series' format.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" YAxis="_bytesAxis" Height="240">
+            <AreaSeries Items="_transfer" Name="Transferred" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Category labels" Code="@CategoryLabelsCode">
     <Description>
         <p>
@@ -165,6 +181,22 @@
     private static readonly AxisOptions OrdersPerHour = new() { Title = "Orders per hour" };
     private static readonly IReadOnlyList<AxisOptions> _ordersAxis = [new() { Id = "orders", Title = "Orders", SeriesColor = true }];
     private static readonly AxisOptions _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
+    private static readonly AxisOptions _bytesAxis = new() { Title = "Per hour", LabelFormatter = Bytes };
+    private static readonly List<Reading> _transfer = [.. Enumerable.Range(0, 48).Select(h =>
+        new Reading(new DateTime(2026, 11, 16).AddHours(h), Math.Round(2.4e9 + 1.9e9 * Math.Sin((h - 9) / 3.8) + 4e8 * Math.Sin(h * 1.7))))];
+
+    private static string Bytes(double v)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        var unit = 0;
+        while (Math.Abs(v) >= 1000 && unit < units.Length - 1)
+        {
+            v /= 1000;
+            unit++;
+        }
+
+        return $"{v:0.#} {units[unit]}";
+    }
     private static readonly System.Globalization.CultureInfo _german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
     private string? _zone = "Europe/Stockholm";
     private bool _log = true;
@@ -234,6 +266,27 @@
             <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" />
             <LineSeries Items="sessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>
+        """;
+
+    private const string BytesCode = """
+        <RioChart Items="transfer" YAxis="@(new AxisOptions { Title = "Per hour", LabelFormatter = Bytes })">
+            <AreaSeries Name="Transferred" XValue="r => r.Time" YValue="r => r.Value" />   @* Value in bytes *@
+        </RioChart>
+
+        @code {
+            static string Bytes(double v)
+            {
+                string[] units = ["B", "KB", "MB", "GB", "TB"];
+                var unit = 0;
+                while (Math.Abs(v) >= 1000 && unit < units.Length - 1)
+                {
+                    v /= 1000;
+                    unit++;
+                }
+
+                return $"{v:0.#} {units[unit]}";
+            }
+        }
         """;
 
     private const string FormatCode = """

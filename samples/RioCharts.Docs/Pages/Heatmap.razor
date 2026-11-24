@@ -61,6 +61,26 @@
     </ChildContent>
 </Example>
 
+<Example Title="Stepped colors" Code="@BandsCode">
+    <Description>
+        <p>
+            For fixed ranges, such as green, yellow and red levels, set <code>ColorBands</code> on the first row: each cell takes the solid
+            color of the band its value is in, and the legend lists the bands. Later bands win where they overlap, so a first band without
+            bounds and then <code>Above</code> limits leave no gaps (a value of exactly 50 is still green); values outside every band take
+            the series color.
+            <code>ColorValue</code> gives single cells a color of their own, which wins over the bands.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Share" Title="Server load per hour" Height="200">
+            @foreach (var (server, hours) in ServerLoad)
+            {
+                <HeatmapSeries Items="hours" Name="@server" XValue="h => h.Name" YValue="h => h.Value" Format="0'%'" DataLabels="true" ColorBands="LoadLevels" />
+            }
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <h2>Options</h2>
 <div class="table-scroll">
     <table class="docs">
@@ -70,6 +90,8 @@
         <tr><td><code>YValue</code></td><td></td><td>The value that sets the cell's color. Missing values leave the cell empty.</td></tr>
         <tr><td><code>Color</code>, <code>Format</code>, <code>Max</code></td><td>first row's</td><td>The hue, value format and full-color value, shared by all rows.</td></tr>
         <tr><td><code>Midpoint</code>, <code>BelowColor</code></td><td>first row's</td><td>Colors diverge from the midpoint: above it the series color, below it <code>BelowColor</code> (default <code>--rio-negative</code>). JSON: <code>"midpoint"</code>, <code>"belowColor"</code>.</td></tr>
+        <tr><td><code>ColorBands</code></td><td>first row's</td><td>Stepped colors: each cell takes the solid color of its value's band, and the legend lists the bands. JSON: <code>"colorBands"</code>.</td></tr>
+        <tr><td><code>ColorValue</code></td><td></td><td>A cell's own solid color (a CSS color or theme token); wins over the scale and the bands. JSON: <code>"colorField"</code>.</td></tr>
         <tr><td><code>DataLabels</code></td><td>false</td><td>Write the values in the cells (when they fit).</td></tr>
         <tr><td>JSON</td><td></td><td><code>"type": "heatmap"</code> with <code>"groupBy"</code> on the row field makes one row per value, e.g. <code>"x": "hour", "y": "sessions", "groupBy": "weekday"</code>.</td></tr>
     </table>
@@ -77,6 +99,39 @@
 
 @code {
     private readonly AxisOptions _hourAxis = new() { Title = "Hour" };
+
+    private static readonly ColorBand[] LoadLevels =
+    [
+        new() { Color = "--rio-series-5" },
+        new() { Above = 50, Color = "--rio-series-2" },
+        new() { Above = 80, Color = "--rio-negative" },
+    ];
+
+    // CPU load per server and hour, in %.
+    private static readonly List<(string Server, List<Share> Hours)> ServerLoad =
+        [.. new[] { "web-1", "web-2", "db-1" }.Select((server, k) => (server, Enumerable.Range(8, 12)
+            .Select(h => new Share(h.ToString("00", System.Globalization.CultureInfo.InvariantCulture),
+                Math.Clamp(Math.Round(55 + 30 * Math.Sin((h - 9) / 3.0) + 12 * Math.Sin(k * 2.3 + h)), 5, 99)))
+            .ToList()))];
+
+    private const string BandsCode = """
+        <RioChart TItem="Share" Title="Server load per hour">
+            @foreach (var (server, hours) in serverLoad)
+            {
+                <HeatmapSeries Items="hours" Name="@server" XValue="h => h.Name" YValue="h => h.Value"
+                               Format="0'%'" DataLabels="true" ColorBands="levels" />
+            }
+        </RioChart>
+
+        @code {
+            ColorBand[] levels =
+            [
+                new() { Color = "--rio-series-5" },                // green: every value...
+                new() { Above = 50, Color = "--rio-series-2" },    // ...yellow above 50...
+                new() { Above = 80, Color = "--rio-negative" },    // ...red above 80 (later bands win)
+            ];
+        }
+        """;
 
     // Change in sessions against the same hour last week, in %.
     private static readonly List<(string Day, List<HourCount> Hours)> WeekChange =

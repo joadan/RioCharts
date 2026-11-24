@@ -74,7 +74,7 @@ public static partial class ChartLayout
         }
 
         var series = trees[0];
-        var format = series.Spec.Format ?? spec.Y.Format ?? "";
+        var format = ValueFormat.Of(series.Spec.Format, spec.Y);
         string Format(double v) => ValueFormatter.Format(v, culture, format, compactFrom: 1e5);
 
         // ---------- The tree ----------

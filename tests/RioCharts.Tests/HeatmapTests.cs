@@ -100,6 +100,51 @@ public class HeatmapTests
         Assert.Equal("Chart \"Sessions\" with 3 series. Lowest 10 at Mon 08, highest 110 at Wed 16.", layout.Scene.Description);
     }
 
+    private static readonly ColorBand[] Traffic =
+    [
+        new() { Below = 40, Color = "#3ca951" },
+        new() { Above = 40, Below = 80, Color = "#efb118" },
+        new() { Above = 80, Color = "#e11d48" },
+    ];
+
+    [Fact]
+    public void Color_bands_give_stepped_solid_colors_and_a_legend_of_the_bands()
+    {
+        var spec = Spec(labels: true) with { Series = [.. Spec().Series.Select(s => s with { ColorBands = Traffic, DataLabels = true })] };
+        var layout = ChartLayout.Compute(spec, Week(), Options);
+
+        var cells = Cells(layout);
+        string Fill(RectNode cell) => layout.Scene.Styles.Get(cell.Style).Fill!;
+        Assert.Equal("#3ca951", Fill(cells[0]));  // Mon 08: 10
+        Assert.Equal("#efb118", Fill(cells[4]));  // Tue 08: 50
+        Assert.Equal("#e11d48", Fill(cells[^1])); // Wed 16: 110
+        Assert.All(cells, c => Assert.Equal(1f, Opacity(layout, c)));
+
+        var legend = All(layout.Scene.Static).OfType<GroupNode>().Single(g => g.Class == "rio-legend rio-heat-legend");
+        Assert.Equal(["< 40", "40–80", "> 80"], legend.Children.OfType<TextNode>().Select(t => t.Text));
+        Assert.Equal(3, legend.Children.OfType<RectNode>().Count());
+        Assert.Equal("#e11d48", layout.Tooltip.Series[2].PointColors![^1]);
+        Assert.Equal("Chart \"Sessions\" with 3 series. Lowest 10 at Mon 08, highest 110 at Wed 16.", layout.Scene.Description); // real values
+
+        // Labels on the yellow band are dark, on green and red light.
+        var labels = All(layout.Scene.Series).OfType<TextNode>().Where(t => t.Class == "rio-data-label").ToList();
+        Assert.Equal("heat-label-dark", labels.Single(l => l.Text == "50").Style.Name);
+        Assert.Equal("heat-label-inverse", labels.Single(l => l.Text == "10").Style.Name);
+    }
+
+    [Fact]
+    public void A_cell_own_color_wins_over_the_scale()
+    {
+        var data = Week();
+        data["Mon"] = data["Mon"].WithColors(["--rio-negative", null, null, null]);
+        var layout = ChartLayout.Compute(Spec(), data, Options);
+
+        var cells = Cells(layout);
+        Assert.Equal("--rio-negative", layout.Scene.Styles.Get(cells[0].Style).Fill);
+        Assert.Equal(1f, Opacity(layout, cells[0]));
+        Assert.True(Opacity(layout, cells[1]) < 1); // the others keep the opacity scale
+    }
+
     [Fact]
     public void Values_show_in_cells_with_contrast()
     {

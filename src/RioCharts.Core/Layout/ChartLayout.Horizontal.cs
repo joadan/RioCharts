@@ -14,7 +14,7 @@ public static partial class ChartLayout
     /// hollow dot at the first and a filled dot at the second; data labels outside the dots.
     /// </summary>
     private static void HorizontalDumbbells(Resolved r, (double From, double To, int Index)[] segments, Func<SeriesData, int, int> rowOf, BandScale band,
-        Scales.ContinuousScale valueScale, RectF plot, bool compact, Text.ITextMeasurer measure, double font, CultureInfo culture, string? format, StyleTable styles,
+        Scales.ContinuousScale valueScale, RectF plot, bool compact, Text.ITextMeasurer measure, double font, CultureInfo culture, ValueFormat format, StyleTable styles,
         List<Node> nodes, List<Node> labelNodes, List<(float X, float Y, float Width, int Index, int Row, double Share)> points)
     {
         const double radius = Series.DumbbellSeriesType.Radius;
@@ -349,7 +349,7 @@ public static partial class ChartLayout
         }
 
         var percent = drawn.Any(r => r.Percent && IsBar(r));
-        var valueFormat = spec.Y.Format ?? (percent ? "P0" : null);
+        var valueFormat = ValueFormat.Of(spec.Y, percent ? "P0" : null);
 
         var lines = new List<(Annotation Spec, double A, double B)>();
         foreach (var (a, i) in spec.Annotations.Select((a, i) => (a, i)))
@@ -437,7 +437,7 @@ public static partial class ChartLayout
         var plotBottom = compact ? height - 1 : height - PadBottom - valueTitleHeight - valueLabelHeight;
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)Math.Max(2, plotRight - plotLeft), (float)Math.Max(2, plotBottom - plotTop));
 
-        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(vMin, vMax, Math.Clamp((int)(plot.Width / 90), 2, 10));
+        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(vMin, vMax, Math.Clamp((int)(plot.Width / 90), 2, 10), NumberFormatter.MinStep(valueFormat, culture) ?? 0);
         var valueScale = new ContinuousScale(spec.Y.Min ?? niceMin, spec.Y.Max ?? niceMax, plot.X, plot.Right);
         var ticks = NiceTicks.Ticks(valueScale.DomainMin, valueScale.DomainMax, step);
         var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, valueFormat);
@@ -505,7 +505,7 @@ public static partial class ChartLayout
             var slot = slotKeys.IndexOf(KeyOf(r));
             var stacked = r.StackGroup is not null && IsBar(r);
             var style = styles.Add($"series-{r.ColorIndex}-bar", new Style { Fill = r.Color });
-            var format = r.Spec.Format ?? spec.Y.Format;
+            var format = ValueFormat.Of(r.Spec.Format, spec.Y);
             var nodes = new List<Node>();
             var points = new List<(float X, float Y, float Width, int Index, int Row, double Share)>();
             var errors = HasErrors(r) ? new PathBuilder() : null;

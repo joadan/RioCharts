@@ -77,6 +77,28 @@
     </ChildContent>
 </Example>
 
+<Example Title="Shared defaults" Code="@DefaultsCode">
+    <Description>
+        <p>
+            Settings that every chart in the app shares (culture, time zone, height, legend, axes) go in a <code>RioChartDefaults</code>,
+            cascaded once around the router instead of repeated on each chart. A parameter set on a chart wins; a chart's
+            <code>YAxis</code> replaces the default axis as a whole. Here both charts get the Swedish culture, 200 px and a legend at the bottom.
+        </p>
+    </Description>
+    <ChildContent>
+        <CascadingValue Value="_defaults" IsFixed="true">
+            <RioChart TItem="Reading" Title="Sessions">
+                <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" />
+                <LineSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" />
+            </RioChart>
+            <RioChart TItem="Reading" Title="Sessions, total" YAxis="@(_defaults.YAxis! with { Title = "Total" })">
+                <AreaSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Stack="all" />
+                <AreaSeries Items="AppSessions" Name="App" XValue="r => r.Time" YValue="r => r.Value" Stack="all" />
+            </RioChart>
+        </CascadingValue>
+    </ChildContent>
+</Example>
+
 <h2>How updates work</h2>
 <ul>
     <li>Selectors run once per data change, never per render.</li>
@@ -161,6 +183,35 @@
             record Reading(DateTime Time, double? Value);
             List<Reading> orders = ...; // orders per day
         }
+        """;
+
+    private static readonly RioChartDefaults _defaults = new()
+    {
+        Culture = System.Globalization.CultureInfo.GetCultureInfo("sv-SE"),
+        Height = 200,
+        Legend = new LegendOptions { Position = LegendPosition.Bottom },
+        YAxis = new AxisOptions { Format = "#,0" },
+    };
+
+    private const string DefaultsCode = """
+        @* App.razor or Routes.razor: every chart below gets these *@
+        <CascadingValue Value="chartDefaults" IsFixed="true">
+            <Router AppAssembly="typeof(Program).Assembly">...</Router>
+        </CascadingValue>
+
+        @code {
+            static readonly RioChartDefaults chartDefaults = new()
+            {
+                Culture = CultureInfo.GetCultureInfo("sv-SE"),
+                TimeZone = "Europe/Stockholm",
+                Height = 200,
+                Legend = new LegendOptions { Position = LegendPosition.Bottom },
+                YAxis = new AxisOptions { Format = "#,0" },
+            };
+        }
+
+        @* A page: its own YAxis wins (with keeps the default's other settings) *@
+        <RioChart TItem="Reading" YAxis="@(chartDefaults.YAxis with { Title = "Total" })"> ... </RioChart>
         """;
 
     private const string SeveralCode = """
