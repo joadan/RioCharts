@@ -325,6 +325,18 @@ public class SnapshotTests
                 42, 31, 28, 25, 22, 19, 17, 15, 14, 12, 11, 9, 8, 7, 6, 5, 4, 3),
         }),
 
+        // A filter left one category: the bar takes a fifth of the plot, centered, instead of all of it.
+        ["bar-single"] = new(new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "s", Name = "Issues", Type = SeriesType.Bar }],
+        }, new() { ["s"] = Categories(["Sweden"], 42) }),
+
+        // Six readings: a dot on each shows where the values are.
+        ["line-dots"] = new(new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "s", Name = "London", Highlight = PointHighlight.All }],
+        }, new() { ["s"] = Hourly(24, London, step: 4) }),
+
         ["annotations"] = new(new ChartDefinition
         {
             Series = [new SeriesOptions { Id = "s", Name = "London" }],

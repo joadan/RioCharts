@@ -752,9 +752,10 @@ public static partial class ChartLayout
 
         // ---------- Series ----------
         var slotKeys = drawable.Where(r => r.Type.UsesSlots).Select(SlotKey).Distinct().ToList();
-        var slotWidth = xKind == XKind.Category
+        var fullSlotWidth = xKind == XKind.Category
             ? xBand!.Bandwidth
             : barSpacing > 0 ? Math.Abs(xScale!.Map(xScale.DomainMin + barSpacing) - xScale.Map(xScale.DomainMin)) * 0.8 : plotWidth * 0.1;
+        var slotWidth = SlotGroupWidth(fullSlotWidth, plotWidth, slotKeys.Count, drawable.Where(r => r.Type.UsesSlots));
         var threshold = options.DownsampleThreshold ?? Math.Max(500, (int)(plotWidth * 2));
 
         var hitTest = new HitTestIndex();
@@ -890,7 +891,7 @@ public static partial class ChartLayout
                 : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts, Facts),
         };
 
-        var bandWidth = xKind == XKind.Category ? xBand!.Step : hasBars ? slotWidth / 0.8 : 0;
+        var bandWidth = xKind == XKind.Category ? xBand!.Step : hasBars ? fullSlotWidth / 0.8 : 0;
         return new ChartLayoutResult
         {
             Scene = scene,
@@ -1646,7 +1647,7 @@ public static partial class ChartLayout
         foreach (var r in series)
         {
             var stroke = r.Spec.StrokeWidth ?? 2;
-            inset = Math.Max(inset, r.Spec.Highlight != PointHighlight.None && !r.Type.UsesSlots ? HighlightRadius(stroke) + 1.5 : stroke / 2 + 0.5);
+            inset = Math.Max(inset, r.Spec.Highlight != PointHighlight.None && !r.Type.UsesSlots ? HighlightRadius(r.Spec, stroke) + 1.5 : stroke / 2 + 0.5);
         }
 
         return inset;
@@ -1654,6 +1655,43 @@ public static partial class ChartLayout
 
     /// <summary>Radius of a highlight dot for a line of the given width.</summary>
     internal static double HighlightRadius(double strokeWidth) => Math.Max(2.5, strokeWidth * 1.25);
+
+    /// <summary>
+    /// Radius of a line or area series' dots: half its <see cref="SeriesOptions.MarkerSize"/>, else from the line width.
+    /// Dots on every point (<see cref="PointHighlight.All"/>) are larger by default (7 px across a 2 px line): they mark the
+    /// data rather than accent one value, and must read as dots, not as a bump in the line.
+    /// </summary>
+    internal static double HighlightRadius(SeriesOptions spec, double strokeWidth) =>
+        spec.MarkerSize is > 0 and var size ? Math.Clamp(size / 2, 1, 30)
+        : spec.Highlight.HasFlag(PointHighlight.All) ? Math.Max(3.5, strokeWidth * 1.75)
+        : HighlightRadius(strokeWidth);
+
+    /// <summary>Bars are never wider than with this many categories: one bar does not fill the plot.</summary>
+    private const double MinSlotCount = 4;
+
+    /// <summary>
+    /// Width of a band's group of bars (all slots; only when all are <see cref="SeriesType.Bar"/>): the band's, but no wider than a fifth of the plot (as with
+    /// <see cref="MinSlotCount"/> categories), and with <see cref="SeriesOptions.MaxBarWidth"/> set, no wider than that per bar
+    /// (plus the 2 px gap between bars). The group stays centered on its band.
+    /// </summary>
+    private static double SlotGroupWidth(double bandwidth, double plotLength, int slotCount, IEnumerable<Resolved> slotSeries)
+    {
+        // Only plain bars: histogram bins touch, and boxes and candles have widths of their own.
+        var series = slotSeries.ToList();
+        if (series.Count == 0 || series.Any(r => r.Spec.Type != SeriesType.Bar))
+        {
+            return bandwidth;
+        }
+
+        var width = Math.Min(bandwidth, plotLength * 0.8 / MinSlotCount);
+        var max = series.Select(r => r.Spec.MaxBarWidth).Where(m => m > 0).DefaultIfEmpty().Min();
+        if (max is > 0 and var perBar)
+        {
+            width = Math.Min(width, Math.Max(1, slotCount) * (perBar + 2));
+        }
+
+        return Math.Max(1, width);
+    }
 
     /// <summary>Compact y domain: the data range as is (no nice rounding, no ticks); equal values sit in the middle.</summary>
     private static void TightDomain(YAxisLayout axis)

@@ -153,6 +153,32 @@
     </ChildContent>
 </Example>
 
+<Example Title="Bar width" Code="@WidthCode">
+    <Description>
+        <p>
+            Bars fill their band, but never take more than a fifth of the plot: when a filter leaves one or two categories, the bars
+            stay bar-shaped and centered instead of filling the chart. <code>MaxBarWidth</code> (pixels) narrows them further; grouped
+            bars stay side by side. In JSON definitions: <code>"maxBarWidth": 40</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="@Quarters.Take(_quarters).ToList()" Height="220">
+            <BarSeries Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" MaxBarWidth="@(_narrow ? 40 : null)" />
+        </RioChart>
+        <p class="note">
+            Quarters:
+            <select @bind="_quarters">
+                @for (var n = 1; n <= 4; n++)
+                {
+                    var count = n;
+                    <option value="@count">@count</option>
+                }
+            </select>
+            <label><input type="checkbox" @bind="_narrow" /> <code>MaxBarWidth="40"</code></label>
+        </p>
+    </ChildContent>
+</Example>
+
 <Example Title="Per-bar tooltip" Code="@SingleCode">
     <Description><p>Tooltips are shared per x by default; <code>Shared = false</code> shows only the bar under the pointer.</p></Description>
     <ChildContent>
@@ -168,6 +194,15 @@
     private static readonly AxisOptions KiloEuros = new() { Title = "k€" };
     private static readonly AxisOptions PercentAxis = new() { Stacking = StackMode.Percent };
     private static readonly TooltipOptions _single = new() { Shared = false };
+    private int _quarters = 1;
+    private bool _narrow;
+
+    private const string WidthCode = """
+        @* One quarter left after filtering: the bar takes a fifth of the plot, centered. MaxBarWidth narrows it further. *@
+        <RioChart Items="quarters">
+            <BarSeries Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" MaxBarWidth="40" />
+        </RioChart>
+        """;
     private static readonly List<Share> _ranking = [.. CategoryRevenue.OrderByDescending(s => s.Value)];
     private PointClickEventArgs<Ticket>? _tickets;
     private static readonly TimeBucket[] Buckets = [TimeBucket.Hour, TimeBucket.Day, TimeBucket.Auto];

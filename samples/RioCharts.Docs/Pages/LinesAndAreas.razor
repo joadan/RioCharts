@@ -57,6 +57,22 @@
     </ChildContent>
 </Example>
 
+<Example Title="Dots on the points" Code="@DotsCode">
+    <Description>
+        <p>
+            Lines hide their points until hovered. With few readings, <code>Highlight="PointHighlight.All"</code> puts a dot on every
+            point, so it is clear where the values are and where the line only joins them. <code>MarkerSize</code> sets the dot's
+            diameter. Other <code>PointHighlight</code> values mark single points: first, last, lowest and highest (combine with
+            <code>|</code>). Beyond 1000 visible points <code>All</code> draws no dots. In JSON definitions: <code>"highlight": "all"</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="220" YAxis="Milliseconds">
+            <LineSeries Items="WeeklyChecks" Name="Response time" XValue="r => r.Time" YValue="r => r.Value" Format="0 'ms'" Highlight="PointHighlight.All" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Numbers on the x axis" Code="@NumericCode">
     <Description>
         <p>
@@ -192,6 +208,16 @@
     private const string GapsCode = """
         <RioChart Items="conversion" YAxis="@(new AxisOptions { Title = "%" })">
             <LineSeries Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="0.00 '%'" />  @* Value is double? *@
+        </RioChart>
+        """;
+
+    // A response time measured once a day for a week: seven readings.
+    private static readonly List<Reading> WeeklyChecks = [.. new double[] { 182, 176, 240, 198, 171, 305, 214 }
+        .Select((v, d) => new Reading(Start.AddDays(d), v))];
+
+    private const string DotsCode = """
+        <RioChart TItem="Reading">
+            <LineSeries Items="checks" Name="Response time" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.All" />
         </RioChart>
         """;
 

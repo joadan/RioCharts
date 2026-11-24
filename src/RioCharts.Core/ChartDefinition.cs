@@ -277,9 +277,20 @@ public sealed record SeriesOptions
     [Description("Histogram: about how many bins, when binWidth is not set; the width is rounded to a nice number. Null: picked from the data.")]
     public int? BinCount { get; init; }
 
-    /// <summary>Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.</summary>
-    [Description("Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.")]
+    /// <summary>
+    /// Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size.
+    /// Line and area: the diameter of the dots from <see cref="Highlight"/>; default from the line width (for a 2 px line,
+    /// 5 px, and 7 px for dots on every point).
+    /// </summary>
+    [Description("Scatter: marker diameter in pixels. Default 5. Bubbles: the diameter of the largest bubble; default from the chart size. Line and area: the diameter of the highlight dots; default from the line width.")]
     public double? MarkerSize { get; init; }
+
+    /// <summary>
+    /// Bars: the widest a bar may be, in pixels. Null: as wide as the band allows, but a group of bars never takes more
+    /// than a fifth of the plot (as with four categories), so a lone bar does not fill the chart.
+    /// </summary>
+    [Description("Bars: the widest a bar may be, in pixels. Null: as wide as the band allows, but never more than a fifth of the plot.")]
+    public double? MaxBarWidth { get; init; }
 
     /// <summary>Map bubbles: on the world map, one bubble per country with the sum of its places; zoomed into a country, each place. Default true.</summary>
     [Description("Map bubbles: on the world map, one bubble per country with the sum of its places; zoomed into a country, each place. Default true.")]
@@ -317,8 +328,8 @@ public sealed record SeriesOptions
     [Description("Candlestick: color candles by direction (rising green, falling red) and show the change in percent, as for prices. Off (default): the series color, with a light fill for rising and a solid fill for falling candles.")]
     public bool DirectionColors { get; init; }
 
-    /// <summary>Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. "last, max").</summary>
-    [Description("Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. \"last, max\").")]
+    /// <summary>Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. "last, max"), or all.</summary>
+    [Description("Line and area series: mark points with a dot. One or more of last, first, min, max, comma-separated (e.g. \"last, max\"), or all (a dot on every point, for sparse data).")]
     public PointHighlight Highlight { get; init; }
 
     /// <summary>Pie, donut, radial bar and gauge: inner radius as a fraction of the outer radius (0 = pie, 0.6 = donut). Gauge default 0.8.</summary>
@@ -591,6 +602,9 @@ public enum PointHighlight
 
     /// <summary>The highest value.</summary>
     Max = 8,
+
+    /// <summary>Every point: shows where the values are when there are few of them.</summary>
+    All = 16,
 }
 
 /// <summary>The scale of an axis.</summary>

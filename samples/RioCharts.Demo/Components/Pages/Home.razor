@@ -104,10 +104,26 @@
 
         <section>
             <h2>Many categories</h2>
-            <RioChart TItem="(string Country, double Count)" Items="_signups" Height="260">
+            <RioChart TItem="(string Country, double Count)" Items="@_signups.Take(_countries).ToList()" Height="260">
                 <BarSeries Name="Sign-ups" XValue="c => c.Country" YValue="c => c.Count" Format="#,0" />
             </RioChart>
-            <p class="note">Labels that do not fit side by side slope at 45 degrees (<code>AxisOptions.LabelRotation</code>).</p>
+            <p class="note">
+                Labels that do not fit side by side slope at 45 degrees (<code>AxisOptions.LabelRotation</code>). With one to three
+                countries the bars take at most a fifth of the plot.
+                <select @bind="_countries">
+                    <option value="1">1 country</option>
+                    <option value="3">3 countries</option>
+                    <option value="18">18 countries</option>
+                </select>
+            </p>
+        </section>
+
+        <section>
+            <h2>Dots on sparse data</h2>
+            <RioChart TItem="Reading" Items="_weekly" Height="220">
+                <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.All" Format="0" />
+            </RioChart>
+            <p class="note">Seven daily values: <code>Highlight="PointHighlight.All"</code> puts a dot on each.</p>
         </section>
 
         <section>
@@ -400,6 +416,8 @@
     private List<Reading> _hourlyOrders = [];
     private List<Reading> _hourlySessions = [];
     private List<Reading> _hourlyRevenue = [];
+    private int _countries = 18;
+    private List<Reading> _weekly = [];
     private List<Reading> _hourlyConversion = [];
     private List<Reading> _organic = [];
     private List<Reading> _ads = [];
@@ -496,6 +514,8 @@
         // Revenue and conversion per hour, from the orders and sessions above (no new random numbers, so the other charts stay the same).
         _hourlyRevenue = _hourlyOrders.Select((o, h) => new Reading(o.Time, Math.Round(o.Value!.Value * (64 + 6 * Math.Sin(h / 3.0))))).ToList();
         _hourlyConversion = _hourlyOrders.Zip(_hourlySessions, (o, s) => new Reading(o.Time, o.Value / s.Value)).ToList();
+
+        _weekly = [.. _daily.TakeLast(7)];
 
         _onePoint = [new(start, 420)];
         _flat = Enumerable.Range(0, 24).Select(h => new Reading(start.AddHours(h), 300)).ToList();
