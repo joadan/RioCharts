@@ -14,11 +14,19 @@ namespace RioCharts.AI;
 /// </summary>
 public static class ChartRazor
 {
-    // The vertical axis settings the export writes: title and stacking.
+    // The vertical axis settings the export writes: title, stacking and side.
     private static string AxisProperties(AxisOptions axis) => string.Join(", ", new[]
     {
         axis.Title is { } title ? $"Title = {Str(title)}" : null,
         axis.Stacking != StackMode.Normal ? $"Stacking = StackMode.{axis.Stacking}" : null,
+        axis.Position != AxisPosition.Auto ? $"Position = AxisPosition.{axis.Position}" : null,
+    }.OfType<string>());
+
+    // The horizontal axis settings the export writes: title and label rotation.
+    private static string XAxisProperties(AxisOptions axis) => string.Join(", ", new[]
+    {
+        axis.Title is { } title ? $"Title = {Str(title)}" : null,
+        axis.LabelRotation is { } rotation ? $"LabelRotation = {Number(rotation)}" : null,
     }.OfType<string>());
 
     /// <param name="itemType">The C# type of the rows, e.g. "Reading".</param>
@@ -38,9 +46,9 @@ public static class ChartRazor
             sb.Append($" YAxis=\"@(new AxisOptions {{ {yAxis} }})\"");
         }
 
-        if (spec.X.Title is { } xTitle)
+        if (XAxisProperties(spec.X) is { Length: > 0 } xAxis)
         {
-            sb.Append($" XAxis=\"@(new AxisOptions {{ Title = {Str(xTitle)} }})\"");
+            sb.Append($" XAxis=\"@(new AxisOptions {{ {xAxis} }})\"");
         }
 
         if (spec.YAxes.Count > 0)
@@ -351,6 +359,15 @@ public static class ChartRazor
                 // Flags: "Last, Max" becomes PointHighlight.Last | PointHighlight.Max.
                 var flags = s.Highlight.ToString().Split(", ").Select(f => $"PointHighlight.{f}");
                 sb.Append($" Highlight=\"{string.Join(" | ", flags)}\"");
+                if (s.MarkerSize is { } dot)
+                {
+                    sb.Append($" MarkerSize=\"{Number(dot)}\"");
+                }
+            }
+
+            if (s.Type == SeriesType.Bar && s.MaxBarWidth is { } maxBar)
+            {
+                sb.Append($" MaxBarWidth=\"{Number(maxBar)}\"");
             }
 
             if (s.Type == SeriesType.Pie && s.InnerRadius is { } inner && inner is not 0 and not 0.6)

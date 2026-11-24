@@ -453,8 +453,14 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
     /// <summary>Line width in pixels.</summary>
     [Parameter] public double StrokeWidth { get; set; } = 2;
 
-    /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last | PointHighlight.Max</c>. Default none.</summary>
+    /// <summary>
+    /// Points to mark with a dot, e.g. <c>PointHighlight.Last | PointHighlight.Max</c>, or <c>PointHighlight.All</c> for a dot
+    /// on every point (sparse data: shows where the values are; not drawn beyond 1000 visible points). Default none.
+    /// </summary>
     [Parameter] public PointHighlight Highlight { get; set; }
+
+    /// <summary>Diameter of the <see cref="Highlight"/> dots in pixels. Default: from the line width (for a 2 px line, 5 px; 7 px with <c>PointHighlight.All</c>).</summary>
+    [Parameter] public double? MarkerSize { get; set; }
 
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Line;
@@ -462,7 +468,10 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
     private protected override TimeBucket? XBucket => Bucket;
 
     /// <inheritdoc />
-    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
+    {
+        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize,
+    };
 }
 
 /// <summary>Area series, filled down to zero.</summary>
@@ -482,8 +491,11 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     /// <summary>Width of the top line in pixels. Default 2.</summary>
     [Parameter] public double StrokeWidth { get; set; } = 2;
 
-    /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last</c>. Default none.</summary>
+    /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last</c>, or <c>PointHighlight.All</c> for every point. Default none.</summary>
     [Parameter] public PointHighlight Highlight { get; set; }
+
+    /// <summary>Diameter of the <see cref="Highlight"/> dots in pixels. Default: from the line width.</summary>
+    [Parameter] public double? MarkerSize { get; set; }
 
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Area;
@@ -491,7 +503,10 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     private protected override TimeBucket? XBucket => Bucket;
 
     /// <inheritdoc />
-    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
+    {
+        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize,
+    };
 }
 
 /// <summary>
@@ -813,10 +828,19 @@ public sealed class BarSeries<TItem> : ErrorBarSeriesBase<TItem>
     /// </summary>
     [Parameter] public TimeBucket? Bucket { get; set; }
 
+    /// <summary>
+    /// The widest a bar may be, in pixels. Default: as wide as its band allows, but a group of bars never takes more than
+    /// a fifth of the plot (as with four categories), so a lone bar does not fill the chart. Bars stay centered on their band.
+    /// </summary>
+    [Parameter] public double? MaxBarWidth { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Bar;
 
     private protected override TimeBucket? XBucket => Bucket;
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { MaxBarWidth = MaxBarWidth };
 }
 
 /// <summary>

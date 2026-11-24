@@ -36,6 +36,8 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out. The same on `XAxis` for numeric x under lines and scatter points (not bars), e.g. load time against page size, log on both axes.
 - Many categories (e.g. bars per country): labels that do not fit slope at 45 degrees, so all show. `XAxis="@(new AxisOptions { LabelRotation = 90 })"` sets another angle; `LabelRotation = 0` keeps them horizontal and shows every n-th.
 - One y axis per unit: `YAxes="@([new AxisOptions { Id = "kw", Title = "kW" }])"` on the chart and `YAxisId="kw"` on the series. Extra axes go right unless `Position = AxisPosition.Left`; several on one side sit side by side.
+- Few points on a line (say under 20): `Highlight="PointHighlight.All"` puts a dot on every point (`MarkerSize` for the diameter). Other values mark single points: `First`, `Last`, `Min`, `Max`, combined with `|`.
+- Bars never take more than a fifth of the plot, so a lone bar after filtering stays narrow; `MaxBarWidth="40"` on a `BarSeries` caps them in pixels.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
 - Error bars (bar, line and scatter series): `ErrorValue="m => m.StdDev"` (plus or minus, per item), `Error="2.5"` (the same for every point), or `ErrorLowValue` and `ErrorHighValue` (the ends, as values). JSON: `errorField`, `error`, `errorLow` and `errorHigh`.
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). With `TimeZone` on the chart, buckets follow that zone's calendar (a day is midnight to midnight there). No need to group in the query.
@@ -404,7 +406,8 @@ Line series.
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `Curve`: `CurveType` — Line shape: Linear, Monotone (smooth, no overshoot) or Step.
 - `StrokeWidth`: `double` = `2` — Line width in pixels.
-- `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last | PointHighlight.Max`. Default none.
+- `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last | PointHighlight.Max`, or `PointHighlight.All` for a dot on every point (sparse data: shows where the values are; not drawn beyond 1000 visible points). Default none.
+- `MarkerSize`: `double?` — Diameter of the `LineSeries.Highlight` dots in pixels. Default: from the line width (for a 2 px line, 5 px; 7 px with `PointHighlight.All`).
 - `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
 - `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
 - `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
@@ -417,7 +420,8 @@ Area series, filled down to zero.
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `Curve`: `CurveType` — Shape of the top edge: Linear, Monotone (smooth, no overshoot) or Step.
 - `StrokeWidth`: `double` = `2` — Width of the top line in pixels. Default 2.
-- `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last`. Default none.
+- `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last`, or `PointHighlight.All` for every point. Default none.
+- `MarkerSize`: `double?` — Diameter of the `AreaSeries.Highlight` dots in pixels. Default: from the line width.
 
 #### `<ScatterSeries>` (`ScatterSeries<TItem>`)
 
@@ -477,6 +481,7 @@ Candlestick: how a value moved within each period: a wick from low to high and a
 Bar series. Several bar series in one chart are grouped side by side.
 
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
+- `MaxBarWidth`: `double?` — The widest a bar may be, in pixels. Default: as wide as its band allows, but a group of bars never takes more than a fifth of the plot (as with four categories), so a lone bar does not fill the chart. Bars stay centered on their band.
 - `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
 - `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
 - `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
@@ -1050,6 +1055,7 @@ Points of a line or area series to mark with a dot (combine with |).
 - `First` — The first value.
 - `Min` — The lowest value.
 - `Max` — The highest value.
+- `All` — Every point: shows where the values are when there are few of them.
 
 Flags: combine values with `|`.
 
@@ -1137,7 +1143,7 @@ Kind of annotation.
 
 One series: its type, where its data comes from (fields and transforms in JSON definitions) and how it looks.
 
-62 properties: `Id`, `Type`, `Dataset`, `X`, `Y`, `Filter`, `TimeBucket`, `Aggregate`, `GroupBy`, `Sort`, `Limit`, `Name`, `Color`, `Curve`, `StrokeWidth`, `ZIndex`, `YAxisId`, `Stack`, `DataLabels`, `Low`, `Open`, `Q1`, `Q3`, `High`, `Row`, `Start`, `End`, `Total`, `BinWidth`, `BinCount`, `MarkerSize`, `GroupByCountry`, `Latitude`, `Longitude`, `Size`, `SizeName`, `SizeFormat`, `TrendLine`, `DirectionColors`, `Highlight`, `InnerRadius`, `StartAngle`, `EndAngle`, `GroupSmallSlices`, `Path`, `VisibleLevels`, `ColorBands`, `ColorField`, `PathSeparator`, `Max`, `Min`, `Midpoint`, `BelowColor`, `Target`, `From`, `Error`, `ErrorField`, `ErrorLow`, `ErrorHigh`, `TargetField`, `Format`, `DisplayName`.
+63 properties: `Id`, `Type`, `Dataset`, `X`, `Y`, `Filter`, `TimeBucket`, `Aggregate`, `GroupBy`, `Sort`, `Limit`, `Name`, `Color`, `Curve`, `StrokeWidth`, `ZIndex`, `YAxisId`, `Stack`, `DataLabels`, `Low`, `Open`, `Q1`, `Q3`, `High`, `Row`, `Start`, `End`, `Total`, `BinWidth`, `BinCount`, `MarkerSize`, `MaxBarWidth`, `GroupByCountry`, `Latitude`, `Longitude`, `Size`, `SizeName`, `SizeFormat`, `TrendLine`, `DirectionColors`, `Highlight`, `InnerRadius`, `StartAngle`, `EndAngle`, `GroupSmallSlices`, `Path`, `VisibleLevels`, `ColorBands`, `ColorField`, `PathSeparator`, `Max`, `Min`, `Midpoint`, `BelowColor`, `Target`, `From`, `Error`, `ErrorField`, `ErrorLow`, `ErrorHigh`, `TargetField`, `Format`, `DisplayName`.
 
 #### `DataField` (class, RioCharts.Core.Definitions)
 

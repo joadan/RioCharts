@@ -71,6 +71,11 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   above the label columns; the axis next to the plot keeps the width of its labels (its title may run
   on over the plot), and outer axes get a column as wide as their title (capped at a fifth of the
   chart width, shortened with "…") so titles on one side never overlap.
+- **Bar width.** A group of bars (all slots of a band) is at most a fifth of the plot, the band width
+  of four categories, so ≥ 4 categories are unchanged and fewer get narrower bars centered on their
+  band. `MaxBarWidth` caps each bar (the group: slots × (max + 2 px gap)). Only when every slotted series
+  is a plain bar: histogram bins touch, and boxes and candles size themselves. Horizontal bars use the
+  plot height the same way. Tooltip hover bands keep the full band.
 - **Category labels.** Horizontal when every label fits its band; otherwise they slope down to the
   left at 45 degrees (`AxisOptions.LabelRotation` sets the angle; 0 keeps the old horizontal labels
   showing every n-th). Rotated labels end at their band's center, are shortened to a third of the
@@ -438,6 +443,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Highlight dots** (`PointHighlight` flags) are picked from the data within the visible range,
   not from the downsampled points, so a min or max dropped by LTTB is still marked. They are
   outlined in the surface color so they stand out on the line. Coinciding picks draw one dot.
+  `PointHighlight.All` marks every visible point, up to 1000 (more would bury the line, as with
+  data labels), with a larger default dot (radius 3.5 for a 2 px line, against 2.5): those dots mark
+  the data, the others accent a value. `MarkerSize` (a diameter) overrides both.
 - **Summary:** `ChartDescriber.DescribeCompact` (range, last value, trend in words), formatted
   with the series' or axis' format like the tooltips.
 - **Keyboard** defaults to off for compact charts (`KeyboardNavigation` became `bool?`), so a

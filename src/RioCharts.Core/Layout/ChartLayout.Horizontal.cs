@@ -92,7 +92,8 @@ public static partial class ChartLayout
     /// line, thin whiskers out to the whisker ends and outliers as small hollow dots, as for upright boxes.
     /// </summary>
     private static void HorizontalBoxes(Resolved r, (double Q1, double Q3, int Index)[] boxes, Func<SeriesData, int, int> rowOf, BandScale band, int slot,
-        double thickness, Scales.ContinuousScale valueScale, StyleTable styles, List<Node> nodes, List<(float X, float Y, float Width, int Index, int Row, double Share)> points)
+        double thickness, double groupOffset, Scales.ContinuousScale valueScale, StyleTable styles, List<Node> nodes,
+        List<(float X, float Y, float Width, int Index, int Row, double Share)> points)
     {
         const double outlierRadius = 2.5;
         if (r.Data.Box is not { } box)
@@ -110,7 +111,7 @@ public static partial class ChartLayout
         foreach (var (q1, q3, i) in boxes)
         {
             var row = rowOf(r.Data, i);
-            var cy = band.Start(row) + slot * thickness + thickness / 2;
+            var cy = band.Start(row) + groupOffset + slot * thickness + thickness / 2;
             var (x1, x3, xm) = (valueScale.Map(q1), valueScale.Map(q3), valueScale.Map(r.Data.Y[i]));
             var (left, right) = (Math.Min(x1, x3), Math.Max(x1, x3));
             rects.Add(new RectNode(new RectF((float)left, (float)(cy - h / 2), (float)Math.Max(1, right - left), (float)h), boxStyle)
@@ -441,7 +442,10 @@ public static partial class ChartLayout
         var tickFormat = NumberFormatter.ForTicks(ticks, step, culture, valueFormat);
         var band = new BandScale(rows, plot.Y, plot.Bottom, 0.25, 0.1);
         var slotCount = Math.Max(1, slotKeys.Count);
-        var thickness = band.Bandwidth / slotCount;
+        // Bars no thicker than with four rows (or MaxBarWidth), centered on their row.
+        var groupHeight = SlotGroupWidth(band.Bandwidth, plot.Height, slotCount, drawn.Where(r => !IsDumbbell(r)));
+        var groupOffset = (band.Bandwidth - groupHeight) / 2;
+        var thickness = groupHeight / slotCount;
         var gap = thickness > 8 ? 2 : 0;
 
         // ---------- Grid, zero line, value labels ----------
@@ -511,7 +515,7 @@ public static partial class ChartLayout
             }
             else if (IsBox(r))
             {
-                HorizontalBoxes(r, segments[r], rowOf, band, slot, thickness, valueScale, styles, nodes, points);
+                HorizontalBoxes(r, segments[r], rowOf, band, slot, thickness, groupOffset, valueScale, styles, nodes, points);
             }
 
             var connectors = IsWaterfall(r) ? new PathBuilder() : null;
@@ -520,7 +524,7 @@ public static partial class ChartLayout
             foreach (var (start, end, i) in IsDumbbell(r) || IsBox(r) ? [] : segments[r])
             {
                 var row = rowOf(r.Data, i);
-                var top = band.Start(row) + slot * thickness + gap / 2.0;
+                var top = band.Start(row) + groupOffset + slot * thickness + gap / 2.0;
                 var h = Math.Max(1, thickness - gap);
                 var (x0, x1) = (valueScale.Map(Math.Min(start, end)), valueScale.Map(Math.Max(start, end)));
                 if (IsWaterfall(r))

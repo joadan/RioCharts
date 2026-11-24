@@ -238,11 +238,12 @@ internal sealed class LineSeriesType : ISeriesType
     }
 
     /// <summary>
-    /// Dots on the first, last, lowest and highest value (<see cref="SeriesOptions.Highlight"/>), found
+    /// Dots on the first, last, lowest and highest value, or on every point (<see cref="SeriesOptions.Highlight"/>), found
     /// in the data (not the downsampled points) within the visible range, outlined in the surface color.
     /// </summary>
     internal static void AddHighlights(SeriesBuildContext c)
     {
+        const int MaxAllHighlights = 1000;
         var highlight = c.Spec.Highlight;
         if (highlight == PointHighlight.None)
         {
@@ -285,12 +286,24 @@ internal sealed class LineSeriesType : ISeriesType
         }
 
         var picked = new SortedSet<int>();
+        // Every point, unless there are so many that the dots would only bury the line (as with data labels).
+        if (highlight.HasFlag(PointHighlight.All) && last - first < MaxAllHighlights)
+        {
+            for (var i = first; i <= last; i++)
+            {
+                if (double.IsFinite(c.Upper[i]) && double.IsFinite(c.PixelX[i]))
+                {
+                    picked.Add(i);
+                }
+            }
+        }
+
         if (highlight.HasFlag(PointHighlight.First)) picked.Add(first);
         if (highlight.HasFlag(PointHighlight.Last)) picked.Add(last);
         if (highlight.HasFlag(PointHighlight.Min)) picked.Add(min);
         if (highlight.HasFlag(PointHighlight.Max)) picked.Add(max);
 
-        var radius = Layout.ChartLayout.HighlightRadius(c.StrokeWidth);
+        var radius = Layout.ChartLayout.HighlightRadius(c.Spec, c.StrokeWidth);
         var builder = new PathBuilder();
         foreach (var i in picked)
         {

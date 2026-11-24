@@ -20,6 +20,13 @@ changes are called out under **Breaking**.
   block; longer data is one block per year. Clicking a day selects its items. New texts: `ChartTexts.CalendarChart`
   and `CalendarDays` in all built-in languages. Docs: a Calendar heatmap page and a gallery card.
   **Breaking (JSON):** `"type": "calendar"` used to mean a plain heatmap; it is now the calendar heatmap.
+- Bars no longer fill the chart when there are only one to three categories: a group of bars takes at most a fifth
+  of the plot (as with four categories), centered on its band. `BarSeries.MaxBarWidth` (`"maxBarWidth"` in JSON) caps
+  each bar in pixels; grouped bars stay side by side. Histograms, box plots and candles keep their widths. A behavior
+  change for bar charts with fewer than four categories. Docs: a "Bar width" example on the Bars page.
+- Dots on every point: `PointHighlight.All` (`"highlight": "all"`) marks each point of a line or area, for sparse data
+  (none beyond 1000 visible points). `MarkerSize` now also works on `LineSeries` and `AreaSeries`: the diameter of
+  their highlight dots. Dots on every point default to 7 px across a 2 px line. Docs: a "Dots on the points" example.
 - Several y axes on one side no longer overlap: an axis that is not next to the plot gets a column as wide as its
   title (up to a fifth of the chart, shortened with "…" beyond that), so the titles above the axes sit side by side
   instead of on top of each other. Charts with one axis per side are unchanged.
