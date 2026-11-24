@@ -94,4 +94,23 @@ public class AxisFormatTests
 
         Assert.Contains("highest 13,910 at Store 1", layout.Scene.Description);
     }
+
+    [Fact]
+    public void A_format_and_a_log_axis_work_when_the_current_culture_has_another_minus_sign()
+    {
+        var culture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("sv-SE"); // minus sign U+2212
+            var layout = Bars([0, 1, 2], new AxisOptions { Format = "#,0" });
+            Assert.Equal(YLabels(layout).Distinct(), YLabels(layout));
+
+            var log = Bars([0.002, 0.05, 3], new AxisOptions { Scale = ScaleType.Log });
+            Assert.Contains("0.01", YLabels(log));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
+        }
+    }
 }

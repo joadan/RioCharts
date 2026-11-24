@@ -793,6 +793,10 @@ public sealed record ColorBand
     /// <summary>A CSS color or a theme token such as "--rio-negative".</summary>
     [Description("A CSS color or a theme token such as \"--rio-negative\".")]
     public string Color { get; init; } = "";
+
+    /// <summary>A name for the band, e.g. "High": a heatmap's legend shows it instead of the band's range. Null: the range ("&gt; 80").</summary>
+    [Description("A name for the band, e.g. \"High\": a heatmap's legend shows it instead of the range. Null: the range (\"> 80\").")]
+    public string? Label { get; init; }
 }
 
 /// <summary>A condition on a field, e.g. { "field": "channel", "op": "eq", "value": "Web" }.</summary>

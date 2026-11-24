@@ -133,6 +133,18 @@ public class HeatmapTests
     }
 
     [Fact]
+    public void Named_bands_show_their_names_in_the_legend()
+    {
+        ColorBand[] named = [new() { Color = "#3ca951", Label = "Normal" }, new() { Above = 40, Color = "#efb118", Label = "High" }, new() { Above = 80, Color = "#e11d48" }];
+        var spec = Spec() with { Series = [.. Spec().Series.Select(s => s with { ColorBands = named })] };
+        var layout = ChartLayout.Compute(spec, Week(), Options);
+
+        var legend = All(layout.Scene.Static).OfType<GroupNode>().Single(g => g.Class == "rio-legend rio-heat-legend");
+        Assert.Equal(["Normal", "High", "> 80"], legend.Children.OfType<TextNode>().Select(t => t.Text)); // no label: the range
+        Assert.Equal("Legend: Normal, High, > 80", legend.AriaLabel);
+    }
+
+    [Fact]
     public void A_cell_own_color_wins_over_the_scale()
     {
         var data = Week();

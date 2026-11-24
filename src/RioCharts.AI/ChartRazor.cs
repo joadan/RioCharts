@@ -213,6 +213,7 @@ public static class ChartRazor
                     b.Above is { } above ? $"Above = {Number(above)}" : null,
                     b.Below is { } below ? $"Below = {Number(below)}" : null,
                     $"Color = \"{Attr(b.Color)}\"",
+                    b.Label is { } bandLabel ? $"Label = \"{Attr(bandLabel)}\"" : null,
                 }.OfType<string>()) + " }");
                 sb.Append($" ColorBands=\"@(new ColorBand[] {{ {string.Join(", ", items)} }})\"");
             }

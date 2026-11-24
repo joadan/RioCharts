@@ -119,4 +119,21 @@
         Assert.Equal(["rio-chart", "mine"], moving.Find("div.rio-chart").ClassList);
         Assert.Equal(["rio-chart", "rio-still", "mine"], still.Find("div.rio-chart").ClassList);
     }
+
+    [Fact]
+    public void A_chart_that_fails_to_lay_out_shows_a_message_instead_of_throwing()
+    {
+        var failing = new AxisOptions { LabelFormatter = _ => throw new InvalidOperationException("app bug") };
+
+        var cut = Render(@<div>
+            <RioChart TItem="Reading" Items="London" Title="Broken" YAxis="failing"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+            <RioChart TItem="Reading" Items="London" Title="Fine"><LineSeries Name="B" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+        </div>);
+
+        var charts = cut.FindAll(".rio-chart");
+        Assert.Equal(2, charts.Count);
+        Assert.Equal("The chart could not be drawn", charts[0].QuerySelector(".rio-empty")!.TextContent);
+        Assert.Null(charts[1].QuerySelector(".rio-empty")); // the other chart still draws
+        Assert.NotNull(charts[1].QuerySelector(".rio-line"));
+    }
 }
