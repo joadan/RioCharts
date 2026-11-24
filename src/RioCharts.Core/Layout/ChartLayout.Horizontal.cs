@@ -491,6 +491,7 @@ public static partial class ChartLayout
 
         // ---------- Bars ----------
         var seriesNodes = new List<Node>();
+        var selectedMarks = new List<Node>();
         var labelNodes = new List<Node>();
         var hitTest = new HitTestIndex();
         var tooltipSeries = new List<TooltipSeries>();
@@ -622,6 +623,21 @@ public static partial class ChartLayout
             });
 
             points.Sort((a, b) => a.Row.CompareTo(b.Row)); // top to bottom, for the keyboard
+            var cellHeight = IsDumbbell(r) ? Series.DumbbellSeriesType.Radius * 2 + 6 : IsBox(r) ? BoxHeight(thickness) : Math.Max(1, thickness - gap);
+            if (options.SelectedPoints is { } selected && selected.TryGetValue(r.Spec.Id, out var picked) && picked.Count > 0)
+            {
+                // Selected bars, boxes, waterfall steps and dumbbells: an outline around the shape the pointer hovers.
+                var outline = styles.Add("selected-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.5f });
+                foreach (var p in points.Where(p => picked.Contains(p.Index)))
+                {
+                    selectedMarks.Add(new RectNode(new RectF((float)(p.X - p.Width / 2 - 1.5), (float)(p.Y - cellHeight / 2 - 1.5), p.Width + 3, (float)(cellHeight + 3)), outline)
+                    {
+                        CornerRadius = 3,
+                        Class = "rio-selected-bar",
+                    });
+                }
+            }
+
             var hits = new HitTestIndex.SeriesHits(r.Spec.Id, [.. points.Select(p => p.X)], [.. points.Select(p => p.Y)], [.. points.Select(p => p.Index)],
                 [.. points.Select(p => r.Data.ToSourceIndex(p.Index))]);
             hitTest.Add(hits);
@@ -639,7 +655,7 @@ public static partial class ChartLayout
                         + (r.Percent && IsBar(r) ? $" ({p.Share.ToString("P0", culture)})" : ""),
                 })])
             {
-                CellHeight = (float)(IsDumbbell(r) ? Series.DumbbellSeriesType.Radius * 2 + 6 : IsBox(r) ? BoxHeight(thickness) : Math.Max(1, thickness - gap)),
+                CellHeight = (float)cellHeight,
                 CellWidths = [.. points.Select(p => p.Width)],
                 PartLabels = IsBox(r) && r.Data.Box is not null ? BoxPartLabels(texts) : IsWaterfall(r) ? [texts.Total] : null,
                 PartValues = IsBox(r) && r.Data.Box is { } box
@@ -699,6 +715,10 @@ public static partial class ChartLayout
         var plotNodes = new List<Node>(below);
         plotNodes.AddRange(seriesNodes);
         plotNodes.AddRange(above);
+        if (selectedMarks.Count > 0)
+        {
+            plotNodes.Add(new GroupNode(selectedMarks) { Key = "selection:points", Class = "rio-selected-points" });
+        }
         var seriesLayer = new GroupNode(
         [
             new GroupNode(plotNodes) { Class = "rio-plot" },

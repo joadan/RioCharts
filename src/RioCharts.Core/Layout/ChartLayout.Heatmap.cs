@@ -168,6 +168,7 @@ public static partial class ChartLayout
 
         var gap = cellWidth > 6 && rowHeight > 6 ? 1f : 0f;
         var cellNodes = new List<Node>();
+        var selectedCells = new List<Node>();
         var labelNodes = new List<Node>();
         var hitTest = new HitTestIndex();
         var tooltipSeries = new List<TooltipSeries>();
@@ -178,6 +179,7 @@ public static partial class ChartLayout
             var r = rows[row];
             var cy = plot.Y + rowHeight * (row + 0.5);
             var points = new List<(float X, int Index)>();
+            var selectedHere = options.SelectedPoints is { } selected && selected.TryGetValue(r.Spec.Id, out var picked) && picked.Count > 0 ? picked : null;
             if (Usable(r))
             {
                 var d = r.Data;
@@ -192,8 +194,15 @@ public static partial class ChartLayout
 
                     var opacity = Opacity(v);
                     var style = CellStyle(v);
-                    cellNodes.Add(new RectNode(new RectF((float)(px - cellWidth / 2 + gap / 2), (float)(cy - rowHeight / 2 + gap / 2),
-                        (float)Math.Max(0.5, cellWidth - gap), (float)Math.Max(0.5, rowHeight - gap)), style) { CornerRadius = gap > 0 ? 2 : 0 });
+                    var cell = new RectF((float)(px - cellWidth / 2 + gap / 2), (float)(cy - rowHeight / 2 + gap / 2),
+                        (float)Math.Max(0.5, cellWidth - gap), (float)Math.Max(0.5, rowHeight - gap));
+                    cellNodes.Add(new RectNode(cell, style) { CornerRadius = gap > 0 ? 2 : 0 });
+                    if (selectedHere?.Contains(i) == true)
+                    {
+                        // An outline just inside the cell, so neighbouring outlines do not overlap.
+                        selectedCells.Add(new RectNode(new RectF(cell.X + 0.75f, cell.Y + 0.75f, Math.Max(0.5f, cell.Width - 1.5f), Math.Max(0.5f, cell.Height - 1.5f)),
+                            styles.Add("selected-bar", new Style { Stroke = ThemeTokens.Text, StrokeWidth = 1.5f })) { CornerRadius = 2, Class = "rio-selected-bar" });
+                    }
                     points.Add(((float)px, i));
 
                     if (r.Spec.DataLabels == true && !compact)
@@ -258,7 +267,10 @@ public static partial class ChartLayout
 
         var seriesLayer = new GroupNode(
         [
-            new GroupNode([new GroupNode(cellNodes) { Key = "series:heatmap", Class = "rio-series rio-series-heatmap" }]) { Class = "rio-plot" },
+            new GroupNode(selectedCells.Count == 0
+                ? [new GroupNode(cellNodes) { Key = "series:heatmap", Class = "rio-series rio-series-heatmap" }]
+                : [new GroupNode(cellNodes) { Key = "series:heatmap", Class = "rio-series rio-series-heatmap" },
+                    new GroupNode(selectedCells) { Key = "selection:points", Class = "rio-selected-points" }]) { Class = "rio-plot" },
             new GroupNode(labelNodes) { Class = "rio-labels" },
         ])
         {

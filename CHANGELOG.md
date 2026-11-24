@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Selected points now show on horizontal bars, box plots, waterfalls and dumbbells, heatmap cells, pie and donut slices
+  and radial bars, as an outline. Before, clicks there selected items and raised the events but drew nothing. The grouped
+  "Other" slice is not outlined. Docs: a "Selection on any chart" example on the Clicks and selection page.
 - Horizontal box plots and waterfalls: `Horizontal="true"` on the chart (`"horizontal": true` in JSON) now lays
   `BoxPlotSeries` and `WaterfallSeries` on their side, with the categories down the left, first on top, as for bars.
   They share a row with bar series in slots. Docs: an example on the Box plots and Waterfall pages.
