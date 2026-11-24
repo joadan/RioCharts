@@ -34,4 +34,21 @@
         Assert.Equal("182 (Target 160)", values[0].GetString());
         Assert.Equal("96 (Target 130)", values[1].GetString());
     }
+
+    [Fact]
+    public void Funnels_and_bullets_do_not_zoom()
+    {
+        // They have an x scale for coordinates but ignore zoom ranges, so Zoomable and range selection stay off.
+        var bullet = Render<RioChart<Sale>>(@<RioChart TItem="Sale" Items="Sales" Zoomable="true" Selection="ChartSelectionMode.Range">
+            <BulletSeries XValue="s => s.Region" YValue="s => s.Amount" TargetValue="s => s.Goal" />
+        </RioChart>);
+        var model = Payload(Calls("update")[^1]);
+        Assert.False(model.GetProperty("zoom").GetBoolean());
+        Assert.False(model.TryGetProperty("select", out _));
+
+        var funnel = Render<RioChart<Sale>>(@<RioChart TItem="Sale" Items="Sales" Zoomable="true">
+            <FunnelSeries XValue="s => s.Region" YValue="s => s.Amount" />
+        </RioChart>);
+        Assert.False(Payload(Calls("update")[^1]).GetProperty("zoom").GetBoolean());
+    }
 }

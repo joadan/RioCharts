@@ -1367,14 +1367,17 @@ The rest of Design.md "Programmatic interaction".
   a layout: no round trip per hover, and it is applied again after each layout. Hovering or focusing
   a legend item highlights its series meanwhile (JS only). The SVG renderer now writes `data-key`
   on series, data label and legend groups (before: annotations only) so the module can find them.
-  Nothing fades when the series is not drawn as such (hidden, pie slices, the canvas layer).
+  Keyed groups nest (a pie ring holds its slices, as do radial bars and treemap groups), so a slice or group highlights too.
+  Nothing fades when the series is not drawn as such (hidden, the canvas layer), on maps (no series groups),
+  or between heatmap rows (one group). Zoom, pan and range selection need `ZoomsX` (false for funnels and bullets,
+  which have an x scale for coordinates but ignore `XRange`).
 - **Coordinates:** `ValueToPixel(x, y, yAxis)` and `PixelToValue(x, y, yAxis)` use the last
   layout's scales; pixels are CSS pixels from the chart's top left (its SVG coordinates). Category
   axes give the nearest category. Null for pies and horizontal bars.
 - **Batching:** `ApplyAsync(changes)` holds rendering (`ShouldRender` is false while it runs) and
   renders once at the end. Events and bound parameters are still raised as each change happens;
   JS calls (tooltip, highlight) go out at once.
-- **Not yet:** highlight on pies and the canvas layer, coordinates for horizontal bars, an
+- **Not yet:** highlight on the canvas layer, maps and heatmap rows, coordinates for horizontal bars, an
   `OnSeriesClick` event, opt-in hover events, legend and data label templates, a custom overlay
   `RenderFragment`, and undo/redo.
 

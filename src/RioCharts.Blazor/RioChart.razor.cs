@@ -891,8 +891,8 @@ public partial class RioChart<TItem> : IChartContext
         var model = CustomTooltip(_layout);
         var click = OnPointClick.HasDelegate || Selection == ChartSelectionMode.Points;
         var scale = _layout.XScale;
-        var select = Selection == ChartSelectionMode.Range && scale is not null && _layout.HasData ? "range" : Selection == ChartSelectionMode.Points ? "points" : null;
-        var zoom = Zoomable && scale is not null && _layout.HasData;
+        var select = Selection == ChartSelectionMode.Range && scale is not null && _layout.ZoomsX && _layout.HasData ? "range" : Selection == ChartSelectionMode.Points ? "points" : null;
+        var zoom = Zoomable && scale is not null && _layout.ZoomsX && _layout.HasData;
         var drags = _layout.DragHandles;
         // UTF-8 JSON from source-generated metadata (Rendering/Interop.cs): trimming and AOT safe.
         byte[]? payload = model.Enabled || click || zoom || keys || select is not null || drags.Count > 0 || (Group is not null && scale is not null)
@@ -955,7 +955,7 @@ public partial class RioChart<TItem> : IChartContext
         var polar = layout.Tooltip.Slices.Count > 0;
         var series = layout.Tooltip.Series.Count(s => s.X.Length > 0);
         var move = polar ? texts.KeysSlices : series > 1 ? texts.KeysPointsAndSeries : texts.KeysPoints;
-        var zoom = Zoomable && layout.XScale is not null ? " " + texts.KeysZoom : "";
+        var zoom = Zoomable && layout.XScale is not null && layout.ZoomsX ? " " + texts.KeysZoom : "";
         return $"{move}{zoom} {(OnPointClick.HasDelegate ? texts.KeysSelect : texts.KeysLeave)}";
     }
 
