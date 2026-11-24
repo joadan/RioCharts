@@ -35,10 +35,12 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
 - Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out. The same on `XAxis` for numeric x under lines and scatter points (not bars), e.g. load time against page size, log on both axes.
 - Many categories (e.g. bars per country): labels that do not fit slope at 45 degrees, so all show. `XAxis="@(new AxisOptions { LabelRotation = 90 })"` sets another angle; `LabelRotation = 0` keeps them horizontal and shows every n-th.
-- One y axis per unit: `YAxes="@([new AxisOptions { Id = "kw", Title = "kW" }])"` on the chart and `YAxisId="kw"` on the series. Extra axes go right unless `Position = AxisPosition.Left`; several on one side sit side by side.
+- Largest first: `Sort="SortOrder.Descending"` on a `BarSeries` orders the categories by its values after `Aggregate` (e.g. counts). Sorting `Items` does not help with aggregates.
+- One y axis per unit: `YAxes="@([new AxisOptions { Id = "kw", Title = "kW" }])"` on the chart and `YAxisId="kw"` on the series. Extra axes go right unless `Position = AxisPosition.Left`; several on one side sit side by side. Add `SeriesColor = true` to each axis to color it like its series.
 - Few points on a line (say under 20): `Highlight="PointHighlight.All"` puts a dot on every point (`MarkerSize` for the diameter). Other values mark single points: `First`, `Last`, `Min`, `Max`, combined with `|`.
 - Bars never take more than a fifth of the plot, so a lone bar after filtering stays narrow; `MaxBarWidth="40"` on a `BarSeries` caps them in pixels.
 - Pins: `OnPointClick` gives the item; add a `<PointAnnotation Id="..." X="item.Time" Y="item.Value" />` for it. With `OnAnnotationClick` set, a click on the pin raises `OnAnnotationClick` (with its `Id`), even on a data point: remove the pin there.
+- Tooltip time: `XAxis="@(new AxisOptions { TooltipFormat = "d MMM HH:mm" })"` formats the tooltip header only (no seconds, no zone offset); `Format` is for the axis labels.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
 - Error bars (bar, line and scatter series): `ErrorValue="m => m.StdDev"` (plus or minus, per item), `Error="2.5"` (the same for every point), or `ErrorLowValue` and `ErrorHighValue` (the ends, as values). JSON: `errorField`, `error`, `errorLow` and `errorHigh`.
 - Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). With `TimeZone` on the chart, buckets follow that zone's calendar (a day is midnight to midnight there). No need to group in the query.
@@ -409,6 +411,7 @@ Line series.
 - `StrokeWidth`: `double` = `2` — Line width in pixels.
 - `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last | PointHighlight.Max`, or `PointHighlight.All` for a dot on every point (sparse data: shows where the values are; not drawn beyond 1000 visible points). Default none.
 - `MarkerSize`: `double?` — Diameter of the `LineSeries.Highlight` dots in pixels. Default: from the line width (for a 2 px line, 5 px; 7 px with `PointHighlight.All`).
+- `Sort`: `SortOrder?` — Category x: orders the categories by this series' values (after `Aggregate`, e.g. counts), largest first with `SortOrder.Descending`. The first series with a sort decides for the whole chart. Time and number x ignore it.
 - `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
 - `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
 - `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
@@ -423,6 +426,7 @@ Area series, filled down to zero.
 - `StrokeWidth`: `double` = `2` — Width of the top line in pixels. Default 2.
 - `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last`, or `PointHighlight.All` for every point. Default none.
 - `MarkerSize`: `double?` — Diameter of the `AreaSeries.Highlight` dots in pixels. Default: from the line width.
+- `Sort`: `SortOrder?` — Category x: orders the categories by this series' values (after `Aggregate`, e.g. counts), largest first with `SortOrder.Descending`. The first series with a sort decides for the whole chart. Time and number x ignore it.
 
 #### `<ScatterSeries>` (`ScatterSeries<TItem>`)
 
@@ -483,6 +487,7 @@ Bar series. Several bar series in one chart are grouped side by side.
 
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `MaxBarWidth`: `double?` — The widest a bar may be, in pixels. Default: as wide as its band allows, but a group of bars never takes more than a fifth of the plot (as with four categories), so a lone bar does not fill the chart. Bars stay centered on their band.
+- `Sort`: `SortOrder?` — Category x: orders the categories by this series' values (after `Aggregate`, e.g. counts), largest first with `SortOrder.Descending`. The first series with a sort decides for the whole chart. Time and number x ignore it.
 - `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
 - `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
 - `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
@@ -699,6 +704,9 @@ Settings for one axis: title, range, scale, label format and grid lines.
 
 - `Id`: `string?` — Axis id that series and annotations refer to (vertical axes only). The primary vertical axis defaults to "y".
 - `Title`: `string?` — Axis title.
+- `Color`: `string?` — Vertical axes: CSS color of the tick labels and title, e.g. to show which axis belongs to which line. Null: the muted axis color (or the series color with `AxisOptions.SeriesColor`).
+- `SeriesColor`: `bool` — Vertical axes: color the tick labels and title like the first visible series on the axis, so with one axis per series each axis matches its line. `AxisOptions.Color` wins when both are set.
+- `TooltipFormat`: `string?` — X axis: .NET format string for the x value in tooltip headers only, e.g. "HH:mm" or "d MMM HH:mm". Unlike `AxisOptions.Format` it leaves the axis labels alone, and on a time axis it also leaves out the time zone offset that tooltips otherwise add when the chart's zone differs from the viewer's. Null: automatic.
 - `Min`: `double?` — Fixed minimum. When null it comes from the data.
 - `Max`: `double?` — Fixed maximum. When null it comes from the data.
 - `Scale`: `ScaleType` — Scale type. Auto picks from the data: times give a time axis, numbers a linear axis, strings a band axis.
@@ -1059,6 +1067,13 @@ Points of a line or area series to mark with a dot (combine with |).
 - `All` — Every point: shows where the values are when there are few of them.
 
 Flags: combine values with `|`.
+
+#### `SortOrder` (enum, RioCharts.Core)
+
+Order of points sorted by value.
+
+- `Ascending` — Smallest first.
+- `Descending` — Largest first.
 
 #### `AnnotationLayer` (enum, RioCharts.Core)
 

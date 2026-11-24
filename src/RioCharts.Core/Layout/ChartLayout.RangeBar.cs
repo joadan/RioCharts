@@ -154,7 +154,8 @@ public static partial class ChartLayout
         }
 
         var times = drawn.SelectMany(r => r.Data.X.Concat(r.Data.Y)).Where(double.IsFinite).Take(5000).ToList();
-        var formatTime = TimeFormat(xKind, times, culture, spec.X.Format, time, options.ViewerTimeZone);
+        var formatTime = TimeFormat(xKind, times, culture, spec.X.TooltipFormat ?? spec.X.Format, time, options.ViewerTimeZone,
+            showOffset: spec.X.TooltipFormat is null);
         string FormatAt(Resolved r, double v) => xKind == XKind.Time ? formatTime(v) : ValueFormatter.Format(v, culture, r.Spec.Format ?? spec.X.Format);
 
         // "09:30 – 10:00" when every bar is on one day, "2 Mar 22:00 – 06:00" for an end on its start's day; dates otherwise.

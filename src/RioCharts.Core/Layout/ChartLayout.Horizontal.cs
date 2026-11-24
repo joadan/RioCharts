@@ -202,6 +202,7 @@ public static partial class ChartLayout
         var xKind = ResolveXKind(spec.X.Scale, bars);
 
         // ---------- Rows: categories, or the distinct x values as labels ----------
+        // The row labels are also the tooltip headers, so TooltipFormat does not apply here.
         var formatX = TimeFormat(xKind, bars.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format, time, options.ViewerTimeZone);
         List<string> rows;
         Func<SeriesData, int, int> rowOf;

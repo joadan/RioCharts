@@ -161,7 +161,8 @@ public static partial class ChartLayout
             : xScale!.Map(d.X[i]);
 
         // ---------- Cells ----------
-        var formatX = TimeFormat(xKind, rows.Where(Usable).SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format, time, options.ViewerTimeZone);
+        var formatX = TimeFormat(xKind, rows.Where(Usable).SelectMany(r => r.Data.X).Take(5000), culture, spec.X.TooltipFormat ?? spec.X.Format, time, options.ViewerTimeZone,
+            showOffset: spec.X.TooltipFormat is null);
         string XLabel(SeriesData d, int i) => xKind == XKind.Category
             ? ((int)d.X[i] is var c && c >= 0 && c < d.Categories.Count ? d.Categories[c] : "")
             : formatX(d.X[i]);

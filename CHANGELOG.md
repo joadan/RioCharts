@@ -20,6 +20,16 @@ changes are called out under **Breaking**.
   block; longer data is one block per year. Clicking a day selects its items. New texts: `ChartTexts.CalendarChart`
   and `CalendarDays` in all built-in languages. Docs: a Calendar heatmap page and a gallery card.
   **Breaking (JSON):** `"type": "calendar"` used to mean a plain heatmap; it is now the calendar heatmap.
+- Axis colors: `AxisOptions.Color` (`"color"`) colors the tick labels and title of a y axis, and `SeriesColor = true`
+  (`"seriesColor"`) takes the color of the first visible series on the axis, so with one axis per series each axis
+  matches its line.
+- Sorting by aggregated values: `Sort` on `BarSeries`, `LineSeries` and `AreaSeries` (`SortOrder.Descending` for largest
+  first) orders a category axis by the series' values after `Aggregate`, e.g. countries by their count. In JSON
+  definitions `"sort"` now orders the category axis the same way (before, only the points were reordered, which another
+  series could undo). The Razor export writes `Sort` instead of a "do this in the query" note, unless there is a `limit`.
+- Tooltip time format: `AxisOptions.TooltipFormat` (`"tooltipFormat"`) on the x axis formats the x value in tooltip
+  headers only (e.g. `"d MMM HH:mm"`), leaving the axis labels alone, and adds no time zone offset. Horizontal bar
+  charts use their row labels in tooltips and ignore it.
 - Point annotations and callouts can be clicked: `OnAnnotationClick` now fires for a click on a pin's marker, label
   or callout box, also when the pin sits on a data point (before, the point under it won and only `OnPointClick`
   fired). A clickable marker gets a larger, invisible hit area. Lets users remove a pin by clicking the pin itself.

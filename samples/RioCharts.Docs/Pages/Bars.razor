@@ -53,12 +53,13 @@
             Items with the same x are drawn on top of each other unless the series combines them.
             <code>Aggregate</code> gives the <code>Sum</code>, <code>Average</code>, <code>Min</code>, <code>Max</code> or <code>Last</code>
             of <code>YValue</code>, or the <code>Count</code> of items. <code>YAggregate</code> computes y from the group's items.
-            A click gives the whole group in <code>Items</code>.
+            A click gives the whole group in <code>Items</code>. <code>Sort="SortOrder.Descending"</code> orders the categories by the
+            combined values, largest first (sorting the items cannot, since the counts only exist after grouping).
         </p>
     </Description>
     <ChildContent>
         <RioChart TItem="Ticket" Items="Tickets" Title="Support tickets per topic" OnPointClick="e => _tickets = e">
-            <BarSeries Name="Tickets" XValue="t => t.Topic" Aggregate="Aggregate.Count" />
+            <BarSeries Name="Tickets" XValue="t => t.Topic" Aggregate="Aggregate.Count" Sort="SortOrder.Descending" />
             <BarSeries Name="Handling time (h)" XValue="t => t.Topic" YAggregate="g => g.Sum(t => t.Minutes) / 60" Format="0.0 h" />
         </RioChart>
         <p class="note">
@@ -234,7 +235,7 @@
 
     private const string AggregateCode = """
         <RioChart TItem="Ticket" Items="tickets" OnPointClick="e => clicked = e">
-            <BarSeries Name="Tickets" XValue="t => t.Topic" Aggregate="Aggregate.Count" />
+            <BarSeries Name="Tickets" XValue="t => t.Topic" Aggregate="Aggregate.Count" Sort="SortOrder.Descending" />
             <BarSeries Name="Handling time (h)" XValue="t => t.Topic" YAggregate="g => g.Sum(t => t.Minutes) / 60" Format="0.0 h" />
         </RioChart>
 

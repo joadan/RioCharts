@@ -462,6 +462,12 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
     /// <summary>Diameter of the <see cref="Highlight"/> dots in pixels. Default: from the line width (for a 2 px line, 5 px; 7 px with <c>PointHighlight.All</c>).</summary>
     [Parameter] public double? MarkerSize { get; set; }
 
+    /// <summary>
+    /// Category x: orders the categories by this series' values (after <c>Aggregate</c>, e.g. counts), largest first with
+    /// <c>SortOrder.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
+    /// </summary>
+    [Parameter] public SortOrder? Sort { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Line;
 
@@ -470,7 +476,7 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
     {
-        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize,
+        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize, Sort = Sort,
     };
 }
 
@@ -497,6 +503,12 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     /// <summary>Diameter of the <see cref="Highlight"/> dots in pixels. Default: from the line width.</summary>
     [Parameter] public double? MarkerSize { get; set; }
 
+    /// <summary>
+    /// Category x: orders the categories by this series' values (after <c>Aggregate</c>, e.g. counts), largest first with
+    /// <c>SortOrder.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
+    /// </summary>
+    [Parameter] public SortOrder? Sort { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Area;
 
@@ -505,7 +517,7 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
     {
-        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize,
+        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize, Sort = Sort,
     };
 }
 
@@ -834,13 +846,19 @@ public sealed class BarSeries<TItem> : ErrorBarSeriesBase<TItem>
     /// </summary>
     [Parameter] public double? MaxBarWidth { get; set; }
 
+    /// <summary>
+    /// Category x: orders the categories by this series' values (after <c>Aggregate</c>, e.g. counts), largest first with
+    /// <c>SortOrder.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
+    /// </summary>
+    [Parameter] public SortOrder? Sort { get; set; }
+
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Bar;
 
     private protected override TimeBucket? XBucket => Bucket;
 
     /// <inheritdoc />
-    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { MaxBarWidth = MaxBarWidth };
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { MaxBarWidth = MaxBarWidth, Sort = Sort };
 }
 
 /// <summary>
