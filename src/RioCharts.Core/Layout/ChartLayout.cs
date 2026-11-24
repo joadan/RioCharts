@@ -753,6 +753,7 @@ public static partial class ChartLayout
                 DownsampleThreshold = threshold,
                 XWindow = window,
                 Bubbles = bubbles,
+                Time = time,
             };
             r.Type.Build(context);
             if (context.Hits is { } drawnHits && HasErrors(r) && ErrorBars(r, context, drawnHits, styles) is { } errorBars)

@@ -170,6 +170,25 @@ public class CandlestickTests
         Assert.Contains(" – ", s.XLabels[0]);
     }
 
+    [Fact]
+    public void Merged_candles_follow_the_display_zone_calendar()
+    {
+        // Daily candles at midnight UTC are 19:00 the evening before in New York.
+        var times = Enumerable.Range(0, 400).Select(d => DateTime.SpecifyKind(Start.AddDays(d), DateTimeKind.Utc)).ToArray();
+        var days = Days(400);
+        var utc = SeriesData.From(times, new double[400]).WithCandles([.. Enumerable.Range(0, 400).Select(i => days.Candles!.At(i, 0))]);
+        var spec = new ChartDefinition { TimeZone = "America/New_York", Series = [new SeriesOptions { Id = "t", Type = SeriesType.Candlestick }] };
+
+        var s = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["t"] = utc }, Options).Tooltip.Series.Single();
+
+        var zone = TimeConversion.For("America/New_York", null)!.Zone;
+        var starts = s.Index.Take(s.Index.Length - 1).Select(last => TimeZoneInfo.ConvertTimeFromUtc(times[last + 1], zone)).ToList();
+        Assert.NotEmpty(starts);
+        var weeks = starts.Count > 1 && (starts[1] - starts[0]).TotalDays < 10;
+        // Each merged candle starts on a Monday (weeks) or the 1st (months), on New York's calendar.
+        Assert.All(starts, t => Assert.True(weeks ? t.DayOfWeek == DayOfWeek.Monday : t.Day == 1, $"{t:yyyy-MM-dd ddd}"));
+    }
+
     private static string ValueFormatterInvariant(double v) => RioCharts.Core.Formatting.ValueFormatter.Format(v, CultureInfo.InvariantCulture, null);
 
     [Fact]

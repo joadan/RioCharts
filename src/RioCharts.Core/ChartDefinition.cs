@@ -173,8 +173,8 @@ public sealed record SeriesOptions
     [Description("Keep only rows that match all of these conditions.")]
     public IReadOnlyList<Filter>? Filter { get; init; }
 
-    /// <summary>Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span) and aggregate y per bucket.</summary>
-    [Description("Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span) and aggregate y per bucket.")]
+    /// <summary>Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span; in the chart's timeZone when set) and aggregate y per bucket.</summary>
+    [Description("Time x: group rows into buckets (minute, hour, day, week, month, quarter, year, or auto to pick one from the time span; in the chart's timeZone when set) and aggregate y per bucket.")]
     public TimeBucket? TimeBucket { get; init; }
 
     /// <summary>Combine rows with the same x (or time bucket): sum, average, min, max, count or last.</summary>

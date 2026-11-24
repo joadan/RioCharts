@@ -205,6 +205,13 @@ public static class TimeBuckets
         return value is DateTimeOffset offset ? new DateTimeOffset(floored, offset.Offset) : (object)floored;
     }
 
+    /// <summary>
+    /// As <see cref="Floor(object, TimeBucket)"/>, but with a display zone (<paramref name="time"/>
+    /// not null) on wall-clock time in that zone: see <see cref="TimeConversion.Floor"/>.
+    /// </summary>
+    public static object Floor(object value, TimeBucket bucket, TimeConversion? time) =>
+        time is null ? Floor(value, bucket) : time.Floor(value, bucket);
+
     private static DateTime FloorTime(DateTime t, TimeBucket bucket) => bucket switch
     {
         TimeBucket.Minute => new DateTime(t.Year, t.Month, t.Day, t.Hour, t.Minute, 0, t.Kind),

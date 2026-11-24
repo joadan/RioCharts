@@ -71,7 +71,7 @@
     <Description>
         <p>
             <code>Bucket</code> groups items with a time x per minute, hour, day, week, month, quarter or year (on their wall-clock
-            time) and draws one bar at the start of each bucket, combined with <code>Aggregate</code> (the average when not set).
+            time, or in the chart's <code>TimeZone</code> when set) and draws one bar at the start of each bucket, combined with <code>Aggregate</code> (the average when not set).
             <code>TimeBucket.Auto</code> picks the bucket from the data's time span, aiming for about 50 bars: hours for these two
             days of revenue, weeks for a year. Lines and areas take <code>Bucket</code> too. In JSON definitions:
             <code>"timeBucket": "auto"</code>.

@@ -277,12 +277,13 @@ public sealed class SeriesData
 
     /// <summary>
     /// Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on
-    /// their wall-clock time) and each bucket gives the first, highest, lowest and last value in
+    /// their wall-clock time, or in <paramref name="zone"/> when set) and each bucket gives the first, highest, lowest and last value in
     /// time order. Null values are skipped.
     /// </summary>
     /// <param name="groups">Each candle's item indexes; a point's source index is its group's index.</param>
+    /// <param name="zone">A display zone (<see cref="TimeConversion.For"/>): buckets on wall-clock time there, starting at DateTimeOffsets in that zone. Null: on the times' own wall-clock time.</param>
     public static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value,
-        TimeBucket bucket, out IReadOnlyList<int[]> groups)
+        TimeBucket bucket, out IReadOnlyList<int[]> groups, TimeConversion? zone = null)
     {
         ArgumentNullException.ThrowIfNull(time);
         ArgumentNullException.ThrowIfNull(value);
@@ -293,7 +294,7 @@ public sealed class SeriesData
             times[i] = time(list[i]);
         }
 
-        var data = FromTimeBuckets(times, bucket, _ => 0, out groups);
+        var data = FromTimeBuckets(times, bucket, _ => 0, out groups, zone);
         var candles = new CandleSummary[groups.Count];
         for (var g = 0; g < candles.Length; g++)
         {
@@ -306,15 +307,16 @@ public sealed class SeriesData
     }
 
     /// <summary>
-    /// Groups items per time bucket (e.g. per day or month, on their wall-clock time) and makes one
+    /// Groups items per time bucket (e.g. per day or month, on their wall-clock time, or in <paramref name="zone"/> when set) and makes one
     /// point per bucket at the bucket's start, with y from <paramref name="aggregate"/> (null is a
     /// gap). <see cref="TimeBucket.Auto"/> picks the bucket from the span of the times. Items with a
     /// null x are left out; x values that are not times group by value. Selectors and the
     /// aggregate run once here, never per render.
     /// </summary>
     /// <param name="groups">Each bucket's item indexes; a point's source index is its group's index.</param>
+    /// <param name="zone">A display zone (<see cref="TimeConversion.For"/>): buckets on wall-clock time there, starting at DateTimeOffsets in that zone. Null: on the times' own wall-clock time.</param>
     public static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket,
-        Func<IReadOnlyList<TItem>, double?> aggregate, out IReadOnlyList<int[]> groups)
+        Func<IReadOnlyList<TItem>, double?> aggregate, out IReadOnlyList<int[]> groups, TimeConversion? zone = null)
     {
         ArgumentNullException.ThrowIfNull(time);
         ArgumentNullException.ThrowIfNull(aggregate);
@@ -325,15 +327,15 @@ public sealed class SeriesData
             times[i] = time(list[i]);
         }
 
-        return FromTimeBuckets(times, bucket, members => aggregate(Array.ConvertAll(members, i => list[i])), out groups);
+        return FromTimeBuckets(times, bucket, members => aggregate(Array.ConvertAll(members, i => list[i])), out groups, zone);
     }
 
     // Groups item indexes by the bucket of their time; aggregate gets each group's item indexes.
-    private static SeriesData FromTimeBuckets(object?[] times, TimeBucket bucket, Func<int[], double?> aggregate, out IReadOnlyList<int[]> groups)
+    private static SeriesData FromTimeBuckets(object?[] times, TimeBucket bucket, Func<int[], double?> aggregate, out IReadOnlyList<int[]> groups, TimeConversion? zone)
     {
         var resolved = TimeBuckets.Resolve(bucket, times);
         return FromGroups(Enumerable.Range(0, times.Length).ToArray(),
-            i => times[i] is { } t ? TimeBuckets.Floor(t, resolved) : null,
+            i => times[i] is { } t ? TimeBuckets.Floor(t, resolved, zone) : null,
             members => aggregate([.. members]), out groups);
     }
 

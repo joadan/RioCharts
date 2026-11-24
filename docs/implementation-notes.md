@@ -186,6 +186,18 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   Zone names use `TimeZoneInfo` (IANA ids work on Windows too); Blazor WASM in invariant time zone
   mode only knows UTC. With a zone, `VisibleRange`, point clicks and dragged values use
   `DateTimeOffset` in the display zone.
+- **Time buckets in the display zone.** With a zone, `TimeConversion.Floor` reads each DateTime or
+  DateTimeOffset as an instant (unspecified times per `UnspecifiedTimes`), floors its wall-clock time
+  in the zone and returns the bucket start as a DateTimeOffset there (`FromDisplay`: a skipped
+  midnight moves to the first time that exists; a repeated hour is one hour bucket, two hours
+  long). The starts carry offsets, so the layout places them exactly and its "times have no zone"
+  warning no longer sees the raw times: the definition binder warns itself, components do not.
+  DateOnly values are calendar dates and bucket as before. Components get the zone from the chart
+  (`IChartContext.BucketZone`, cached per `TimeZone`/`UnspecifiedTimes`/viewer zone) and include it
+  in the key that decides when to group again; for `"local"` the chart lays out again when the
+  browser reports its zone. A definition is bound again when the viewer zone changes
+  (`Bind(..., viewerTimeZone)`); `BindAsync` (AI tools, MCP) has no viewer, so `"local"` is UTC
+  there. Merged candles (zoomed out) floor in the zone too (`SeriesBuildContext.Time`).
 - **Canvas series layer.** With `SeriesLayer.Canvas`, the SVG renderer leaves out the series groups
   and `CanvasSeriesWriter` sends them to JS as draw operations: SVG path data (read with `Path2D`),
   rectangles and CSS paint. This is JSON, not binary; the paths are already downsampled, so it
@@ -272,8 +284,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Definition → Razor** writes component markup with field names as PascalCase properties; transforms
   that components do not do become comments to implement in the query. An `aggregate` without a
   `timeBucket` becomes the series' `Aggregate` parameter.
-- **Not yet:** a time zone-aware `timeBucket` (buckets are on wall-clock time), declarative joins,
-  and streaming definitions.
+- **Not yet:** declarative joins and streaming definitions.
 
 ## Aggregating series components
 
@@ -708,7 +719,7 @@ Design.md "Candlestick" (milestone 7).
   `WithX` carry them. `CandleSummary.FromValues` takes values in time order (first, highest,
   lowest, last); `Merge` joins candles.
 - **Raw readings:** `FromCandleBuckets` (and `CandlestickSeries` with `Bucket`, JSON with
-  `timeBucket`, a day when not set) groups per `TimeBucket` on wall-clock time, sorted by time
+  `timeBucket`, a day when not set) groups per `TimeBucket` on wall-clock time (in the display zone when set; see Time zones), sorted by time
   inside each bucket. The bucket floor moved from the definition binder to the public
   `TimeBuckets.Floor`, which now keeps the DateTime's `Kind` and returns a DateTime for a DateTime
   (the binder's version widened it to a DateTimeOffset with the machine's local offset). The component wraps `XValue` to
