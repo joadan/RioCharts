@@ -6,7 +6,7 @@ namespace RioCharts.Core.Paths;
 /// Builds line and area paths from pixel coordinates. NaN in y (or x) splits the data into
 /// segments, so missing values show as gaps instead of dropping to zero.
 /// </summary>
-public static class LineGenerator
+internal static class LineGenerator
 {
     /// <summary>A line through the points (pixel coordinates); NaN splits it into segments.</summary>
     public static PathData Line(ReadOnlySpan<double> x, ReadOnlySpan<double> y, CurveType curve)

@@ -200,6 +200,12 @@ public sealed record TooltipOptions
 /// </summary>
 public sealed record SeriesOptions
 {
+    /// <summary>
+    /// The id of a pie's or donut's "Other" slice (<see cref="GroupSmallSlices"/>) in its legend and in the
+    /// chart's hidden series: hide it with this id.
+    /// </summary>
+    public const string OtherSliceKey = "rio:other";
+
     /// <summary>Unique id of the series. Optional in JSON definitions (generated from the y field).</summary>
     [Description("Unique id of the series. Optional in JSON definitions (generated from the y field).")]
     public string Id { get; init; } = "";

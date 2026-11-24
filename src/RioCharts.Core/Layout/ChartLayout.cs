@@ -9,7 +9,7 @@ using RioCharts.Core.Text;
 namespace RioCharts.Core.Layout;
 
 /// <summary>Size, fonts and environment for a layout pass (<see cref="ChartLayout.Compute"/>).</summary>
-public sealed record LayoutOptions
+internal sealed record LayoutOptions
 {
     /// <summary>Chart width in pixels. Default 640.</summary>
     public double Width { get; init; } = 640;
@@ -98,17 +98,17 @@ public sealed record LayoutOptions
 /// <summary>The space between the chart's edges and its plot, in pixels.</summary>
 /// <param name="Left">From the left edge to the plot.</param>
 /// <param name="Right">From the plot to the right edge.</param>
-public readonly record struct PlotInsets(double Left, double Right);
+internal readonly record struct PlotInsets(double Left, double Right);
 
 /// <summary>A legend item. <paramref name="Tooltip"/>: a summary shown on hover (lines separated by \n).</summary>
-public sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty, string? Tooltip = null)
+internal sealed record LegendEntry(string SeriesId, string Label, string Color, SeriesType Type, bool Visible, bool IsEmpty, string? Tooltip = null)
 {
     /// <summary>Candlesticks colored by direction (<see cref="SeriesOptions.DirectionColors"/>): the swatch shows the rising and falling colors.</summary>
     public bool DirectionColors { get; init; }
 }
 
 /// <summary>The output of <see cref="ChartLayout.Compute"/>: the scene plus what interaction needs.</summary>
-public sealed class ChartLayoutResult
+internal sealed class ChartLayoutResult
 {
     /// <summary>The nodes to draw.</summary>
     public required Scene.Scene Scene { get; init; }
@@ -185,7 +185,7 @@ public sealed class ChartLayoutResult
 /// that fit the measured labels, places legend, axes and plot, and emits the scene. Pure: no
 /// UI or browser dependency.
 /// </summary>
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     private const double PadTop = 8, PadRight = 12, PadBottom = 6, PadLeft = 6;
     private const double LabelGap = 8;

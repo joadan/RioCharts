@@ -5,7 +5,7 @@ using RioCharts.Core.Series;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>
     /// Whether a series draws error bars: a bar, line or scatter series with error ends in its data

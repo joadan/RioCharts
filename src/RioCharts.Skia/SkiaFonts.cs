@@ -7,7 +7,7 @@ namespace RioCharts.Skia;
 /// Picks the first installed font of a CSS-like family list and creates typefaces per weight.
 /// Falls back to Skia's default font, so export works on servers without the UI fonts.
 /// </summary>
-public sealed class SkiaFonts
+internal sealed class SkiaFonts
 {
     private readonly Dictionary<int, SKTypeface> _typefaces = [];
     private readonly Lock _lock = new();
@@ -54,7 +54,7 @@ public sealed class SkiaFonts
 }
 
 /// <summary>Real text widths from Skia, so a server-side layout fits its labels like the browser does.</summary>
-public sealed class SkiaTextMeasurer(SkiaFonts fonts) : ITextMeasurer
+internal sealed class SkiaTextMeasurer(SkiaFonts fonts) : ITextMeasurer
 {
     private readonly Lock _lock = new();
 

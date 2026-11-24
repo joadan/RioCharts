@@ -6,7 +6,7 @@ using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     private const double MsPerDay = 86_400_000;
 

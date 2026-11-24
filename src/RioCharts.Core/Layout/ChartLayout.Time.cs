@@ -5,7 +5,7 @@ using RioCharts.Core.Scales;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>The display zone conversion, or null when times are shown as given (the default).</summary>
     private static TimeConversion? ResolveTime(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, LayoutOptions options, List<string> warnings)

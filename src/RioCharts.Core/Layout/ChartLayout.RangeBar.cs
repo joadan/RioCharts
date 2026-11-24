@@ -6,7 +6,7 @@ using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>
     /// Range bars (timelines): rows down the left side in order of first appearance, a time (or

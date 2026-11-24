@@ -10,7 +10,6 @@
 using System.Globalization;
 using RioCharts.Core;
 using RioCharts.Core.Data;
-using RioCharts.Core.Scene;
 using RioCharts.Skia;
 using SkiaSharp;
 

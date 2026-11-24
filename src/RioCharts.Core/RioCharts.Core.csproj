@@ -12,6 +12,12 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="RioCharts.Tests" />
+    <InternalsVisibleTo Include="RioCharts.Blazor" />
+    <InternalsVisibleTo Include="RioCharts.Blazor.Tests" />
+    <InternalsVisibleTo Include="RioCharts.Skia" />
+    <InternalsVisibleTo Include="RioCharts.AI" />
+    <InternalsVisibleTo Include="RioCharts.Benchmarks" />
+    <InternalsVisibleTo Include="RioCharts.AotSmoke" />
     <EmbeddedResource Include="Geo\WorldCountries.txt" LogicalName="RioCharts.Core.Geo.WorldCountries.txt" />
   </ItemGroup>
 

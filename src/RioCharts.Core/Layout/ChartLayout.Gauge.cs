@@ -6,7 +6,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     private sealed record Gauge(Resolved Series, int Index, string Label, double Value, double Min, double Max);
 

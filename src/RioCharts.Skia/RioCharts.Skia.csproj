@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="RioCharts.Tests" />
+    <InternalsVisibleTo Include="RioCharts.AI" />
+    <InternalsVisibleTo Include="RioCharts.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>

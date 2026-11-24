@@ -2,7 +2,7 @@ using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>What a chart has room for (auto-compact). All true when auto-compact is off.</summary>
     private readonly record struct Chrome(bool Title, bool Legend, bool RightLegendToTop, bool XTitle, bool YTitles, bool XLabels, bool YLabels)

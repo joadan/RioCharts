@@ -3,7 +3,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     private const double SwatchWidth = 12;
     private const double SwatchGap = 6;

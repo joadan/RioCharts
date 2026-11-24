@@ -1,7 +1,7 @@
 namespace RioCharts.Core.Text;
 
 /// <summary>Measures text for layout (label sizes decide margins and tick density).</summary>
-public interface ITextMeasurer
+internal interface ITextMeasurer
 {
     /// <summary>Width of the text in pixels at the given font size.</summary>
     double Measure(string text, double fontSize);
@@ -11,7 +11,7 @@ public interface ITextMeasurer
 /// Approximation from per-character width classes. Used for prerendering and server-side
 /// layout when no real font metrics are available; close enough for common UI fonts.
 /// </summary>
-public sealed class ApproximateTextMeasurer : ITextMeasurer
+internal sealed class ApproximateTextMeasurer : ITextMeasurer
 {
     /// <summary>The shared instance.</summary>
     public static ApproximateTextMeasurer Instance { get; } = new();
@@ -54,7 +54,7 @@ public sealed class ApproximateTextMeasurer : ITextMeasurer
 /// (as a fraction of the font size), measured once in the browser and cached.
 /// Other characters use the average width.
 /// </summary>
-public sealed class WidthTableTextMeasurer : ITextMeasurer
+internal sealed class WidthTableTextMeasurer : ITextMeasurer
 {
     private const int First = 32;
     private readonly double[] _widths;

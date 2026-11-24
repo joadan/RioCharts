@@ -7,7 +7,7 @@ using RioCharts.Core.Series;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>Opacity of the lowest value's cells (the highest is fully opaque).</summary>
     private const double HeatMinOpacity = 0.08;

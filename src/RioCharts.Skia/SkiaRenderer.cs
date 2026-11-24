@@ -1,3 +1,4 @@
+using RioCharts.Core;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using RioCharts.Core.Scene;
@@ -6,7 +7,7 @@ using SkiaSharp;
 namespace RioCharts.Skia;
 
 /// <summary>Draws a scene on a Skia canvas: the same nodes the SVG renderer writes.</summary>
-public sealed partial class SkiaRenderer(ExportTheme theme, SkiaFonts fonts)
+internal sealed partial class SkiaRenderer(ExportTheme theme, SkiaFonts fonts)
 {
     /// <summary>Draws the static, series and overlay layers in chart units (scale the canvas first for higher density).</summary>
     public void Draw(SKCanvas canvas, Scene scene)

@@ -1380,11 +1380,19 @@ The rest of Design.md "Programmatic interaction".
 
 ## Public API surface
 
-- Reviewed before the first release. Public: the definition model, data types, scales, formatters, the
-  scene types (renderers in other packages and custom renderers draw them), `ChartLayout`, and
-  each package's entry points. Internal: SVG/canvas writers and the scene renderer component in
-  Blazor, Skia's color and path helpers, `ChartDefinitionJson.Options` (deserializing with it skips the
-  defaults fix-up that `Parse` does) and the components' options.
+- Reviewed before the first release. Public: the definition model, data types, scales, formatters,
+  `ThemeTokens` and each package's entry points. Internal: SVG/canvas writers and the scene renderer
+  component in Blazor, Skia's color and path helpers, `ChartDefinitionJson.Options` (deserializing with
+  it skips the defaults fix-up that `Parse` does) and the components' options.
+- **Scene and layout are internal (1.0 plan, docs/v1.md).** The scene types (`RioCharts.Core.Scene`),
+  `ChartLayout` and its result, options, hit-test index, tooltip and legend models
+  (`RioCharts.Core.Layout`), `LineGenerator`, the text measurers, and Skia's `SkiaRenderer`,
+  `SvgExporter`, `SkiaFonts`, `SkiaTextMeasurer`, `ChartExport.Layout` and the `Scene` overloads of
+  `ToSvg`/`ToPng`. The renderers, AI, tests, benchmarks and the AOT smoke test reach them through
+  `InternalsVisibleTo`; custom renderers are not an extension point, so the layout can change in 1.x.
+  Public replacements: `ThemeTokens` moved to `RioCharts.Core`, the "Other" slice id is
+  `SeriesOptions.OtherSliceKey`, and Blazor's `RioChart.Layout` is internal (export a component chart
+  with `ExportPngAsync`/`ExportSvgAsync`, or its `GetDefinition()`).
 - **JS callbacks:** the module calls a private `JsCallbacks` object (`DotNetObjectReference`), so
   the `[JSInvokable]` entry points are not methods on `RioChart`. The method names are unchanged.
 - **`SvgSceneRenderer`** is internal, and Razor only resolves public components as tags, so

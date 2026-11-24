@@ -67,7 +67,7 @@ public static class ChartExport
     private static readonly Lock FontsLock = new();
 
     /// <summary>Lays out the chart with Skia text measurement. The result holds the scene, scales and warnings.</summary>
-    public static ChartLayoutResult Layout(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
+    internal static ChartLayoutResult Layout(ChartDefinition spec, IReadOnlyDictionary<string, SeriesData> data, ExportOptions? options = null)
     {
         options ??= new ExportOptions();
         return ChartLayout.Compute(spec, data, new LayoutOptions
@@ -93,7 +93,7 @@ public static class ChartExport
     }
 
     /// <summary>A scene (e.g. from <see cref="Layout"/> or a Blazor chart's <c>Layout</c>) as a standalone SVG document.</summary>
-    public static string ToSvg(Scene scene, ExportOptions? options = null)
+    internal static string ToSvg(Scene scene, ExportOptions? options = null)
     {
         options ??= new ExportOptions();
         return SvgExporter.Write(scene, options.Theme, options.FontFamily, options.Background, options.CssVariables);
@@ -107,7 +107,7 @@ public static class ChartExport
     }
 
     /// <summary>A scene as a PNG image.</summary>
-    public static byte[] ToPng(Scene scene, ExportOptions? options = null)
+    internal static byte[] ToPng(Scene scene, ExportOptions? options = null)
     {
         options ??= new ExportOptions();
         return new SkiaRenderer(options.Theme, FontsFor(options)).Encode(scene, options.Scale, options.Background);

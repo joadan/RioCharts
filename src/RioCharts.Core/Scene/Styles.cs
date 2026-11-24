@@ -1,16 +1,16 @@
 namespace RioCharts.Core.Scene;
 
 /// <summary>Reference to a paint style in the scene's <see cref="StyleTable"/>.</summary>
-public readonly record struct StyleRef(string Name);
+internal readonly record struct StyleRef(string Name);
 
 /// <summary>Reference to a text style in the scene's <see cref="StyleTable"/>.</summary>
-public readonly record struct TextStyle(string Name);
+internal readonly record struct TextStyle(string Name);
 
 /// <summary>
 /// Fill and stroke. Colors are CSS-like strings or theme tokens ("--rio-series-1");
 /// renderers resolve tokens (SVG through CSS variables, canvas through values read once).
 /// </summary>
-public sealed record Style
+internal sealed record Style
 {
     /// <summary>Fill color; null for no fill.</summary>
     public string? Fill { get; init; }
@@ -32,7 +32,7 @@ public sealed record Style
 }
 
 /// <summary>A text style: font size, weight and color.</summary>
-public sealed record TextStyleDef
+internal sealed record TextStyleDef
 {
     /// <summary>Font size in pixels. Default 12.</summary>
     public float FontSize { get; init; } = 12;
@@ -45,7 +45,7 @@ public sealed record TextStyleDef
 }
 
 /// <summary>Named paint and text styles of a <see cref="Scene"/>; nodes refer to them by name.</summary>
-public sealed class StyleTable
+internal sealed class StyleTable
 {
     private readonly Dictionary<string, Style> _paint = new(StringComparer.Ordinal);
     private readonly Dictionary<string, TextStyleDef> _text = new(StringComparer.Ordinal);
@@ -75,54 +75,4 @@ public sealed class StyleTable
 
     /// <summary>The referenced text style, or a default <see cref="TextStyleDef"/> when the name is unknown.</summary>
     public TextStyleDef Get(TextStyle reference) => _text.TryGetValue(reference.Name, out var s) ? s : new TextStyleDef();
-}
-
-/// <summary>Theme token names. Renderers map them to CSS variables or concrete colors.</summary>
-public static class ThemeTokens
-{
-    /// <summary>Primary text (title, values).</summary>
-    public const string Text = "--rio-text";
-
-    /// <summary>Secondary text (axis labels and titles, empty state).</summary>
-    public const string TextMuted = "--rio-text-muted";
-
-    /// <summary>Grid lines.</summary>
-    public const string Grid = "--rio-grid";
-
-    /// <summary>Axis lines and pie leader lines.</summary>
-    public const string Axis = "--rio-axis";
-
-    /// <summary>The chart background; also used for outlines that separate marks from each other.</summary>
-    public const string Surface = "--rio-surface";
-
-    /// <summary>Reference lines, bands and their labels (muted by default).</summary>
-    public const string Annotation = "--rio-annotation";
-
-    /// <summary>Data labels drawn on top of a bar's own color.</summary>
-    public const string DataLabelInverse = "--rio-data-label-inverse";
-
-    /// <summary>Data labels drawn on top of a light fill (the light palette colors), dark in both themes.</summary>
-    public const string DataLabelDark = "--rio-data-label-dark";
-
-    /// <summary>Rising values, e.g. a candle that closes above its open.</summary>
-    public const string Positive = "--rio-positive";
-
-    /// <summary>Falling values, e.g. a candle that closes below its open.</summary>
-    public const string Negative = "--rio-negative";
-
-    /// <summary>Number of colors in the series palette.</summary>
-    public const int SeriesColorCount = 10;
-
-    /// <summary>Token for the n-th palette color (wraps around).</summary>
-    public static string Series(int index) => "--rio-series-" + ((index % SeriesColorCount + SeriesColorCount) % SeriesColorCount + 1);
-
-    /// <summary>
-    /// True for the built-in palette's light colors (yellow, teal, pink, light blue, grey: series
-    /// 2, 4, 6, 8 and 10), where a label on top reads better in <see cref="DataLabelDark"/>.
-    /// </summary>
-    public static bool IsLightSeries(string? color) =>
-        color is "--rio-series-2" or "--rio-series-4" or "--rio-series-6" or "--rio-series-8" or "--rio-series-10";
-
-    /// <summary>True when the color is a theme token (starts with <c>--</c>) rather than a CSS color.</summary>
-    public static bool IsToken(string? color) => color is not null && color.StartsWith("--", StringComparison.Ordinal);
 }

@@ -252,7 +252,7 @@ public partial class RioChart<TItem> : IChartContext
     [Parameter] public string? Class { get; set; }
 
     /// <summary>The latest layout: scene, scales, hit-test index and warnings.</summary>
-    public ChartLayoutResult? Layout => _layout;
+    internal ChartLayoutResult? Layout => _layout;
 
     /// <summary>
     /// A chart definition (e.g. from JSON or an AI agent) instead of child components: series read their

@@ -1,3 +1,4 @@
+using RioCharts.Core;
 using System.Globalization;
 using System.Security;
 using System.Text;
@@ -9,7 +10,7 @@ namespace RioCharts.Skia;
 /// Writes a scene as a standalone SVG document: concrete colors from an <see cref="ExportTheme"/>
 /// (or CSS variables with those colors as fallback), invariant number formatting, no scripts.
 /// </summary>
-public static class SvgExporter
+internal static class SvgExporter
 {
     /// <summary>Writes <paramref name="scene"/> as an SVG document.</summary>
     /// <param name="scene">The laid-out chart.</param>

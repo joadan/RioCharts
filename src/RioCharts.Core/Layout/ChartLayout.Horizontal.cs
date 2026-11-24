@@ -7,7 +7,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>
     /// Horizontal dumbbells: in the middle of each row, a line from the first value to the second, a

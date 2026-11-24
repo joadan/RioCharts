@@ -7,7 +7,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>
     /// The radar pass: one spoke per category (clockwise from 12 o'clock), a linear value scale from

@@ -1,3 +1,4 @@
+using RioCharts.Core;
 using System.Globalization;
 using System.Text;
 using RioCharts.Core.Scene;

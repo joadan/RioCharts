@@ -6,7 +6,7 @@ using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>The most stages a funnel draws.</summary>
     private const int MaxFunnelStages = 40;
