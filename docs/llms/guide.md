@@ -58,7 +58,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Progress toward a goal | `RadialBarSeries` | `Max` |
 | One value on a scale (load, how full), with ranges and a target | `GaugeSeries` | `Value` (or `YValue` per item, `XValue` its label), `Max`, `Target`, `ColorBands` |
 | Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
-| Stages narrowing down (visits → sign-ups → customers) | `FunnelSeries` | `XValue` (the stage), `YValue`; stages keep the items' order; one funnel per chart |
+| Stages narrowing down (visits → cart → purchase) | `FunnelSeries` | `XValue` (the stage), `YValue`; stages keep the items' order, each shows its share of the stage before; one funnel per chart |
 | Several measures per item | `RadarSeries` | one series per item |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors) |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |

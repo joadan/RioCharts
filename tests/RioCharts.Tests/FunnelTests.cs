@@ -14,6 +14,11 @@ public class FunnelTests
 
     private static readonly SeriesData Signups = SeriesData.FromCategories(["Visits", "Sign-ups", "Trials", "Customers"], [1200.0, 540, 180, 45]);
 
+    // A milder funnel, wide enough for its values inside: 15,000 → 10,000 → 7,000 → 4,000.
+    private static readonly SeriesData Shop = SeriesData.FromCategories(["Visits", "Views", "Cart", "Checkout"], [15000.0, 10000, 7000, 4000]);
+
+    private static readonly LayoutOptions Wide = Options with { Width = 800, Height = 320 };
+
     private static List<T> All<T>(Node node) where T : Node
     {
         var found = node is T match ? new List<T> { match } : [];
@@ -29,45 +34,60 @@ public class FunnelTests
         ChartLayout.Compute(new ChartDefinition { Series = [(spec ?? new SeriesOptions { Id = "f" }) with { Type = SeriesType.Funnel }] },
             new Dictionary<string, SeriesData> { [(spec?.Id ?? "f")] = data }, options ?? Options);
 
-    private static List<RectNode> Bars(ChartLayoutResult layout) => All<RectNode>(layout.Scene.Series).Where(r => r.Class == "rio-funnel-bar").ToList();
+    private static List<PathNode> Stages(ChartLayoutResult layout) => All<PathNode>(layout.Scene.Series).Where(r => r.Class == "rio-funnel-stage").ToList();
 
     private static List<string> Texts(ChartLayoutResult layout, string cls) =>
         All<TextNode>(layout.Scene.Static).Concat(All<TextNode>(layout.Scene.Series)).Where(t => t.Class == cls).Select(t => t.Text).ToList();
 
     [Fact]
-    public void Stages_are_centered_bars_as_wide_as_their_share_of_the_largest()
+    public void Stages_are_centered_segments_as_wide_as_their_share_of_the_largest()
     {
         var layout = Funnel(Signups);
 
-        var bars = Bars(layout);
-        Assert.Equal(4, bars.Count);
-        Assert.Equal(layout.Plot.Width, bars[0].Bounds.Width, 1);
-        Assert.Equal(layout.Plot.Width * 540 / 1200, bars[1].Bounds.Width, 1);
-        Assert.All(bars, b => Assert.Equal(layout.Plot.X + layout.Plot.Width / 2, b.Bounds.X + b.Bounds.Width / 2, 1));
-        Assert.True(bars.Zip(bars.Skip(1)).All(p => p.First.Bounds.Y < p.Second.Bounds.Y)); // first stage on top
-        Assert.Equal(["Visits", "Sign-ups", "Trials", "Customers"], Texts(layout, "rio-row-label"));
+        Assert.Equal(4, Stages(layout).Count);
+        var s = layout.Tooltip.Series.Single();
+        Assert.Equal(540.0 / 1200, s.CellWidths![1] / s.CellWidths[0], 2); // a segment's top edge
+        Assert.All(s.X, x => Assert.Equal(layout.Plot.X + layout.Plot.Width / 2, x, 1));
+        Assert.True(s.Y.Zip(s.Y.Skip(1)).All(p => p.First < p.Second)); // first stage on top
+        Assert.Equal(4, Texts(layout, "rio-row-label").Count);
+        Assert.Equal(4, All<PathNode>(layout.Scene.Static).Count(p => p.Class == "rio-funnel-leader"));
     }
 
     [Fact]
-    public void Bands_join_each_bar_to_the_next()
+    public void Each_stage_has_its_own_color_unless_the_series_sets_one()
+    {
+        var colors = Stages(Funnel(Signups)).Select(p => p.Style).Distinct().Count();
+        var one = Funnel(Signups, new SeriesOptions { Id = "f", Color = "#336699" });
+
+        Assert.Equal(4, colors);
+        Assert.Single(Stages(one).Select(p => p.Style).Distinct());
+        Assert.DoesNotContain(All<GroupNode>(one.Scene.Series), g => g.Key == "selection:points");
+    }
+
+    [Fact]
+    public void Labels_give_the_value_and_the_share_of_the_stage_before()
+    {
+        var layout = Funnel(Shop, options: Wide);
+
+        Assert.Equal(["15,000 (100%)", "10,000 (66.7%)", "7,000 (70%)", "4,000 (57.1%)"], Texts(layout, "rio-data-label"));
+        Assert.Equal(["Visits", "Views", "Cart", "Checkout"], Texts(layout, "rio-row-label"));
+        Assert.Empty(Texts(Funnel(Shop, new SeriesOptions { Id = "f", DataLabels = false }, Wide), "rio-data-label"));
+    }
+
+    [Fact]
+    public void A_value_that_does_not_fit_goes_into_its_stage_label()
     {
         var layout = Funnel(Signups);
 
-        Assert.Equal(3, All<PathNode>(layout.Scene.Series).Count(p => p.Class == "rio-funnel-neck"));
-        Assert.DoesNotContain(All<GroupNode>(layout.Scene.Series), g => g.Key == "selection:points");
+        var inside = Texts(layout, "rio-data-label");
+        var names = Texts(layout, "rio-row-label");
+        Assert.Contains("1,200 (100%)", inside);
+        Assert.Contains("Customers · 45 (25%)", names); // too thin for its value
+        Assert.Equal(4, inside.Count + names.Count(n => n.Contains(" · ", StringComparison.Ordinal)));
     }
 
     [Fact]
-    public void Labels_give_the_value_and_the_share_of_the_first_stage()
-    {
-        var labels = Texts(Funnel(Signups), "rio-data-label");
-
-        Assert.Equal(["1,200", "540 (45%)", "180 (15%)", "45 (4%)"], labels);
-        Assert.Empty(Texts(Funnel(Signups, new SeriesOptions { Id = "f", DataLabels = false }), "rio-data-label"));
-    }
-
-    [Fact]
-    public void Tooltip_adds_the_share_of_the_stage_before()
+    public void Tooltip_gives_the_share_of_the_first_and_of_the_previous_stage()
     {
         var s = Funnel(Signups).Tooltip.Series.Single();
 
@@ -75,8 +95,8 @@ public class FunnelTests
         Assert.Equal(["Of first stage", "Of previous stage"], s.PartLabels!);
         Assert.Equal(["", ""], s.PartValues![0]); // the first stage has nothing to compare with
         Assert.Equal(["45%", "45%"], s.PartValues[1]);
-        Assert.Equal(["15%", "33%"], s.PartValues[2]);
-        Assert.Equal(["4%", "25%"], s.PartValues[3]);
+        Assert.Equal(["15%", "33.3%"], s.PartValues[2]);
+        Assert.Equal(["3.8%", "25%"], s.PartValues[3]);
         Assert.Equal(SeriesType.Funnel, s.Type);
     }
 
@@ -85,12 +105,11 @@ public class FunnelTests
     {
         var data = SeriesData.FromCategories(["Leads", "Meetings", "Offers"], [80.0, 100, 30]);
 
-        var layout = Funnel(data);
+        var s = Funnel(data).Tooltip.Series.Single();
 
-        var bars = Bars(layout);
-        Assert.Equal(layout.Plot.Width, bars[1].Bounds.Width, 1); // the largest is full width
-        Assert.Equal(["Leads", "Meetings", "Offers"], layout.Tooltip.Series.Single().XLabels);
-        Assert.Equal(["125%", "125%"], layout.Tooltip.Series.Single().PartValues![1]);
+        Assert.Equal(0.8, s.CellWidths![0] / s.CellWidths[1], 2); // the larger second stage is the widest
+        Assert.Equal(["Leads", "Meetings", "Offers"], s.XLabels);
+        Assert.Equal(["125%", "125%"], s.PartValues![1]);
     }
 
     [Fact]
@@ -101,7 +120,7 @@ public class FunnelTests
         var layout = Funnel(data);
 
         Assert.Equal(["A", "C", "D"], layout.Tooltip.Series.Single().XLabels); // the gap is left out
-        Assert.Single(Bars(layout)); // nothing to draw for zero and below
+        Assert.Single(Stages(layout)); // nothing to draw for zero and below
         Assert.Contains(layout.Warnings, w => w.Contains("below zero", StringComparison.Ordinal));
     }
 
@@ -112,10 +131,12 @@ public class FunnelTests
         Assert.False(empty.HasData);
         Assert.Single(All<TextNode>(empty.Scene.Overlay), t => t.Class == "rio-empty");
 
-        Assert.Single(Bars(Funnel(SeriesData.FromCategories(["Only"], [7.0]))));
-        Assert.All(Bars(Funnel(SeriesData.FromCategories(["A", "B"], [5.0, 5]))), b => Assert.True(b.Bounds.Width > 100));
-        Assert.Empty(Bars(Funnel(SeriesData.FromCategories(["A", "B"], [0.0, 0]))));
-        Assert.NotEmpty(Bars(Funnel(Signups, options: Options with { Width = 20, Height = 20 }))); // tiny: still lays out
+        Assert.Single(Stages(Funnel(SeriesData.FromCategories(["Only"], [7.0]))));
+        Assert.Equal(2, Stages(Funnel(SeriesData.FromCategories(["A", "B"], [5.0, 5]))).Count);
+        Assert.Empty(Stages(Funnel(SeriesData.FromCategories(["A", "B"], [0.0, 0]))));
+        var tiny = Funnel(Signups, options: Options with { Width = 20, Height = 20 });
+        Assert.NotEmpty(Stages(tiny)); // tiny: still lays out, without labels
+        Assert.Empty(Texts(tiny, "rio-row-label"));
     }
 
     [Fact]
@@ -134,7 +155,7 @@ public class FunnelTests
 
         var layout = ChartLayout.Compute(spec, data, Options);
 
-        Assert.Equal(4, Bars(layout).Count);
+        Assert.Equal(4, Stages(layout).Count);
         Assert.Contains(layout.Warnings, w => w.Contains("series 'b': a chart shows one funnel", StringComparison.Ordinal));
         Assert.Contains(layout.Warnings, w => w.Contains("series 'c': Line series cannot be mixed with a funnel", StringComparison.Ordinal));
     }
@@ -142,15 +163,15 @@ public class FunnelTests
     [Fact]
     public void Point_colors_and_selection_outlines()
     {
-        var data = Signups.WithColors(["--rio-series-2", null, null, null]);
+        var data = Signups.WithColors(["--rio-negative", null, null, null]);
 
         var layout = Funnel(data, options: Options with { SelectedPoints = new Dictionary<string, IReadOnlyCollection<int>> { ["f"] = [2] } });
 
-        var bars = Bars(layout);
-        Assert.Equal("--rio-series-2", layout.Scene.Styles.Get(bars[0].Style).Fill);
-        var outline = All<RectNode>(layout.Scene.Series).Single(r => r.Class == "rio-selected-bar");
-        Assert.Equal(bars[2].Bounds.X - 1.5, outline.Bounds.X, 1);
-        Assert.Equal(bars[2].Bounds.Right + 1.5, outline.Bounds.Right, 1);
+        var stages = Stages(layout);
+        Assert.Equal("--rio-negative", layout.Scene.Styles.Get(stages[0].Style).Fill);
+        var outline = All<PathNode>(layout.Scene.Series).Single(r => r.Class == "rio-selected-bar");
+        Assert.Equal(stages[2].Path.Coords, outline.Path.Coords); // around the stage's own shape
+        Assert.Equal("none", layout.Scene.Styles.Get(outline.Style).Fill);
     }
 
     [Fact]
@@ -160,7 +181,8 @@ public class FunnelTests
 
         Assert.Contains("Trattdiagram", layout.Scene.Description, StringComparison.Ordinal);
         Assert.Contains("Visits 1", layout.Scene.Description, StringComparison.Ordinal);
-        Assert.Contains("Customers 45 (4%)", layout.Scene.Description, StringComparison.Ordinal);
+        Assert.Contains("Customers 45 (25%)", layout.Scene.Description, StringComparison.Ordinal);
+        Assert.Contains("Trials 180 (33,3%)", layout.Scene.Description, StringComparison.Ordinal); // the culture's decimal comma
         Assert.Equal("Av föregående steg", layout.Tooltip.Series.Single().PartLabels![1]);
     }
 

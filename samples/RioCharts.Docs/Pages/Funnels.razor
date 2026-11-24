@@ -4,22 +4,22 @@
 
 <h1>Funnels</h1>
 <p class="lead">
-    A funnel shows how many make it through each stage of a process, such as visits, sign-ups, trials and customers. Each stage is a
-    bar as wide as its share of the largest, so the drop between stages is easy to see.
+    A funnel shows how many make it through each stage of a process, such as visits, product views, cart, checkout and purchase. Each
+    stage is a segment as wide as its share of the largest, narrowing to the next, so the drop between stages is easy to see.
 </p>
 
 <Example Title="Stages narrowing down" Code="@StagesCode">
     <Description>
         <p>
-            <code>FunnelSeries</code> draws one row per item, top to bottom in the order of the items: <code>XValue</code> is the stage and
-            <code>YValue</code> how many reached it. A light band joins each bar to the next. Each label gives the value and its share of
-            the first stage; the tooltip adds the share of the stage before, the step-by-step conversion. <code>DataLabels="false"</code>
-            hides the labels.
+            <code>FunnelSeries</code> draws one segment per item, top to bottom in the order of the items: <code>XValue</code> is the stage
+            and <code>YValue</code> how many reached it. Each segment has a palette color of its own and shows its value and its share of
+            the stage before; its name sits in a label beside the funnel, on alternating sides. A value that does not fit in its segment
+            moves into the label. The tooltip adds the share of the first stage. <code>DataLabels="false"</code> leaves the values out.
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Stage" Items="Signups" Title="Sign-ups in March" Height="280">
-            <FunnelSeries Name="Users" XValue="s => s.Name" YValue="s => s.Users" Format="#,0" />
+        <RioChart TItem="Stage" Items="Shop" Title="Shop funnel, March" Height="300">
+            <FunnelSeries Name="Visitors" XValue="s => s.Name" YValue="s => s.Users" Format="#,0" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -27,30 +27,30 @@
 <Example Title="From raw events" Code="@EventsCode">
     <Description>
         <p>
-            With <code>Aggregate</code>, items with the same stage are combined into one bar, so a list of events per channel gives the
+            With <code>Aggregate</code>, items with the same stage are combined into one segment, so a list of events per channel gives the
             funnel directly. Stages appear in the order they are first seen. Clicking a stage with <code>Selection</code> on selects the
             items behind it. In JSON definitions: <code>"type": "funnel"</code> with <code>"x"</code>, <code>"y"</code> and
             <code>"aggregate"</code>.
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Event" Items="Events" Height="240" Selection="SelectionMode.Points" @bind-SelectedItems="_picked">
+        <RioChart TItem="Event" Items="Events" Height="260" Selection="SelectionMode.Points" @bind-SelectedItems="_picked">
             <FunnelSeries Name="Shoppers" XValue="e => e.Step" YValue="e => e.Count" Aggregate="Aggregate.Sum" Format="#,0" />
         </RioChart>
         <p class="note">@(_picked.Count == 0 ? "Click a stage to select its events." : $"{_picked.Count} events selected: {string.Join(", ", _picked.Select(e => e.Channel).Distinct())}.")</p>
     </ChildContent>
 </Example>
 
-<Example Title="Highlight a stage" Code="@ColorCode">
+<Example Title="One color, one stage highlighted" Code="@ColorCode">
     <Description>
         <p>
-            Every stage takes the series color, since the rows are labeled. <code>ColorValue</code> gives a stage its own color, for
+            <code>Color</code> on the series draws every stage in that color; <code>ColorValue</code> then gives a stage its own, for
             example the step with the largest drop.
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Stage" Items="Hiring" Height="240">
-            <FunnelSeries Name="Candidates" XValue="s => s.Name" YValue="s => s.Users" ColorValue="@(s => s.Name == "Interview" ? "--rio-negative" : null)" />
+        <RioChart TItem="Stage" Items="Hiring" Height="280">
+            <FunnelSeries Name="Candidates" XValue="s => s.Name" YValue="s => s.Users" Color="--rio-series-1" ColorValue="@(s => s.Name == "Interview" ? "--rio-negative" : null)" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -62,7 +62,7 @@
 
     private IReadOnlyCollection<Event> _picked = [];
 
-    private static readonly Stage[] Signups = [new("Visits", 12400), new("Sign-ups", 3100), new("Trials", 1240), new("Customers", 310)];
+    private static readonly Stage[] Shop = [new("Visits", 15000), new("Product views", 10000), new("Cart", 7000), new("Checkout", 4000), new("Purchase", 2000)];
 
     private static readonly Stage[] Hiring = [new("Applied", 420), new("Screened", 260), new("Interview", 64), new("Offer", 18), new("Hired", 14)];
 
@@ -73,8 +73,8 @@
     ];
 
     private const string StagesCode = """
-        <RioChart Items="signups" Title="Sign-ups in March">
-            <FunnelSeries Name="Users" XValue="s => s.Name" YValue="s => s.Users" Format="#,0" />
+        <RioChart Items="shop" Title="Shop funnel, March">
+            <FunnelSeries Name="Visitors" XValue="s => s.Name" YValue="s => s.Users" Format="#,0" />
         </RioChart>
         """;
 
@@ -86,7 +86,7 @@
 
     private const string ColorCode = """
         <RioChart Items="hiring">
-            <FunnelSeries Name="Candidates" XValue="s => s.Name" YValue="s => s.Users"
+            <FunnelSeries Name="Candidates" XValue="s => s.Name" YValue="s => s.Users" Color="--rio-series-1"
                           ColorValue="@(s => s.Name == "Interview" ? "--rio-negative" : null)" />
         </RioChart>
         """;

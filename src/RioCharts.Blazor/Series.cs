@@ -925,11 +925,12 @@ public sealed class WaterfallSeries<TItem> : SeriesBase<TItem>
 }
 
 /// <summary>
-/// Funnel: one centered bar per stage, top to bottom in the order of the items, each as wide as
-/// its share of the largest stage, with a light band to the next showing what is lost between
-/// them. <c>XValue</c> is the stage, <c>YValue</c> how many reached it. Labels give each value and
-/// its share of the first stage (<c>DataLabels="false"</c> hides them); the tooltip adds the share
-/// of the stage before. One funnel per chart; it cannot be mixed with other series.
+/// Funnel: one segment per stage, top to bottom in the order of the items, each as wide at its top
+/// as its share of the largest stage and narrowing to the next, in a color of its own (one color
+/// when <c>Color</c> is set; <c>ColorValue</c> colors a stage). <c>XValue</c> is the stage,
+/// <c>YValue</c> how many reached it. Each stage shows its value and its share of the stage before
+/// (<c>DataLabels="false"</c> hides them), with its name in a label beside the funnel; the tooltip
+/// adds the share of the first stage. One funnel per chart; it cannot be mixed with other series.
 /// </summary>
 public sealed class FunnelSeries<TItem> : SeriesBase<TItem>
 {

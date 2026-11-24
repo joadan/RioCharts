@@ -58,7 +58,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Progress toward a goal | `RadialBarSeries` | `Max` |
 | One value on a scale (load, how full), with ranges and a target | `GaugeSeries` | `Value` (or `YValue` per item, `XValue` its label), `Max`, `Target`, `ColorBands` |
 | Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
-| Stages narrowing down (visits → sign-ups → customers) | `FunnelSeries` | `XValue` (the stage), `YValue`; stages keep the items' order; one funnel per chart |
+| Stages narrowing down (visits → cart → purchase) | `FunnelSeries` | `XValue` (the stage), `YValue`; stages keep the items' order, each shows its share of the stage before; one funnel per chart |
 | Several measures per item | `RadarSeries` | one series per item |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors) |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |
@@ -502,7 +502,7 @@ Waterfall: how a start value becomes an end value, e.g. a month's result from re
 
 #### `<FunnelSeries>` (`FunnelSeries<TItem>`)
 
-Funnel: one centered bar per stage, top to bottom in the order of the items, each as wide as its share of the largest stage, with a light band to the next showing what is lost between them. `XValue` is the stage, `YValue` how many reached it. Labels give each value and its share of the first stage (`DataLabels="false"` hides them); the tooltip adds the share of the stage before. One funnel per chart; it cannot be mixed with other series.
+Funnel: one segment per stage, top to bottom in the order of the items, each as wide at its top as its share of the largest stage and narrowing to the next, in a color of its own (one color when `Color` is set; `ColorValue` colors a stage). `XValue` is the stage, `YValue` how many reached it. Each stage shows its value and its share of the stage before (`DataLabels="false"` hides them), with its name in a label beside the funnel; the tooltip adds the share of the first stage. One funnel per chart; it cannot be mixed with other series.
 
 No parameters of its own.
 
