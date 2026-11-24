@@ -3,7 +3,7 @@ using RioCharts.Core.Data;
 namespace RioCharts.Core.Scales;
 
 /// <summary>A calendar unit for time tick intervals.</summary>
-public enum TimeUnit
+internal enum TimeUnit
 {
     /// <summary>Seconds.</summary>
     Second,
@@ -28,7 +28,7 @@ public enum TimeUnit
 }
 
 /// <summary>A calendar tick interval such as "every 6 hours" or "every 3 months".</summary>
-public readonly record struct TimeInterval(TimeUnit Unit, int Step)
+internal readonly record struct TimeInterval(TimeUnit Unit, int Step)
 {
     /// <summary>Approximate length in milliseconds, for choosing an interval.</summary>
     public double ApproxMilliseconds => Step * Unit switch
@@ -47,7 +47,7 @@ public readonly record struct TimeInterval(TimeUnit Unit, int Step)
 /// Calendar-aware ticks for time axes: whole minutes, hours, midnights, Mondays, first of
 /// the month, January 1. Calendar logic runs on the wall-clock time as given.
 /// </summary>
-public static class TimeTicks
+internal static class TimeTicks
 {
     /// <summary>The candidate tick intervals, from 1 second to 1000 years, shortest first.</summary>
     public static IReadOnlyList<TimeInterval> Intervals { get; } =

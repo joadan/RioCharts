@@ -1,7 +1,7 @@
 namespace RioCharts.Core.Data;
 
 /// <summary>Built-in aggregates over a group of values (used by definitions and series components).</summary>
-public static class Aggregation
+internal static class Aggregation
 {
     /// <summary>
     /// Applies an aggregate to a group's values. Null and NaN values are skipped; Count counts every

@@ -1,7 +1,7 @@
 namespace RioCharts.Core.Scales;
 
 /// <summary>"Nice" numeric ticks: steps of 1, 2 or 5 times a power of ten.</summary>
-public static class NiceTicks
+internal static class NiceTicks
 {
     /// <summary>
     /// The smallest nice step (1, 2, 5 or 10 times a power of ten) that is at least

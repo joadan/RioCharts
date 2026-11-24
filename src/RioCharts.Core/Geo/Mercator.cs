@@ -4,7 +4,7 @@ namespace RioCharts.Core.Geo;
 /// The Mercator projection, as on web maps: shapes and directions are true locally, but areas grow
 /// toward the poles (Greenland looks as large as Africa). Latitudes are cut at ±85.05°, like web maps.
 /// </summary>
-public static class Mercator
+internal static class Mercator
 {
     /// <summary>The latitude, in degrees, at which the map is cut (where it becomes square, as on web maps).</summary>
     public const double MaxLatitude = 85.0511287798066;

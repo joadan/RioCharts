@@ -4,7 +4,7 @@ namespace RioCharts.Core.Geo;
 /// The Equal Earth projection (Šavrič, Patterson and Jenny, 2018): equal-area, so a country's size
 /// on the map compares fairly, with straight parallels and continents that keep a familiar shape.
 /// </summary>
-public static class EqualEarth
+internal static class EqualEarth
 {
     private const double A1 = 1.340264, A2 = -0.081106, A3 = 0.000893, A4 = 0.003796;
     private static readonly double M = Math.Sqrt(3) / 2;

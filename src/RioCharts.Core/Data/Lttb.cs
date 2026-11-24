@@ -4,7 +4,7 @@ namespace RioCharts.Core.Data;
 /// Largest Triangle Three Buckets downsampling on columnar data. Gaps (NaN y) are kept:
 /// each run of real values is downsampled on its own and the gaps stay between them.
 /// </summary>
-public static class Lttb
+internal static class Lttb
 {
     /// <summary>
     /// Returns indexes (ascending) into x/y within [start, end) that keep the shape of the data,

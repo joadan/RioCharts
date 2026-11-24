@@ -25,7 +25,7 @@ public sealed record CsvOptions
 /// without a value at an x gets an empty cell, as do missing values (NaN). When a series has the
 /// same x more than once, that x gets as many rows as needed, so no point is lost.
 /// </summary>
-public static class ChartCsv
+internal static class ChartCsv
 {
     /// <summary>The CSV text for the given series (name and data), in order.</summary>
     public static string Write(IReadOnlyList<(string Name, SeriesData Data)> series, CsvOptions? options = null)

@@ -8,7 +8,7 @@ namespace RioCharts.Core.Formatting;
 /// Formats numeric tick labels for one axis. Large values are compact (1.2k, 3.4M);
 /// decimals follow the tick step so labels stay short and consistent.
 /// </summary>
-public sealed class NumberFormatter
+internal sealed class NumberFormatter
 {
     private static readonly (double Divisor, string Suffix)[] Scales =
     [
@@ -182,7 +182,7 @@ internal readonly record struct ValueFormat(string? Pattern, Func<double, string
 }
 
 /// <summary>Single values for tooltips and data labels (not tied to a tick grid).</summary>
-public static class ValueFormatter
+internal static class ValueFormatter
 {
     /// <summary>
     /// Up to two decimals, trailing zeros dropped, group separators. Values from
@@ -271,7 +271,7 @@ public static class ValueFormatter
 }
 
 /// <summary>Time tick labels that adapt to the interval: times, days, months or years.</summary>
-public static class TimeFormatter
+internal static class TimeFormatter
 {
     /// <summary>Formats a time tick label.</summary>
     /// <param name="milliseconds">The time as an x value (see <see cref="Data.TimeValue"/>).</param>

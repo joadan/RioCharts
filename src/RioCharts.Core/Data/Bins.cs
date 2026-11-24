@@ -10,7 +10,7 @@ namespace RioCharts.Core.Data;
 /// <param name="Start">The lower edge of the first bin.</param>
 /// <param name="Width">The width of every bin.</param>
 /// <param name="Count">The number of bins (0 when there are no values).</param>
-public readonly record struct Bins(double Start, double Width, int Count)
+internal readonly record struct Bins(double Start, double Width, int Count)
 {
     /// <summary>At most this many bins; a narrower width is widened to fit.</summary>
     public const int MaxCount = 1000;

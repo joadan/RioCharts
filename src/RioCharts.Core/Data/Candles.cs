@@ -64,7 +64,7 @@ public readonly record struct CandleSummary(double Open, double High, double Low
 /// The candlestick columns of a <see cref="SeriesData"/>, one entry per point in point order; the
 /// point's <see cref="SeriesData.Y"/> is its close. Treat as read-only.
 /// </summary>
-public sealed class CandleColumns
+internal sealed class CandleColumns
 {
     internal CandleColumns(int count)
     {
@@ -102,7 +102,7 @@ public sealed class CandleColumns
 }
 
 /// <summary>Time buckets: the start of the bucket a time falls in, on its wall-clock time (weeks start on Monday).</summary>
-public static class TimeBuckets
+internal static class TimeBuckets
 {
     private const double Day = 86_400_000;
 
