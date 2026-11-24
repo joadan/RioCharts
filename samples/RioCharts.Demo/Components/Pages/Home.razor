@@ -120,10 +120,17 @@
 
         <section>
             <h2>Dots on sparse data</h2>
-            <RioChart TItem="Reading" Items="_weekly" Height="220">
+            <RioChart TItem="Reading" Items="_weekly" Height="220" OnPointClick="Pin" OnAnnotationClick="Unpin">
                 <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.All" Format="0" />
+                @foreach (var pin in _pins)
+                {
+                    <PointAnnotation @key="pin.Time" Id="@PinId(pin)" X="pin.Time" Y="pin.Value ?? 0" Label="@($"{pin.Value:0}")" Color="#d9480f" />
+                }
             </RioChart>
-            <p class="note">Seven daily values: <code>Highlight="PointHighlight.All"</code> puts a dot on each.</p>
+            <p class="note">
+                Seven daily values: <code>Highlight="PointHighlight.All"</code> puts a dot on each. Click a point to pin it, click the pin
+                to remove it (@_pins.Count pinned).
+            </p>
         </section>
 
         <section>
@@ -432,6 +439,20 @@
 
     private void PointClicked(PointClickEventArgs<Reading> e) =>
         _clicked = $"Clicked {e.SeriesName}: {e.Item?.Value:0} ms at {e.Item?.Time:g}.";
+
+    private readonly List<Reading> _pins = [];
+
+    private static string PinId(Reading r) => "pin-" + r.Time.Ticks;
+
+    private void Pin(PointClickEventArgs<Reading> e)
+    {
+        if (e.Item is { } item && !_pins.Contains(item))
+        {
+            _pins.Add(item);
+        }
+    }
+
+    private void Unpin(AnnotationClickEventArgs e) => _pins.RemoveAll(p => PinId(p) == e.AnnotationId);
 
     private void AnnotationClicked(AnnotationClickEventArgs e) =>
         _clicked = $"Clicked annotation '{e.Label}'.";

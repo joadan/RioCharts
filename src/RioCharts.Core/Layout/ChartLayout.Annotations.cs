@@ -168,7 +168,7 @@ public static partial class ChartLayout
             var nodes = new List<Node>();
             if (a.IsPoint)
             {
-                if (!BuildPoint(a, MapX(a.A), a.Axis!.Scale.Map(a.B), plot, measure, small, textHeight, color, labelStyle, styles, nodes, placed))
+                if (!BuildPoint(a, MapX(a.A), a.Axis!.Scale.Map(a.B), plot, measure, small, textHeight, color, labelStyle, styles, nodes, placed, interactive))
                 {
                     continue;
                 }
@@ -288,7 +288,7 @@ public static partial class ChartLayout
     /// the label in a box at an offset, with a connector line to the point.
     /// </summary>
     private static bool BuildPoint(ResolvedAnnotation a, double px, double py, RectF plot, ITextMeasurer measure, double small, double textHeight,
-        string? color, TextStyle labelStyle, StyleTable styles, List<Node> nodes, List<RectF> placed)
+        string? color, TextStyle labelStyle, StyleTable styles, List<Node> nodes, List<RectF> placed, bool interactive)
     {
         if (!plot.Contains((float)px, (float)py))
         {
@@ -326,6 +326,14 @@ public static partial class ChartLayout
         }
 
         nodes.Add(new PathNode(new PathBuilder().MoveTo(px, py - 4.5).Arc(px, py, 4.5, 0, Math.PI * 2).Close().Build(), markerStyle) { Class = "rio-annotation-marker" });
+        if (interactive)
+        {
+            // Clickable: a transparent ring around the small marker makes it easy to hit (12 px from its center).
+            nodes.Add(new PathNode(new PathBuilder().MoveTo(px, py - 6).Arc(px, py, 6, 0, Math.PI * 2).Close().Build(), new StyleRef("annotation-grip"))
+            {
+                Class = "rio-annotation-grip",
+            });
+        }
         placed.Add(new RectF((float)(px - 5), (float)(py - 5), 10, 10));
         return true;
     }

@@ -143,7 +143,11 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Raised when a point or bar is clicked.</summary>
     [Parameter] public EventCallback<PointClickEventArgs<TItem>> OnPointClick { get; set; }
 
-    /// <summary>Raised when a reference line or band is clicked (it becomes a focusable button).</summary>
+    /// <summary>
+    /// Raised when an annotation is clicked: a reference line or band, a point annotation or a callout (each becomes a
+    /// focusable button). A click on a point annotation's marker, label or callout box is the annotation's, even when it
+    /// sits on a data point; elsewhere a point or bar under the pointer wins over an annotation underneath.
+    /// </summary>
     [Parameter] public EventCallback<AnnotationClickEventArgs> OnAnnotationClick { get; set; }
 
     /// <summary>

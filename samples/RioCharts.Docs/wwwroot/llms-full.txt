@@ -333,7 +333,7 @@ A chart. Series are added as child components: `<RioChart Items="readings"><Line
 - `HiddenSeriesChanged`: `EventCallback<IReadOnlyCollection<string>>` — Called with the new hidden series when the user toggles one in the legend.
 - `OnLegendClick`: `EventCallback<LegendClickEventArgs>` — Raised after a legend click has toggled a series.
 - `OnPointClick`: `EventCallback<PointClickEventArgs<TItem>>` — Raised when a point or bar is clicked.
-- `OnAnnotationClick`: `EventCallback<AnnotationClickEventArgs>` — Raised when a reference line or band is clicked (it becomes a focusable button).
+- `OnAnnotationClick`: `EventCallback<AnnotationClickEventArgs>` — Raised when an annotation is clicked: a reference line or band, a point annotation or a callout (each becomes a focusable button). A click on a point annotation's marker, label or callout box is the annotation's, even when it sits on a data point; elsewhere a point or bar under the pointer wins over an annotation underneath.
 - `OnAnnotationChanged`: `EventCallback<AnnotationChangedEventArgs>` — Raised when the user has dragged a reference line (`Draggable`). For lines in `RioChart.Annotations`, update the definition's value here; components use `@bind-Value`.
 - `VisibleRangeChanged`: `EventCallback<ChartRange?>` — Called with the new visible range after a zoom, pan or reset (null: all data).
 - `OnZoomChanging`: `EventCallback<ZoomChangingEventArgs>` — Raised before a zoom or pan is applied; the handler may change or cancel it.
