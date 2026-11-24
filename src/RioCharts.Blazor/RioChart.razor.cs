@@ -140,7 +140,11 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Raised after a legend click has toggled a series.</summary>
     [Parameter] public EventCallback<LegendClickEventArgs> OnLegendClick { get; set; }
 
-    /// <summary>Raised when a point or bar is clicked.</summary>
+    /// <summary>
+    /// Raised when a point or bar is clicked. Lines, areas and scatter points: a click within 16 px of a point (the closest
+    /// point of any series wins), so a click on a line next to a point picks it, but one between points far apart picks
+    /// nothing. Bars: anywhere on the bar. Pies, heatmaps, treemaps and calendars: the slice or cell.
+    /// </summary>
     [Parameter] public EventCallback<PointClickEventArgs<TItem>> OnPointClick { get; set; }
 
     /// <summary>

@@ -11,6 +11,13 @@
 <Example Title="Point clicks" Code="@ClickCode">
     <Description>
         <p>Click a point to get its item in <code>OnPointClick</code>, with the series it belongs to.</p>
+        <p>
+            What counts as a click on a point: on lines, areas and scatter charts, a click within 16 px of a point, so a click on a line
+            next to a point picks that point; with several series the closest point wins, and a click on a line between two points far
+            apart picks nothing. On bars, anywhere on the bar (box plots and candlesticks: anywhere in their slot); on pies, heatmaps,
+            treemaps and calendars, the slice or cell. A point wins over a reference line or band underneath, but not over a point
+            annotation or callout (see Annotations).
+        </p>
     </Description>
     <ChildContent>
         <RioChart TItem="Reading" Height="240" YAxis="Sessions" OnPointClick="e => _point = e">
