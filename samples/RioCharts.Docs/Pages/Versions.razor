@@ -1,0 +1,66 @@
+@page "/versions"
+
+<PageTitle>Versions and support · RioCharts for Blazor and .NET</PageTitle>
+
+<h1>Versions and support</h1>
+<p class="lead">
+    From 1.0, RioCharts follows semantic versioning: updating within 1.x never breaks your code or your saved charts.
+    Until then the packages are previews, and APIs can still change between them.
+</p>
+
+<h2 id="promise">What 1.x keeps</h2>
+<table class="docs">
+    <tr><th>Kept in every 1.x</th><th>Details</th></tr>
+    <tr>
+        <td>The public API</td>
+        <td>
+            Every public type and member of RioCharts.Core, RioCharts.Blazor, RioCharts.Skia and RioCharts.AI: components,
+            parameters, events, methods and the chart model. New members can arrive in any 1.x; none is removed or changes
+            meaning before 2.0. The build checks this against a list of every public symbol.
+        </td>
+    </tr>
+    <tr>
+        <td>JSON chart definitions</td>
+        <td>
+            A definition saved with any 1.x (<code>"version": 1</code>, or no version) renders in every later 1.x: fields, chart
+            type names, their synonyms and option words can be added, never removed. See <a href="definitions#versions">Definitions</a>.
+        </td>
+    </tr>
+    <tr>
+        <td>AI tools</td>
+        <td>The tools of riocharts-mcp and <code>ChartTool</code>: their names and arguments.</td>
+    </tr>
+    <tr>
+        <td>Theming</td>
+        <td>The <code>--rio-*</code> CSS variables and <code>ThemeTokens</code> (see <a href="theming">Theming</a>).</td>
+    </tr>
+</table>
+
+<h2 id="may-change">What a 1.x update may change</h2>
+<ul>
+    <li>
+        How charts look: spacing, tick choices, label placement and other layout details improve in minor releases. Charts keep
+        showing the same data; only the drawing gets better.
+    </li>
+    <li>The SVG markup and its <code>rio-*</code> class names. Style charts with the CSS variables, not with selectors on their elements.</li>
+    <li>Texts the chart writes: tooltips, screen reader descriptions and announcements, warnings.</li>
+    <li>Performance, and anything internal.</li>
+</ul>
+<p>Breaking changes wait for 2.0, and the <a href="https://github.com/joadan/RioCharts/blob/master/CHANGELOG.md">changelog</a> lists each change in every release.</p>
+
+<h2 id="dotnet">.NET versions</h2>
+<p>
+    The packages target the current long-term support .NET and the newest .NET: today .NET 10 (LTS) and .NET 11.
+    When a new .NET ships, a 1.x minor release adds it. A target is removed only after Microsoft ends its support, in a minor
+    release that says so in the changelog. Your app keeps working on the version it has until you update .NET.
+</p>
+<p>
+    Blazor runs where ASP.NET Core does: in the current versions of the common browsers, with Server, WebAssembly, Auto
+    and static rendering. Server export with RioCharts.Skia runs on Windows, Linux and macOS.
+</p>
+
+<h2 id="fixes">Fixes</h2>
+<p>
+    Fixes go into the newest 1.x release; update within 1.x to get them. Report problems on
+    <a href="https://github.com/joadan/RioCharts/issues">GitHub</a>.
+</p>

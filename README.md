@@ -16,8 +16,10 @@ tiny JS module only measures text and follows the pointer.
 <sub>Drawn by RioCharts.Skia itself (<a href="tools/ReadmeImage.cs">tools/ReadmeImage.cs</a>).
 **[See them live, with tooltips and zoom →](https://riocharts.com/)**</sub>
 
-> **Status: early preview.** APIs will change without notice before 1.0. It is built for our own
-> teams' needs; issues are welcome, but there is no roadmap promise.
+> **Status: preview of 1.0.** Until 1.0, APIs can still change; the [changelog](CHANGELOG.md) lists every
+> break. From 1.0, updates within 1.x never break code that uses the public API or saved chart definitions
+> ([versions and support](https://riocharts.com/versions)). It is built for our own teams' needs; issues are
+> welcome, but there is no roadmap promise.
 > Human-led, AI-built: the design is ours ([Design.md](Design.md)); most code is written by AI
 > coding agents and tested and snapshot-checked before it ships.
 
@@ -57,7 +59,7 @@ built-in texts in eight languages.
 
 Coming from Blazor-ApexCharts? The concepts map closely: see
 [the mapping](https://riocharts.com/from-apexcharts). Blazor-ApexCharts is production ready and
-battle-proven; RioCharts is an early preview, so expect changes before 1.0. It is an alternative
+battle-proven; RioCharts is a preview until 1.0, so expect changes until then. It is an alternative
 approach, not an attempt to match Blazor-ApexCharts feature for feature.
 
 ## Images on the server
@@ -120,7 +122,7 @@ All target .NET 10 (LTS) and .NET 11, and are previews: add `--prerelease`.
 
 | Package | For |
 | --- | --- |
-| [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | The chart engine alone: scales, layout and a render-agnostic scene, no UI dependencies |
+| [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | The chart model, data types and JSON chart definitions, with no UI dependencies (the other packages include it) |
 | [RioCharts.Blazor](https://www.nuget.org/packages/RioCharts.Blazor) | The `<RioChart>` component and its series (includes Core) |
 | [RioCharts.Skia](https://www.nuget.org/packages/RioCharts.Skia) | PNG and SVG on the server |
 | [RioCharts.AI](https://www.nuget.org/packages/RioCharts.AI) | `create_chart` and `render_chart` tools for AI agents |
