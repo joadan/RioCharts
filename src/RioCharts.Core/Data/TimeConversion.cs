@@ -80,6 +80,37 @@ public sealed class TimeConversion
         _ => AxisValue.ToDouble(value, XKind.Numeric), // milliseconds as a number
     };
 
+    /// <summary>
+    /// The start of the time bucket a DateTime or DateTimeOffset falls in, on wall-clock time in
+    /// the display zone (a day is midnight to midnight there, weeks start on Monday), as a
+    /// DateTimeOffset in that zone. DateOnly values are calendar dates and bucket as they are;
+    /// other values are returned as they are. A repeated hour (autumn) is one hour bucket.
+    /// </summary>
+    public object Floor(object value, TimeBucket bucket)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        if (value is not (DateTime or DateTimeOffset))
+        {
+            return TimeBuckets.Floor(value, bucket);
+        }
+
+        var wall = TimeValue.ToDateTime(ToDisplay(ToInstant(value)));
+        var start = (DateTime)TimeBuckets.Floor(DateTime.SpecifyKind(wall, DateTimeKind.Unspecified), bucket);
+        return ToDateTimeOffset(FromDisplay(TimeValue.FromDateTime(start)));
+    }
+
+    /// <summary>
+    /// The conversion for a chart's <c>TimeZone</c> and <c>UnspecifiedTimes</c>, or null when no
+    /// zone is set or the name is unknown (times are then used as given).
+    /// </summary>
+    /// <param name="timeZone">"UTC", "local" or an IANA or Windows id.</param>
+    /// <param name="unspecified">How times without a zone are read (UTC when null).</param>
+    /// <param name="viewerZone">The viewer's zone, for "local".</param>
+    public static TimeConversion? For(string? timeZone, UnspecifiedTimes? unspecified, string? viewerZone = null) =>
+        string.IsNullOrWhiteSpace(timeZone) || FindZone(timeZone, viewerZone) is not { } zone
+            ? null
+            : new TimeConversion(zone, unspecified ?? UnspecifiedTimes.Utc);
+
     /// <summary>The instant as a DateTimeOffset in the display zone.</summary>
     public DateTimeOffset ToDateTimeOffset(double instant)
     {

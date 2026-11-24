@@ -5,6 +5,15 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Time buckets follow the display time zone: with `TimeZone` on the chart (`"timeZone"` in JSON), `Bucket`
+  (`"timeBucket"`) groups on wall-clock time in that zone, so a day runs from midnight to midnight there and a day with a
+  daylight saving change is 23 or 25 hours long. Before, buckets used the times as given (a behavior change for charts
+  that set both). Bucket starts are
+  DateTimeOffsets in the zone. This applies to line, area and bar series, candles from raw readings and candles merged
+  when zoomed out. `"local"` regroups once the browser's zone is known. A definition warns when bucketed times have no
+  zone and `unspecifiedTimes` is not set. New in Core: `TimeConversion.Floor`, `TimeConversion.For`, `TimeBuckets.Floor`
+  with a zone, an optional `zone` on `SeriesData.FromTimeBuckets` and `FromCandleBuckets`, and `viewerTimeZone` on
+  `ChartDefinitionBinder.Bind`. Docs: a "Time buckets in the display zone" example on the Axes page.
 - Selected points now show on horizontal bars, box plots, waterfalls and dumbbells, heatmap cells, pie and donut slices
   and radial bars, as an outline. Before, clicks there selected items and raised the events but drew nothing. The grouped
   "Other" slice is not outlined. Docs: a "Selection on any chart" example on the Clicks and selection page.

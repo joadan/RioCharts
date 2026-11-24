@@ -123,6 +123,9 @@ internal sealed class SeriesBuildContext
     /// <summary>The size scale all bubble series in the chart share; null when no series has sizes.</summary>
     public BubbleScale? Bubbles { get; init; }
 
+    /// <summary>The display zone; null when times are shown as given. Merged candles follow its calendar.</summary>
+    public TimeConversion? Time { get; init; }
+
     /// <summary>Bubbles: the drawn radius of each hit point (same order as <see cref="Hits"/>); null for other series.</summary>
     public float[]? HitRadii { get; set; }
 
@@ -1102,8 +1105,12 @@ internal sealed class CandlestickSeriesType : ISeriesType
             }
 
             period = ms;
+            // With a display zone x is in instants: merge on that zone's calendar.
+            var zone = c.Time;
             key = calendar is { } bucket
-                ? t => TimeValue.FromDateTime((DateTime)TimeBuckets.Floor(TimeValue.ToDateTime(t), bucket))
+                ? zone is null
+                    ? t => TimeValue.FromDateTime((DateTime)TimeBuckets.Floor(TimeValue.ToDateTime(t), bucket))
+                    : t => zone.FromDisplay(TimeValue.FromDateTime((DateTime)TimeBuckets.Floor(TimeValue.ToDateTime(zone.ToDisplay(t)), bucket)))
                 : t => Math.Floor(t / ms) * ms;
         }
         else

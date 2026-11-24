@@ -103,7 +103,45 @@
     </ChildContent>
 </Example>
 
+<Example Title="Time buckets in the display zone" Code="@ZoneBucketCode">
+    <Description>
+        <p>
+            With a <code>TimeZone</code>, <code>Bucket</code> groups on the calendar of that zone: a day runs from midnight to midnight there,
+            weeks start on Monday there, and a day with a daylight saving change is 23 or 25 hours long. The same orders, stored in UTC,
+            give other daily totals in New York or Tokyo. Without a zone, buckets use the times as given. JSON definitions do the same with
+            <code>"timeZone"</code> and <code>"timeBucket"</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="(DateTimeOffset Time, double Value)" Items="UtcOrders" TimeZone="@_bucketZone" Height="220" YAxis="OrdersPerDay">
+            <BarSeries Name="Orders" XValue="m => m.Time" YValue="m => m.Value" Bucket="TimeBucket.Day" Aggregate="Aggregate.Sum" Format="#,0 'orders'" DataLabels="true" />
+        </RioChart>
+        <p class="note">
+            Zone:
+            <select @bind="_bucketZone">
+                <option value="UTC">UTC</option>
+                <option value="local">local (your browser)</option>
+                <option value="America/New_York">America/New_York</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+            </select>
+        </p>
+    </ChildContent>
+</Example>
+
 @code {
+    private static readonly AxisOptions OrdersPerDay = new() { Title = "Orders per day" };
+    private string? _bucketZone = "America/New_York";
+
+    // Orders per hour for four days, stored in UTC, busiest around 15:00 UTC.
+    private static readonly (DateTimeOffset Time, double Value)[] UtcOrders = [.. Enumerable.Range(0, 4 * 24).Select(h =>
+        (new DateTimeOffset(2026, 11, 16, 0, 0, 0, TimeSpan.Zero).AddHours(h), Math.Round(12 + 10 * Math.Cos((h % 24 - 15) * Math.PI / 12) + (h / 24) * 2)))];
+
+    private const string ZoneBucketCode = """
+        <RioChart Items="orders" TimeZone="America/New_York">   @* Time is a DateTimeOffset in UTC *@
+            <BarSeries XValue="m => m.Time" YValue="m => m.Value" Bucket="TimeBucket.Day" Aggregate="Aggregate.Sum" />
+        </RioChart>
+        """;
+
     private static readonly AxisOptions SessionsAxis = new() { Title = "Sessions per hour" };
     private static readonly AxisOptions OrdersPerHour = new() { Title = "Orders per hour" };
     private static readonly IReadOnlyList<AxisOptions> _ordersAxis = [new() { Id = "orders", Title = "Orders" }];

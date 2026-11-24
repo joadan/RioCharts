@@ -15,7 +15,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     private object? _lastItems;
     private SeriesData? _lastData;
     private object? _lastVersion;
-    private (Aggregate?, bool, TimeBucket?) _lastAggregate;
+    private (Aggregate?, bool, TimeBucket?, TimeConversion?) _lastAggregate;
     private IReadOnlyList<int[]>? _groups;
     private bool _registered;
     private bool _hadTooltipValue;
@@ -252,7 +252,8 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
         }
 
         var items = Items ?? Chart.DefaultItems as IEnumerable<TItem>;
-        var aggregateKey = (Aggregate, YAggregate is not null, XBucket);
+        // Time buckets follow the chart's display zone (a cached instance per setting).
+        var aggregateKey = (Aggregate, YAggregate is not null, XBucket, XBucket is null ? null : Chart.BucketZone);
         if (_buffer is null && (!ReferenceEquals(items, _lastItems) || aggregateKey != _lastAggregate || !Equals(DataSettings, _lastDataSettings)
                 || (ColorValue is not null) != _hadColorValue)
             || !ReferenceEquals(Data, _lastData) || !Equals(DataVersion, _lastVersion))
@@ -287,7 +288,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             {
                 ItemList = items as IReadOnlyList<TItem> ?? items.ToList();
                 _data = bucket is { } perBucket
-                    ? SeriesData.FromTimeBuckets(ItemList, XValue, perBucket, aggregate, out var groups)
+                    ? SeriesData.FromTimeBuckets(ItemList, XValue, perBucket, aggregate, out var groups, Chart.BucketZone)
                     : SeriesData.FromGroups(ItemList, XValue, aggregate, out groups);
                 _groups = groups;
                 _data = Complete(_data, ItemList, groups);
@@ -437,7 +438,7 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
 {
     /// <summary>
     /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
-    /// items' wall-clock time) at the bucket's start, combining its items with <c>Aggregate</c>
+    /// items' wall-clock time, or in the chart's <c>TimeZone</c> when set) at the bucket's start, combining its items with <c>Aggregate</c>
     /// (average when not set) or <c>YAggregate</c>. <c>TimeBucket.Auto</c> picks the bucket from the
     /// data's time span (about 50 buckets).
     /// </summary>
@@ -466,7 +467,7 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 {
     /// <summary>
     /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
-    /// items' wall-clock time) at the bucket's start, combining its items with <c>Aggregate</c>
+    /// items' wall-clock time, or in the chart's <c>TimeZone</c> when set) at the bucket's start, combining its items with <c>Aggregate</c>
     /// (average when not set) or <c>YAggregate</c>. <c>TimeBucket.Auto</c> picks the bucket from the
     /// data's time span (about 50 buckets).
     /// </summary>
@@ -720,7 +721,7 @@ public sealed class CandlestickSeries<TItem> : SeriesBase<TItem>
 
     /// <summary>
     /// Raw readings: the period of each candle, e.g. <c>TimeBucket.Hour</c> (on the readings'
-    /// wall-clock time); <c>TimeBucket.Auto</c> picks it from the data's time span (about 50 candles).
+    /// wall-clock time, or in the chart's <c>TimeZone</c> when set); <c>TimeBucket.Auto</c> picks it from the data's time span (about 50 candles).
     /// </summary>
     [Parameter] public TimeBucket? Bucket { get; set; }
 
@@ -803,7 +804,7 @@ public sealed class BarSeries<TItem> : ErrorBarSeriesBase<TItem>
 {
     /// <summary>
     /// Time x: one point per bucket (e.g. <c>TimeBucket.Day</c> or <c>TimeBucket.Month</c>, on the
-    /// items' wall-clock time) at the bucket's start, combining its items with <c>Aggregate</c>
+    /// items' wall-clock time, or in the chart's <c>TimeZone</c> when set) at the bucket's start, combining its items with <c>Aggregate</c>
     /// (average when not set) or <c>YAggregate</c>. <c>TimeBucket.Auto</c> picks the bucket from the
     /// data's time span (about 50 buckets).
     /// </summary>

@@ -262,7 +262,7 @@ public partial class RioChart<TItem> : IChartContext
     public ChartDefinition GetDefinition() => Definition ?? BuildDefinition();
 
     private DefinitionBindResult? _bound;
-    private (ChartDefinition?, object?) _boundFrom;
+    private (ChartDefinition?, object?, string?) _boundFrom;
 
     /// <summary>The definition being drawn: the bound <see cref="Definition"/>, or the one from parameters and child components.</summary>
     private ChartDefinition CurrentDefinition() => Definition is not null && _bound is not null
@@ -299,6 +299,23 @@ public partial class RioChart<TItem> : IChartContext
     // ---------- IChartContext ----------
 
     object? IChartContext.DefaultItems => Items;
+
+    private (string?, UnspecifiedTimes?, string?) _bucketZoneKey;
+    private TimeConversion? _bucketZone;
+
+    TimeConversion? IChartContext.BucketZone
+    {
+        get
+        {
+            var key = (TimeZone, UnspecifiedTimes, _viewerZone);
+            if (key != _bucketZoneKey)
+            {
+                (_bucketZoneKey, _bucketZone) = (key, TimeConversion.For(TimeZone, UnspecifiedTimes, _viewerZone));
+            }
+
+            return _bucketZone;
+        }
+    }
 
     string IChartContext.Register(ISeriesSource series, string? requestedId)
     {
@@ -462,10 +479,10 @@ public partial class RioChart<TItem> : IChartContext
         if (Definition is not null)
         {
             // Bind once per definition/datasets pair; legend toggles and resizes reuse it.
-            if (_bound is null || !Equals(_boundFrom, (Definition, (object?)Datasets)))
+            if (_bound is null || !Equals(_boundFrom, (Definition, (object?)Datasets, _viewerZone)))
             {
-                _bound = ChartDefinitionBinder.Bind(Definition, Datasets ?? new Dictionary<string, ChartDataset>());
-                _boundFrom = (Definition, Datasets);
+                _bound = ChartDefinitionBinder.Bind(Definition, Datasets ?? new Dictionary<string, ChartDataset>(), viewerTimeZone: _viewerZone);
+                _boundFrom = (Definition, Datasets, _viewerZone);
             }
 
             data = _bound.Data;
@@ -678,6 +695,8 @@ public partial class RioChart<TItem> : IChartContext
                     changed = true;
                 }
 
+                // "local" is the browser's zone: series that bucket by time group again in it.
+                changed |= info.TimeZone != _viewerZone && string.Equals(TimeZone, "local", StringComparison.OrdinalIgnoreCase);
                 _viewerZone = info.TimeZone;
                 if (info.Width > 0 && Width is null)
                 {

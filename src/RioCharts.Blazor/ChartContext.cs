@@ -37,6 +37,9 @@ internal interface IAnnotationSource
 /// <summary>Cascaded from <see cref="RioChart{TItem}"/> to its series and annotation components.</summary>
 internal interface IChartContext
 {
+    /// <summary>The display zone time buckets follow (from TimeZone and UnspecifiedTimes); null when times are shown as given.</summary>
+    TimeConversion? BucketZone { get; }
+
     /// <summary>The chart's Items, used by series that do not set their own.</summary>
     object? DefaultItems { get; }
 

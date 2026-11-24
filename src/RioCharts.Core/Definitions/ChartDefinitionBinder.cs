@@ -39,13 +39,20 @@ public static class ChartDefinitionBinder
         return Bind(spec, loaded, source.Describe().Select(d => d.Name).ToList());
     }
 
-    /// <summary>Binds against datasets already in memory (by name, case-insensitive).</summary>
-    public static DefinitionBindResult Bind(ChartDefinition spec, IReadOnlyDictionary<string, ChartDataset> datasets, IReadOnlyList<string>? available = null)
+    /// <summary>
+    /// Binds against datasets already in memory (by name, case-insensitive). With a
+    /// <c>timeZone</c> on the chart, time buckets are on wall-clock time in that zone;
+    /// <paramref name="viewerTimeZone"/> is the zone "local" stands for (UTC when null).
+    /// </summary>
+    public static DefinitionBindResult Bind(ChartDefinition spec, IReadOnlyDictionary<string, ChartDataset> datasets, IReadOnlyList<string>? available = null,
+        string? viewerTimeZone = null)
     {
         ArgumentNullException.ThrowIfNull(spec);
         var errors = new List<DefinitionError>();
         var warnings = new List<string>();
         var lookup = new Dictionary<string, ChartDataset>(datasets, StringComparer.OrdinalIgnoreCase);
+        // Buckets follow the chart's display zone, so a day is midnight to midnight there.
+        var zone = TimeConversion.For(spec.TimeZone, spec.UnspecifiedTimes, viewerTimeZone);
         available ??= [.. lookup.Keys];
         if (spec.Data is { Count: > 0 } rows)
         {
@@ -62,7 +69,7 @@ public static class ChartDefinitionBinder
         var usedIds = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < spec.Series.Count; i++)
         {
-            BindSeries(spec, spec.Series[i], $"series[{i}]", lookup, available, series, data, usedIds, errors, warnings);
+            BindSeries(spec, spec.Series[i], $"series[{i}]", lookup, available, series, data, usedIds, errors, warnings, zone);
         }
 
         if (spec.Series.Count == 0)
@@ -82,7 +89,8 @@ public static class ChartDefinitionBinder
         double? ErrorLow = null, double? ErrorHigh = null);
 
     private static void BindSeries(ChartDefinition chart, SeriesOptions s, string path, Dictionary<string, ChartDataset> datasets, IReadOnlyList<string> available,
-        List<SeriesOptions> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings)
+        List<SeriesOptions> output, Dictionary<string, SeriesData> data, HashSet<string> usedIds, List<DefinitionError> errors, List<string> warnings,
+        TimeConversion? zone)
     {
         var errorsBefore = errors.Count;
         var datasetName = s.Dataset ?? chart.Dataset ?? (datasets.ContainsKey(InlineDataset) ? InlineDataset : null);
@@ -343,6 +351,12 @@ public static class ChartDefinitionBinder
         }
 
         var candleBucket = s.Type == SeriesType.Candlestick && open is null ? bucket ?? TimeBucket.Day : (TimeBucket?)null;
+        // Bucket starts carry the zone's offset, so the layout cannot see that the raw times had none.
+        if (zone is not null && (bucket ?? candleBucket) is not null && chart.UnspecifiedTimes is null
+            && rows.Any(r => x.Values[r] is DateTime { Kind: DateTimeKind.Unspecified }))
+        {
+            warnings.Add($"{path}.timeBucket: some times have no zone; they are read as UTC before bucketing in {chart.TimeZone}. Set unspecifiedTimes to utc or displayZone.");
+        }
         if (s.Type == SeriesType.Candlestick && open is null && s.TimeBucket is null)
         {
             warnings.Add($"{path}.timeBucket: not set for candles from raw values; using day.");
@@ -397,7 +411,7 @@ public static class ChartDefinitionBinder
                 var kept = groupRows.Where(r => x.Values[r] is not null).ToList();
                 double At(DataField? field, int r) => field?.Values[r] is double d ? d : double.NaN;
                 data[candleId] = candleBucket is { } perBucket
-                    ? SeriesData.FromCandleBuckets(kept, r => x.Values[r], r => At(y, r) is var v && double.IsFinite(v) ? v : null, perBucket, out _)
+                    ? SeriesData.FromCandleBuckets(kept, r => x.Values[r], r => At(y, r) is var v && double.IsFinite(v) ? v : null, perBucket, out _, zone)
                     : SeriesData.FromItems(kept, r => x.Values[r], r => At(y, r) is var c && double.IsFinite(c) ? c : null)
                         .WithCandles(kept.Select(r => new CandleSummary(At(open, r), At(high, r), At(low, r), At(y, r))).ToArray());
                 continue;
@@ -408,7 +422,7 @@ public static class ChartDefinitionBinder
                 var boxId = UniqueId(string.IsNullOrEmpty(s.Id) ? Slug(y?.Name ?? "values") : s.Id, key, usedIds);
                 var boxName = key is null ? s.Name ?? Humanize(y?.Name ?? "values") : s.Name is null ? key : $"{s.Name}: {key}";
                 output.Add(s with { Id = boxId, Name = boxName });
-                data[boxId] = Boxes(groupRows, x, y, bucket, low, q1, q3, high);
+                data[boxId] = Boxes(groupRows, x, y, bucket, zone, low, q1, q3, high);
                 continue;
             }
 
@@ -425,7 +439,7 @@ public static class ChartDefinitionBinder
                 continue;
             }
 
-            var points = Points(groupRows, x, y, bucket, aggregate, low, colorField, totalField, sizeField, targetField, errorField, errorLow, errorHigh,
+            var points = Points(groupRows, x, y, bucket, zone, aggregate, low, colorField, totalField, sizeField, targetField, errorField, errorLow, errorHigh,
                 lowLikeY: s.Type == SeriesType.Dumbbell);
             if (s.Sort is { } sort)
             {
@@ -648,9 +662,9 @@ public static class ChartDefinitionBinder
     }
 
     /// <summary>Box plot data: one box per row (precomputed, with q1 and q3), or per x from the rows' y values.</summary>
-    private static SeriesData Boxes(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, DataField? low, DataField? q1, DataField? q3, DataField? high)
+    private static SeriesData Boxes(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, TimeConversion? zone, DataField? low, DataField? q1, DataField? q3, DataField? high)
     {
-        object? XAt(int r) => x.Values[r] is { } v && bucket is { } b ? Floor(v, b) : x.Values[r];
+        object? XAt(int r) => x.Values[r] is { } v && bucket is { } b ? TimeBuckets.Floor(v, b, zone) : x.Values[r];
         double At(DataField? field, int r) => field?.Values[r] is double d ? d : double.NaN;
 
         var kept = rows.Where(r => x.Values[r] is not null).ToList();
@@ -663,7 +677,7 @@ public static class ChartDefinitionBinder
         return SeriesData.FromBoxGroups(kept, XAt, r => At(y, r) is var v && double.IsFinite(v) ? v : null, out _);
     }
 
-    private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, Aggregate? aggregate, DataField? low = null,
+    private static List<Point> Points(List<int> rows, DataField x, DataField? y, TimeBucket? bucket, TimeConversion? zone, Aggregate? aggregate, DataField? low = null,
         DataField? color = null, DataField? total = null, DataField? size = null, DataField? target = null, DataField? errorAmount = null,
         DataField? errorLow = null, DataField? errorHigh = null, bool lowLikeY = false)
     {
@@ -683,7 +697,7 @@ public static class ChartDefinitionBinder
         object? XAt(int r)
         {
             var v = x.Values[r];
-            return bucket is { } b && v is not null ? Floor(v, b) : v;
+            return bucket is { } b && v is not null ? TimeBuckets.Floor(v, b, zone) : v;
         }
 
         double? YAt(int r) => y?.Values[r] is double d ? d : null;
@@ -734,9 +748,6 @@ public static class ChartDefinitionBinder
             return new Point(key, y, lowValue, colorValue, totalValue, sizeValue, targetValue, errorLowValue, errorHighValue);
         }
     }
-
-    /// <summary>The start of the bucket a time falls in (wall-clock time; weeks start on Monday).</summary>
-    private static object Floor(object value, TimeBucket bucket) => TimeBuckets.Floor(value, bucket);
 
     /// <summary>
     /// The chart type for "auto": times and numbers give a line (bars for time buckets), categories

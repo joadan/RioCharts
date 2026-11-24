@@ -36,7 +36,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out. The same on `XAxis` for numeric x under lines and scatter points (not bars), e.g. load time against page size, log on both axes.
 - Several items with the same x: `Aggregate="Aggregate.Sum"` (also Average, Min, Max, Count, Last), or `YAggregate="g => ..."` with your own calculation over the group.
 - Error bars (bar, line and scatter series): `ErrorValue="m => m.StdDev"` (plus or minus, per item), `Error="2.5"` (the same for every point), or `ErrorLowValue` and `ErrorHighValue` (the ends, as values). JSON: `errorField`, `error`, `errorLow` and `errorHigh`.
-- Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). No need to group in the query.
+- Time x per hour, day, month...: `Bucket="TimeBucket.Day"` on line, area and bar series gives one point per bucket, combined with `Aggregate` (average when not set). `TimeBucket.Auto` picks the bucket from the data's time span (about 50 points). With `TimeZone` on the chart, buckets follow that zone's calendar (a day is midnight to midnight there). No need to group in the query.
 - Updates: selectors run once per data change. The chart reprocesses a series when `Items` is a new reference or `DataVersion` changes. Changing a list in place does nothing until you assign a new list or change `DataVersion`. For streaming data use a `SeriesBuffer`.
 - Size: the chart fills its container's width; `Height` is 300 px by default.
 - Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture).
@@ -397,7 +397,7 @@ Every series component below takes these, plus its own.
 
 Line series.
 
-- `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
+- `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `Curve`: `CurveType` — Line shape: Linear, Monotone (smooth, no overshoot) or Step.
 - `StrokeWidth`: `double` = `2` — Line width in pixels.
 - `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last | PointHighlight.Max`. Default none.
@@ -410,7 +410,7 @@ Line series.
 
 Area series, filled down to zero.
 
-- `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
+- `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `Curve`: `CurveType` — Shape of the top edge: Linear, Monotone (smooth, no overshoot) or Step.
 - `StrokeWidth`: `double` = `2` — Width of the top line in pixels. Default 2.
 - `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last`. Default none.
@@ -461,7 +461,7 @@ Box plot: the spread of values per x, e.g. supply temperatures per unit. Give th
 
 Candlestick: how a value moved within each period: a wick from low to high and a body from open to close, lightly filled when it rose and solid when it fell, in the series color (or green and red with `CandlestickSeries.DirectionColors`). Give raw readings (`XValue` and `YValue`, one item per reading) with a `CandlestickSeries.Bucket` such as an hour or a day, or candles computed elsewhere (`CandlestickSeries.OpenValue`, `CandlestickSeries.HighValue`, `CandlestickSeries.LowValue` and `CandlestickSeries.CloseValue`, one item per period). When zoomed out, candles too narrow to see merge into wider ones.
 
-- `Bucket`: `TimeBucket?` — Raw readings: the period of each candle, e.g. `TimeBucket.Hour` (on the readings' wall-clock time); `TimeBucket.Auto` picks it from the data's time span (about 50 candles).
+- `Bucket`: `TimeBucket?` — Raw readings: the period of each candle, e.g. `TimeBucket.Hour` (on the readings' wall-clock time, or in the chart's `TimeZone` when set); `TimeBucket.Auto` picks it from the data's time span (about 50 candles).
 - `DirectionColors`: `bool` — Color candles by direction, rising in `--rio-positive` and falling in `--rio-negative` (green and red), with the change in percent in the tooltip, as for prices. Off (default): the series color, with a light fill for rising and a solid fill for falling candles.
 - `OpenValue`: `Func<TItem, double?>?` — Precomputed candles: the period's first value.
 - `HighValue`: `Func<TItem, double?>?` — Precomputed candles: the highest value.
@@ -472,7 +472,7 @@ Candlestick: how a value moved within each period: a wick from low to high and a
 
 Bar series. Several bar series in one chart are grouped side by side.
 
-- `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
+- `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `Error`: `double?` — Error bars: the same plus-or-minus amount for every point, e.g. 2.5.
 - `ErrorValue`: `Func<TItem, double?>?` — Error bars: each item's plus-or-minus amount, e.g. `m => m.StdDev`; null for none. Items combined into one point take the average.
 - `ErrorLowValue`: `Func<TItem, double?>?` — Error bars: the low end of each item's error bar (a value, e.g. a confidence interval's lower bound); use with `ErrorBarSeriesBase.ErrorHighValue`. Items combined into one point take the lowest.
@@ -955,8 +955,8 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `SeriesData WithErrors(ReadOnlySpan<double> low, ReadOnlySpan<double> high)` — The same points with an error bar each, from `low` to `high` (values on the y axis, e.g. y - sd and y + sd). Both are in input order, like the y values given when creating the data: index i belongs to input item (or group) i; NaN for none.
 - `SeriesData WithTargets(ReadOnlySpan<double> targets)` — The same points with a target each (bullet charts). `targets` is in input order, like the y values given when creating the data: index i is the target of input item (or group) i.
 - `SeriesData WithCandles(ReadOnlySpan<CandleSummary> candles)` — The same points as candles: `candles` is in input order (index i is the candle of input item or group i). Each point's y becomes its candle's close; an incomplete candle is a gap.
-- `static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value, TimeBucket bucket, IReadOnlyList<int[]> groups)` — Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on their wall-clock time) and each bucket gives the first, highest, lowest and last value in time order. Null values are skipped.
-- `static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups)` — Groups items per time bucket (e.g. per day or month, on their wall-clock time) and makes one point per bucket at the bucket's start, with y from `aggregate` (null is a gap). `TimeBucket.Auto` picks the bucket from the span of the times. Items with a null x are left out; x values that are not times group by value. Selectors and the aggregate run once here, never per render.
+- `static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value, TimeBucket bucket, IReadOnlyList<int[]> groups, TimeConversion? zone = null)` — Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on their wall-clock time, or in `zone` when set) and each bucket gives the first, highest, lowest and last value in time order. Null values are skipped.
+- `static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups, TimeConversion? zone = null)` — Groups items per time bucket (e.g. per day or month, on their wall-clock time, or in `zone` when set) and makes one point per bucket at the bucket's start, with y from `aggregate` (null is a gap). `TimeBucket.Auto` picks the bucket from the span of the times. Items with a null x are left out; x values that are not times group by value. Selectors and the aggregate run once here, never per render.
 - `SeriesData WithBox(ReadOnlySpan<BoxSummary> boxes)` — The same points as boxes: `boxes` is in input order, like the y values given when creating the data (index i is the box of input item or group i). Each point's y becomes its box's median.
 - `static SeriesData FromBoxGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> value, IReadOnlyList<int[]> groups)` — Box plot data from raw values: items with the same x form one box, summarized with `BoxSummary.FromValues`. Categories keep the order of first appearance; numbers and times are sorted. Null values are skipped.
 - `SeriesData WithRows(IReadOnlyList<string?> rows)` — The same points as range bars, each in a row: `rows` is in input order, like the y values given when creating the data (index i is the row of input item i); a null or missing row is "". `SeriesData.X` is each bar's start and `SeriesData.Y` its end.
