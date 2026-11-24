@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <!-- Trimming and native AOT: turns on the analyzers and marks the assembly trimmable. -->
     <IsAotCompatible>true</IsAotCompatible>
-    <Description>Charts for .NET: the RioCharts engine, with no UI dependencies, behind the Blazor component, server-side PNG/SVG export and AI chart tools. It turns a serializable chart definition plus data into a render-agnostic scene. It includes scales, nice and calendar-aware time ticks, culture-aware label formatting, line/area/bar layout, LTTB downsampling and hit-testing.</Description>
+    <Description>Charts for .NET: the RioCharts engine, with no UI dependencies, behind the Blazor component, server-side PNG/SVG export and AI chart tools. It holds the serializable chart model, the data types (columnar series, live buffers) and JSON chart definitions with their schema; the layout behind them handles scales, nice and calendar-aware time ticks, culture-aware labels and LTTB downsampling.</Description>
     <PackageTags>charts;dataviz;time-series</PackageTags>
   </PropertyGroup>
 

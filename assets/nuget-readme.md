@@ -8,7 +8,9 @@ tiny JS module only measures text and follows the pointer.
 
 Drawn by RioCharts.Skia itself. **[See them live, with tooltips and zoom](https://riocharts.com/)**
 
-> **Status: early preview.** APIs will change without notice before 1.0.
+> **Status: preview of 1.0.** Until 1.0, APIs can still change; the changelog lists every break. From 1.0, updates
+> within 1.x never break code that uses the public API or saved chart definitions
+> ([versions and support](https://riocharts.com/versions)).
 > Human-led, AI-built: the design is ours ([Design.md](https://github.com/joadan/RioCharts/blob/master/Design.md));
 > most code is written by AI coding agents and tested and snapshot-checked before it ships.
 

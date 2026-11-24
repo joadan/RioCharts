@@ -5,6 +5,28 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+### Upgrading from 0.7.6-preview
+
+Most apps only need the first two renames. Search and replace, then build:
+
+| Before | After |
+| --- | --- |
+| `SelectionMode.Points`, `SelectionMode.Range` | `ChartSelectionMode.Points`, `ChartSelectionMode.Range` |
+| `<MapBubbleSeries Latitude="..." Longitude="...">` | `LatitudeValue="..."`, `LongitudeValue="..."` |
+| `using RioCharts.Core.Scene;` for `ThemeTokens` | `using RioCharts.Core;` |
+| `ChartLayout.OtherSliceKey` | `SeriesOptions.OtherSliceKey` |
+| `ChartExport.ToPng(chart.Layout.Scene)` (a Blazor chart on the server) | `chart.ExportPngAsync()` in the browser, or `ChartExport.ToPng(definition, data)` |
+| `ChartExport.Layout`, `ChartExport.ToSvg/ToPng(Scene)`, `SkiaRenderer`, `SvgExporter` | `ChartExport.ToSvg`, `ToPng` or `WritePngAsync` with a definition and data |
+| `ChartLayout.Compute`, `Scene` and its nodes, `LayoutOptions`, text measurers | Internal: draw with a component, or export with RioCharts.Skia |
+| Scales, formatters, `Lttb`, `Bins`, `TimeBuckets`, `EqualEarth`, `Mercator` | Internal: the components and definitions do this for you |
+| `SeriesData.FromTimeBuckets`, `FromCandleBuckets`, `FromBins`, `SeriesData.Box`, `Candles` | Internal: use `Bucket`, `BinWidth` and the series components, or `WithBox`/`WithCandles` |
+
+Behavior that changes without a compile error: `ChartDefinitionJson.Serialize` writes `"version": 1`; zoom and range
+selection stay off on funnels and bullets; the screen reader text of dumbbells and bubble maps is fuller. From 1.0 on,
+what is kept and what may change is on [Versions and support](https://riocharts.com/versions).
+
+### Changes
+
 - Fixed: in Windows High Contrast (forced colors), a chart with `SeriesLayer.Canvas` drew every series in the text color,
   the tooltip's color dots disappeared, and `ExportPngAsync` could fill the background with the text color. Data colors
   now stay as they are; the rest of the chart takes the system colors.
