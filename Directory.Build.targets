@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Public API baselines for the library packages (src, not the riocharts-mcp tool): every public symbol is listed in
+    PublicAPI.Shipped.txt (released) or PublicAPI.Unshipped.txt (added since) next to the project. A public API change
+    that is not in those files fails the build (RS0016 added, RS0017 removed). See CONTRIBUTING.md, "Public API".
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectDirectory.Replace('\', '/').Contains('/src/')) And '$(OutputType)' != 'Exe'">
+    <RioPublicApi>true</RioPublicApi>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017;RS0036;RS0037</WarningsAsErrors>
+    <!-- Razor's generated BuildRenderTree has no nullable context, so its entry starts with ~ (oblivious). -->
+    <NoWarn>$(NoWarn);RS0041</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(RioPublicApi)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+</Project>

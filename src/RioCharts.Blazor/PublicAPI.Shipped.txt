@@ -1,0 +1,742 @@
+#nullable enable
+Microsoft.Extensions.DependencyInjection.RioChartsServiceCollectionExtensions
+RioCharts.Blazor.AnnotationBase
+RioCharts.Blazor.AnnotationBase.AnnotationBase() -> void
+RioCharts.Blazor.AnnotationBase.Color.get -> string?
+RioCharts.Blazor.AnnotationBase.Color.set -> void
+RioCharts.Blazor.AnnotationBase.Common(RioCharts.Core.AnnotationType type) -> RioCharts.Core.Annotation!
+RioCharts.Blazor.AnnotationBase.Dispose() -> void
+RioCharts.Blazor.AnnotationBase.ExpandsDomain.get -> bool?
+RioCharts.Blazor.AnnotationBase.ExpandsDomain.set -> void
+RioCharts.Blazor.AnnotationBase.Id.get -> string?
+RioCharts.Blazor.AnnotationBase.Id.set -> void
+RioCharts.Blazor.AnnotationBase.Label.get -> string?
+RioCharts.Blazor.AnnotationBase.Label.set -> void
+RioCharts.Blazor.AnnotationBase.Layer.get -> RioCharts.Core.AnnotationLayer?
+RioCharts.Blazor.AnnotationBase.Layer.set -> void
+RioCharts.Blazor.AnnotationBase.YAxisId.get -> string?
+RioCharts.Blazor.AnnotationBase.YAxisId.set -> void
+RioCharts.Blazor.AnnotationChangedEventArgs
+RioCharts.Blazor.AnnotationChangedEventArgs.<Clone>$() -> RioCharts.Blazor.AnnotationChangedEventArgs!
+RioCharts.Blazor.AnnotationChangedEventArgs.AnnotationChangedEventArgs(string! AnnotationId, string? Label, object! Value) -> void
+RioCharts.Blazor.AnnotationChangedEventArgs.AnnotationId.get -> string!
+RioCharts.Blazor.AnnotationChangedEventArgs.AnnotationId.init -> void
+RioCharts.Blazor.AnnotationChangedEventArgs.Deconstruct(out string! AnnotationId, out string? Label, out object! Value) -> void
+RioCharts.Blazor.AnnotationChangedEventArgs.Equals(RioCharts.Blazor.AnnotationChangedEventArgs? other) -> bool
+RioCharts.Blazor.AnnotationChangedEventArgs.Label.get -> string?
+RioCharts.Blazor.AnnotationChangedEventArgs.Label.init -> void
+RioCharts.Blazor.AnnotationChangedEventArgs.Value.get -> object!
+RioCharts.Blazor.AnnotationChangedEventArgs.Value.init -> void
+RioCharts.Blazor.AnnotationClickEventArgs
+RioCharts.Blazor.AnnotationClickEventArgs.<Clone>$() -> RioCharts.Blazor.AnnotationClickEventArgs!
+RioCharts.Blazor.AnnotationClickEventArgs.AnnotationClickEventArgs(string! AnnotationId, string? Label) -> void
+RioCharts.Blazor.AnnotationClickEventArgs.AnnotationId.get -> string!
+RioCharts.Blazor.AnnotationClickEventArgs.AnnotationId.init -> void
+RioCharts.Blazor.AnnotationClickEventArgs.Deconstruct(out string! AnnotationId, out string? Label) -> void
+RioCharts.Blazor.AnnotationClickEventArgs.Equals(RioCharts.Blazor.AnnotationClickEventArgs? other) -> bool
+RioCharts.Blazor.AnnotationClickEventArgs.Label.get -> string?
+RioCharts.Blazor.AnnotationClickEventArgs.Label.init -> void
+RioCharts.Blazor.AreaSeries<TItem>
+RioCharts.Blazor.AreaSeries<TItem>.AreaSeries() -> void
+RioCharts.Blazor.AreaSeries<TItem>.Bucket.get -> RioCharts.Core.TimeBucket?
+RioCharts.Blazor.AreaSeries<TItem>.Bucket.set -> void
+RioCharts.Blazor.AreaSeries<TItem>.Curve.get -> RioCharts.Core.CurveType
+RioCharts.Blazor.AreaSeries<TItem>.Curve.set -> void
+RioCharts.Blazor.AreaSeries<TItem>.Highlight.get -> RioCharts.Core.PointHighlight
+RioCharts.Blazor.AreaSeries<TItem>.Highlight.set -> void
+RioCharts.Blazor.AreaSeries<TItem>.MarkerSize.get -> double?
+RioCharts.Blazor.AreaSeries<TItem>.MarkerSize.set -> void
+RioCharts.Blazor.AreaSeries<TItem>.Sort.get -> RioCharts.Core.ChartSort?
+RioCharts.Blazor.AreaSeries<TItem>.Sort.set -> void
+RioCharts.Blazor.AreaSeries<TItem>.StrokeWidth.get -> double
+RioCharts.Blazor.AreaSeries<TItem>.StrokeWidth.set -> void
+RioCharts.Blazor.BarSeries<TItem>
+RioCharts.Blazor.BarSeries<TItem>.BarSeries() -> void
+RioCharts.Blazor.BarSeries<TItem>.Bucket.get -> RioCharts.Core.TimeBucket?
+RioCharts.Blazor.BarSeries<TItem>.Bucket.set -> void
+RioCharts.Blazor.BarSeries<TItem>.MaxBarWidth.get -> double?
+RioCharts.Blazor.BarSeries<TItem>.MaxBarWidth.set -> void
+RioCharts.Blazor.BarSeries<TItem>.Sort.get -> RioCharts.Core.ChartSort?
+RioCharts.Blazor.BarSeries<TItem>.Sort.set -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>
+RioCharts.Blazor.BoxPlotSeries<TItem>.BoxPlotSeries() -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>.CountValue.get -> System.Func<TItem, int?>?
+RioCharts.Blazor.BoxPlotSeries<TItem>.CountValue.set -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>.HighValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.BoxPlotSeries<TItem>.HighValue.set -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>.LowValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.BoxPlotSeries<TItem>.LowValue.set -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>.MedianValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.BoxPlotSeries<TItem>.MedianValue.set -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>.OutliersValue.get -> System.Func<TItem, System.Collections.Generic.IEnumerable<double>?>?
+RioCharts.Blazor.BoxPlotSeries<TItem>.OutliersValue.set -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>.Q1Value.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.BoxPlotSeries<TItem>.Q1Value.set -> void
+RioCharts.Blazor.BoxPlotSeries<TItem>.Q3Value.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.BoxPlotSeries<TItem>.Q3Value.set -> void
+RioCharts.Blazor.BulletSeries<TItem>
+RioCharts.Blazor.BulletSeries<TItem>.BulletSeries() -> void
+RioCharts.Blazor.BulletSeries<TItem>.Max.get -> double?
+RioCharts.Blazor.BulletSeries<TItem>.Max.set -> void
+RioCharts.Blazor.BulletSeries<TItem>.Min.get -> double?
+RioCharts.Blazor.BulletSeries<TItem>.Min.set -> void
+RioCharts.Blazor.BulletSeries<TItem>.Target.get -> double?
+RioCharts.Blazor.BulletSeries<TItem>.Target.set -> void
+RioCharts.Blazor.BulletSeries<TItem>.TargetValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.BulletSeries<TItem>.TargetValue.set -> void
+RioCharts.Blazor.BulletSeries<TItem>.Value.get -> double?
+RioCharts.Blazor.BulletSeries<TItem>.Value.set -> void
+RioCharts.Blazor.CalendarSeries<TItem>
+RioCharts.Blazor.CalendarSeries<TItem>.BelowColor.get -> string?
+RioCharts.Blazor.CalendarSeries<TItem>.BelowColor.set -> void
+RioCharts.Blazor.CalendarSeries<TItem>.CalendarSeries() -> void
+RioCharts.Blazor.CalendarSeries<TItem>.Max.get -> double?
+RioCharts.Blazor.CalendarSeries<TItem>.Max.set -> void
+RioCharts.Blazor.CalendarSeries<TItem>.Midpoint.get -> double?
+RioCharts.Blazor.CalendarSeries<TItem>.Midpoint.set -> void
+RioCharts.Blazor.Callout
+RioCharts.Blazor.Callout.Callout() -> void
+RioCharts.Blazor.Callout.OffsetX.get -> double?
+RioCharts.Blazor.Callout.OffsetX.set -> void
+RioCharts.Blazor.Callout.OffsetY.get -> double?
+RioCharts.Blazor.Callout.OffsetY.set -> void
+RioCharts.Blazor.Callout.X.get -> object?
+RioCharts.Blazor.Callout.X.set -> void
+RioCharts.Blazor.Callout.Y.get -> double
+RioCharts.Blazor.Callout.Y.set -> void
+RioCharts.Blazor.CandlestickSeries<TItem>
+RioCharts.Blazor.CandlestickSeries<TItem>.Bucket.get -> RioCharts.Core.TimeBucket?
+RioCharts.Blazor.CandlestickSeries<TItem>.Bucket.set -> void
+RioCharts.Blazor.CandlestickSeries<TItem>.CandlestickSeries() -> void
+RioCharts.Blazor.CandlestickSeries<TItem>.CloseValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.CandlestickSeries<TItem>.CloseValue.set -> void
+RioCharts.Blazor.CandlestickSeries<TItem>.DirectionColors.get -> bool
+RioCharts.Blazor.CandlestickSeries<TItem>.DirectionColors.set -> void
+RioCharts.Blazor.CandlestickSeries<TItem>.HighValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.CandlestickSeries<TItem>.HighValue.set -> void
+RioCharts.Blazor.CandlestickSeries<TItem>.LowValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.CandlestickSeries<TItem>.LowValue.set -> void
+RioCharts.Blazor.CandlestickSeries<TItem>.OpenValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.CandlestickSeries<TItem>.OpenValue.set -> void
+RioCharts.Blazor.ChartExportingEventArgs
+RioCharts.Blazor.ChartExportingEventArgs.Cancel.get -> bool
+RioCharts.Blazor.ChartExportingEventArgs.Cancel.set -> void
+RioCharts.Blazor.ChartExportingEventArgs.CsvOptions.get -> RioCharts.Core.Data.CsvOptions?
+RioCharts.Blazor.ChartExportingEventArgs.CsvOptions.set -> void
+RioCharts.Blazor.ChartExportingEventArgs.FileName.get -> string!
+RioCharts.Blazor.ChartExportingEventArgs.FileName.set -> void
+RioCharts.Blazor.ChartExportingEventArgs.Format.get -> RioCharts.Blazor.ExportFormat
+RioCharts.Blazor.ChartExportingEventArgs.GetCsv() -> string!
+RioCharts.Blazor.ChartExportingEventArgs.GetPngAsync() -> System.Threading.Tasks.Task<byte[]!>!
+RioCharts.Blazor.ChartExportingEventArgs.GetSvgAsync() -> System.Threading.Tasks.Task<string!>!
+RioCharts.Blazor.ChartExportingEventArgs.ImageOptions.get -> RioCharts.Blazor.ChartImageOptions!
+RioCharts.Blazor.ChartExportingEventArgs.ImageOptions.set -> void
+RioCharts.Blazor.ChartImageOptions
+RioCharts.Blazor.ChartImageOptions.<Clone>$() -> RioCharts.Blazor.ChartImageOptions!
+RioCharts.Blazor.ChartImageOptions.Background.get -> string?
+RioCharts.Blazor.ChartImageOptions.Background.init -> void
+RioCharts.Blazor.ChartImageOptions.ChartImageOptions() -> void
+RioCharts.Blazor.ChartImageOptions.Equals(RioCharts.Blazor.ChartImageOptions? other) -> bool
+RioCharts.Blazor.ChartImageOptions.Scale.get -> double
+RioCharts.Blazor.ChartImageOptions.Scale.init -> void
+RioCharts.Blazor.ChartPoint
+RioCharts.Blazor.ChartPoint.ChartPoint() -> void
+RioCharts.Blazor.ChartPoint.ChartPoint(double X, double Y) -> void
+RioCharts.Blazor.ChartPoint.Deconstruct(out double X, out double Y) -> void
+RioCharts.Blazor.ChartPoint.Equals(RioCharts.Blazor.ChartPoint other) -> bool
+RioCharts.Blazor.ChartPoint.X.get -> double
+RioCharts.Blazor.ChartPoint.X.init -> void
+RioCharts.Blazor.ChartPoint.Y.get -> double
+RioCharts.Blazor.ChartPoint.Y.init -> void
+RioCharts.Blazor.ChartRange
+RioCharts.Blazor.ChartRange.<Clone>$() -> RioCharts.Blazor.ChartRange!
+RioCharts.Blazor.ChartRange.ChartRange(object! Min, object! Max) -> void
+RioCharts.Blazor.ChartRange.Deconstruct(out object! Min, out object! Max) -> void
+RioCharts.Blazor.ChartRange.Equals(RioCharts.Blazor.ChartRange? other) -> bool
+RioCharts.Blazor.ChartRange.Max.get -> object!
+RioCharts.Blazor.ChartRange.Max.init -> void
+RioCharts.Blazor.ChartRange.Min.get -> object!
+RioCharts.Blazor.ChartRange.Min.init -> void
+RioCharts.Blazor.ChartSelectionMode
+RioCharts.Blazor.ChartSelectionMode.None = 0 -> RioCharts.Blazor.ChartSelectionMode
+RioCharts.Blazor.ChartSelectionMode.Points = 1 -> RioCharts.Blazor.ChartSelectionMode
+RioCharts.Blazor.ChartSelectionMode.Range = 2 -> RioCharts.Blazor.ChartSelectionMode
+RioCharts.Blazor.ChartValue
+RioCharts.Blazor.ChartValue.<Clone>$() -> RioCharts.Blazor.ChartValue!
+RioCharts.Blazor.ChartValue.ChartValue(object! X, double Y) -> void
+RioCharts.Blazor.ChartValue.Deconstruct(out object! X, out double Y) -> void
+RioCharts.Blazor.ChartValue.Equals(RioCharts.Blazor.ChartValue? other) -> bool
+RioCharts.Blazor.ChartValue.X.get -> object!
+RioCharts.Blazor.ChartValue.X.init -> void
+RioCharts.Blazor.ChartValue.Y.get -> double
+RioCharts.Blazor.ChartValue.Y.init -> void
+RioCharts.Blazor.DonutSeries<TItem>
+RioCharts.Blazor.DonutSeries<TItem>.DonutSeries() -> void
+RioCharts.Blazor.DumbbellSeries<TItem>
+RioCharts.Blazor.DumbbellSeries<TItem>.DumbbellSeries() -> void
+RioCharts.Blazor.DumbbellSeries<TItem>.FromValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.DumbbellSeries<TItem>.FromValue.set -> void
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.Error.get -> double?
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.Error.set -> void
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.ErrorBarSeriesBase() -> void
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.ErrorHighValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.ErrorHighValue.set -> void
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.ErrorLowValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.ErrorLowValue.set -> void
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.ErrorValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.ErrorBarSeriesBase<TItem>.ErrorValue.set -> void
+RioCharts.Blazor.ExportFormat
+RioCharts.Blazor.ExportFormat.Csv = 2 -> RioCharts.Blazor.ExportFormat
+RioCharts.Blazor.ExportFormat.Png = 0 -> RioCharts.Blazor.ExportFormat
+RioCharts.Blazor.ExportFormat.Svg = 1 -> RioCharts.Blazor.ExportFormat
+RioCharts.Blazor.ExportFormats
+RioCharts.Blazor.ExportFormats.All = RioCharts.Blazor.ExportFormats.Png | RioCharts.Blazor.ExportFormats.Svg | RioCharts.Blazor.ExportFormats.Csv -> RioCharts.Blazor.ExportFormats
+RioCharts.Blazor.ExportFormats.Csv = 4 -> RioCharts.Blazor.ExportFormats
+RioCharts.Blazor.ExportFormats.None = 0 -> RioCharts.Blazor.ExportFormats
+RioCharts.Blazor.ExportFormats.Png = 1 -> RioCharts.Blazor.ExportFormats
+RioCharts.Blazor.ExportFormats.Svg = 2 -> RioCharts.Blazor.ExportFormats
+RioCharts.Blazor.FunnelSeries<TItem>
+RioCharts.Blazor.FunnelSeries<TItem>.FunnelSeries() -> void
+RioCharts.Blazor.GaugeSeries<TItem>
+RioCharts.Blazor.GaugeSeries<TItem>.EndAngle.get -> double?
+RioCharts.Blazor.GaugeSeries<TItem>.EndAngle.set -> void
+RioCharts.Blazor.GaugeSeries<TItem>.GaugeSeries() -> void
+RioCharts.Blazor.GaugeSeries<TItem>.InnerRadius.get -> double?
+RioCharts.Blazor.GaugeSeries<TItem>.InnerRadius.set -> void
+RioCharts.Blazor.GaugeSeries<TItem>.Max.get -> double?
+RioCharts.Blazor.GaugeSeries<TItem>.Max.set -> void
+RioCharts.Blazor.GaugeSeries<TItem>.Min.get -> double?
+RioCharts.Blazor.GaugeSeries<TItem>.Min.set -> void
+RioCharts.Blazor.GaugeSeries<TItem>.StartAngle.get -> double?
+RioCharts.Blazor.GaugeSeries<TItem>.StartAngle.set -> void
+RioCharts.Blazor.GaugeSeries<TItem>.Target.get -> double?
+RioCharts.Blazor.GaugeSeries<TItem>.Target.set -> void
+RioCharts.Blazor.GaugeSeries<TItem>.Value.get -> double?
+RioCharts.Blazor.GaugeSeries<TItem>.Value.set -> void
+RioCharts.Blazor.HeatmapSeries<TItem>
+RioCharts.Blazor.HeatmapSeries<TItem>.BelowColor.get -> string?
+RioCharts.Blazor.HeatmapSeries<TItem>.BelowColor.set -> void
+RioCharts.Blazor.HeatmapSeries<TItem>.HeatmapSeries() -> void
+RioCharts.Blazor.HeatmapSeries<TItem>.Max.get -> double?
+RioCharts.Blazor.HeatmapSeries<TItem>.Max.set -> void
+RioCharts.Blazor.HeatmapSeries<TItem>.Midpoint.get -> double?
+RioCharts.Blazor.HeatmapSeries<TItem>.Midpoint.set -> void
+RioCharts.Blazor.HistogramSeries<TItem>
+RioCharts.Blazor.HistogramSeries<TItem>.BinCount.get -> int?
+RioCharts.Blazor.HistogramSeries<TItem>.BinCount.set -> void
+RioCharts.Blazor.HistogramSeries<TItem>.BinWidth.get -> double?
+RioCharts.Blazor.HistogramSeries<TItem>.BinWidth.set -> void
+RioCharts.Blazor.HistogramSeries<TItem>.HistogramSeries() -> void
+RioCharts.Blazor.LegendClickEventArgs
+RioCharts.Blazor.LegendClickEventArgs.<Clone>$() -> RioCharts.Blazor.LegendClickEventArgs!
+RioCharts.Blazor.LegendClickEventArgs.Deconstruct(out string! SeriesId, out string! Name, out bool Visible) -> void
+RioCharts.Blazor.LegendClickEventArgs.Equals(RioCharts.Blazor.LegendClickEventArgs? other) -> bool
+RioCharts.Blazor.LegendClickEventArgs.LegendClickEventArgs(string! SeriesId, string! Name, bool Visible) -> void
+RioCharts.Blazor.LegendClickEventArgs.Name.get -> string!
+RioCharts.Blazor.LegendClickEventArgs.Name.init -> void
+RioCharts.Blazor.LegendClickEventArgs.SeriesId.get -> string!
+RioCharts.Blazor.LegendClickEventArgs.SeriesId.init -> void
+RioCharts.Blazor.LegendClickEventArgs.Visible.get -> bool
+RioCharts.Blazor.LegendClickEventArgs.Visible.init -> void
+RioCharts.Blazor.LegendClickingEventArgs
+RioCharts.Blazor.LegendClickingEventArgs.Cancel.get -> bool
+RioCharts.Blazor.LegendClickingEventArgs.Cancel.set -> void
+RioCharts.Blazor.LegendClickingEventArgs.LegendClickingEventArgs() -> void
+RioCharts.Blazor.LegendClickingEventArgs.Name.get -> string!
+RioCharts.Blazor.LegendClickingEventArgs.Name.init -> void
+RioCharts.Blazor.LegendClickingEventArgs.SeriesId.get -> string!
+RioCharts.Blazor.LegendClickingEventArgs.SeriesId.init -> void
+RioCharts.Blazor.LegendClickingEventArgs.Visible.get -> bool
+RioCharts.Blazor.LegendClickingEventArgs.Visible.init -> void
+RioCharts.Blazor.LineSeries<TItem>
+RioCharts.Blazor.LineSeries<TItem>.Bucket.get -> RioCharts.Core.TimeBucket?
+RioCharts.Blazor.LineSeries<TItem>.Bucket.set -> void
+RioCharts.Blazor.LineSeries<TItem>.Curve.get -> RioCharts.Core.CurveType
+RioCharts.Blazor.LineSeries<TItem>.Curve.set -> void
+RioCharts.Blazor.LineSeries<TItem>.Highlight.get -> RioCharts.Core.PointHighlight
+RioCharts.Blazor.LineSeries<TItem>.Highlight.set -> void
+RioCharts.Blazor.LineSeries<TItem>.LineSeries() -> void
+RioCharts.Blazor.LineSeries<TItem>.MarkerSize.get -> double?
+RioCharts.Blazor.LineSeries<TItem>.MarkerSize.set -> void
+RioCharts.Blazor.LineSeries<TItem>.Sort.get -> RioCharts.Core.ChartSort?
+RioCharts.Blazor.LineSeries<TItem>.Sort.set -> void
+RioCharts.Blazor.LineSeries<TItem>.StrokeWidth.get -> double
+RioCharts.Blazor.LineSeries<TItem>.StrokeWidth.set -> void
+RioCharts.Blazor.MapBubbleSeries<TItem>
+RioCharts.Blazor.MapBubbleSeries<TItem>.GroupByCountry.get -> bool?
+RioCharts.Blazor.MapBubbleSeries<TItem>.GroupByCountry.set -> void
+RioCharts.Blazor.MapBubbleSeries<TItem>.LatitudeValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.MapBubbleSeries<TItem>.LatitudeValue.set -> void
+RioCharts.Blazor.MapBubbleSeries<TItem>.LongitudeValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.MapBubbleSeries<TItem>.LongitudeValue.set -> void
+RioCharts.Blazor.MapBubbleSeries<TItem>.MapBubbleSeries() -> void
+RioCharts.Blazor.MapBubbleSeries<TItem>.MarkerSize.get -> double?
+RioCharts.Blazor.MapBubbleSeries<TItem>.MarkerSize.set -> void
+RioCharts.Blazor.MapSeries<TItem>
+RioCharts.Blazor.MapSeries<TItem>.BelowColor.get -> string?
+RioCharts.Blazor.MapSeries<TItem>.BelowColor.set -> void
+RioCharts.Blazor.MapSeries<TItem>.MapSeries() -> void
+RioCharts.Blazor.MapSeries<TItem>.Max.get -> double?
+RioCharts.Blazor.MapSeries<TItem>.Max.set -> void
+RioCharts.Blazor.MapSeries<TItem>.Midpoint.get -> double?
+RioCharts.Blazor.MapSeries<TItem>.Midpoint.set -> void
+RioCharts.Blazor.PieSeries<TItem>
+RioCharts.Blazor.PieSeries<TItem>.EndAngle.get -> double?
+RioCharts.Blazor.PieSeries<TItem>.EndAngle.set -> void
+RioCharts.Blazor.PieSeries<TItem>.GroupSmallSlices.get -> double?
+RioCharts.Blazor.PieSeries<TItem>.GroupSmallSlices.set -> void
+RioCharts.Blazor.PieSeries<TItem>.InnerRadius.get -> double?
+RioCharts.Blazor.PieSeries<TItem>.InnerRadius.set -> void
+RioCharts.Blazor.PieSeries<TItem>.PieSeries() -> void
+RioCharts.Blazor.PieSeries<TItem>.StartAngle.get -> double?
+RioCharts.Blazor.PieSeries<TItem>.StartAngle.set -> void
+RioCharts.Blazor.PointAnnotation
+RioCharts.Blazor.PointAnnotation.PointAnnotation() -> void
+RioCharts.Blazor.PointAnnotation.X.get -> object?
+RioCharts.Blazor.PointAnnotation.X.set -> void
+RioCharts.Blazor.PointAnnotation.Y.get -> double
+RioCharts.Blazor.PointAnnotation.Y.set -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>
+RioCharts.Blazor.PointClickEventArgs<TItem>.<Clone>$() -> RioCharts.Blazor.PointClickEventArgs<TItem>!
+RioCharts.Blazor.PointClickEventArgs<TItem>.Deconstruct(out string! SeriesId, out string! SeriesName, out TItem? Item, out int Index, out object? X, out double Y) -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.Equals(RioCharts.Blazor.PointClickEventArgs<TItem>? other) -> bool
+RioCharts.Blazor.PointClickEventArgs<TItem>.Index.get -> int
+RioCharts.Blazor.PointClickEventArgs<TItem>.Index.init -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.Item.get -> TItem?
+RioCharts.Blazor.PointClickEventArgs<TItem>.Item.init -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.Items.get -> System.Collections.Generic.IReadOnlyList<TItem>!
+RioCharts.Blazor.PointClickEventArgs<TItem>.Items.init -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.PointClickEventArgs(string! SeriesId, string! SeriesName, TItem? Item, int Index, object? X, double Y) -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.SeriesId.get -> string!
+RioCharts.Blazor.PointClickEventArgs<TItem>.SeriesId.init -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.SeriesName.get -> string!
+RioCharts.Blazor.PointClickEventArgs<TItem>.SeriesName.init -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.X.get -> object?
+RioCharts.Blazor.PointClickEventArgs<TItem>.X.init -> void
+RioCharts.Blazor.PointClickEventArgs<TItem>.Y.get -> double
+RioCharts.Blazor.PointClickEventArgs<TItem>.Y.init -> void
+RioCharts.Blazor.RadarSeries<TItem>
+RioCharts.Blazor.RadarSeries<TItem>.RadarSeries() -> void
+RioCharts.Blazor.RadialBarSeries<TItem>
+RioCharts.Blazor.RadialBarSeries<TItem>.EndAngle.get -> double?
+RioCharts.Blazor.RadialBarSeries<TItem>.EndAngle.set -> void
+RioCharts.Blazor.RadialBarSeries<TItem>.InnerRadius.get -> double?
+RioCharts.Blazor.RadialBarSeries<TItem>.InnerRadius.set -> void
+RioCharts.Blazor.RadialBarSeries<TItem>.Max.get -> double?
+RioCharts.Blazor.RadialBarSeries<TItem>.Max.set -> void
+RioCharts.Blazor.RadialBarSeries<TItem>.RadialBarSeries() -> void
+RioCharts.Blazor.RadialBarSeries<TItem>.StartAngle.get -> double?
+RioCharts.Blazor.RadialBarSeries<TItem>.StartAngle.set -> void
+RioCharts.Blazor.RangeAreaSeries<TItem>
+RioCharts.Blazor.RangeAreaSeries<TItem>.Curve.get -> RioCharts.Core.CurveType
+RioCharts.Blazor.RangeAreaSeries<TItem>.Curve.set -> void
+RioCharts.Blazor.RangeAreaSeries<TItem>.HighValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.RangeAreaSeries<TItem>.HighValue.set -> void
+RioCharts.Blazor.RangeAreaSeries<TItem>.LowValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.RangeAreaSeries<TItem>.LowValue.set -> void
+RioCharts.Blazor.RangeAreaSeries<TItem>.RangeAreaSeries() -> void
+RioCharts.Blazor.RangeBarSeries<TItem>
+RioCharts.Blazor.RangeBarSeries<TItem>.EndValue.get -> System.Func<TItem, object?>?
+RioCharts.Blazor.RangeBarSeries<TItem>.EndValue.set -> void
+RioCharts.Blazor.RangeBarSeries<TItem>.RangeBarSeries() -> void
+RioCharts.Blazor.RangeBarSeries<TItem>.RowValue.get -> System.Func<TItem, string?>?
+RioCharts.Blazor.RangeBarSeries<TItem>.RowValue.set -> void
+RioCharts.Blazor.RangeBarSeries<TItem>.StartValue.get -> System.Func<TItem, object?>?
+RioCharts.Blazor.RangeBarSeries<TItem>.StartValue.set -> void
+RioCharts.Blazor.ReferenceBand
+RioCharts.Blazor.ReferenceBand.Axis.get -> RioCharts.Core.AnnotationAxis
+RioCharts.Blazor.ReferenceBand.Axis.set -> void
+RioCharts.Blazor.ReferenceBand.From.get -> object?
+RioCharts.Blazor.ReferenceBand.From.set -> void
+RioCharts.Blazor.ReferenceBand.LabelPosition.get -> RioCharts.Core.LabelPosition?
+RioCharts.Blazor.ReferenceBand.LabelPosition.set -> void
+RioCharts.Blazor.ReferenceBand.ReferenceBand() -> void
+RioCharts.Blazor.ReferenceBand.To.get -> object?
+RioCharts.Blazor.ReferenceBand.To.set -> void
+RioCharts.Blazor.ReferenceLine<TValue>
+RioCharts.Blazor.ReferenceLine<TValue>.Axis.get -> RioCharts.Core.AnnotationAxis
+RioCharts.Blazor.ReferenceLine<TValue>.Axis.set -> void
+RioCharts.Blazor.ReferenceLine<TValue>.Draggable.get -> bool
+RioCharts.Blazor.ReferenceLine<TValue>.Draggable.set -> void
+RioCharts.Blazor.ReferenceLine<TValue>.LabelPosition.get -> RioCharts.Core.LabelPosition?
+RioCharts.Blazor.ReferenceLine<TValue>.LabelPosition.set -> void
+RioCharts.Blazor.ReferenceLine<TValue>.ReferenceLine() -> void
+RioCharts.Blazor.ReferenceLine<TValue>.Value.get -> TValue?
+RioCharts.Blazor.ReferenceLine<TValue>.Value.set -> void
+RioCharts.Blazor.ReferenceLine<TValue>.ValueChanged.get -> Microsoft.AspNetCore.Components.EventCallback<TValue>
+RioCharts.Blazor.ReferenceLine<TValue>.ValueChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>
+RioCharts.Blazor.RioChart<TItem>.Animate.get -> bool
+RioCharts.Blazor.RioChart<TItem>.Animate.set -> void
+RioCharts.Blazor.RioChart<TItem>.Annotations.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Annotation!>?
+RioCharts.Blazor.RioChart<TItem>.Annotations.set -> void
+RioCharts.Blazor.RioChart<TItem>.ApplyAsync(System.Func<System.Threading.Tasks.Task!>! changes) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.AutoCompact.get -> bool
+RioCharts.Blazor.RioChart<TItem>.AutoCompact.set -> void
+RioCharts.Blazor.RioChart<TItem>.ChildContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
+RioCharts.Blazor.RioChart<TItem>.ChildContent.set -> void
+RioCharts.Blazor.RioChart<TItem>.Class.get -> string?
+RioCharts.Blazor.RioChart<TItem>.Class.set -> void
+RioCharts.Blazor.RioChart<TItem>.ClearSelectionAsync() -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.Compact.get -> bool
+RioCharts.Blazor.RioChart<TItem>.Compact.set -> void
+RioCharts.Blazor.RioChart<TItem>.Culture.get -> System.Globalization.CultureInfo?
+RioCharts.Blazor.RioChart<TItem>.Culture.set -> void
+RioCharts.Blazor.RioChart<TItem>.Datasets.get -> System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Definitions.ChartDataset!>?
+RioCharts.Blazor.RioChart<TItem>.Datasets.set -> void
+RioCharts.Blazor.RioChart<TItem>.Definition.get -> RioCharts.Core.ChartDefinition?
+RioCharts.Blazor.RioChart<TItem>.Definition.set -> void
+RioCharts.Blazor.RioChart<TItem>.DefinitionErrors.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DefinitionError!>!
+RioCharts.Blazor.RioChart<TItem>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+RioCharts.Blazor.RioChart<TItem>.DownloadCsvAsync(string? fileName = null, RioCharts.Core.Data.CsvOptions? options = null) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.DownloadPngAsync(string? fileName = null, RioCharts.Blazor.ChartImageOptions? options = null) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.DownloadSvgAsync(string? fileName = null, RioCharts.Blazor.ChartImageOptions? options = null) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.DownsampleThreshold.get -> int?
+RioCharts.Blazor.RioChart<TItem>.DownsampleThreshold.set -> void
+RioCharts.Blazor.RioChart<TItem>.DrillDownAsync(string? path) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.ExportCsv(RioCharts.Core.Data.CsvOptions? options = null) -> string!
+RioCharts.Blazor.RioChart<TItem>.ExportFileName.get -> string?
+RioCharts.Blazor.RioChart<TItem>.ExportFileName.set -> void
+RioCharts.Blazor.RioChart<TItem>.ExportFormats.get -> RioCharts.Blazor.ExportFormats
+RioCharts.Blazor.RioChart<TItem>.ExportFormats.set -> void
+RioCharts.Blazor.RioChart<TItem>.ExportPngAsync(RioCharts.Blazor.ChartImageOptions? options = null) -> System.Threading.Tasks.Task<byte[]!>!
+RioCharts.Blazor.RioChart<TItem>.ExportSvgAsync(RioCharts.Blazor.ChartImageOptions? options = null) -> System.Threading.Tasks.Task<string!>!
+RioCharts.Blazor.RioChart<TItem>.Exportable.get -> bool
+RioCharts.Blazor.RioChart<TItem>.Exportable.set -> void
+RioCharts.Blazor.RioChart<TItem>.GetDefinition() -> RioCharts.Core.ChartDefinition!
+RioCharts.Blazor.RioChart<TItem>.GetHighlightedSeries() -> string?
+RioCharts.Blazor.RioChart<TItem>.GetItemsInRange(RioCharts.Blazor.ChartRange! range) -> System.Collections.Generic.IReadOnlyList<TItem>!
+RioCharts.Blazor.RioChart<TItem>.GetSelectedItems() -> System.Collections.Generic.IReadOnlyList<TItem>!
+RioCharts.Blazor.RioChart<TItem>.GetSelectedRange() -> RioCharts.Blazor.ChartRange?
+RioCharts.Blazor.RioChart<TItem>.GetTreemapPath() -> string?
+RioCharts.Blazor.RioChart<TItem>.GetVisibleRange() -> RioCharts.Blazor.ChartRange?
+RioCharts.Blazor.RioChart<TItem>.Group.get -> string?
+RioCharts.Blazor.RioChart<TItem>.Group.set -> void
+RioCharts.Blazor.RioChart<TItem>.Height.get -> double
+RioCharts.Blazor.RioChart<TItem>.Height.set -> void
+RioCharts.Blazor.RioChart<TItem>.HiddenSeries.get -> System.Collections.Generic.IReadOnlyCollection<string!>?
+RioCharts.Blazor.RioChart<TItem>.HiddenSeries.set -> void
+RioCharts.Blazor.RioChart<TItem>.HiddenSeriesChanged.get -> Microsoft.AspNetCore.Components.EventCallback<System.Collections.Generic.IReadOnlyCollection<string!>!>
+RioCharts.Blazor.RioChart<TItem>.HiddenSeriesChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>.HideSeriesAsync(string! seriesId) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.HideTooltipAsync() -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.HighlightSeriesAsync(string? seriesId) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.Horizontal.get -> bool
+RioCharts.Blazor.RioChart<TItem>.Horizontal.set -> void
+RioCharts.Blazor.RioChart<TItem>.Interactive.get -> bool
+RioCharts.Blazor.RioChart<TItem>.Interactive.set -> void
+RioCharts.Blazor.RioChart<TItem>.IsSeriesVisible(string! seriesId) -> bool
+RioCharts.Blazor.RioChart<TItem>.Items.get -> System.Collections.Generic.IEnumerable<TItem>?
+RioCharts.Blazor.RioChart<TItem>.Items.set -> void
+RioCharts.Blazor.RioChart<TItem>.KeyboardNavigation.get -> bool?
+RioCharts.Blazor.RioChart<TItem>.KeyboardNavigation.set -> void
+RioCharts.Blazor.RioChart<TItem>.Legend.get -> RioCharts.Core.LegendOptions?
+RioCharts.Blazor.RioChart<TItem>.Legend.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnAnnotationChanged.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.AnnotationChangedEventArgs!>
+RioCharts.Blazor.RioChart<TItem>.OnAnnotationChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnAnnotationClick.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.AnnotationClickEventArgs!>
+RioCharts.Blazor.RioChart<TItem>.OnAnnotationClick.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnDrillDown.get -> Microsoft.AspNetCore.Components.EventCallback<string?>
+RioCharts.Blazor.RioChart<TItem>.OnDrillDown.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnExporting.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.ChartExportingEventArgs!>
+RioCharts.Blazor.RioChart<TItem>.OnExporting.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnLegendClick.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.LegendClickEventArgs!>
+RioCharts.Blazor.RioChart<TItem>.OnLegendClick.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnLegendClicking.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.LegendClickingEventArgs!>
+RioCharts.Blazor.RioChart<TItem>.OnLegendClicking.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnPointClick.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.PointClickEventArgs<TItem>!>
+RioCharts.Blazor.RioChart<TItem>.OnPointClick.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnSelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.SelectionChangedEventArgs<TItem>!>
+RioCharts.Blazor.RioChart<TItem>.OnSelectionChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>.OnZoomChanging.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.ZoomChangingEventArgs!>
+RioCharts.Blazor.RioChart<TItem>.OnZoomChanging.set -> void
+RioCharts.Blazor.RioChart<TItem>.PanAsync(double fraction) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.PixelToValue(double x, double y, string? yAxis = null) -> RioCharts.Blazor.ChartValue?
+RioCharts.Blazor.RioChart<TItem>.Projection.get -> RioCharts.Core.MapProjection
+RioCharts.Blazor.RioChart<TItem>.Projection.set -> void
+RioCharts.Blazor.RioChart<TItem>.Refresh() -> void
+RioCharts.Blazor.RioChart<TItem>.RefreshInterval.get -> int
+RioCharts.Blazor.RioChart<TItem>.RefreshInterval.set -> void
+RioCharts.Blazor.RioChart<TItem>.ResetZoomAsync() -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.RioChart() -> void
+RioCharts.Blazor.RioChart<TItem>.SelectItemsAsync(System.Collections.Generic.IEnumerable<TItem>! items) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.SelectRangeAsync(RioCharts.Blazor.ChartRange? range) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.SelectedItems.get -> System.Collections.Generic.IReadOnlyCollection<TItem>?
+RioCharts.Blazor.RioChart<TItem>.SelectedItems.set -> void
+RioCharts.Blazor.RioChart<TItem>.SelectedItemsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<System.Collections.Generic.IReadOnlyCollection<TItem>!>
+RioCharts.Blazor.RioChart<TItem>.SelectedItemsChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>.SelectedRange.get -> RioCharts.Blazor.ChartRange?
+RioCharts.Blazor.RioChart<TItem>.SelectedRange.set -> void
+RioCharts.Blazor.RioChart<TItem>.SelectedRangeChanged.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.ChartRange?>
+RioCharts.Blazor.RioChart<TItem>.SelectedRangeChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>.Selection.get -> RioCharts.Blazor.ChartSelectionMode
+RioCharts.Blazor.RioChart<TItem>.Selection.set -> void
+RioCharts.Blazor.RioChart<TItem>.SeriesLayer.get -> RioCharts.Blazor.SeriesLayer
+RioCharts.Blazor.RioChart<TItem>.SeriesLayer.set -> void
+RioCharts.Blazor.RioChart<TItem>.ShowSeriesAsync(string! seriesId) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.ShowTooltipAsync(object! x) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.Texts.get -> RioCharts.Core.ChartTexts?
+RioCharts.Blazor.RioChart<TItem>.Texts.set -> void
+RioCharts.Blazor.RioChart<TItem>.TimeZone.get -> string?
+RioCharts.Blazor.RioChart<TItem>.TimeZone.set -> void
+RioCharts.Blazor.RioChart<TItem>.Title.get -> string?
+RioCharts.Blazor.RioChart<TItem>.Title.set -> void
+RioCharts.Blazor.RioChart<TItem>.ToggleSeriesAsync(string! seriesId) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.Tooltip.get -> RioCharts.Core.TooltipOptions?
+RioCharts.Blazor.RioChart<TItem>.Tooltip.set -> void
+RioCharts.Blazor.RioChart<TItem>.TooltipHeader.get -> System.Func<RioCharts.Blazor.TooltipPoint<TItem>!, string?>?
+RioCharts.Blazor.RioChart<TItem>.TooltipHeader.set -> void
+RioCharts.Blazor.RioChart<TItem>.TooltipTemplate.get -> Microsoft.AspNetCore.Components.RenderFragment<RioCharts.Blazor.TooltipContext<TItem>!>?
+RioCharts.Blazor.RioChart<TItem>.TooltipTemplate.set -> void
+RioCharts.Blazor.RioChart<TItem>.TreemapPath.get -> string?
+RioCharts.Blazor.RioChart<TItem>.TreemapPath.set -> void
+RioCharts.Blazor.RioChart<TItem>.TreemapPathChanged.get -> Microsoft.AspNetCore.Components.EventCallback<string?>
+RioCharts.Blazor.RioChart<TItem>.TreemapPathChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>.UnspecifiedTimes.get -> RioCharts.Core.Data.UnspecifiedTimes?
+RioCharts.Blazor.RioChart<TItem>.UnspecifiedTimes.set -> void
+RioCharts.Blazor.RioChart<TItem>.ValueToPixel(object! x, double y, string? yAxis = null) -> RioCharts.Blazor.ChartPoint?
+RioCharts.Blazor.RioChart<TItem>.VisibleRange.get -> RioCharts.Blazor.ChartRange?
+RioCharts.Blazor.RioChart<TItem>.VisibleRange.set -> void
+RioCharts.Blazor.RioChart<TItem>.VisibleRangeChanged.get -> Microsoft.AspNetCore.Components.EventCallback<RioCharts.Blazor.ChartRange?>
+RioCharts.Blazor.RioChart<TItem>.VisibleRangeChanged.set -> void
+RioCharts.Blazor.RioChart<TItem>.Width.get -> double?
+RioCharts.Blazor.RioChart<TItem>.Width.set -> void
+RioCharts.Blazor.RioChart<TItem>.XAxis.get -> RioCharts.Core.AxisOptions?
+RioCharts.Blazor.RioChart<TItem>.XAxis.set -> void
+RioCharts.Blazor.RioChart<TItem>.YAxes.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.AxisOptions!>?
+RioCharts.Blazor.RioChart<TItem>.YAxes.set -> void
+RioCharts.Blazor.RioChart<TItem>.YAxis.get -> RioCharts.Core.AxisOptions?
+RioCharts.Blazor.RioChart<TItem>.YAxis.set -> void
+RioCharts.Blazor.RioChart<TItem>.ZoomToAsync(RioCharts.Blazor.ChartRange! range) -> System.Threading.Tasks.Task!
+RioCharts.Blazor.RioChart<TItem>.Zoomable.get -> bool
+RioCharts.Blazor.RioChart<TItem>.Zoomable.set -> void
+RioCharts.Blazor.RioChartDefaults
+RioCharts.Blazor.RioChartDefaults.<Clone>$() -> RioCharts.Blazor.RioChartDefaults!
+RioCharts.Blazor.RioChartDefaults.Animate.get -> bool?
+RioCharts.Blazor.RioChartDefaults.Animate.init -> void
+RioCharts.Blazor.RioChartDefaults.Class.get -> string?
+RioCharts.Blazor.RioChartDefaults.Class.init -> void
+RioCharts.Blazor.RioChartDefaults.Culture.get -> System.Globalization.CultureInfo?
+RioCharts.Blazor.RioChartDefaults.Culture.init -> void
+RioCharts.Blazor.RioChartDefaults.Equals(RioCharts.Blazor.RioChartDefaults? other) -> bool
+RioCharts.Blazor.RioChartDefaults.Height.get -> double?
+RioCharts.Blazor.RioChartDefaults.Height.init -> void
+RioCharts.Blazor.RioChartDefaults.KeyboardNavigation.get -> bool?
+RioCharts.Blazor.RioChartDefaults.KeyboardNavigation.init -> void
+RioCharts.Blazor.RioChartDefaults.Legend.get -> RioCharts.Core.LegendOptions?
+RioCharts.Blazor.RioChartDefaults.Legend.init -> void
+RioCharts.Blazor.RioChartDefaults.RioChartDefaults() -> void
+RioCharts.Blazor.RioChartDefaults.TimeZone.get -> string?
+RioCharts.Blazor.RioChartDefaults.TimeZone.init -> void
+RioCharts.Blazor.RioChartDefaults.Tooltip.get -> RioCharts.Core.TooltipOptions?
+RioCharts.Blazor.RioChartDefaults.Tooltip.init -> void
+RioCharts.Blazor.RioChartDefaults.UnspecifiedTimes.get -> RioCharts.Core.Data.UnspecifiedTimes?
+RioCharts.Blazor.RioChartDefaults.UnspecifiedTimes.init -> void
+RioCharts.Blazor.RioChartDefaults.XAxis.get -> RioCharts.Core.AxisOptions?
+RioCharts.Blazor.RioChartDefaults.XAxis.init -> void
+RioCharts.Blazor.RioChartDefaults.YAxis.get -> RioCharts.Core.AxisOptions?
+RioCharts.Blazor.RioChartDefaults.YAxis.init -> void
+RioCharts.Blazor.ScatterSeries<TItem>
+RioCharts.Blazor.ScatterSeries<TItem>.MarkerSize.get -> double?
+RioCharts.Blazor.ScatterSeries<TItem>.MarkerSize.set -> void
+RioCharts.Blazor.ScatterSeries<TItem>.ScatterSeries() -> void
+RioCharts.Blazor.ScatterSeries<TItem>.SizeFormat.get -> string?
+RioCharts.Blazor.ScatterSeries<TItem>.SizeFormat.set -> void
+RioCharts.Blazor.ScatterSeries<TItem>.SizeName.get -> string?
+RioCharts.Blazor.ScatterSeries<TItem>.SizeName.set -> void
+RioCharts.Blazor.ScatterSeries<TItem>.SizeValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.ScatterSeries<TItem>.SizeValue.set -> void
+RioCharts.Blazor.ScatterSeries<TItem>.TrendLine.get -> bool
+RioCharts.Blazor.ScatterSeries<TItem>.TrendLine.set -> void
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.<Clone>$() -> RioCharts.Blazor.SelectionChangedEventArgs<TItem>!
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.Deconstruct(out System.Collections.Generic.IReadOnlyList<TItem>! Items, out RioCharts.Blazor.ChartRange? Range) -> void
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.Equals(RioCharts.Blazor.SelectionChangedEventArgs<TItem>? other) -> bool
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.Items.get -> System.Collections.Generic.IReadOnlyList<TItem>!
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.Items.init -> void
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.Range.get -> RioCharts.Blazor.ChartRange?
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.Range.init -> void
+RioCharts.Blazor.SelectionChangedEventArgs<TItem>.SelectionChangedEventArgs(System.Collections.Generic.IReadOnlyList<TItem>! Items, RioCharts.Blazor.ChartRange? Range) -> void
+RioCharts.Blazor.SeriesBase<TItem>
+RioCharts.Blazor.SeriesBase<TItem>.Aggregate.get -> RioCharts.Core.Aggregate?
+RioCharts.Blazor.SeriesBase<TItem>.Aggregate.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.Buffer.get -> RioCharts.Core.Data.SeriesBuffer?
+RioCharts.Blazor.SeriesBase<TItem>.Buffer.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.Color.get -> string?
+RioCharts.Blazor.SeriesBase<TItem>.Color.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.ColorBands.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.ColorBand!>?
+RioCharts.Blazor.SeriesBase<TItem>.ColorBands.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.ColorValue.get -> System.Func<TItem, string?>?
+RioCharts.Blazor.SeriesBase<TItem>.ColorValue.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.Data.get -> RioCharts.Core.Data.SeriesData?
+RioCharts.Blazor.SeriesBase<TItem>.Data.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.DataLabels.get -> bool?
+RioCharts.Blazor.SeriesBase<TItem>.DataLabels.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.DataVersion.get -> object?
+RioCharts.Blazor.SeriesBase<TItem>.DataVersion.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.Dispose() -> void
+RioCharts.Blazor.SeriesBase<TItem>.Format.get -> string?
+RioCharts.Blazor.SeriesBase<TItem>.Format.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.Id.get -> string?
+RioCharts.Blazor.SeriesBase<TItem>.Id.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.Items.get -> System.Collections.Generic.IEnumerable<TItem>?
+RioCharts.Blazor.SeriesBase<TItem>.Items.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.Name.get -> string?
+RioCharts.Blazor.SeriesBase<TItem>.Name.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.SeriesBase() -> void
+RioCharts.Blazor.SeriesBase<TItem>.Stack.get -> string?
+RioCharts.Blazor.SeriesBase<TItem>.Stack.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.TooltipValue.get -> System.Func<RioCharts.Blazor.TooltipPoint<TItem>!, string?>?
+RioCharts.Blazor.SeriesBase<TItem>.TooltipValue.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.XValue.get -> System.Func<TItem, object?>?
+RioCharts.Blazor.SeriesBase<TItem>.XValue.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.YAggregate.get -> System.Func<System.Collections.Generic.IReadOnlyList<TItem>!, double?>?
+RioCharts.Blazor.SeriesBase<TItem>.YAggregate.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.YAxisId.get -> string?
+RioCharts.Blazor.SeriesBase<TItem>.YAxisId.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.YValue.get -> System.Func<TItem, double?>?
+RioCharts.Blazor.SeriesBase<TItem>.YValue.set -> void
+RioCharts.Blazor.SeriesBase<TItem>.ZIndex.get -> int?
+RioCharts.Blazor.SeriesBase<TItem>.ZIndex.set -> void
+RioCharts.Blazor.SeriesLayer
+RioCharts.Blazor.SeriesLayer.Canvas = 1 -> RioCharts.Blazor.SeriesLayer
+RioCharts.Blazor.SeriesLayer.Svg = 0 -> RioCharts.Blazor.SeriesLayer
+RioCharts.Blazor.TooltipContext<TItem>
+RioCharts.Blazor.TooltipContext<TItem>.<Clone>$() -> RioCharts.Blazor.TooltipContext<TItem>!
+RioCharts.Blazor.TooltipContext<TItem>.Deconstruct(out string! Header, out object? X, out System.Collections.Generic.IReadOnlyList<RioCharts.Blazor.TooltipPoint<TItem>!>! Points) -> void
+RioCharts.Blazor.TooltipContext<TItem>.Equals(RioCharts.Blazor.TooltipContext<TItem>? other) -> bool
+RioCharts.Blazor.TooltipContext<TItem>.Header.get -> string!
+RioCharts.Blazor.TooltipContext<TItem>.Header.init -> void
+RioCharts.Blazor.TooltipContext<TItem>.Points.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Blazor.TooltipPoint<TItem>!>!
+RioCharts.Blazor.TooltipContext<TItem>.Points.init -> void
+RioCharts.Blazor.TooltipContext<TItem>.TooltipContext(string! Header, object? X, System.Collections.Generic.IReadOnlyList<RioCharts.Blazor.TooltipPoint<TItem>!>! Points) -> void
+RioCharts.Blazor.TooltipContext<TItem>.X.get -> object?
+RioCharts.Blazor.TooltipContext<TItem>.X.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>
+RioCharts.Blazor.TooltipPoint<TItem>.<Clone>$() -> RioCharts.Blazor.TooltipPoint<TItem>!
+RioCharts.Blazor.TooltipPoint<TItem>.Color.get -> string!
+RioCharts.Blazor.TooltipPoint<TItem>.Color.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.Deconstruct(out string! SeriesId, out string! SeriesName, out string! Color, out int Index, out object? X, out double Y, out string! XText, out string! ValueText) -> void
+RioCharts.Blazor.TooltipPoint<TItem>.Equals(RioCharts.Blazor.TooltipPoint<TItem>? other) -> bool
+RioCharts.Blazor.TooltipPoint<TItem>.Index.get -> int
+RioCharts.Blazor.TooltipPoint<TItem>.Index.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.Item.get -> TItem?
+RioCharts.Blazor.TooltipPoint<TItem>.Item.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.Items.get -> System.Collections.Generic.IReadOnlyList<TItem>!
+RioCharts.Blazor.TooltipPoint<TItem>.Items.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.SeriesId.get -> string!
+RioCharts.Blazor.TooltipPoint<TItem>.SeriesId.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.SeriesName.get -> string!
+RioCharts.Blazor.TooltipPoint<TItem>.SeriesName.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.TooltipPoint(string! SeriesId, string! SeriesName, string! Color, int Index, object? X, double Y, string! XText, string! ValueText) -> void
+RioCharts.Blazor.TooltipPoint<TItem>.ValueText.get -> string!
+RioCharts.Blazor.TooltipPoint<TItem>.ValueText.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.X.get -> object?
+RioCharts.Blazor.TooltipPoint<TItem>.X.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.XText.get -> string!
+RioCharts.Blazor.TooltipPoint<TItem>.XText.init -> void
+RioCharts.Blazor.TooltipPoint<TItem>.Y.get -> double
+RioCharts.Blazor.TooltipPoint<TItem>.Y.init -> void
+RioCharts.Blazor.TreemapSeries<TItem>
+RioCharts.Blazor.TreemapSeries<TItem>.GroupSmallItems.get -> double?
+RioCharts.Blazor.TreemapSeries<TItem>.GroupSmallItems.set -> void
+RioCharts.Blazor.TreemapSeries<TItem>.ParentValue.get -> System.Func<TItem, object?>?
+RioCharts.Blazor.TreemapSeries<TItem>.ParentValue.set -> void
+RioCharts.Blazor.TreemapSeries<TItem>.PathSeparator.get -> string?
+RioCharts.Blazor.TreemapSeries<TItem>.PathSeparator.set -> void
+RioCharts.Blazor.TreemapSeries<TItem>.TreemapSeries() -> void
+RioCharts.Blazor.TreemapSeries<TItem>.VisibleLevels.get -> int?
+RioCharts.Blazor.TreemapSeries<TItem>.VisibleLevels.set -> void
+RioCharts.Blazor.WaterfallSeries<TItem>
+RioCharts.Blazor.WaterfallSeries<TItem>.IsTotal.get -> System.Func<TItem, bool>?
+RioCharts.Blazor.WaterfallSeries<TItem>.IsTotal.set -> void
+RioCharts.Blazor.WaterfallSeries<TItem>.WaterfallSeries() -> void
+RioCharts.Blazor.ZoomChangingEventArgs
+RioCharts.Blazor.ZoomChangingEventArgs.Cancel.get -> bool
+RioCharts.Blazor.ZoomChangingEventArgs.Cancel.set -> void
+RioCharts.Blazor.ZoomChangingEventArgs.Range.get -> RioCharts.Blazor.ChartRange?
+RioCharts.Blazor.ZoomChangingEventArgs.Range.set -> void
+RioCharts.Blazor.ZoomChangingEventArgs.ZoomChangingEventArgs() -> void
+RioCharts.Blazor._Imports
+RioCharts.Blazor._Imports.Execute() -> void
+RioCharts.Blazor._Imports._Imports() -> void
+abstract RioCharts.Blazor.AnnotationBase.CreateAnnotation() -> RioCharts.Core.Annotation!
+abstract RioCharts.Blazor.SeriesBase<TItem>.Type.get -> RioCharts.Core.SeriesType
+override RioCharts.Blazor.AnnotationBase.OnParametersSet() -> void
+override RioCharts.Blazor.AnnotationBase.ShouldRender() -> bool
+override RioCharts.Blazor.AnnotationChangedEventArgs.Equals(object? obj) -> bool
+override RioCharts.Blazor.AnnotationChangedEventArgs.GetHashCode() -> int
+override RioCharts.Blazor.AnnotationChangedEventArgs.ToString() -> string!
+override RioCharts.Blazor.AnnotationClickEventArgs.Equals(object? obj) -> bool
+override RioCharts.Blazor.AnnotationClickEventArgs.GetHashCode() -> int
+override RioCharts.Blazor.AnnotationClickEventArgs.ToString() -> string!
+override RioCharts.Blazor.ChartImageOptions.Equals(object? obj) -> bool
+override RioCharts.Blazor.ChartImageOptions.GetHashCode() -> int
+override RioCharts.Blazor.ChartImageOptions.ToString() -> string!
+override RioCharts.Blazor.ChartPoint.GetHashCode() -> int
+override RioCharts.Blazor.ChartRange.Equals(object? obj) -> bool
+override RioCharts.Blazor.ChartRange.GetHashCode() -> int
+override RioCharts.Blazor.ChartRange.ToString() -> string!
+override RioCharts.Blazor.ChartValue.Equals(object? obj) -> bool
+override RioCharts.Blazor.ChartValue.GetHashCode() -> int
+override RioCharts.Blazor.ChartValue.ToString() -> string!
+override RioCharts.Blazor.ErrorBarSeriesBase<TItem>.CreateOptions(string! id) -> RioCharts.Core.SeriesOptions!
+override RioCharts.Blazor.LegendClickEventArgs.Equals(object? obj) -> bool
+override RioCharts.Blazor.LegendClickEventArgs.GetHashCode() -> int
+override RioCharts.Blazor.LegendClickEventArgs.ToString() -> string!
+override RioCharts.Blazor.PieSeries<TItem>.CreateOptions(string! id) -> RioCharts.Core.SeriesOptions!
+override RioCharts.Blazor.PieSeries<TItem>.Type.get -> RioCharts.Core.SeriesType
+override RioCharts.Blazor.PointClickEventArgs<TItem>.Equals(object? obj) -> bool
+override RioCharts.Blazor.PointClickEventArgs<TItem>.GetHashCode() -> int
+override RioCharts.Blazor.PointClickEventArgs<TItem>.ToString() -> string!
+override RioCharts.Blazor.RioChart<TItem>.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override RioCharts.Blazor.RioChart<TItem>.OnParametersSet() -> void
+override RioCharts.Blazor.RioChart<TItem>.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView parameters) -> System.Threading.Tasks.Task!
+override RioCharts.Blazor.RioChart<TItem>.ShouldRender() -> bool
+override RioCharts.Blazor.RioChartDefaults.Equals(object? obj) -> bool
+override RioCharts.Blazor.RioChartDefaults.GetHashCode() -> int
+override RioCharts.Blazor.RioChartDefaults.ToString() -> string!
+override RioCharts.Blazor.SelectionChangedEventArgs<TItem>.Equals(object? obj) -> bool
+override RioCharts.Blazor.SelectionChangedEventArgs<TItem>.GetHashCode() -> int
+override RioCharts.Blazor.SelectionChangedEventArgs<TItem>.ToString() -> string!
+override RioCharts.Blazor.SeriesBase<TItem>.OnParametersSet() -> void
+override RioCharts.Blazor.SeriesBase<TItem>.ShouldRender() -> bool
+override RioCharts.Blazor.TooltipContext<TItem>.Equals(object? obj) -> bool
+override RioCharts.Blazor.TooltipContext<TItem>.GetHashCode() -> int
+override RioCharts.Blazor.TooltipContext<TItem>.ToString() -> string!
+override RioCharts.Blazor.TooltipPoint<TItem>.Equals(object? obj) -> bool
+override RioCharts.Blazor.TooltipPoint<TItem>.GetHashCode() -> int
+override RioCharts.Blazor.TooltipPoint<TItem>.ToString() -> string!
+static Microsoft.Extensions.DependencyInjection.RioChartsServiceCollectionExtensions.AddRioCharts(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, RioCharts.Blazor.RioChartDefaults! defaults) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static RioCharts.Blazor.AnnotationChangedEventArgs.operator !=(RioCharts.Blazor.AnnotationChangedEventArgs? left, RioCharts.Blazor.AnnotationChangedEventArgs? right) -> bool
+static RioCharts.Blazor.AnnotationChangedEventArgs.operator ==(RioCharts.Blazor.AnnotationChangedEventArgs? left, RioCharts.Blazor.AnnotationChangedEventArgs? right) -> bool
+static RioCharts.Blazor.AnnotationClickEventArgs.operator !=(RioCharts.Blazor.AnnotationClickEventArgs? left, RioCharts.Blazor.AnnotationClickEventArgs? right) -> bool
+static RioCharts.Blazor.AnnotationClickEventArgs.operator ==(RioCharts.Blazor.AnnotationClickEventArgs? left, RioCharts.Blazor.AnnotationClickEventArgs? right) -> bool
+static RioCharts.Blazor.ChartImageOptions.operator !=(RioCharts.Blazor.ChartImageOptions? left, RioCharts.Blazor.ChartImageOptions? right) -> bool
+static RioCharts.Blazor.ChartImageOptions.operator ==(RioCharts.Blazor.ChartImageOptions? left, RioCharts.Blazor.ChartImageOptions? right) -> bool
+static RioCharts.Blazor.ChartPoint.operator !=(RioCharts.Blazor.ChartPoint left, RioCharts.Blazor.ChartPoint right) -> bool
+static RioCharts.Blazor.ChartPoint.operator ==(RioCharts.Blazor.ChartPoint left, RioCharts.Blazor.ChartPoint right) -> bool
+static RioCharts.Blazor.ChartRange.Of(System.DateTime min, System.DateTime max) -> RioCharts.Blazor.ChartRange!
+static RioCharts.Blazor.ChartRange.Of(double min, double max) -> RioCharts.Blazor.ChartRange!
+static RioCharts.Blazor.ChartRange.operator !=(RioCharts.Blazor.ChartRange? left, RioCharts.Blazor.ChartRange? right) -> bool
+static RioCharts.Blazor.ChartRange.operator ==(RioCharts.Blazor.ChartRange? left, RioCharts.Blazor.ChartRange? right) -> bool
+static RioCharts.Blazor.ChartValue.operator !=(RioCharts.Blazor.ChartValue? left, RioCharts.Blazor.ChartValue? right) -> bool
+static RioCharts.Blazor.ChartValue.operator ==(RioCharts.Blazor.ChartValue? left, RioCharts.Blazor.ChartValue? right) -> bool
+static RioCharts.Blazor.LegendClickEventArgs.operator !=(RioCharts.Blazor.LegendClickEventArgs? left, RioCharts.Blazor.LegendClickEventArgs? right) -> bool
+static RioCharts.Blazor.LegendClickEventArgs.operator ==(RioCharts.Blazor.LegendClickEventArgs? left, RioCharts.Blazor.LegendClickEventArgs? right) -> bool
+static RioCharts.Blazor.PointClickEventArgs<TItem>.operator !=(RioCharts.Blazor.PointClickEventArgs<TItem>? left, RioCharts.Blazor.PointClickEventArgs<TItem>? right) -> bool
+static RioCharts.Blazor.PointClickEventArgs<TItem>.operator ==(RioCharts.Blazor.PointClickEventArgs<TItem>? left, RioCharts.Blazor.PointClickEventArgs<TItem>? right) -> bool
+static RioCharts.Blazor.RioChartDefaults.operator !=(RioCharts.Blazor.RioChartDefaults? left, RioCharts.Blazor.RioChartDefaults? right) -> bool
+static RioCharts.Blazor.RioChartDefaults.operator ==(RioCharts.Blazor.RioChartDefaults? left, RioCharts.Blazor.RioChartDefaults? right) -> bool
+static RioCharts.Blazor.SelectionChangedEventArgs<TItem>.operator !=(RioCharts.Blazor.SelectionChangedEventArgs<TItem>? left, RioCharts.Blazor.SelectionChangedEventArgs<TItem>? right) -> bool
+static RioCharts.Blazor.SelectionChangedEventArgs<TItem>.operator ==(RioCharts.Blazor.SelectionChangedEventArgs<TItem>? left, RioCharts.Blazor.SelectionChangedEventArgs<TItem>? right) -> bool
+static RioCharts.Blazor.TooltipContext<TItem>.operator !=(RioCharts.Blazor.TooltipContext<TItem>? left, RioCharts.Blazor.TooltipContext<TItem>? right) -> bool
+static RioCharts.Blazor.TooltipContext<TItem>.operator ==(RioCharts.Blazor.TooltipContext<TItem>? left, RioCharts.Blazor.TooltipContext<TItem>? right) -> bool
+static RioCharts.Blazor.TooltipPoint<TItem>.operator !=(RioCharts.Blazor.TooltipPoint<TItem>? left, RioCharts.Blazor.TooltipPoint<TItem>? right) -> bool
+static RioCharts.Blazor.TooltipPoint<TItem>.operator ==(RioCharts.Blazor.TooltipPoint<TItem>? left, RioCharts.Blazor.TooltipPoint<TItem>? right) -> bool
+virtual RioCharts.Blazor.AnnotationBase.OnDraggedAsync(object! value) -> System.Threading.Tasks.Task!
+virtual RioCharts.Blazor.SeriesBase<TItem>.CreateOptions(string! id) -> RioCharts.Core.SeriesOptions!
+~override RioCharts.Blazor.ChartPoint.Equals(object obj) -> bool
+~override RioCharts.Blazor.ChartPoint.ToString() -> string
+~override RioCharts.Blazor.RioChart<TItem>.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

@@ -1,0 +1,895 @@
+#nullable enable
+RioCharts.Core.Aggregate
+RioCharts.Core.Aggregate.Average = 1 -> RioCharts.Core.Aggregate
+RioCharts.Core.Aggregate.Count = 4 -> RioCharts.Core.Aggregate
+RioCharts.Core.Aggregate.Last = 5 -> RioCharts.Core.Aggregate
+RioCharts.Core.Aggregate.Max = 3 -> RioCharts.Core.Aggregate
+RioCharts.Core.Aggregate.Min = 2 -> RioCharts.Core.Aggregate
+RioCharts.Core.Aggregate.Sum = 0 -> RioCharts.Core.Aggregate
+RioCharts.Core.Annotation
+RioCharts.Core.Annotation.<Clone>$() -> RioCharts.Core.Annotation!
+RioCharts.Core.Annotation.Annotation() -> void
+RioCharts.Core.Annotation.Axis.get -> RioCharts.Core.AnnotationAxis
+RioCharts.Core.Annotation.Axis.init -> void
+RioCharts.Core.Annotation.Color.get -> string?
+RioCharts.Core.Annotation.Color.init -> void
+RioCharts.Core.Annotation.Draggable.get -> bool
+RioCharts.Core.Annotation.Draggable.init -> void
+RioCharts.Core.Annotation.Equals(RioCharts.Core.Annotation? other) -> bool
+RioCharts.Core.Annotation.ExpandsDomain.get -> bool?
+RioCharts.Core.Annotation.ExpandsDomain.init -> void
+RioCharts.Core.Annotation.From.get -> object?
+RioCharts.Core.Annotation.From.init -> void
+RioCharts.Core.Annotation.Id.get -> string?
+RioCharts.Core.Annotation.Id.init -> void
+RioCharts.Core.Annotation.Label.get -> string?
+RioCharts.Core.Annotation.Label.init -> void
+RioCharts.Core.Annotation.LabelPosition.get -> RioCharts.Core.LabelPosition?
+RioCharts.Core.Annotation.LabelPosition.init -> void
+RioCharts.Core.Annotation.Layer.get -> RioCharts.Core.AnnotationLayer?
+RioCharts.Core.Annotation.Layer.init -> void
+RioCharts.Core.Annotation.OffsetX.get -> double?
+RioCharts.Core.Annotation.OffsetX.init -> void
+RioCharts.Core.Annotation.OffsetY.get -> double?
+RioCharts.Core.Annotation.OffsetY.init -> void
+RioCharts.Core.Annotation.To.get -> object?
+RioCharts.Core.Annotation.To.init -> void
+RioCharts.Core.Annotation.Type.get -> RioCharts.Core.AnnotationType
+RioCharts.Core.Annotation.Type.init -> void
+RioCharts.Core.Annotation.Value.get -> object?
+RioCharts.Core.Annotation.Value.init -> void
+RioCharts.Core.Annotation.X.get -> object?
+RioCharts.Core.Annotation.X.init -> void
+RioCharts.Core.Annotation.Y.get -> object?
+RioCharts.Core.Annotation.Y.init -> void
+RioCharts.Core.Annotation.YAxisId.get -> string?
+RioCharts.Core.Annotation.YAxisId.init -> void
+RioCharts.Core.AnnotationAxis
+RioCharts.Core.AnnotationAxis.X = 0 -> RioCharts.Core.AnnotationAxis
+RioCharts.Core.AnnotationAxis.Y = 1 -> RioCharts.Core.AnnotationAxis
+RioCharts.Core.AnnotationLayer
+RioCharts.Core.AnnotationLayer.Above = 1 -> RioCharts.Core.AnnotationLayer
+RioCharts.Core.AnnotationLayer.Below = 0 -> RioCharts.Core.AnnotationLayer
+RioCharts.Core.AnnotationType
+RioCharts.Core.AnnotationType.Band = 1 -> RioCharts.Core.AnnotationType
+RioCharts.Core.AnnotationType.Callout = 3 -> RioCharts.Core.AnnotationType
+RioCharts.Core.AnnotationType.Line = 0 -> RioCharts.Core.AnnotationType
+RioCharts.Core.AnnotationType.Point = 2 -> RioCharts.Core.AnnotationType
+RioCharts.Core.AxisOptions
+RioCharts.Core.AxisOptions.<Clone>$() -> RioCharts.Core.AxisOptions!
+RioCharts.Core.AxisOptions.AxisOptions() -> void
+RioCharts.Core.AxisOptions.Color.get -> string?
+RioCharts.Core.AxisOptions.Color.init -> void
+RioCharts.Core.AxisOptions.Equals(RioCharts.Core.AxisOptions? other) -> bool
+RioCharts.Core.AxisOptions.Format.get -> string?
+RioCharts.Core.AxisOptions.Format.init -> void
+RioCharts.Core.AxisOptions.GridLines.get -> bool?
+RioCharts.Core.AxisOptions.GridLines.init -> void
+RioCharts.Core.AxisOptions.Id.get -> string?
+RioCharts.Core.AxisOptions.Id.init -> void
+RioCharts.Core.AxisOptions.LabelFormatter.get -> System.Func<double, string!>?
+RioCharts.Core.AxisOptions.LabelFormatter.init -> void
+RioCharts.Core.AxisOptions.LabelRotation.get -> double?
+RioCharts.Core.AxisOptions.LabelRotation.init -> void
+RioCharts.Core.AxisOptions.Max.get -> double?
+RioCharts.Core.AxisOptions.Max.init -> void
+RioCharts.Core.AxisOptions.Min.get -> double?
+RioCharts.Core.AxisOptions.Min.init -> void
+RioCharts.Core.AxisOptions.Position.get -> RioCharts.Core.AxisPosition
+RioCharts.Core.AxisOptions.Position.init -> void
+RioCharts.Core.AxisOptions.Scale.get -> RioCharts.Core.ScaleType
+RioCharts.Core.AxisOptions.Scale.init -> void
+RioCharts.Core.AxisOptions.SeriesColor.get -> bool
+RioCharts.Core.AxisOptions.SeriesColor.init -> void
+RioCharts.Core.AxisOptions.Stacking.get -> RioCharts.Core.StackMode
+RioCharts.Core.AxisOptions.Stacking.init -> void
+RioCharts.Core.AxisOptions.TickBase.get -> double?
+RioCharts.Core.AxisOptions.TickBase.init -> void
+RioCharts.Core.AxisOptions.Title.get -> string?
+RioCharts.Core.AxisOptions.Title.init -> void
+RioCharts.Core.AxisOptions.TooltipFormat.get -> string?
+RioCharts.Core.AxisOptions.TooltipFormat.init -> void
+RioCharts.Core.AxisPosition
+RioCharts.Core.AxisPosition.Auto = 0 -> RioCharts.Core.AxisPosition
+RioCharts.Core.AxisPosition.Left = 1 -> RioCharts.Core.AxisPosition
+RioCharts.Core.AxisPosition.Right = 2 -> RioCharts.Core.AxisPosition
+RioCharts.Core.ChartDefinition
+RioCharts.Core.ChartDefinition.<Clone>$() -> RioCharts.Core.ChartDefinition!
+RioCharts.Core.ChartDefinition.Annotations.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Annotation!>!
+RioCharts.Core.ChartDefinition.Annotations.init -> void
+RioCharts.Core.ChartDefinition.AutoCompact.get -> bool
+RioCharts.Core.ChartDefinition.AutoCompact.init -> void
+RioCharts.Core.ChartDefinition.ChartDefinition() -> void
+RioCharts.Core.ChartDefinition.Compact.get -> bool
+RioCharts.Core.ChartDefinition.Compact.init -> void
+RioCharts.Core.ChartDefinition.Data.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>?
+RioCharts.Core.ChartDefinition.Data.init -> void
+RioCharts.Core.ChartDefinition.Dataset.get -> string?
+RioCharts.Core.ChartDefinition.Dataset.init -> void
+RioCharts.Core.ChartDefinition.Equals(RioCharts.Core.ChartDefinition? other) -> bool
+RioCharts.Core.ChartDefinition.Horizontal.get -> bool
+RioCharts.Core.ChartDefinition.Horizontal.init -> void
+RioCharts.Core.ChartDefinition.Legend.get -> RioCharts.Core.LegendOptions!
+RioCharts.Core.ChartDefinition.Legend.init -> void
+RioCharts.Core.ChartDefinition.Projection.get -> RioCharts.Core.MapProjection
+RioCharts.Core.ChartDefinition.Projection.init -> void
+RioCharts.Core.ChartDefinition.Series.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.SeriesOptions!>!
+RioCharts.Core.ChartDefinition.Series.init -> void
+RioCharts.Core.ChartDefinition.TimeZone.get -> string?
+RioCharts.Core.ChartDefinition.TimeZone.init -> void
+RioCharts.Core.ChartDefinition.Title.get -> string?
+RioCharts.Core.ChartDefinition.Title.init -> void
+RioCharts.Core.ChartDefinition.Tooltip.get -> RioCharts.Core.TooltipOptions!
+RioCharts.Core.ChartDefinition.Tooltip.init -> void
+RioCharts.Core.ChartDefinition.UnspecifiedTimes.get -> RioCharts.Core.Data.UnspecifiedTimes?
+RioCharts.Core.ChartDefinition.UnspecifiedTimes.init -> void
+RioCharts.Core.ChartDefinition.X.get -> RioCharts.Core.AxisOptions!
+RioCharts.Core.ChartDefinition.X.init -> void
+RioCharts.Core.ChartDefinition.Y.get -> RioCharts.Core.AxisOptions!
+RioCharts.Core.ChartDefinition.Y.init -> void
+RioCharts.Core.ChartDefinition.YAxes.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.AxisOptions!>!
+RioCharts.Core.ChartDefinition.YAxes.init -> void
+RioCharts.Core.ChartSort
+RioCharts.Core.ChartSort.Ascending = 0 -> RioCharts.Core.ChartSort
+RioCharts.Core.ChartSort.Descending = 1 -> RioCharts.Core.ChartSort
+RioCharts.Core.ChartTexts
+RioCharts.Core.ChartTexts.<Clone>$() -> RioCharts.Core.ChartTexts!
+RioCharts.Core.ChartTexts.AllSeriesHidden.get -> string!
+RioCharts.Core.ChartTexts.AllSeriesHidden.init -> void
+RioCharts.Core.ChartTexts.AllSlicesHidden.get -> string!
+RioCharts.Core.ChartTexts.AllSlicesHidden.init -> void
+RioCharts.Core.ChartTexts.AxisRange.get -> string!
+RioCharts.Core.ChartTexts.AxisRange.init -> void
+RioCharts.Core.ChartTexts.BoxCount.get -> string!
+RioCharts.Core.ChartTexts.BoxCount.init -> void
+RioCharts.Core.ChartTexts.BoxLowerQuartile.get -> string!
+RioCharts.Core.ChartTexts.BoxLowerQuartile.init -> void
+RioCharts.Core.ChartTexts.BoxMax.get -> string!
+RioCharts.Core.ChartTexts.BoxMax.init -> void
+RioCharts.Core.ChartTexts.BoxMedian.get -> string!
+RioCharts.Core.ChartTexts.BoxMedian.init -> void
+RioCharts.Core.ChartTexts.BoxMin.get -> string!
+RioCharts.Core.ChartTexts.BoxMin.init -> void
+RioCharts.Core.ChartTexts.BoxOutliers.get -> string!
+RioCharts.Core.ChartTexts.BoxOutliers.init -> void
+RioCharts.Core.ChartTexts.BoxUpperQuartile.get -> string!
+RioCharts.Core.ChartTexts.BoxUpperQuartile.init -> void
+RioCharts.Core.ChartTexts.BulletChart.get -> string!
+RioCharts.Core.ChartTexts.BulletChart.init -> void
+RioCharts.Core.ChartTexts.CalendarChart.get -> string!
+RioCharts.Core.ChartTexts.CalendarChart.init -> void
+RioCharts.Core.ChartTexts.CalendarDays.get -> string!
+RioCharts.Core.ChartTexts.CalendarDays.init -> void
+RioCharts.Core.ChartTexts.CandleChange.get -> string!
+RioCharts.Core.ChartTexts.CandleChange.init -> void
+RioCharts.Core.ChartTexts.CandleClose.get -> string!
+RioCharts.Core.ChartTexts.CandleClose.init -> void
+RioCharts.Core.ChartTexts.CandleHigh.get -> string!
+RioCharts.Core.ChartTexts.CandleHigh.init -> void
+RioCharts.Core.ChartTexts.CandleLow.get -> string!
+RioCharts.Core.ChartTexts.CandleLow.init -> void
+RioCharts.Core.ChartTexts.CandleOpen.get -> string!
+RioCharts.Core.ChartTexts.CandleOpen.init -> void
+RioCharts.Core.ChartTexts.Chart.get -> string!
+RioCharts.Core.ChartTexts.Chart.init -> void
+RioCharts.Core.ChartTexts.ChartFailed.get -> string!
+RioCharts.Core.ChartTexts.ChartFailed.init -> void
+RioCharts.Core.ChartTexts.ChartRole.get -> string!
+RioCharts.Core.ChartTexts.ChartRole.init -> void
+RioCharts.Core.ChartTexts.ChartTexts() -> void
+RioCharts.Core.ChartTexts.DonutChart.get -> string!
+RioCharts.Core.ChartTexts.DonutChart.init -> void
+RioCharts.Core.ChartTexts.Download.get -> string!
+RioCharts.Core.ChartTexts.Download.init -> void
+RioCharts.Core.ChartTexts.DownloadChart.get -> string!
+RioCharts.Core.ChartTexts.DownloadChart.init -> void
+RioCharts.Core.ChartTexts.DownloadFormat.get -> string!
+RioCharts.Core.ChartTexts.DownloadFormat.init -> void
+RioCharts.Core.ChartTexts.DurationUnits.get -> string!
+RioCharts.Core.ChartTexts.DurationUnits.init -> void
+RioCharts.Core.ChartTexts.Equals(RioCharts.Core.ChartTexts? other) -> bool
+RioCharts.Core.ChartTexts.Falling.get -> string!
+RioCharts.Core.ChartTexts.Falling.init -> void
+RioCharts.Core.ChartTexts.Fill(string! key, System.IFormatProvider? provider, params object?[]! args) -> string!
+RioCharts.Core.ChartTexts.FunnelChart.get -> string!
+RioCharts.Core.ChartTexts.FunnelChart.init -> void
+RioCharts.Core.ChartTexts.FunnelOfFirst.get -> string!
+RioCharts.Core.ChartTexts.FunnelOfFirst.init -> void
+RioCharts.Core.ChartTexts.FunnelOfPrevious.get -> string!
+RioCharts.Core.ChartTexts.FunnelOfPrevious.init -> void
+RioCharts.Core.ChartTexts.GaugeChart.get -> string!
+RioCharts.Core.ChartTexts.GaugeChart.init -> void
+RioCharts.Core.ChartTexts.HistogramPeak.get -> string!
+RioCharts.Core.ChartTexts.HistogramPeak.init -> void
+RioCharts.Core.ChartTexts.KeysLeave.get -> string!
+RioCharts.Core.ChartTexts.KeysLeave.init -> void
+RioCharts.Core.ChartTexts.KeysPoints.get -> string!
+RioCharts.Core.ChartTexts.KeysPoints.init -> void
+RioCharts.Core.ChartTexts.KeysPointsAndSeries.get -> string!
+RioCharts.Core.ChartTexts.KeysPointsAndSeries.init -> void
+RioCharts.Core.ChartTexts.KeysSelect.get -> string!
+RioCharts.Core.ChartTexts.KeysSelect.init -> void
+RioCharts.Core.ChartTexts.KeysSlices.get -> string!
+RioCharts.Core.ChartTexts.KeysSlices.init -> void
+RioCharts.Core.ChartTexts.KeysZoom.get -> string!
+RioCharts.Core.ChartTexts.KeysZoom.init -> void
+RioCharts.Core.ChartTexts.LastValue.get -> string!
+RioCharts.Core.ChartTexts.LastValue.init -> void
+RioCharts.Core.ChartTexts.Legend.get -> string!
+RioCharts.Core.ChartTexts.Legend.init -> void
+RioCharts.Core.ChartTexts.LowestHighest.get -> string!
+RioCharts.Core.ChartTexts.LowestHighest.init -> void
+RioCharts.Core.ChartTexts.Map.get -> string!
+RioCharts.Core.ChartTexts.Map.init -> void
+RioCharts.Core.ChartTexts.MapWorld.get -> string!
+RioCharts.Core.ChartTexts.MapWorld.init -> void
+RioCharts.Core.ChartTexts.More.get -> string!
+RioCharts.Core.ChartTexts.More.init -> void
+RioCharts.Core.ChartTexts.NoData.get -> string!
+RioCharts.Core.ChartTexts.NoData.init -> void
+RioCharts.Core.ChartTexts.NoDataShort.get -> string!
+RioCharts.Core.ChartTexts.NoDataShort.init -> void
+RioCharts.Core.ChartTexts.Other.get -> string!
+RioCharts.Core.ChartTexts.Other.init -> void
+RioCharts.Core.ChartTexts.PieChart.get -> string!
+RioCharts.Core.ChartTexts.PieChart.init -> void
+RioCharts.Core.ChartTexts.PolarItems.get -> string!
+RioCharts.Core.ChartTexts.PolarItems.init -> void
+RioCharts.Core.ChartTexts.PolarNoData.get -> string!
+RioCharts.Core.ChartTexts.PolarNoData.init -> void
+RioCharts.Core.ChartTexts.Position.get -> string!
+RioCharts.Core.ChartTexts.Position.init -> void
+RioCharts.Core.ChartTexts.RadarChart.get -> string!
+RioCharts.Core.ChartTexts.RadarChart.init -> void
+RioCharts.Core.ChartTexts.RadialBarChart.get -> string!
+RioCharts.Core.ChartTexts.RadialBarChart.init -> void
+RioCharts.Core.ChartTexts.RangeBarSummary.get -> string!
+RioCharts.Core.ChartTexts.RangeBarSummary.init -> void
+RioCharts.Core.ChartTexts.ResetZoom.get -> string!
+RioCharts.Core.ChartTexts.ResetZoom.init -> void
+RioCharts.Core.ChartTexts.Rising.get -> string!
+RioCharts.Core.ChartTexts.Rising.init -> void
+RioCharts.Core.ChartTexts.SeriesPoints.get -> string!
+RioCharts.Core.ChartTexts.SeriesPoints.init -> void
+RioCharts.Core.ChartTexts.SeriesValues.get -> string!
+RioCharts.Core.ChartTexts.SeriesValues.init -> void
+RioCharts.Core.ChartTexts.ShareOfGroup.get -> string!
+RioCharts.Core.ChartTexts.ShareOfGroup.init -> void
+RioCharts.Core.ChartTexts.ShareOfTotal.get -> string!
+RioCharts.Core.ChartTexts.ShareOfTotal.init -> void
+RioCharts.Core.ChartTexts.Size.get -> string!
+RioCharts.Core.ChartTexts.Size.init -> void
+RioCharts.Core.ChartTexts.Stable.get -> string!
+RioCharts.Core.ChartTexts.Stable.init -> void
+RioCharts.Core.ChartTexts.Summary.get -> string!
+RioCharts.Core.ChartTexts.Summary.init -> void
+RioCharts.Core.ChartTexts.SummaryTitled.get -> string!
+RioCharts.Core.ChartTexts.SummaryTitled.init -> void
+RioCharts.Core.ChartTexts.Target.get -> string!
+RioCharts.Core.ChartTexts.Target.init -> void
+RioCharts.Core.ChartTexts.Total.get -> string!
+RioCharts.Core.ChartTexts.Total.init -> void
+RioCharts.Core.ChartTexts.Treemap.get -> string!
+RioCharts.Core.ChartTexts.Treemap.init -> void
+RioCharts.Core.ChartTexts.TreemapAll.get -> string!
+RioCharts.Core.ChartTexts.TreemapAll.init -> void
+RioCharts.Core.ChartTexts.TreemapLeftOut.get -> string!
+RioCharts.Core.ChartTexts.TreemapLeftOut.init -> void
+RioCharts.Core.ChartTexts.TreemapPathLabel.get -> string!
+RioCharts.Core.ChartTexts.TreemapPathLabel.init -> void
+RioCharts.Core.ChartTexts.TreemapShow.get -> string!
+RioCharts.Core.ChartTexts.TreemapShow.init -> void
+RioCharts.Core.ChartTexts.Trend.get -> string!
+RioCharts.Core.ChartTexts.Trend.init -> void
+RioCharts.Core.ChartTexts.ValueRange.get -> string!
+RioCharts.Core.ChartTexts.ValueRange.init -> void
+RioCharts.Core.ChartTexts.XAxis.get -> string!
+RioCharts.Core.ChartTexts.XAxis.init -> void
+RioCharts.Core.ChartTexts.YAxis.get -> string!
+RioCharts.Core.ChartTexts.YAxis.init -> void
+RioCharts.Core.ChartTexts.this[string! key].get -> string!
+RioCharts.Core.ColorBand
+RioCharts.Core.ColorBand.<Clone>$() -> RioCharts.Core.ColorBand!
+RioCharts.Core.ColorBand.Above.get -> double?
+RioCharts.Core.ColorBand.Above.init -> void
+RioCharts.Core.ColorBand.Below.get -> double?
+RioCharts.Core.ColorBand.Below.init -> void
+RioCharts.Core.ColorBand.Color.get -> string!
+RioCharts.Core.ColorBand.Color.init -> void
+RioCharts.Core.ColorBand.ColorBand() -> void
+RioCharts.Core.ColorBand.Equals(RioCharts.Core.ColorBand? other) -> bool
+RioCharts.Core.ColorBand.Label.get -> string?
+RioCharts.Core.ColorBand.Label.init -> void
+RioCharts.Core.CurveType
+RioCharts.Core.CurveType.Linear = 0 -> RioCharts.Core.CurveType
+RioCharts.Core.CurveType.Monotone = 1 -> RioCharts.Core.CurveType
+RioCharts.Core.CurveType.Step = 2 -> RioCharts.Core.CurveType
+RioCharts.Core.Data.BoxSummary
+RioCharts.Core.Data.BoxSummary.BoxSummary() -> void
+RioCharts.Core.Data.BoxSummary.BoxSummary(double Min, double Low, double Q1, double Median, double Q3, double High, double Max, int Count, double[]! Outliers) -> void
+RioCharts.Core.Data.BoxSummary.Count.get -> int
+RioCharts.Core.Data.BoxSummary.Count.init -> void
+RioCharts.Core.Data.BoxSummary.Deconstruct(out double Min, out double Low, out double Q1, out double Median, out double Q3, out double High, out double Max, out int Count, out double[]! Outliers) -> void
+RioCharts.Core.Data.BoxSummary.Equals(RioCharts.Core.Data.BoxSummary other) -> bool
+RioCharts.Core.Data.BoxSummary.HasBox.get -> bool
+RioCharts.Core.Data.BoxSummary.High.get -> double
+RioCharts.Core.Data.BoxSummary.High.init -> void
+RioCharts.Core.Data.BoxSummary.Low.get -> double
+RioCharts.Core.Data.BoxSummary.Low.init -> void
+RioCharts.Core.Data.BoxSummary.Max.get -> double
+RioCharts.Core.Data.BoxSummary.Max.init -> void
+RioCharts.Core.Data.BoxSummary.Median.get -> double
+RioCharts.Core.Data.BoxSummary.Median.init -> void
+RioCharts.Core.Data.BoxSummary.Min.get -> double
+RioCharts.Core.Data.BoxSummary.Min.init -> void
+RioCharts.Core.Data.BoxSummary.Outliers.get -> double[]!
+RioCharts.Core.Data.BoxSummary.Outliers.init -> void
+RioCharts.Core.Data.BoxSummary.Q1.get -> double
+RioCharts.Core.Data.BoxSummary.Q1.init -> void
+RioCharts.Core.Data.BoxSummary.Q3.get -> double
+RioCharts.Core.Data.BoxSummary.Q3.init -> void
+RioCharts.Core.Data.CandleSummary
+RioCharts.Core.Data.CandleSummary.CandleSummary() -> void
+RioCharts.Core.Data.CandleSummary.CandleSummary(double Open, double High, double Low, double Close, int Count = 0) -> void
+RioCharts.Core.Data.CandleSummary.Close.get -> double
+RioCharts.Core.Data.CandleSummary.Close.init -> void
+RioCharts.Core.Data.CandleSummary.Count.get -> int
+RioCharts.Core.Data.CandleSummary.Count.init -> void
+RioCharts.Core.Data.CandleSummary.Deconstruct(out double Open, out double High, out double Low, out double Close, out int Count) -> void
+RioCharts.Core.Data.CandleSummary.Equals(RioCharts.Core.Data.CandleSummary other) -> bool
+RioCharts.Core.Data.CandleSummary.High.get -> double
+RioCharts.Core.Data.CandleSummary.High.init -> void
+RioCharts.Core.Data.CandleSummary.IsComplete.get -> bool
+RioCharts.Core.Data.CandleSummary.Low.get -> double
+RioCharts.Core.Data.CandleSummary.Low.init -> void
+RioCharts.Core.Data.CandleSummary.Open.get -> double
+RioCharts.Core.Data.CandleSummary.Open.init -> void
+RioCharts.Core.Data.CsvOptions
+RioCharts.Core.Data.CsvOptions.<Clone>$() -> RioCharts.Core.Data.CsvOptions!
+RioCharts.Core.Data.CsvOptions.CsvOptions() -> void
+RioCharts.Core.Data.CsvOptions.Culture.get -> System.Globalization.CultureInfo!
+RioCharts.Core.Data.CsvOptions.Culture.init -> void
+RioCharts.Core.Data.CsvOptions.Delimiter.get -> char
+RioCharts.Core.Data.CsvOptions.Delimiter.init -> void
+RioCharts.Core.Data.CsvOptions.Equals(RioCharts.Core.Data.CsvOptions? other) -> bool
+RioCharts.Core.Data.CsvOptions.NewLine.get -> string!
+RioCharts.Core.Data.CsvOptions.NewLine.init -> void
+RioCharts.Core.Data.CsvOptions.XHeader.get -> string!
+RioCharts.Core.Data.CsvOptions.XHeader.init -> void
+RioCharts.Core.Data.SeriesBuffer
+RioCharts.Core.Data.SeriesBuffer.Append(System.DateTime x, double y) -> void
+RioCharts.Core.Data.SeriesBuffer.Append(System.DateTimeOffset x, double y) -> void
+RioCharts.Core.Data.SeriesBuffer.Append(double x, double y) -> void
+RioCharts.Core.Data.SeriesBuffer.AppendRange(System.ReadOnlySpan<System.DateTime> x, System.ReadOnlySpan<double> y) -> void
+RioCharts.Core.Data.SeriesBuffer.AppendRange(System.ReadOnlySpan<double> x, System.ReadOnlySpan<double> y) -> void
+RioCharts.Core.Data.SeriesBuffer.Capacity.get -> int
+RioCharts.Core.Data.SeriesBuffer.Changed -> System.Action?
+RioCharts.Core.Data.SeriesBuffer.Clear() -> void
+RioCharts.Core.Data.SeriesBuffer.Count.get -> int
+RioCharts.Core.Data.SeriesBuffer.Kind.get -> RioCharts.Core.Data.XKind
+RioCharts.Core.Data.SeriesBuffer.SeriesBuffer(int capacity = 100000, System.TimeSpan? timeWindow = null, RioCharts.Core.Data.XKind kind = RioCharts.Core.Data.XKind.Time) -> void
+RioCharts.Core.Data.SeriesBuffer.TimeWindow.get -> System.TimeSpan?
+RioCharts.Core.Data.SeriesBuffer.ToSeriesData() -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesBuffer.Version.get -> long
+RioCharts.Core.Data.SeriesBufferExtensions
+RioCharts.Core.Data.SeriesData
+RioCharts.Core.Data.SeriesData.Categories.get -> System.Collections.Generic.IReadOnlyList<string!>!
+RioCharts.Core.Data.SeriesData.ColorAt(int point, string! fallback) -> string!
+RioCharts.Core.Data.SeriesData.Colors.get -> string?[]?
+RioCharts.Core.Data.SeriesData.Count.get -> int
+RioCharts.Core.Data.SeriesData.ErrorHigh.get -> double[]?
+RioCharts.Core.Data.SeriesData.ErrorLow.get -> double[]?
+RioCharts.Core.Data.SeriesData.Kind.get -> RioCharts.Core.Data.XKind
+RioCharts.Core.Data.SeriesData.Latitudes.get -> double[]?
+RioCharts.Core.Data.SeriesData.Longitudes.get -> double[]?
+RioCharts.Core.Data.SeriesData.Low.get -> double[]?
+RioCharts.Core.Data.SeriesData.Rows.get -> string![]?
+RioCharts.Core.Data.SeriesData.Sizes.get -> double[]?
+RioCharts.Core.Data.SeriesData.SourceIndex.get -> int[]?
+RioCharts.Core.Data.SeriesData.Targets.get -> double[]?
+RioCharts.Core.Data.SeriesData.TimeOffsets.get -> double[]?
+RioCharts.Core.Data.SeriesData.ToSourceIndex(int index) -> int
+RioCharts.Core.Data.SeriesData.Totals.get -> bool[]?
+RioCharts.Core.Data.SeriesData.WithBox(System.ReadOnlySpan<RioCharts.Core.Data.BoxSummary> boxes) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithCandles(System.ReadOnlySpan<RioCharts.Core.Data.CandleSummary> candles) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithColors(System.Collections.Generic.IReadOnlyList<string?>! colors) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithErrors(System.ReadOnlySpan<double> low, System.ReadOnlySpan<double> high) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithLocations(System.ReadOnlySpan<double> latitudes, System.ReadOnlySpan<double> longitudes) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithLow(System.ReadOnlySpan<double> low) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithRows(System.Collections.Generic.IReadOnlyList<string?>! rows) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithSizes(System.ReadOnlySpan<double> sizes) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithTargets(System.ReadOnlySpan<double> targets) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.WithTotals(System.ReadOnlySpan<bool> totals) -> RioCharts.Core.Data.SeriesData!
+RioCharts.Core.Data.SeriesData.X.get -> double[]!
+RioCharts.Core.Data.SeriesData.Y.get -> double[]!
+RioCharts.Core.Data.TimeValue
+RioCharts.Core.Data.UnspecifiedTimes
+RioCharts.Core.Data.UnspecifiedTimes.DisplayZone = 1 -> RioCharts.Core.Data.UnspecifiedTimes
+RioCharts.Core.Data.UnspecifiedTimes.Utc = 0 -> RioCharts.Core.Data.UnspecifiedTimes
+RioCharts.Core.Data.XKind
+RioCharts.Core.Data.XKind.Category = 2 -> RioCharts.Core.Data.XKind
+RioCharts.Core.Data.XKind.Numeric = 0 -> RioCharts.Core.Data.XKind
+RioCharts.Core.Data.XKind.Time = 1 -> RioCharts.Core.Data.XKind
+RioCharts.Core.Definitions.ChartDataset
+RioCharts.Core.Definitions.ChartDataset.ChartDataset(string! name, System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DataField!>! fields, string? description = null) -> void
+RioCharts.Core.Definitions.ChartDataset.Description.get -> string?
+RioCharts.Core.Definitions.ChartDataset.Field(string! name) -> RioCharts.Core.Definitions.DataField?
+RioCharts.Core.Definitions.ChartDataset.Fields.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DataField!>!
+RioCharts.Core.Definitions.ChartDataset.Name.get -> string!
+RioCharts.Core.Definitions.ChartDataset.RowCount.get -> int
+RioCharts.Core.Definitions.ChartDefinitionBinder
+RioCharts.Core.Definitions.ChartDefinitionJson
+RioCharts.Core.Definitions.DataField
+RioCharts.Core.Definitions.DataField.DataField(string! name, RioCharts.Core.Definitions.FieldType type, object?[]! values, string? description = null) -> void
+RioCharts.Core.Definitions.DataField.Description.get -> string?
+RioCharts.Core.Definitions.DataField.Name.get -> string!
+RioCharts.Core.Definitions.DataField.Type.get -> RioCharts.Core.Definitions.FieldType
+RioCharts.Core.Definitions.DataField.Values.get -> object?[]!
+RioCharts.Core.Definitions.DefinitionBindResult
+RioCharts.Core.Definitions.DefinitionBindResult.<Clone>$() -> RioCharts.Core.Definitions.DefinitionBindResult!
+RioCharts.Core.Definitions.DefinitionBindResult.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Data.SeriesData!>!
+RioCharts.Core.Definitions.DefinitionBindResult.Data.init -> void
+RioCharts.Core.Definitions.DefinitionBindResult.Deconstruct(out RioCharts.Core.ChartDefinition! Definition, out System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Data.SeriesData!>! Data, out System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DefinitionError!>! Errors, out System.Collections.Generic.IReadOnlyList<string!>! Warnings) -> void
+RioCharts.Core.Definitions.DefinitionBindResult.Definition.get -> RioCharts.Core.ChartDefinition!
+RioCharts.Core.Definitions.DefinitionBindResult.Definition.init -> void
+RioCharts.Core.Definitions.DefinitionBindResult.DefinitionBindResult(RioCharts.Core.ChartDefinition! Definition, System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Data.SeriesData!>! Data, System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DefinitionError!>! Errors, System.Collections.Generic.IReadOnlyList<string!>! Warnings) -> void
+RioCharts.Core.Definitions.DefinitionBindResult.Equals(RioCharts.Core.Definitions.DefinitionBindResult? other) -> bool
+RioCharts.Core.Definitions.DefinitionBindResult.Errors.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DefinitionError!>!
+RioCharts.Core.Definitions.DefinitionBindResult.Errors.init -> void
+RioCharts.Core.Definitions.DefinitionBindResult.Success.get -> bool
+RioCharts.Core.Definitions.DefinitionBindResult.Warnings.get -> System.Collections.Generic.IReadOnlyList<string!>!
+RioCharts.Core.Definitions.DefinitionBindResult.Warnings.init -> void
+RioCharts.Core.Definitions.DefinitionError
+RioCharts.Core.Definitions.DefinitionError.<Clone>$() -> RioCharts.Core.Definitions.DefinitionError!
+RioCharts.Core.Definitions.DefinitionError.Deconstruct(out string! Path, out string! Message) -> void
+RioCharts.Core.Definitions.DefinitionError.DefinitionError(string! Path, string! Message) -> void
+RioCharts.Core.Definitions.DefinitionError.Equals(RioCharts.Core.Definitions.DefinitionError? other) -> bool
+RioCharts.Core.Definitions.DefinitionError.Message.get -> string!
+RioCharts.Core.Definitions.DefinitionError.Message.init -> void
+RioCharts.Core.Definitions.DefinitionError.Path.get -> string!
+RioCharts.Core.Definitions.DefinitionError.Path.init -> void
+RioCharts.Core.Definitions.DefinitionParseResult
+RioCharts.Core.Definitions.DefinitionParseResult.<Clone>$() -> RioCharts.Core.Definitions.DefinitionParseResult!
+RioCharts.Core.Definitions.DefinitionParseResult.Deconstruct(out RioCharts.Core.ChartDefinition? Definition, out System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DefinitionError!>! Errors, out System.Collections.Generic.IReadOnlyList<string!>! Warnings) -> void
+RioCharts.Core.Definitions.DefinitionParseResult.Definition.get -> RioCharts.Core.ChartDefinition?
+RioCharts.Core.Definitions.DefinitionParseResult.Definition.init -> void
+RioCharts.Core.Definitions.DefinitionParseResult.DefinitionParseResult(RioCharts.Core.ChartDefinition? Definition, System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DefinitionError!>! Errors, System.Collections.Generic.IReadOnlyList<string!>! Warnings) -> void
+RioCharts.Core.Definitions.DefinitionParseResult.Equals(RioCharts.Core.Definitions.DefinitionParseResult? other) -> bool
+RioCharts.Core.Definitions.DefinitionParseResult.Errors.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.DefinitionError!>!
+RioCharts.Core.Definitions.DefinitionParseResult.Errors.init -> void
+RioCharts.Core.Definitions.DefinitionParseResult.Success.get -> bool
+RioCharts.Core.Definitions.DefinitionParseResult.Warnings.get -> System.Collections.Generic.IReadOnlyList<string!>!
+RioCharts.Core.Definitions.DefinitionParseResult.Warnings.init -> void
+RioCharts.Core.Definitions.FieldType
+RioCharts.Core.Definitions.FieldType.Number = 0 -> RioCharts.Core.Definitions.FieldType
+RioCharts.Core.Definitions.FieldType.Text = 2 -> RioCharts.Core.Definitions.FieldType
+RioCharts.Core.Definitions.FieldType.Time = 1 -> RioCharts.Core.Definitions.FieldType
+RioCharts.Core.Definitions.FolderDataSource
+RioCharts.Core.Definitions.FolderDataSource.Describe() -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.ChartDataset!>!
+RioCharts.Core.Definitions.FolderDataSource.Folder.get -> string!
+RioCharts.Core.Definitions.FolderDataSource.FolderDataSource(string! folder, long maxFileBytes = 104857600) -> void
+RioCharts.Core.Definitions.FolderDataSource.LoadAsync(string! name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.Core.Definitions.ChartDataset?>!
+RioCharts.Core.Definitions.IChartDataSource
+RioCharts.Core.Definitions.IChartDataSource.Describe() -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.ChartDataset!>!
+RioCharts.Core.Definitions.IChartDataSource.LoadAsync(string! name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.Core.Definitions.ChartDataset?>!
+RioCharts.Core.Definitions.InMemoryDataSource
+RioCharts.Core.Definitions.InMemoryDataSource.Describe() -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Definitions.ChartDataset!>!
+RioCharts.Core.Definitions.InMemoryDataSource.InMemoryDataSource(System.Collections.Generic.IEnumerable<RioCharts.Core.Definitions.ChartDataset!>! datasets) -> void
+RioCharts.Core.Definitions.InMemoryDataSource.LoadAsync(string! name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.Core.Definitions.ChartDataset?>!
+RioCharts.Core.Filter
+RioCharts.Core.Filter.<Clone>$() -> RioCharts.Core.Filter!
+RioCharts.Core.Filter.Equals(RioCharts.Core.Filter? other) -> bool
+RioCharts.Core.Filter.Field.get -> string!
+RioCharts.Core.Filter.Field.init -> void
+RioCharts.Core.Filter.Filter() -> void
+RioCharts.Core.Filter.Op.get -> RioCharts.Core.FilterOp
+RioCharts.Core.Filter.Op.init -> void
+RioCharts.Core.Filter.Value.get -> object?
+RioCharts.Core.Filter.Value.init -> void
+RioCharts.Core.FilterOp
+RioCharts.Core.FilterOp.Contains = 6 -> RioCharts.Core.FilterOp
+RioCharts.Core.FilterOp.Eq = 0 -> RioCharts.Core.FilterOp
+RioCharts.Core.FilterOp.Gt = 2 -> RioCharts.Core.FilterOp
+RioCharts.Core.FilterOp.Gte = 3 -> RioCharts.Core.FilterOp
+RioCharts.Core.FilterOp.Lt = 4 -> RioCharts.Core.FilterOp
+RioCharts.Core.FilterOp.Lte = 5 -> RioCharts.Core.FilterOp
+RioCharts.Core.FilterOp.Ne = 1 -> RioCharts.Core.FilterOp
+RioCharts.Core.Geo.GeoContinent
+RioCharts.Core.Geo.GeoContinent.<Clone>$() -> RioCharts.Core.Geo.GeoContinent!
+RioCharts.Core.Geo.GeoContinent.CenterLongitude.get -> double
+RioCharts.Core.Geo.GeoContinent.Deconstruct(out string! Name, out double West, out double South, out double East, out double North) -> void
+RioCharts.Core.Geo.GeoContinent.East.get -> double
+RioCharts.Core.Geo.GeoContinent.East.init -> void
+RioCharts.Core.Geo.GeoContinent.Equals(RioCharts.Core.Geo.GeoContinent? other) -> bool
+RioCharts.Core.Geo.GeoContinent.GeoContinent(string! Name, double West, double South, double East, double North) -> void
+RioCharts.Core.Geo.GeoContinent.Name.get -> string!
+RioCharts.Core.Geo.GeoContinent.Name.init -> void
+RioCharts.Core.Geo.GeoContinent.North.get -> double
+RioCharts.Core.Geo.GeoContinent.North.init -> void
+RioCharts.Core.Geo.GeoContinent.South.get -> double
+RioCharts.Core.Geo.GeoContinent.South.init -> void
+RioCharts.Core.Geo.GeoContinent.West.get -> double
+RioCharts.Core.Geo.GeoContinent.West.init -> void
+RioCharts.Core.Geo.GeoPolygon
+RioCharts.Core.Geo.GeoPolygon.Area.get -> double
+RioCharts.Core.Geo.GeoPolygon.CenterLatitude.get -> double
+RioCharts.Core.Geo.GeoPolygon.CenterLongitude.get -> double
+RioCharts.Core.Geo.GeoPolygon.East.get -> double
+RioCharts.Core.Geo.GeoPolygon.North.get -> double
+RioCharts.Core.Geo.GeoPolygon.Rings.get -> System.Collections.Generic.IReadOnlyList<double[]!>!
+RioCharts.Core.Geo.GeoPolygon.South.get -> double
+RioCharts.Core.Geo.GeoPolygon.West.get -> double
+RioCharts.Core.Geo.GeoRegion
+RioCharts.Core.Geo.GeoRegion.Alpha2.get -> string!
+RioCharts.Core.Geo.GeoRegion.Alpha3.get -> string!
+RioCharts.Core.Geo.GeoRegion.Code.get -> string!
+RioCharts.Core.Geo.GeoRegion.Continent.get -> RioCharts.Core.Geo.GeoContinent?
+RioCharts.Core.Geo.GeoRegion.MainPolygons.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Geo.GeoPolygon!>!
+RioCharts.Core.Geo.GeoRegion.Name.get -> string!
+RioCharts.Core.Geo.GeoRegion.Polygons.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Geo.GeoPolygon!>!
+RioCharts.Core.Geo.WorldMap
+RioCharts.Core.LabelPosition
+RioCharts.Core.LabelPosition.End = 2 -> RioCharts.Core.LabelPosition
+RioCharts.Core.LabelPosition.Middle = 1 -> RioCharts.Core.LabelPosition
+RioCharts.Core.LabelPosition.Start = 0 -> RioCharts.Core.LabelPosition
+RioCharts.Core.LegendMode
+RioCharts.Core.LegendMode.Auto = 0 -> RioCharts.Core.LegendMode
+RioCharts.Core.LegendMode.Hide = 2 -> RioCharts.Core.LegendMode
+RioCharts.Core.LegendMode.Show = 1 -> RioCharts.Core.LegendMode
+RioCharts.Core.LegendOptions
+RioCharts.Core.LegendOptions.<Clone>$() -> RioCharts.Core.LegendOptions!
+RioCharts.Core.LegendOptions.Equals(RioCharts.Core.LegendOptions? other) -> bool
+RioCharts.Core.LegendOptions.LegendOptions() -> void
+RioCharts.Core.LegendOptions.Mode.get -> RioCharts.Core.LegendMode
+RioCharts.Core.LegendOptions.Mode.init -> void
+RioCharts.Core.LegendOptions.Position.get -> RioCharts.Core.LegendPosition
+RioCharts.Core.LegendOptions.Position.init -> void
+RioCharts.Core.LegendOptions.Sizes.get -> bool?
+RioCharts.Core.LegendOptions.Sizes.init -> void
+RioCharts.Core.LegendPosition
+RioCharts.Core.LegendPosition.Bottom = 1 -> RioCharts.Core.LegendPosition
+RioCharts.Core.LegendPosition.Right = 2 -> RioCharts.Core.LegendPosition
+RioCharts.Core.LegendPosition.Top = 0 -> RioCharts.Core.LegendPosition
+RioCharts.Core.MapProjection
+RioCharts.Core.MapProjection.EqualEarth = 0 -> RioCharts.Core.MapProjection
+RioCharts.Core.MapProjection.Mercator = 1 -> RioCharts.Core.MapProjection
+RioCharts.Core.PointHighlight
+RioCharts.Core.PointHighlight.All = 16 -> RioCharts.Core.PointHighlight
+RioCharts.Core.PointHighlight.First = 2 -> RioCharts.Core.PointHighlight
+RioCharts.Core.PointHighlight.Last = 1 -> RioCharts.Core.PointHighlight
+RioCharts.Core.PointHighlight.Max = 8 -> RioCharts.Core.PointHighlight
+RioCharts.Core.PointHighlight.Min = 4 -> RioCharts.Core.PointHighlight
+RioCharts.Core.PointHighlight.None = 0 -> RioCharts.Core.PointHighlight
+RioCharts.Core.ScaleType
+RioCharts.Core.ScaleType.Auto = 0 -> RioCharts.Core.ScaleType
+RioCharts.Core.ScaleType.Band = 3 -> RioCharts.Core.ScaleType
+RioCharts.Core.ScaleType.Linear = 1 -> RioCharts.Core.ScaleType
+RioCharts.Core.ScaleType.Log = 4 -> RioCharts.Core.ScaleType
+RioCharts.Core.ScaleType.Time = 2 -> RioCharts.Core.ScaleType
+RioCharts.Core.SeriesOptions
+RioCharts.Core.SeriesOptions.<Clone>$() -> RioCharts.Core.SeriesOptions!
+RioCharts.Core.SeriesOptions.Aggregate.get -> RioCharts.Core.Aggregate?
+RioCharts.Core.SeriesOptions.Aggregate.init -> void
+RioCharts.Core.SeriesOptions.BelowColor.get -> string?
+RioCharts.Core.SeriesOptions.BelowColor.init -> void
+RioCharts.Core.SeriesOptions.BinCount.get -> int?
+RioCharts.Core.SeriesOptions.BinCount.init -> void
+RioCharts.Core.SeriesOptions.BinWidth.get -> double?
+RioCharts.Core.SeriesOptions.BinWidth.init -> void
+RioCharts.Core.SeriesOptions.Color.get -> string?
+RioCharts.Core.SeriesOptions.Color.init -> void
+RioCharts.Core.SeriesOptions.ColorBands.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.ColorBand!>?
+RioCharts.Core.SeriesOptions.ColorBands.init -> void
+RioCharts.Core.SeriesOptions.ColorField.get -> string?
+RioCharts.Core.SeriesOptions.ColorField.init -> void
+RioCharts.Core.SeriesOptions.Curve.get -> RioCharts.Core.CurveType
+RioCharts.Core.SeriesOptions.Curve.init -> void
+RioCharts.Core.SeriesOptions.DataLabels.get -> bool?
+RioCharts.Core.SeriesOptions.DataLabels.init -> void
+RioCharts.Core.SeriesOptions.Dataset.get -> string?
+RioCharts.Core.SeriesOptions.Dataset.init -> void
+RioCharts.Core.SeriesOptions.DirectionColors.get -> bool
+RioCharts.Core.SeriesOptions.DirectionColors.init -> void
+RioCharts.Core.SeriesOptions.DisplayName.get -> string!
+RioCharts.Core.SeriesOptions.End.get -> string?
+RioCharts.Core.SeriesOptions.End.init -> void
+RioCharts.Core.SeriesOptions.EndAngle.get -> double?
+RioCharts.Core.SeriesOptions.EndAngle.init -> void
+RioCharts.Core.SeriesOptions.Equals(RioCharts.Core.SeriesOptions? other) -> bool
+RioCharts.Core.SeriesOptions.Error.get -> double?
+RioCharts.Core.SeriesOptions.Error.init -> void
+RioCharts.Core.SeriesOptions.ErrorField.get -> string?
+RioCharts.Core.SeriesOptions.ErrorField.init -> void
+RioCharts.Core.SeriesOptions.ErrorHigh.get -> string?
+RioCharts.Core.SeriesOptions.ErrorHigh.init -> void
+RioCharts.Core.SeriesOptions.ErrorLow.get -> string?
+RioCharts.Core.SeriesOptions.ErrorLow.init -> void
+RioCharts.Core.SeriesOptions.Filter.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Filter!>?
+RioCharts.Core.SeriesOptions.Filter.init -> void
+RioCharts.Core.SeriesOptions.Format.get -> string?
+RioCharts.Core.SeriesOptions.Format.init -> void
+RioCharts.Core.SeriesOptions.From.get -> string?
+RioCharts.Core.SeriesOptions.From.init -> void
+RioCharts.Core.SeriesOptions.GroupBy.get -> string?
+RioCharts.Core.SeriesOptions.GroupBy.init -> void
+RioCharts.Core.SeriesOptions.GroupByCountry.get -> bool?
+RioCharts.Core.SeriesOptions.GroupByCountry.init -> void
+RioCharts.Core.SeriesOptions.GroupSmallSlices.get -> double?
+RioCharts.Core.SeriesOptions.GroupSmallSlices.init -> void
+RioCharts.Core.SeriesOptions.High.get -> string?
+RioCharts.Core.SeriesOptions.High.init -> void
+RioCharts.Core.SeriesOptions.Highlight.get -> RioCharts.Core.PointHighlight
+RioCharts.Core.SeriesOptions.Highlight.init -> void
+RioCharts.Core.SeriesOptions.Id.get -> string!
+RioCharts.Core.SeriesOptions.Id.init -> void
+RioCharts.Core.SeriesOptions.InnerRadius.get -> double?
+RioCharts.Core.SeriesOptions.InnerRadius.init -> void
+RioCharts.Core.SeriesOptions.Latitude.get -> string?
+RioCharts.Core.SeriesOptions.Latitude.init -> void
+RioCharts.Core.SeriesOptions.Limit.get -> int?
+RioCharts.Core.SeriesOptions.Limit.init -> void
+RioCharts.Core.SeriesOptions.Longitude.get -> string?
+RioCharts.Core.SeriesOptions.Longitude.init -> void
+RioCharts.Core.SeriesOptions.Low.get -> string?
+RioCharts.Core.SeriesOptions.Low.init -> void
+RioCharts.Core.SeriesOptions.MarkerSize.get -> double?
+RioCharts.Core.SeriesOptions.MarkerSize.init -> void
+RioCharts.Core.SeriesOptions.Max.get -> double?
+RioCharts.Core.SeriesOptions.Max.init -> void
+RioCharts.Core.SeriesOptions.MaxBarWidth.get -> double?
+RioCharts.Core.SeriesOptions.MaxBarWidth.init -> void
+RioCharts.Core.SeriesOptions.Midpoint.get -> double?
+RioCharts.Core.SeriesOptions.Midpoint.init -> void
+RioCharts.Core.SeriesOptions.Min.get -> double?
+RioCharts.Core.SeriesOptions.Min.init -> void
+RioCharts.Core.SeriesOptions.Name.get -> string?
+RioCharts.Core.SeriesOptions.Name.init -> void
+RioCharts.Core.SeriesOptions.Open.get -> string?
+RioCharts.Core.SeriesOptions.Open.init -> void
+RioCharts.Core.SeriesOptions.Path.get -> System.Collections.Generic.IReadOnlyList<string!>?
+RioCharts.Core.SeriesOptions.Path.init -> void
+RioCharts.Core.SeriesOptions.PathSeparator.get -> string?
+RioCharts.Core.SeriesOptions.PathSeparator.init -> void
+RioCharts.Core.SeriesOptions.Q1.get -> string?
+RioCharts.Core.SeriesOptions.Q1.init -> void
+RioCharts.Core.SeriesOptions.Q3.get -> string?
+RioCharts.Core.SeriesOptions.Q3.init -> void
+RioCharts.Core.SeriesOptions.Row.get -> string?
+RioCharts.Core.SeriesOptions.Row.init -> void
+RioCharts.Core.SeriesOptions.SeriesOptions() -> void
+RioCharts.Core.SeriesOptions.Size.get -> string?
+RioCharts.Core.SeriesOptions.Size.init -> void
+RioCharts.Core.SeriesOptions.SizeFormat.get -> string?
+RioCharts.Core.SeriesOptions.SizeFormat.init -> void
+RioCharts.Core.SeriesOptions.SizeName.get -> string?
+RioCharts.Core.SeriesOptions.SizeName.init -> void
+RioCharts.Core.SeriesOptions.Sort.get -> RioCharts.Core.ChartSort?
+RioCharts.Core.SeriesOptions.Sort.init -> void
+RioCharts.Core.SeriesOptions.Stack.get -> string?
+RioCharts.Core.SeriesOptions.Stack.init -> void
+RioCharts.Core.SeriesOptions.Start.get -> string?
+RioCharts.Core.SeriesOptions.Start.init -> void
+RioCharts.Core.SeriesOptions.StartAngle.get -> double?
+RioCharts.Core.SeriesOptions.StartAngle.init -> void
+RioCharts.Core.SeriesOptions.StrokeWidth.get -> double?
+RioCharts.Core.SeriesOptions.StrokeWidth.init -> void
+RioCharts.Core.SeriesOptions.Target.get -> double?
+RioCharts.Core.SeriesOptions.Target.init -> void
+RioCharts.Core.SeriesOptions.TargetField.get -> string?
+RioCharts.Core.SeriesOptions.TargetField.init -> void
+RioCharts.Core.SeriesOptions.TimeBucket.get -> RioCharts.Core.TimeBucket?
+RioCharts.Core.SeriesOptions.TimeBucket.init -> void
+RioCharts.Core.SeriesOptions.Total.get -> string?
+RioCharts.Core.SeriesOptions.Total.init -> void
+RioCharts.Core.SeriesOptions.TrendLine.get -> bool
+RioCharts.Core.SeriesOptions.TrendLine.init -> void
+RioCharts.Core.SeriesOptions.Type.get -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesOptions.Type.init -> void
+RioCharts.Core.SeriesOptions.VisibleLevels.get -> int?
+RioCharts.Core.SeriesOptions.VisibleLevels.init -> void
+RioCharts.Core.SeriesOptions.X.get -> string?
+RioCharts.Core.SeriesOptions.X.init -> void
+RioCharts.Core.SeriesOptions.Y.get -> string?
+RioCharts.Core.SeriesOptions.Y.init -> void
+RioCharts.Core.SeriesOptions.YAxisId.get -> string?
+RioCharts.Core.SeriesOptions.YAxisId.init -> void
+RioCharts.Core.SeriesOptions.ZIndex.get -> int?
+RioCharts.Core.SeriesOptions.ZIndex.init -> void
+RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Area = 1 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Auto = 22 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Bar = 2 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.BoxPlot = 8 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Bullet = 16 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Calendar = 21 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Candlestick = 9 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Dumbbell = 17 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Funnel = 20 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Gauge = 15 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Heatmap = 6 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Histogram = 13 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Line = 0 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Map = 18 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.MapBubble = 19 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Pie = 3 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Radar = 10 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.RadialBar = 4 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.RangeArea = 7 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.RangeBar = 14 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Scatter = 5 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Treemap = 11 -> RioCharts.Core.SeriesType
+RioCharts.Core.SeriesType.Waterfall = 12 -> RioCharts.Core.SeriesType
+RioCharts.Core.StackMode
+RioCharts.Core.StackMode.Normal = 0 -> RioCharts.Core.StackMode
+RioCharts.Core.StackMode.Percent = 1 -> RioCharts.Core.StackMode
+RioCharts.Core.ThemeTokens
+RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Auto = 7 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Day = 2 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Hour = 1 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Minute = 0 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Month = 4 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Quarter = 5 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Week = 3 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TimeBucket.Year = 6 -> RioCharts.Core.TimeBucket
+RioCharts.Core.TooltipOptions
+RioCharts.Core.TooltipOptions.<Clone>$() -> RioCharts.Core.TooltipOptions!
+RioCharts.Core.TooltipOptions.Enabled.get -> bool
+RioCharts.Core.TooltipOptions.Enabled.init -> void
+RioCharts.Core.TooltipOptions.Equals(RioCharts.Core.TooltipOptions? other) -> bool
+RioCharts.Core.TooltipOptions.Shared.get -> bool
+RioCharts.Core.TooltipOptions.Shared.init -> void
+RioCharts.Core.TooltipOptions.TooltipOptions() -> void
+const RioCharts.Core.Definitions.ChartDefinitionJson.MaxAnnotations = 50 -> int
+const RioCharts.Core.Definitions.ChartDefinitionJson.MaxInlineRows = 1000 -> int
+const RioCharts.Core.Definitions.ChartDefinitionJson.MaxSeries = 20 -> int
+const RioCharts.Core.SeriesOptions.OtherSliceKey = "rio:other" -> string!
+const RioCharts.Core.ThemeTokens.Annotation = "--rio-annotation" -> string!
+const RioCharts.Core.ThemeTokens.Axis = "--rio-axis" -> string!
+const RioCharts.Core.ThemeTokens.DataLabelDark = "--rio-data-label-dark" -> string!
+const RioCharts.Core.ThemeTokens.DataLabelInverse = "--rio-data-label-inverse" -> string!
+const RioCharts.Core.ThemeTokens.Grid = "--rio-grid" -> string!
+const RioCharts.Core.ThemeTokens.Negative = "--rio-negative" -> string!
+const RioCharts.Core.ThemeTokens.Positive = "--rio-positive" -> string!
+const RioCharts.Core.ThemeTokens.SeriesColorCount = 10 -> int
+const RioCharts.Core.ThemeTokens.Surface = "--rio-surface" -> string!
+const RioCharts.Core.ThemeTokens.Text = "--rio-text" -> string!
+const RioCharts.Core.ThemeTokens.TextMuted = "--rio-text-muted" -> string!
+override RioCharts.Core.Annotation.Equals(object? obj) -> bool
+override RioCharts.Core.Annotation.GetHashCode() -> int
+override RioCharts.Core.Annotation.ToString() -> string!
+override RioCharts.Core.AxisOptions.Equals(object? obj) -> bool
+override RioCharts.Core.AxisOptions.GetHashCode() -> int
+override RioCharts.Core.AxisOptions.ToString() -> string!
+override RioCharts.Core.ChartDefinition.Equals(object? obj) -> bool
+override RioCharts.Core.ChartDefinition.GetHashCode() -> int
+override RioCharts.Core.ChartDefinition.ToString() -> string!
+override RioCharts.Core.ChartTexts.Equals(object? obj) -> bool
+override RioCharts.Core.ChartTexts.GetHashCode() -> int
+override RioCharts.Core.ChartTexts.ToString() -> string!
+override RioCharts.Core.ColorBand.Equals(object? obj) -> bool
+override RioCharts.Core.ColorBand.GetHashCode() -> int
+override RioCharts.Core.ColorBand.ToString() -> string!
+override RioCharts.Core.Data.BoxSummary.GetHashCode() -> int
+override RioCharts.Core.Data.CandleSummary.GetHashCode() -> int
+override RioCharts.Core.Data.CsvOptions.Equals(object? obj) -> bool
+override RioCharts.Core.Data.CsvOptions.GetHashCode() -> int
+override RioCharts.Core.Data.CsvOptions.ToString() -> string!
+override RioCharts.Core.Definitions.DefinitionBindResult.Equals(object? obj) -> bool
+override RioCharts.Core.Definitions.DefinitionBindResult.GetHashCode() -> int
+override RioCharts.Core.Definitions.DefinitionBindResult.ToString() -> string!
+override RioCharts.Core.Definitions.DefinitionError.Equals(object? obj) -> bool
+override RioCharts.Core.Definitions.DefinitionError.GetHashCode() -> int
+override RioCharts.Core.Definitions.DefinitionError.ToString() -> string!
+override RioCharts.Core.Definitions.DefinitionParseResult.Equals(object? obj) -> bool
+override RioCharts.Core.Definitions.DefinitionParseResult.GetHashCode() -> int
+override RioCharts.Core.Definitions.DefinitionParseResult.ToString() -> string!
+override RioCharts.Core.Filter.Equals(object? obj) -> bool
+override RioCharts.Core.Filter.GetHashCode() -> int
+override RioCharts.Core.Filter.ToString() -> string!
+override RioCharts.Core.Geo.GeoContinent.Equals(object? obj) -> bool
+override RioCharts.Core.Geo.GeoContinent.GetHashCode() -> int
+override RioCharts.Core.Geo.GeoContinent.ToString() -> string!
+override RioCharts.Core.LegendOptions.Equals(object? obj) -> bool
+override RioCharts.Core.LegendOptions.GetHashCode() -> int
+override RioCharts.Core.LegendOptions.ToString() -> string!
+override RioCharts.Core.SeriesOptions.Equals(object? obj) -> bool
+override RioCharts.Core.SeriesOptions.GetHashCode() -> int
+override RioCharts.Core.SeriesOptions.ToString() -> string!
+override RioCharts.Core.TooltipOptions.Equals(object? obj) -> bool
+override RioCharts.Core.TooltipOptions.GetHashCode() -> int
+override RioCharts.Core.TooltipOptions.ToString() -> string!
+static RioCharts.Core.Annotation.operator !=(RioCharts.Core.Annotation? left, RioCharts.Core.Annotation? right) -> bool
+static RioCharts.Core.Annotation.operator ==(RioCharts.Core.Annotation? left, RioCharts.Core.Annotation? right) -> bool
+static RioCharts.Core.AxisOptions.operator !=(RioCharts.Core.AxisOptions? left, RioCharts.Core.AxisOptions? right) -> bool
+static RioCharts.Core.AxisOptions.operator ==(RioCharts.Core.AxisOptions? left, RioCharts.Core.AxisOptions? right) -> bool
+static RioCharts.Core.ChartDefinition.operator !=(RioCharts.Core.ChartDefinition? left, RioCharts.Core.ChartDefinition? right) -> bool
+static RioCharts.Core.ChartDefinition.operator ==(RioCharts.Core.ChartDefinition? left, RioCharts.Core.ChartDefinition? right) -> bool
+static RioCharts.Core.ChartTexts.BuiltIn.get -> System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.ChartTexts!>!
+static RioCharts.Core.ChartTexts.Danish.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.English.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.Finnish.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.For(System.Globalization.CultureInfo? culture) -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.French.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.From(System.Func<string!, string?>! lookup, RioCharts.Core.ChartTexts? fallback = null) -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.German.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.Keys.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static RioCharts.Core.ChartTexts.Norwegian.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.Register(string! culture, RioCharts.Core.ChartTexts! texts) -> void
+static RioCharts.Core.ChartTexts.Spanish.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.Swedish.get -> RioCharts.Core.ChartTexts!
+static RioCharts.Core.ChartTexts.operator !=(RioCharts.Core.ChartTexts? left, RioCharts.Core.ChartTexts? right) -> bool
+static RioCharts.Core.ChartTexts.operator ==(RioCharts.Core.ChartTexts? left, RioCharts.Core.ChartTexts? right) -> bool
+static RioCharts.Core.ColorBand.operator !=(RioCharts.Core.ColorBand? left, RioCharts.Core.ColorBand? right) -> bool
+static RioCharts.Core.ColorBand.operator ==(RioCharts.Core.ColorBand? left, RioCharts.Core.ColorBand? right) -> bool
+static RioCharts.Core.Data.BoxSummary.Empty.get -> RioCharts.Core.Data.BoxSummary
+static RioCharts.Core.Data.BoxSummary.FromFiveNumbers(double low, double q1, double median, double q3, double high, System.Collections.Generic.IEnumerable<double>? outliers = null, int count = 0) -> RioCharts.Core.Data.BoxSummary
+static RioCharts.Core.Data.BoxSummary.FromValues(System.Collections.Generic.IEnumerable<double>! values) -> RioCharts.Core.Data.BoxSummary
+static RioCharts.Core.Data.BoxSummary.operator !=(RioCharts.Core.Data.BoxSummary left, RioCharts.Core.Data.BoxSummary right) -> bool
+static RioCharts.Core.Data.BoxSummary.operator ==(RioCharts.Core.Data.BoxSummary left, RioCharts.Core.Data.BoxSummary right) -> bool
+static RioCharts.Core.Data.CandleSummary.Empty.get -> RioCharts.Core.Data.CandleSummary
+static RioCharts.Core.Data.CandleSummary.FromValues(System.Collections.Generic.IEnumerable<double>! valuesInTimeOrder) -> RioCharts.Core.Data.CandleSummary
+static RioCharts.Core.Data.CandleSummary.Merge(System.Collections.Generic.IEnumerable<RioCharts.Core.Data.CandleSummary>! candlesInTimeOrder) -> RioCharts.Core.Data.CandleSummary
+static RioCharts.Core.Data.CandleSummary.operator !=(RioCharts.Core.Data.CandleSummary left, RioCharts.Core.Data.CandleSummary right) -> bool
+static RioCharts.Core.Data.CandleSummary.operator ==(RioCharts.Core.Data.CandleSummary left, RioCharts.Core.Data.CandleSummary right) -> bool
+static RioCharts.Core.Data.CsvOptions.operator !=(RioCharts.Core.Data.CsvOptions? left, RioCharts.Core.Data.CsvOptions? right) -> bool
+static RioCharts.Core.Data.CsvOptions.operator ==(RioCharts.Core.Data.CsvOptions? left, RioCharts.Core.Data.CsvOptions? right) -> bool
+static RioCharts.Core.Data.SeriesBufferExtensions.ConsumeAsync<T>(this RioCharts.Core.Data.SeriesBuffer! buffer, System.Collections.Generic.IAsyncEnumerable<T>! source, System.Func<T, System.DateTime>! x, System.Func<T, double?>! y, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static RioCharts.Core.Data.SeriesBufferExtensions.ConsumeAsync<T>(this RioCharts.Core.Data.SeriesBuffer! buffer, System.Collections.Generic.IAsyncEnumerable<T>! source, System.Func<T, double>! x, System.Func<T, double?>! y, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static RioCharts.Core.Data.SeriesData.Empty.get -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.From(System.ReadOnlyMemory<System.DateTime> x, System.ReadOnlyMemory<double> y) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.From(System.ReadOnlyMemory<System.DateTimeOffset> x, System.ReadOnlyMemory<double> y) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.From(System.ReadOnlyMemory<double> x, System.ReadOnlyMemory<double> y) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.From(System.ReadOnlySpan<System.DateTime> x, System.ReadOnlySpan<double> y) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.From(System.ReadOnlySpan<System.DateTimeOffset> x, System.ReadOnlySpan<double> y) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.From(System.ReadOnlySpan<double> x, System.ReadOnlySpan<double> y) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.FromBoxGroups<TItem>(System.Collections.Generic.IEnumerable<TItem>! items, System.Func<TItem, object?>! xValue, System.Func<TItem, double?>! value, out System.Collections.Generic.IReadOnlyList<int[]!>! groups) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.FromCategories(System.Collections.Generic.IReadOnlyList<string!>! categories, System.ReadOnlySpan<double> y) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.FromGroups<TItem>(System.Collections.Generic.IEnumerable<TItem>! items, System.Func<TItem, object?>! xValue, System.Func<System.Collections.Generic.IReadOnlyList<TItem>!, double?>! aggregate) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.FromGroups<TItem>(System.Collections.Generic.IEnumerable<TItem>! items, System.Func<TItem, object?>! xValue, System.Func<System.Collections.Generic.IReadOnlyList<TItem>!, double?>! aggregate, out System.Collections.Generic.IReadOnlyList<int[]!>! groups) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.FromItems<TItem>(System.Collections.Generic.IEnumerable<TItem>! items, System.Func<TItem, object?>! xValue, System.Func<TItem, double?>! yValue) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.SeriesData.FromRanges<TItem>(System.Collections.Generic.IEnumerable<TItem>! items, System.Func<TItem, string?>? row, System.Func<TItem, object?>! start, System.Func<TItem, object?>! end) -> RioCharts.Core.Data.SeriesData!
+static RioCharts.Core.Data.TimeValue.FromDateOnly(System.DateOnly value) -> double
+static RioCharts.Core.Data.TimeValue.FromDateTime(System.DateTime value) -> double
+static RioCharts.Core.Data.TimeValue.FromDateTimeOffset(System.DateTimeOffset value) -> double
+static RioCharts.Core.Data.TimeValue.OffsetOf(System.DateTime value) -> double
+static RioCharts.Core.Data.TimeValue.OffsetOf(object? value) -> double
+static RioCharts.Core.Data.TimeValue.ToDateTime(double milliseconds) -> System.DateTime
+static RioCharts.Core.Definitions.ChartDataset.FromCsv(string! name, string! csv, string? description = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? fieldDescriptions = null) -> RioCharts.Core.Definitions.ChartDataset!
+static RioCharts.Core.Definitions.ChartDataset.FromItems<T>(string! name, System.Collections.Generic.IEnumerable<T>! items, string? description = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? fieldDescriptions = null) -> RioCharts.Core.Definitions.ChartDataset!
+static RioCharts.Core.Definitions.ChartDataset.FromJson(string! name, System.Text.Json.JsonElement array, string? description = null) -> RioCharts.Core.Definitions.ChartDataset!
+static RioCharts.Core.Definitions.ChartDataset.FromRows(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! rows, string? description = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? fieldDescriptions = null) -> RioCharts.Core.Definitions.ChartDataset!
+static RioCharts.Core.Definitions.ChartDefinitionBinder.Bind(RioCharts.Core.ChartDefinition! spec, System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Definitions.ChartDataset!>! datasets, System.Collections.Generic.IReadOnlyList<string!>? available = null, string? viewerTimeZone = null) -> RioCharts.Core.Definitions.DefinitionBindResult!
+static RioCharts.Core.Definitions.ChartDefinitionBinder.BindAsync(RioCharts.Core.ChartDefinition! spec, RioCharts.Core.Definitions.IChartDataSource! source, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.Core.Definitions.DefinitionBindResult!>!
+static RioCharts.Core.Definitions.ChartDefinitionBinder.Humanize(string! field) -> string!
+static RioCharts.Core.Definitions.ChartDefinitionJson.Parse(string! json) -> RioCharts.Core.Definitions.DefinitionParseResult!
+static RioCharts.Core.Definitions.ChartDefinitionJson.Schema() -> System.Text.Json.Nodes.JsonNode!
+static RioCharts.Core.Definitions.ChartDefinitionJson.Serialize(RioCharts.Core.ChartDefinition! spec) -> string!
+static RioCharts.Core.Definitions.DefinitionBindResult.operator !=(RioCharts.Core.Definitions.DefinitionBindResult? left, RioCharts.Core.Definitions.DefinitionBindResult? right) -> bool
+static RioCharts.Core.Definitions.DefinitionBindResult.operator ==(RioCharts.Core.Definitions.DefinitionBindResult? left, RioCharts.Core.Definitions.DefinitionBindResult? right) -> bool
+static RioCharts.Core.Definitions.DefinitionError.operator !=(RioCharts.Core.Definitions.DefinitionError? left, RioCharts.Core.Definitions.DefinitionError? right) -> bool
+static RioCharts.Core.Definitions.DefinitionError.operator ==(RioCharts.Core.Definitions.DefinitionError? left, RioCharts.Core.Definitions.DefinitionError? right) -> bool
+static RioCharts.Core.Definitions.DefinitionParseResult.operator !=(RioCharts.Core.Definitions.DefinitionParseResult? left, RioCharts.Core.Definitions.DefinitionParseResult? right) -> bool
+static RioCharts.Core.Definitions.DefinitionParseResult.operator ==(RioCharts.Core.Definitions.DefinitionParseResult? left, RioCharts.Core.Definitions.DefinitionParseResult? right) -> bool
+static RioCharts.Core.Filter.operator !=(RioCharts.Core.Filter? left, RioCharts.Core.Filter? right) -> bool
+static RioCharts.Core.Filter.operator ==(RioCharts.Core.Filter? left, RioCharts.Core.Filter? right) -> bool
+static RioCharts.Core.Geo.GeoContinent.operator !=(RioCharts.Core.Geo.GeoContinent? left, RioCharts.Core.Geo.GeoContinent? right) -> bool
+static RioCharts.Core.Geo.GeoContinent.operator ==(RioCharts.Core.Geo.GeoContinent? left, RioCharts.Core.Geo.GeoContinent? right) -> bool
+static RioCharts.Core.Geo.WorldMap.Continents.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Geo.GeoContinent!>!
+static RioCharts.Core.Geo.WorldMap.Countries.get -> System.Collections.Generic.IReadOnlyList<RioCharts.Core.Geo.GeoRegion!>!
+static RioCharts.Core.Geo.WorldMap.Find(string? key) -> RioCharts.Core.Geo.GeoRegion?
+static RioCharts.Core.Geo.WorldMap.FindContinent(string? name) -> RioCharts.Core.Geo.GeoContinent?
+static RioCharts.Core.Geo.WorldMap.Locate(double latitude, double longitude) -> RioCharts.Core.Geo.GeoRegion?
+static RioCharts.Core.LegendOptions.operator !=(RioCharts.Core.LegendOptions? left, RioCharts.Core.LegendOptions? right) -> bool
+static RioCharts.Core.LegendOptions.operator ==(RioCharts.Core.LegendOptions? left, RioCharts.Core.LegendOptions? right) -> bool
+static RioCharts.Core.SeriesOptions.operator !=(RioCharts.Core.SeriesOptions? left, RioCharts.Core.SeriesOptions? right) -> bool
+static RioCharts.Core.SeriesOptions.operator ==(RioCharts.Core.SeriesOptions? left, RioCharts.Core.SeriesOptions? right) -> bool
+static RioCharts.Core.ThemeTokens.IsLightSeries(string? color) -> bool
+static RioCharts.Core.ThemeTokens.IsToken(string? color) -> bool
+static RioCharts.Core.ThemeTokens.Series(int index) -> string!
+static RioCharts.Core.TooltipOptions.operator !=(RioCharts.Core.TooltipOptions? left, RioCharts.Core.TooltipOptions? right) -> bool
+static RioCharts.Core.TooltipOptions.operator ==(RioCharts.Core.TooltipOptions? left, RioCharts.Core.TooltipOptions? right) -> bool
+~override RioCharts.Core.Data.BoxSummary.Equals(object obj) -> bool
+~override RioCharts.Core.Data.BoxSummary.ToString() -> string
+~override RioCharts.Core.Data.CandleSummary.Equals(object obj) -> bool
+~override RioCharts.Core.Data.CandleSummary.ToString() -> string
