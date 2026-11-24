@@ -2003,6 +2003,7 @@ function buildSvg(container, options) {
 function resolveColor(container, css) {
     const probe = document.createElement('span');
     probe.style.display = 'none';
+    probe.style.forcedColorAdjust = 'none'; // the color itself, not the High Contrast text color
     probe.style.color = css;
     container.appendChild(probe);
     const color = getComputedStyle(probe).color;

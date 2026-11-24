@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Fixed: in Windows High Contrast (forced colors), a chart with `SeriesLayer.Canvas` drew every series in the text color,
+  the tooltip's color dots disappeared, and `ExportPngAsync` could fill the background with the text color. Data colors
+  now stay as they are; the rest of the chart takes the system colors.
 - Screen reader text: a map with only bubbles now lists its places and values, largest first (it said just "Map."), and
   a map with countries and bubbles lists both. A dumbbell chart now reads both ends of each dumbbell
   ("Utrecht 33% to 41%, ...") instead of only the second values. The `<desc>` of these charts changes.
