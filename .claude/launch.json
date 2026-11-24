@@ -27,6 +27,18 @@
         "http://localhost:5032"
       ],
       "port": 5032
+    },
+    {
+      "name": "rendermodes",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "samples/RioCharts.RenderModes/RioCharts.RenderModes",
+        "--launch-profile",
+        "http"
+      ],
+      "port": 5033
     }
   ]
 }

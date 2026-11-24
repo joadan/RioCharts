@@ -1,0 +1,12 @@
+@page "/"
+
+<PageTitle>RioCharts render modes</PageTitle>
+
+<h1>RioCharts render modes</h1>
+<p>The same charts in each Blazor render mode. Check that each page draws the charts, and on the interactive ones that tooltips, zoom (drag), clicks, the canvas layer and keyboard navigation work.</p>
+<ul>
+    @foreach (var (href, name) in Modes.All)
+    {
+        <li><a href="@href">@name</a></li>
+    }
+</ul>

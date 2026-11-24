@@ -1,0 +1,58 @@
+@* The same charts on every page; only the render mode differs. Lives in the client project so it can run in WebAssembly. *@
+
+<p class="mode" data-testid="mode">
+    Renderer: <strong>@RendererInfo.Name</strong>, interactive: <strong>@RendererInfo.IsInteractive</strong>
+</p>
+
+<div class="grid">
+    <section>
+        <h2>Line, zoomable</h2>
+        <RioChart TItem="Visit" Items="Visits" Height="240" Zoomable="true" OnPointClick="(PointClickEventArgs<Visit> e) => Clicked(e.SeriesName, e.Index)" Title="Visits per day">
+            <ReferenceLine Value="140" Label="Goal" />
+            <LineSeries Name="Web" XValue="v => v.Day" YValue="v => v.Web" />
+            <LineSeries Name="App" XValue="v => v.Day" YValue="v => v.App" />
+        </RioChart>
+    </section>
+
+    <section>
+        <h2>Stacked bars</h2>
+        <RioChart TItem="Sale" Items="Sales" Height="240" OnPointClick="(PointClickEventArgs<Sale> e) => Clicked(e.SeriesName, e.Index)" Title="Orders per quarter">
+            <BarSeries Name="Web" XValue="s => s.Quarter" YValue="s => s.Web" Stack="all" />
+            <BarSeries Name="Store" XValue="s => s.Quarter" YValue="s => s.Store" Stack="all" />
+        </RioChart>
+    </section>
+
+    <section>
+        <h2>Donut</h2>
+        <RioChart TItem="Share" Items="Shares" Height="240" OnPointClick="(PointClickEventArgs<Share> e) => Clicked(e.SeriesName, e.Index)" Title="Revenue by channel">
+            <DonutSeries XValue="s => s.Channel" YValue="s => s.Value" />
+        </RioChart>
+    </section>
+
+    <section>
+        <h2>Canvas layer</h2>
+        <RioChart TItem="Visit" Items="Visits" Height="240" SeriesLayer="SeriesLayer.Canvas" Zoomable="true" Title="Visits, on a canvas">
+            <LineSeries Name="Web" XValue="v => v.Day" YValue="v => v.Web" />
+            <AreaSeries Name="App" XValue="v => v.Day" YValue="v => v.App" />
+        </RioChart>
+    </section>
+</div>
+
+<p data-testid="clicked">Clicked: @(_clicked ?? "nothing yet")</p>
+
+@code {
+    private sealed record Visit(DateTime Day, double Web, double App);
+    private sealed record Sale(string Quarter, double Web, double Store);
+    private sealed record Share(string Channel, double Value);
+
+    private static readonly Visit[] Visits = [.. Enumerable.Range(0, 60).Select(i =>
+        new Visit(new DateTime(2026, 1, 1).AddDays(i), 120 + 30 * Math.Sin(i / 5.0) + i % 7 * 3, 60 + 20 * Math.Cos(i / 6.0)))];
+
+    private static readonly Sale[] Sales = [new("Q1", 120, 80), new("Q2", 150, 70), new("Q3", 170, 90), new("Q4", 210, 110)];
+
+    private static readonly Share[] Shares = [new("Web", 52), new("Store", 31), new("Partners", 17)];
+
+    private string? _clicked;
+
+    private void Clicked(string series, int index) => _clicked = $"{series} #{index}";
+}
