@@ -59,7 +59,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   until the new one arrives. The card keeps `pointer-events: none`, so links in a template are
   not clickable.
 - **Point clicks** only count on or next to a point (16 px) or a bar, and win over an annotation
-  underneath. Hover events are not raised to .NET (except with a tooltip template).
+  underneath, except a point annotation or callout: a click on its marker (a transparent 12 px
+  ring makes it easy to hit), label or box raises `OnAnnotationClick`, since pins usually sit on a
+  data point. Hover events are not raised to .NET (except with a tooltip template).
 - **Stacking.** Series stack when they share `Stack`, axis and kind (bars, or lines/areas),
   matched by exact x value (or category). Positive values stack up and negative values down.
   Hidden series leave the stack. Stacked bars are square with a 1 px gap; stacked areas fill

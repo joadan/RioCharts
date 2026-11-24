@@ -293,4 +293,39 @@
         Assert.Equal(50 * Math.Sqrt(10), (double)zoomed[^1]!.Min, 3);
         Assert.Equal(500 * Math.Sqrt(10), (double)zoomed[^1]!.Max, 3);
     }
+
+    [Fact]
+    public void A_pin_on_a_data_point_is_a_button_that_raises_OnAnnotationClick()
+    {
+        AnnotationClickEventArgs? clicked = null;
+        var pinned = London[3];
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London" OnPointClick="@((PointClickEventArgs<Reading> _) => { })"
+                                                      OnAnnotationClick="@((AnnotationClickEventArgs e) => clicked = e)">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+            <PointAnnotation Id="pin" X="pinned.Time" Y="pinned.Value!.Value" Label="Pinned" />
+        </RioChart>);
+
+        var pin = cut.Find("[data-key='annotation:pin']");
+        Assert.Equal("button", pin.GetAttribute("role"));
+        Assert.Contains("rio-annotation-point", pin.GetAttribute("class"));
+        Assert.NotEmpty(pin.QuerySelectorAll(".rio-annotation-grip")); // a larger hit area around the marker
+
+        pin.Click();
+
+        Assert.Equal(new AnnotationClickEventArgs("pin", "Pinned"), clicked);
+    }
+
+    [Fact]
+    public void Pins_are_plain_markers_without_OnAnnotationClick()
+    {
+        var pinned = London[3];
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London">
+            <LineSeries Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+            <PointAnnotation Id="pin" X="pinned.Time" Y="pinned.Value!.Value" Label="Pinned" />
+        </RioChart>);
+
+        var pin = cut.Find("[data-key='annotation:pin']");
+        Assert.NotEqual("button", pin.GetAttribute("role"));
+        Assert.Empty(pin.QuerySelectorAll(".rio-annotation-grip"));
+    }
 }

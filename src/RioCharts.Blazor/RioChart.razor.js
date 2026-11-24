@@ -1676,6 +1676,12 @@ function click(state, e) {
         return;
     }
 
+    // A click on a clickable point annotation or callout (its marker, label or box) is the annotation's: a pin usually
+    // sits on a data point, and the point must not win there (Blazor handles the annotation's click after this).
+    if (e.target && e.target.closest && e.target.closest('.rio-annotation-point[role="button"], .rio-annotation-callout[role="button"]')) {
+        return;
+    }
+
     const pos = toChart(state, e);
     if (!pos) {
         return;

@@ -20,6 +20,9 @@ changes are called out under **Breaking**.
   block; longer data is one block per year. Clicking a day selects its items. New texts: `ChartTexts.CalendarChart`
   and `CalendarDays` in all built-in languages. Docs: a Calendar heatmap page and a gallery card.
   **Breaking (JSON):** `"type": "calendar"` used to mean a plain heatmap; it is now the calendar heatmap.
+- Point annotations and callouts can be clicked: `OnAnnotationClick` now fires for a click on a pin's marker, label
+  or callout box, also when the pin sits on a data point (before, the point under it won and only `OnPointClick`
+  fired). A clickable marker gets a larger, invisible hit area. Lets users remove a pin by clicking the pin itself.
 - Bars no longer fill the chart when there are only one to three categories: a group of bars takes at most a fifth
   of the plot (as with four categories), centered on its band. `BarSeries.MaxBarWidth` (`"maxBarWidth"` in JSON) caps
   each bar in pixels; grouped bars stay side by side. Histograms, box plots and candles keep their widths. A behavior

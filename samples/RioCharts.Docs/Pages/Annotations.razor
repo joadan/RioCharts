@@ -41,7 +41,59 @@
     </ChildContent>
 </Example>
 
+<Example Title="Pins: click a point to add one, click the pin to remove it" Code="@PinsCode">
+    <Description>
+        <p>
+            <code>OnPointClick</code> gives the item behind a point, so pinning it is a <code>PointAnnotation</code> at its x and y.
+            With <code>OnAnnotationClick</code> set, point annotations and callouts are buttons: a click on the pin (its marker or
+            label) raises <code>OnAnnotationClick</code> even though the pin sits on a data point, so removing a pin is a click on the pin.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Items="DailyOrders" Height="240" YAxis="OrdersAxis" OnPointClick="Pin" OnAnnotationClick="Unpin">
+            <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="0 'orders'" />
+            @foreach (var pin in _pins)
+            {
+                <PointAnnotation @key="pin.Time" Id="@PinId(pin)" X="pin.Time" Y="pin.Value ?? 0" Label="@($"{pin.Value:0}")" Color="#d9480f" />
+            }
+        </RioChart>
+        <p class="note">@(_pins.Count == 0 ? "Click a point to pin it." : $"{_pins.Count} pinned. Click a pin to remove it.")</p>
+    </ChildContent>
+</Example>
+
 @code {
+    private static readonly AxisOptions OrdersAxis = new() { Title = "Orders per day" };
+    private readonly List<Reading> _pins = [];
+
+    private static string PinId(Reading r) => "pin-" + r.Time.Ticks;
+
+    private void Pin(PointClickEventArgs<Reading> e)
+    {
+        if (e.Item is { } item && !_pins.Contains(item))
+        {
+            _pins.Add(item);
+        }
+    }
+
+    private void Unpin(AnnotationClickEventArgs e) => _pins.RemoveAll(p => PinId(p) == e.AnnotationId);
+
+    private const string PinsCode = """
+        <RioChart TItem="Reading" Items="orders" OnPointClick="Pin" OnAnnotationClick="Unpin">
+            <LineSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
+            @foreach (var pin in pins)
+            {
+                <PointAnnotation @key="pin.Time" Id="@PinId(pin)" X="pin.Time" Y="pin.Value ?? 0" Label="@($"{pin.Value:0}")" />
+            }
+        </RioChart>
+
+        @code {
+            List<Reading> pins = [];
+            static string PinId(Reading r) => "pin-" + r.Time.Ticks;
+            void Pin(PointClickEventArgs<Reading> e) { if (e.Item is { } item && !pins.Contains(item)) pins.Add(item); }
+            void Unpin(AnnotationClickEventArgs e) => pins.RemoveAll(p => PinId(p) == e.AnnotationId);
+        }
+        """;
+
     private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
     private static readonly DateTime _saleStart = Start.AddHours(16), _saleEnd = Start.AddHours(23), _now = Start.AddHours(44);
     private static readonly DateTime _maintenanceStart = Start.AddHours(26), _maintenanceEnd = Start.AddHours(28);
