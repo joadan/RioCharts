@@ -1,7 +1,7 @@
 namespace RioCharts.Core.Scene;
 
 /// <summary>A drawing primitive. Core emits these; renderers turn them into SVG, canvas calls, etc.</summary>
-public abstract record Node
+internal abstract record Node
 {
     /// <summary>Optional semantic class (e.g. "rio-grid"), useful to renderers and for styling.</summary>
     public string? Class { get; init; }
@@ -13,19 +13,19 @@ public abstract record Node
 /// <summary>A path (lines, curves, arcs) drawn with a paint style.</summary>
 /// <param name="Path">The geometry, in pixels.</param>
 /// <param name="Style">Fill and stroke, looked up in <see cref="Scene.Styles"/>.</param>
-public sealed record PathNode(PathData Path, StyleRef Style) : Node;
+internal sealed record PathNode(PathData Path, StyleRef Style) : Node;
 
 /// <summary>An axis-aligned rectangle drawn with a paint style.</summary>
 /// <param name="Bounds">Position and size in pixels.</param>
 /// <param name="Style">Fill and stroke, looked up in <see cref="Scene.Styles"/>.</param>
-public sealed record RectNode(RectF Bounds, StyleRef Style) : Node
+internal sealed record RectNode(RectF Bounds, StyleRef Style) : Node
 {
     /// <summary>Corner radius in pixels; 0 (the default) for square corners.</summary>
     public float CornerRadius { get; init; }
 }
 
 /// <summary>Horizontal text alignment relative to the anchor point.</summary>
-public enum Anchor
+internal enum Anchor
 {
     /// <summary>Text starts at the point.</summary>
     Start,
@@ -38,7 +38,7 @@ public enum Anchor
 }
 
 /// <summary>Vertical text alignment relative to the anchor point.</summary>
-public enum Baseline
+internal enum Baseline
 {
     /// <summary>Top of the text at the point.</summary>
     Top,
@@ -55,7 +55,7 @@ public enum Baseline
 /// <param name="At">Anchor point in pixels.</param>
 /// <param name="Style">Font and color, looked up in <see cref="Scene.Styles"/>.</param>
 /// <param name="Anchor">Horizontal alignment relative to <paramref name="At"/>.</param>
-public sealed record TextNode(string Text, PointF At, TextStyle Style, Anchor Anchor) : Node
+internal sealed record TextNode(string Text, PointF At, TextStyle Style, Anchor Anchor) : Node
 {
     /// <summary>Vertical alignment relative to <see cref="At"/>. Default <see cref="Baseline.Middle"/>.</summary>
     public Baseline Baseline { get; init; } = Baseline.Middle;
@@ -68,7 +68,7 @@ public sealed record TextNode(string Text, PointF At, TextStyle Style, Anchor An
 /// <param name="Children">The nodes in the group, drawn in order.</param>
 /// <param name="Clip">Clip rectangle in pixels; null for no clipping.</param>
 /// <param name="Transform">Transform applied to the children; null for none.</param>
-public sealed record GroupNode(IReadOnlyList<Node> Children, RectF? Clip = null, Matrix? Transform = null) : Node
+internal sealed record GroupNode(IReadOnlyList<Node> Children, RectF? Clip = null, Matrix? Transform = null) : Node
 {
     /// <summary>A group with no children.</summary>
     public static GroupNode Empty { get; } = new([]);
@@ -86,7 +86,7 @@ public sealed record GroupNode(IReadOnlyList<Node> Children, RectF? Clip = null,
 /// <summary>What happens when an interactive group is activated.</summary>
 /// <param name="Kind">e.g. "legend".</param>
 /// <param name="Id">e.g. the series id.</param>
-public sealed record NodeInteraction(string Kind, string Id)
+internal sealed record NodeInteraction(string Kind, string Id)
 {
     /// <summary>Toggle state for toggle buttons (legend items): true when the series is shown.</summary>
     public bool? Pressed { get; init; }
@@ -103,7 +103,7 @@ public sealed record NodeInteraction(string Kind, string Id)
 /// grid, legend), <see cref="Series"/> (data) and <see cref="Overlay"/> (crosshair, tooltip,
 /// hover; on canvas only this layer redraws when the pointer moves).
 /// </summary>
-public sealed record Scene(Node Static, Node Series, Node Overlay)
+internal sealed record Scene(Node Static, Node Series, Node Overlay)
 {
     /// <summary>Width of the chart in pixels.</summary>
     public float Width { get; init; }

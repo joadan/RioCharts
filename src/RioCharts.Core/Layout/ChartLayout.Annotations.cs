@@ -17,9 +17,9 @@ namespace RioCharts.Core.Layout;
 /// A line on a log axis: the domain is in log10 units, so the pixel maps linearly to log10(value); the value is 10 to
 /// the power of the result.
 /// </param>
-public sealed record DragHandle(string Id, bool IsX, float Pixel, double DomainMin, double DomainMax, double RangeStart, double RangeEnd, bool Log = false);
+internal sealed record DragHandle(string Id, bool IsX, float Pixel, double DomainMin, double DomainMax, double RangeStart, double RangeEnd, bool Log = false);
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     private sealed class ResolvedAnnotation
     {

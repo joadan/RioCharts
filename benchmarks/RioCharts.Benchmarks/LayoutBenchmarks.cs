@@ -33,11 +33,11 @@ public class LineLayoutBenchmarks
     }
 
     [Benchmark]
-    public ChartLayoutResult Line() => ChartLayout.Compute(_spec, _data, _options);
+    public object Line() => ChartLayout.Compute(_spec, _data, _options);
 
     /// <summary>A tenth of the data visible: the y axis fits it and the line draws only that window.</summary>
     [Benchmark]
-    public ChartLayoutResult LineZoomed() => ChartLayout.Compute(_spec, _data, _zoomed);
+    public object LineZoomed() => ChartLayout.Compute(_spec, _data, _zoomed);
 }
 
 /// <summary>Layout of category and polar charts, which have few points but more labels.</summary>
@@ -72,11 +72,11 @@ public class CategoryLayoutBenchmarks
     }
 
     [Benchmark]
-    public ChartLayoutResult GroupedBars() => ChartLayout.Compute(_bars, _barData, Options);
+    public object GroupedBars() => ChartLayout.Compute(_bars, _barData, Options);
 
     [Benchmark]
-    public ChartLayoutResult StackedBars() => ChartLayout.Compute(_stacked, _barData, Options);
+    public object StackedBars() => ChartLayout.Compute(_stacked, _barData, Options);
 
     [Benchmark]
-    public ChartLayoutResult Pie() => ChartLayout.Compute(_pie, _pieData, Options);
+    public object Pie() => ChartLayout.Compute(_pie, _pieData, Options);
 }

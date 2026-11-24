@@ -7,7 +7,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>A vertical axis during layout: its series, extent, ticks and label column.</summary>
     private sealed class YAxisLayout

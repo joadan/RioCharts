@@ -8,7 +8,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     private const double MapMinOpacity = 0.25;
 

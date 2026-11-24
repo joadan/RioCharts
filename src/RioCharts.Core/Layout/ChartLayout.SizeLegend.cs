@@ -7,7 +7,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>Space between the circles and their values, and the length of the leader lines.</summary>
     private const double SizeLegendGap = 8;

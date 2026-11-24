@@ -5,6 +5,15 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- **Breaking:** the scene and layout engine are internal, the first step of the 1.0 plan (`docs/v1.md`): the
+  `RioCharts.Core.Scene` and `RioCharts.Core.Layout` types (`ChartLayout`, `ChartLayoutResult`, `LayoutOptions`,
+  `Scene`, nodes, styles, hit-test and tooltip models), `LineGenerator`, the text measurers, and in RioCharts.Skia
+  `SkiaRenderer`, `SvgExporter`, `SkiaFonts`, `SkiaTextMeasurer`, `ChartExport.Layout` and `ChartExport.ToSvg/ToPng(Scene)`.
+  Export with `ChartExport.ToPng`/`ToSvg`/`WritePngAsync` from a definition and data. Also:
+  - `ThemeTokens` moved from `RioCharts.Core.Scene` to `RioCharts.Core`.
+  - The pie "Other" slice id is `SeriesOptions.OtherSliceKey` (was `ChartLayout.OtherSliceKey`).
+  - `RioChart.Layout` is internal: export a component chart with `ExportPngAsync`/`ExportSvgAsync`, or save its
+    `GetDefinition()`.
 - Color scale legends follow `Legend.Position`: with `LegendPosition.Bottom` (also from `RioChartDefaults`) the scale of
   a heatmap, calendar heatmap or map, and a heatmap's color bands, sit below the chart instead of above it. `Right`
   keeps them above (a scale is a wide strip).

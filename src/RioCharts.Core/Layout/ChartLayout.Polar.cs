@@ -8,7 +8,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
 
     private sealed record Slice(string Label, int Index, double Value, string Color);
@@ -322,7 +322,7 @@ public static partial class ChartLayout
     // ---------- Pie and donut ----------
 
     /// <summary>The legend key of the "Other" slice (hide it with this id in HiddenSeries).</summary>
-    public const string OtherSliceKey = "rio:other";
+    internal const string OtherSliceKey = SeriesOptions.OtherSliceKey;
 
     /// <summary>Starts each part's line in the "Other" legend tooltip (the JS module shows those lines as parts).</summary>
     internal const string OtherPartPrefix = "• ";

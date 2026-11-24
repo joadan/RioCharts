@@ -3,14 +3,14 @@ namespace RioCharts.Core.Scene;
 /// <summary>A point in pixels (y grows downwards).</summary>
 /// <param name="X">Horizontal position.</param>
 /// <param name="Y">Vertical position.</param>
-public readonly record struct PointF(float X, float Y);
+internal readonly record struct PointF(float X, float Y);
 
 /// <summary>A rectangle in pixels (y grows downwards).</summary>
 /// <param name="X">Left edge.</param>
 /// <param name="Y">Top edge.</param>
 /// <param name="Width">Width.</param>
 /// <param name="Height">Height.</param>
-public readonly record struct RectF(float X, float Y, float Width, float Height)
+internal readonly record struct RectF(float X, float Y, float Width, float Height)
 {
     /// <summary>Right edge.</summary>
     public float Right => X + Width;
@@ -29,7 +29,7 @@ public readonly record struct RectF(float X, float Y, float Width, float Height)
 }
 
 /// <summary>2D affine transform [a c e; b d f].</summary>
-public readonly record struct Matrix(float A, float B, float C, float D, float E, float F)
+internal readonly record struct Matrix(float A, float B, float C, float D, float E, float F)
 {
     /// <summary>The transform that changes nothing.</summary>
     public static Matrix Identity { get; } = new(1, 0, 0, 1, 0, 0);
@@ -48,7 +48,7 @@ public readonly record struct Matrix(float A, float B, float C, float D, float E
 }
 
 /// <summary>A path command in <see cref="PathData"/>; each takes a fixed number of coordinates (<see cref="PathData.CoordCount"/>).</summary>
-public enum PathCommand : byte
+internal enum PathCommand : byte
 {
     /// <summary>x, y</summary>
     MoveTo,
@@ -73,7 +73,7 @@ public enum PathCommand : byte
 /// Path geometry as commands plus float coordinates. Render-agnostic: each renderer converts
 /// it (the SVG renderer writes a "d" attribute; a canvas renderer would replay the commands).
 /// </summary>
-public sealed class PathData
+internal sealed class PathData
 {
     internal PathData(PathCommand[] commands, float[] coords)
     {
@@ -104,7 +104,7 @@ public sealed class PathData
 }
 
 /// <summary>Builds a <see cref="PathData"/> with chained calls. Coordinates are in pixels and stored as floats.</summary>
-public sealed class PathBuilder
+internal sealed class PathBuilder
 {
     private readonly List<PathCommand> _commands = [];
     private readonly List<float> _coords = [];

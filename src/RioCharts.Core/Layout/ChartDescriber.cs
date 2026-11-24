@@ -5,7 +5,7 @@ using RioCharts.Core.Data;
 namespace RioCharts.Core.Layout;
 
 /// <summary>The overall direction of a series, from <see cref="ChartDescriber.ComputeTrend(IReadOnlyList{ValueTuple{double, double}})"/>.</summary>
-public enum Trend
+internal enum Trend
 {
     /// <summary>No trend can be computed (fewer than two points, or no x range).</summary>
     None,
@@ -21,7 +21,7 @@ public enum Trend
 }
 
 /// <summary>Text alternative for a chart: series, ranges and trends.</summary>
-public static class ChartDescriber
+internal static class ChartDescriber
 {
     /// <summary>
     /// Describes the chart in a few sentences in the chart's language: title, series count and,

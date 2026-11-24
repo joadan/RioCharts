@@ -1,3 +1,4 @@
+using RioCharts.Core;
 using RioCharts.Core.Scene;
 
 namespace RioCharts.Skia;

@@ -7,7 +7,7 @@ using RioCharts.Core.Text;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>A group or item of a treemap, built from the paths.</summary>
     private sealed class TreeNode(string name, TreeNode? parent)

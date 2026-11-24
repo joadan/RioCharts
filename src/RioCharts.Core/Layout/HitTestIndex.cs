@@ -3,13 +3,13 @@ namespace RioCharts.Core.Layout;
 /// <summary>A point found by hit-testing.</summary>
 /// <param name="Index">Index into the series' <see cref="Data.SeriesData"/>.</param>
 /// <param name="SourceIndex">Index into the original input (items list or columns).</param>
-public readonly record struct HitResult(string SeriesId, int Index, int SourceIndex, float X, float Y, float Distance);
+internal readonly record struct HitResult(string SeriesId, int Index, int SourceIndex, float X, float Y, float Distance);
 
 /// <summary>
 /// Pixel positions of drawn points per series, sorted by x, for nearest-point lookup by
 /// binary search. Works server-side too; the same data is what gets sent to JS.
 /// </summary>
-public sealed class HitTestIndex
+internal sealed class HitTestIndex
 {
     private readonly List<SeriesHits> _series = [];
 
@@ -22,7 +22,7 @@ public sealed class HitTestIndex
     /// <param name="Y">Vertical pixel positions.</param>
     /// <param name="Index">Index of each point into the series' <see cref="Data.SeriesData"/>.</param>
     /// <param name="SourceIndex">Index of each point into the original input (items list or columns).</param>
-    public sealed record SeriesHits(string SeriesId, float[] X, float[] Y, int[] Index, int[] SourceIndex);
+    internal sealed record SeriesHits(string SeriesId, float[] X, float[] Y, int[] Index, int[] SourceIndex);
 
     internal void Add(SeriesHits hits)
     {

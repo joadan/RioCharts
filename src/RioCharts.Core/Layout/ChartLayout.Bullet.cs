@@ -6,7 +6,7 @@ using RioCharts.Core.Scene;
 
 namespace RioCharts.Core.Layout;
 
-public static partial class ChartLayout
+internal static partial class ChartLayout
 {
     /// <summary>
     /// Bullets: one row per data point of every bullet series, top to bottom, labeled on the left.
