@@ -429,7 +429,7 @@ function broadcastHover(state, dataX) {
             continue;
         }
 
-        const px = toPixel(m.xscale, dataX);
+        const px = toPixel(m.xscale, between(state.model.xscale, m.xscale, dataX));
         const rows = px >= m.plot.x - 1 && px <= m.plot.x + m.plot.w + 1 ? findShared(m, px) : [];
         if (rows.length === 0) {
             clearHover(other);
@@ -447,6 +447,15 @@ function toPixel(s, v) {
 
 function toData(s, px) {
     return s.d0 + (px - s.r0) / (s.r1 - s.r0) * (s.d1 - s.d0);
+}
+
+// A value in one x scale's units in another's: a log x scale works in log10 units (s.l).
+function between(from, to, v) {
+    if (!from || !to || !from.l === !to.l) {
+        return v;
+    }
+
+    return from.l ? Math.pow(10, v) : Math.log10(v);
 }
 
 // Pointer position in chart (viewBox) units, not limited to the plot.
@@ -727,8 +736,10 @@ function wheel(state, e) {
 }
 
 function commitRange(state, min, max) {
+    const from = state.model && state.model.xscale;
     for (const s of [state, ...others(state).filter(o => o.model.zoom)]) {
-        s.dotnet.invokeMethodAsync('OnZoom', min, max).catch(() => { });
+        const to = s.model && s.model.xscale;
+        s.dotnet.invokeMethodAsync('OnZoom', between(from, to, min), between(from, to, max)).catch(() => { });
     }
 }
 

@@ -264,4 +264,33 @@
         Assert.Single(zoomed);
         Assert.NotNull(zoomed[0]);
     }
+
+    private sealed record PageLoad(double SizeKb, double Ms);
+
+    private static readonly PageLoad[] Pages = [new(12, 110), new(85, 160), new(950, 480), new(8000, 2300)];
+
+    [Fact]
+    public async Task A_log_x_axis_talks_to_the_module_in_log10_units()
+    {
+        var zoomed = new List<ChartRange?>();
+        var cut = Render<RioChart<PageLoad>>(@<RioChart TItem="PageLoad" Items="Pages" Zoomable="true" XAxis="@(new AxisOptions { Scale = ScaleType.Log })"
+                                                       VisibleRangeChanged="@((ChartRange? r) => zoomed.Add(r))">
+            <ScatterSeries Name="Pages" XValue="p => p.SizeKb" YValue="p => p.Ms" />
+        </RioChart>);
+
+        var scale = Payload(Calls("update")[^1]).GetProperty("xscale");
+        Assert.True(scale.GetProperty("l").GetBoolean());
+        Assert.Equal(1, scale.GetProperty("d0").GetDouble(), 6); // 10 ...
+        Assert.Equal(4, scale.GetProperty("d1").GetDouble(), 6); // ... to 10 000
+
+        // A drag zoom from 50 to 500 arrives in log10 units.
+        await cut.InvokeAsync(() => cut.Instance.OnZoom(Math.Log10(50), Math.Log10(500)));
+        Assert.Equal(50, (double)zoomed[^1]!.Min, 6);
+        Assert.Equal(500, (double)zoomed[^1]!.Max, 6);
+
+        // Panning keeps the ratio: half the width to the right is a factor √10.
+        await cut.InvokeAsync(() => cut.Instance.PanAsync(0.5));
+        Assert.Equal(50 * Math.Sqrt(10), (double)zoomed[^1]!.Min, 3);
+        Assert.Equal(500 * Math.Sqrt(10), (double)zoomed[^1]!.Max, 3);
+    }
 }

@@ -404,6 +404,21 @@ public static partial class ChartLayout
                 }
             }
         }
+        else if (scale.IsLog)
+        {
+            // Powers of ten (with 2 and 5 between them on short ranges), fewer until the labels fit. Like log y axes,
+            // one per 28 px to start: the short labels of a log axis read well close together.
+            var format = NumberFormatter.ForLogTicks(culture, axis.Format);
+            for (var target = Math.Clamp((int)(plotWidth / 28), 2, 12); target >= 1; target--)
+            {
+                ticks = NiceTicks.LogTicks(scale.DomainMin, scale.DomainMax, target);
+                labels = ticks.Select(format).ToList();
+                if (Fits(ticks, labels, scale, measure, font, chartWidth))
+                {
+                    break;
+                }
+            }
+        }
         else
         {
             for (var target = Math.Clamp((int)(plotWidth / 70), 2, 12); target >= 1; target--)

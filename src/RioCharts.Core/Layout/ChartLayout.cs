@@ -347,9 +347,9 @@ public static partial class ChartLayout
         }
 
         var xKind = ResolveXKind(spec.X.Scale, resolved);
-        if (spec.X.Scale == ScaleType.Log)
+        if (spec.X.Scale == ScaleType.Log && xKind != XKind.Numeric)
         {
-            warnings.Add("x.scale: a log scale is for y axes only; the x axis is linear.");
+            warnings.Add($"x.scale: a log scale needs numbers, but the x values are {xKind}; the x axis is not logarithmic.");
         }
 
         // Counts, extremes and trend per series for the screen reader texts, computed once: the
@@ -387,22 +387,32 @@ public static partial class ChartLayout
         ApplyStacking(drawable, xKind, categoryIndex);
 
         var annotations = ResolveAnnotations(spec, axes, xKind, categories, warnings, time);
-        LeaveOutNonPositive(drawable, annotations, warnings);
         var hasBars = drawable.Any(r => r.Type.UsesSlots);
+
+        // A log x axis: numbers only, and not under bars (their slots need even spacing).
+        var xLog = spec.X.Scale == ScaleType.Log && xKind == XKind.Numeric;
+        if (xLog && hasBars)
+        {
+            warnings.Add("x.scale: a log x axis cannot be used with bar-like series (bars, histograms, box plots, candlesticks, waterfalls); the x axis is linear.");
+            xLog = false;
+        }
+
+        LeaveOutNonPositive(drawable, annotations, warnings, xLog);
         var (xMin, xMax, barSpacing) = xKind == XKind.Category
             ? (0, 0, 0)
+            : xLog ? LogXExtent(drawable, spec.X, annotations.Where(a => a.ExpandsDomain))
             : XExtent(drawable, spec.X, xKind, hasBars, annotations.Where(a => a.ExpandsDomain));
         var scatter = drawable.Where(r => r.Spec.Type == SeriesType.Scatter).ToList();
         var bubbles = BubbleScale.For(drawable.Select(r => (r.Spec, r.Data)), width, height);
         var sizeLegend = MeasureSizeLegend(spec, drawable, bubbles, compact, chrome.Legend, width, culture, texts, measure, font, lineHeight);
-        if (bubbles is { } bubbleScale && xKind != XKind.Category && options.XRange is null)
+        if (bubbles is { } bubbleScale && xKind != XKind.Category && options.XRange is null && !xLog)
         {
             // Room for the bubbles at the ends, about as much as their radius on a plot of this size.
             (xMin, xMax) = PadForBubbles(scatter, bubbleScale, r => r.Data.X, xMin, xMax, (width - (sizeLegend?.Width + 16 ?? 0)) * 0.85,
                 spec.X.Min is null, spec.X.Max is null);
         }
 
-        if (scatter.Count > 0 && xKind == XKind.Numeric && options.XRange is null)
+        if (scatter.Count > 0 && xKind == XKind.Numeric && options.XRange is null && !xLog)
         {
             // Scatter: a nice x range too, so points at the extremes are not on the plot edge.
             var nice = NiceTicks.NiceDomain(xMin, xMax, 10);
@@ -410,7 +420,8 @@ public static partial class ChartLayout
         }
         (double Min, double Max)? fullX = xKind == XKind.Category ? null : (xMin, xMax);
         (double Min, double Max)? window = null;
-        if (fullX is not null && options.XRange is { } range && range.Max > range.Min && double.IsFinite(range.Min) && double.IsFinite(range.Max))
+        if (fullX is not null && options.XRange is { } range && range.Max > range.Min && double.IsFinite(range.Min) && double.IsFinite(range.Max)
+            && (!xLog || range.Min > 0))
         {
             (xMin, xMax) = range;
             window = range;
@@ -568,7 +579,7 @@ public static partial class ChartLayout
         }
         else
         {
-            xScale = new ContinuousScale(xMin, xMax, plotLeft, plotLeft + plotWidth);
+            xScale = xLog ? ContinuousScale.Log(xMin, xMax, plotLeft, plotLeft + plotWidth) : new ContinuousScale(xMin, xMax, plotLeft, plotLeft + plotWidth);
             if (hasData && !compact)
             {
                 xGrid = AddContinuousXLabels(xScale, xKind, spec.X, culture, measure, font, plotBottom, width, xTickNodes, time);
@@ -998,8 +1009,45 @@ public static partial class ChartLayout
     /// Zero and negative values have no place on a log axis: series values become gaps (on copies; the data stays as
     /// it is) and lines and points of annotations are not drawn, each with one warning.
     /// </summary>
-    private static void LeaveOutNonPositive(List<Resolved> drawable, List<ResolvedAnnotation> annotations, List<string> warnings)
+    private static void LeaveOutNonPositive(List<Resolved> drawable, List<ResolvedAnnotation> annotations, List<string> warnings, bool xLog)
     {
+        if (xLog)
+        {
+            // Points at x zero or below have no place on a log x axis: gaps, like values of zero or below on a log y axis.
+            foreach (var r in drawable)
+            {
+                var count = 0;
+                double[]? upper = null, lower = null;
+                for (var i = 0; i < r.Data.Count; i++)
+                {
+                    if (r.Data.X[i] <= 0 && double.IsFinite(r.Upper[i]))
+                    {
+                        upper ??= (double[])r.Upper.Clone();
+                        upper[i] = double.NaN;
+                        if (r.Lower is not null)
+                        {
+                            lower ??= (double[])r.Lower.Clone();
+                            lower[i] = double.NaN;
+                        }
+
+                        count++;
+                    }
+                }
+
+                if (count > 0)
+                {
+                    r.Upper = upper!;
+                    r.Lower = lower ?? r.Lower;
+                    warnings.Add($"series '{r.Spec.Id}': {count} point(s) at x zero or below are left out; a log x axis has no place for them.");
+                }
+            }
+
+            foreach (var a in annotations.Where(a => (a.IsX || a.IsPoint) && (!(a.A > 0) || (a.IsBand && !(a.B > 0)))))
+            {
+                warnings.Add($"annotation '{a.Id}': an x value of zero or below has no place on a log x axis; it is not drawn.");
+            }
+        }
+
         foreach (var r in drawable.Where(r => r.Axis.Log))
         {
             var count = 0;
@@ -1223,6 +1271,40 @@ public static partial class ChartLayout
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// The domain of a log x axis: the positive x values with a value (and annotations there), rounded out to
+    /// powers of ten unless Min or Max is set (and positive).
+    /// </summary>
+    private static (double Min, double Max, double BarSpacing) LogXExtent(List<Resolved> series, AxisOptions axis, IEnumerable<ResolvedAnnotation> annotations)
+    {
+        double min = double.PositiveInfinity, max = double.NegativeInfinity;
+        foreach (var r in series)
+        {
+            for (var i = 0; i < r.Data.Count; i++)
+            {
+                if (r.Data.X[i] > 0 && double.IsFinite(r.Upper[i]))
+                {
+                    (min, max) = (Math.Min(min, r.Data.X[i]), Math.Max(max, r.Data.X[i]));
+                }
+            }
+        }
+
+        foreach (var v in annotations.SelectMany(a => a.XValues).Where(v => v > 0 && double.IsFinite(v)))
+        {
+            (min, max) = (Math.Min(min, v), Math.Max(max, v));
+        }
+
+        if (!double.IsFinite(min))
+        {
+            (min, max) = (1, 10);
+        }
+
+        var (niceMin, niceMax) = NiceTicks.LogDomain(min, max);
+        var lo = axis.Min is > 0 and var fixedMin ? fixedMin : niceMin;
+        var hi = axis.Max is > 0 and var fixedMax ? fixedMax : niceMax;
+        return (lo, hi > lo ? hi : lo * 10, 0);
     }
 
     private static (double Min, double Max, double BarSpacing) XExtent(List<Resolved> series, AxisOptions axis, XKind kind, bool hasBars,

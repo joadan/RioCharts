@@ -753,7 +753,10 @@ public partial class RioChart<TItem> : IChartContext
                 Zoom: zoom,
                 Zoomed: _layout.Zoomed,
                 Group: Group,
-                Xscale: scale is null ? null : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
+                // A log x scale goes out in log10 units, so the module's zoom and pan math stays linear (FromScaleUnits).
+                Xscale: scale is null ? null
+                    : scale.IsLog ? new ScaleModel(Math.Log10(scale.DomainMin), Math.Log10(scale.DomainMax), scale.RangeStart, scale.RangeEnd, L: true)
+                    : new ScaleModel(scale.DomainMin, scale.DomainMax, scale.RangeStart, scale.RangeEnd),
                 Series: [.. model.Series.Select(s => new SeriesModel(s.Id, s.Name, SvgWriter.Color(s.Color), s.Type is SeriesType.Bar or SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall or SeriesType.Histogram, s.Step, s.Snap,
                     s.BarWidth, s.BarOffset, s.X, s.Y, s.Index, s.XLabels, s.Values, s.Type is SeriesType.Scatter or SeriesType.MapBubble, s.CellHeight, s.CellWidths,
                     s.PartLabels, s.PartValues, s.Spokes, s.CellHeights,
@@ -819,12 +822,16 @@ public partial class RioChart<TItem> : IChartContext
             return Task.CompletedTask;
         }
 
-        var shift = (scale.DomainMax - scale.DomainMin) * fraction;
-        return ApplyRangeAsync((scale.DomainMin + shift, scale.DomainMax + shift));
+        // In pixels, so a log axis pans by the same ratio at both ends.
+        var shift = (scale.RangeEnd - scale.RangeStart) * fraction;
+        return ApplyRangeAsync((scale.Invert(scale.RangeStart + shift), scale.Invert(scale.RangeEnd + shift)));
     }
 
-    /// <summary>Called by JS at the end of a drag, pan or wheel zoom (data units).</summary>
-    internal Task OnZoom(double min, double max) => ApplyRangeAsync((min, max), share: false);
+    /// <summary>Called by JS at the end of a drag, pan or wheel zoom (the x scale's units: log10 on a log axis).</summary>
+    internal Task OnZoom(double min, double max) => ApplyRangeAsync((FromScaleUnits(min), FromScaleUnits(max)), share: false);
+
+    /// <summary>A value from the JS module in data units: the module works in log10 units on a log x axis.</summary>
+    internal double FromScaleUnits(double value) => _layout?.XScale is { IsLog: true } ? Math.Pow(10, value) : value;
 
     /// <summary>Called by JS on a double-click (zoom reset).</summary>
     internal Task OnZoomReset() => ApplyRangeAsync(null, share: false);

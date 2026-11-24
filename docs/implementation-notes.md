@@ -76,8 +76,18 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   (linear axes: 42 px); labels are formatted one by one (`NumberFormatter.ForLogTicks`: 0.01, 1k,
   5M). Series values of zero or below become gaps on copies of the data, and annotation lines and
   points there are not drawn, each with a warning. A linear second axis does not align to a log
-  grid. Draggable lines drag in log10 units (`DragHandle.Log`; .NET takes 10^value). Not for x
-  axes (a warning; the axis stays linear), horizontal bars, radar or polar charts.
+  grid. Draggable lines drag in log10 units (`DragHandle.Log`; .NET takes 10^value). Not for
+  horizontal bars, radar or polar charts.
+- **Log x axes.** `ScaleType.Log` on `X` with numeric x values, under lines, areas and scatter points.
+  Bar-like series (slots: bars, histograms, box plots, candlesticks, waterfalls) need even spacing, so the
+  axis stays linear with a warning; time and category x values warn too. The domain is the positive x
+  values with a value, rounded out to powers of ten (`LogXExtent`; no nice or bubble padding). Points at
+  x zero or below become gaps (copies of `Upper`/`Lower`), x lines, bands and points there are not drawn,
+  each with a warning. Labels as for log y axes, starting at one per 28 px and thinned until they fit.
+  The JS module gets the x scale in log10 units (`ScaleModel.L`), so its zoom, pan, pinch and key
+  math stays linear; `OnZoom` and `OnRangeSelected` take 10^value, `PanAsync` pans in pixels, and
+  linked charts convert between log and linear scales (`between` in the module). LTTB downsampling
+  still picks points by linear x, which is fine for the shape but not ideal on a log axis.
 - **Data labels** are off by default (`DataLabels` per series). Bars: above the bar (below when
   negative), or inside it in the inverse color when there is no room above; stacked segments only
   inside, when the label fits. Points: above, else below. A label overlapping an earlier label or
@@ -582,7 +592,7 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   distance; x is sorted so the scan is short). A chart with any scatter series is not shared, since
   "everything at this x" means little for unordered points. No crosshair; the hovered point gets a
   ring. The tooltip header is "x axis title: x" for scatter.
-- **Not yet:** a log x axis (log y axes work, see Log axes).
+- **Log x axes** work (see Log x axes), also log on both axes.
 
 ## Bubbles
 

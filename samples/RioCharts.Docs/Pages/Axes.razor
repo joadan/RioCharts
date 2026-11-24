@@ -63,6 +63,22 @@
     </ChildContent>
 </Example>
 
+<Example Title="Logarithmic on both axes" Code="@LogLogCode">
+    <Description>
+        <p>
+            The x axis takes <code>Scale = ScaleType.Log</code> too, for numbers under lines, areas and scatter points (bars need even
+            spacing, so their x axis stays linear, with a warning). Log on both axes, a power law such as load time against page size
+            becomes a straight line. Points at x zero or below are left out, x lines and bands are placed by ratio, and zoom and pan keep
+            ratios: drag to zoom, Shift-drag to pan. In JSON definitions: <code>"x": { "scale": "log" }</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="PageLoads" XAxis="PageSize" YAxis="LoadTime" Height="280" Zoomable="true" Annotations="OneMegabyte">
+            <ScatterSeries Name="Pages" XValue="p => p.SizeKb" YValue="p => p.Ms" Format="#,0 'ms'" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Display time zone" Code="@ZoneCode">
     <Description>
         <p>
@@ -97,6 +113,24 @@
     private bool _log = true;
     private static readonly AxisOptions Visits = new() { Title = "Visits per month" };
     private static readonly AxisOptions VisitsLog = Visits with { Scale = ScaleType.Log };
+
+    private sealed record PageLoad(double SizeKb, double Ms);
+
+    // Page load time in ms against page size in kB: about a power law, with some scatter.
+    private static readonly PageLoad[] PageLoads = [.. Enumerable.Range(0, 40).Select(i => new PageLoad(Math.Round(Math.Pow(10, 1 + i * 0.075), 1),
+        Math.Round(60 * Math.Pow(10, (1 + i * 0.075) * 0.55) * (1 + 0.35 * Math.Sin(i * 2.3)))))];
+
+    private static readonly AxisOptions PageSize = new() { Title = "Page size, kB", Scale = ScaleType.Log };
+    private static readonly AxisOptions LoadTime = new() { Title = "Load time, ms", Scale = ScaleType.Log };
+    private static readonly IReadOnlyList<Annotation> OneMegabyte = [new() { Axis = AnnotationAxis.X, Value = 1000.0, Label = "1 MB" }];
+
+    private const string LogLogCode = """
+        <RioChart Items="pageLoads" Zoomable="true"
+                  XAxis="@(new AxisOptions { Title = "Page size, kB", Scale = ScaleType.Log })"
+                  YAxis="@(new AxisOptions { Title = "Load time, ms", Scale = ScaleType.Log })">
+            <ScatterSeries Name="Pages" XValue="p => p.SizeKb" YValue="p => p.Ms" Format="#,0 'ms'" />
+        </RioChart>
+        """;
 
     private const string LogCode = """
         <RioChart Items="pageVisits" YAxis="@(new AxisOptions { Title = "Visits per month", Scale = ScaleType.Log })">

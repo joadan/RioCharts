@@ -42,7 +42,8 @@ internal sealed record DragModel(string Id, bool X, double Pos, ScaleModel S);
 
 internal sealed record PlotModel(float X, float Y, float W, float H);
 
-internal sealed record ScaleModel(double D0, double D1, double R0, double R1);
+/// <summary>A scale for the JS module; <paramref name="L"/>: the domain is in log10 units (a log x axis).</summary>
+internal sealed record ScaleModel(double D0, double D1, double R0, double R1, bool L = false);
 
 internal sealed record SeriesModel(
     string Id, string Name, string Color, bool Bar, bool Step, float Snap, float BarWidth, float BarOffset,
