@@ -256,6 +256,8 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    /* The series color is data: keep it under forced colors (Windows High Contrast), which would make it the background. */
+    forced-color-adjust: none;
 }
 
 .rio-chart ::deep .rio-tooltip-name {
@@ -509,6 +511,9 @@
     left: 0;
     width: 100%;
     pointer-events: none;
+    /* The module reads each series color through this element's `color`: forced colors (Windows High Contrast) would
+       turn them all into the text color. */
+    forced-color-adjust: none;
 }
 
 /* ---------- Spec errors ---------- */

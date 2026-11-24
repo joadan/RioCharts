@@ -43,6 +43,13 @@
     </ChildContent>
 </Example>
 
+<h2 id="contrast">High Contrast and reduced motion</h2>
+<p>
+    In Windows High Contrast (forced colors) the page takes the system colors, but the data keeps its own: series, the
+    canvas layer and the tooltip's color dots stay in their colors, so the legend still matches. With
+    <code>prefers-reduced-motion</code>, or <code>Animate="false"</code>, nothing fades or moves.
+</p>
+
 @code {
     private static readonly AxisOptions Sessions = new() { Title = "Sessions per 15 min" };
     private PointClickEventArgs<Reading>? _keyPoint;
