@@ -36,7 +36,7 @@
     [Fact]
     public void Clicking_a_day_selects_its_items()
     {
-        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Selection="ChartSelectionMode.Points">
             <CalendarSeries Id="c" XValue="o => o.At" YValue="o => o.Amount" />
         </RioChart>);
 

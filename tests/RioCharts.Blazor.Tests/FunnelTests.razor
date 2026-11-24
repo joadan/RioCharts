@@ -24,7 +24,7 @@
     [Fact]
     public void Clicking_a_stage_selects_its_items()
     {
-        var cut = Render<RioChart<Step>>(@<RioChart TItem="Step" Items="Steps" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Step>>(@<RioChart TItem="Step" Items="Steps" Selection="ChartSelectionMode.Points">
             <FunnelSeries Id="f" XValue="s => s.Name" YValue="s => s.Users" Aggregate="Aggregate.Sum" />
         </RioChart>);
 

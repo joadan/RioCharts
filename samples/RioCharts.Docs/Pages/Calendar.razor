@@ -34,7 +34,7 @@
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Order" Items="Orders" Title="Orders, spring" Height="200" Selection="SelectionMode.Points" @bind-SelectedItems="_picked">
+        <RioChart TItem="Order" Items="Orders" Title="Orders, spring" Height="200" Selection="ChartSelectionMode.Points" @bind-SelectedItems="_picked">
             <CalendarSeries Name="Orders" XValue="o => o.Placed" />
         </RioChart>
         <p class="note">@(_picked.Count == 0 ? "Click a day to select its orders." : $"{_picked.Count} orders selected, {_picked.Sum(o => o.Amount):#,0} € in all.")</p>
@@ -90,7 +90,7 @@
         """;
 
     private const string EventsCode = """
-        <RioChart Items="orders" Title="Orders, spring" Selection="SelectionMode.Points" @bind-SelectedItems="picked">
+        <RioChart Items="orders" Title="Orders, spring" Selection="ChartSelectionMode.Points" @bind-SelectedItems="picked">
             <CalendarSeries Name="Orders" XValue="o => o.Placed" />   @* no YValue: counts the orders per day *@
         </RioChart>
 

@@ -14,11 +14,11 @@
             Give <code>BoxPlotSeries</code> one item per value: items with the same <code>XValue</code> form a box. The box runs from the
             lower to the upper quartile with the median as a line; the whiskers reach the furthest values within 1.5 box lengths, and values
             beyond them are dots. Two series sit side by side, like grouped bars. Hover a box for its numbers; with
-            <code>Selection="SelectionMode.Points"</code>, clicking a box selects all its orders.
+            <code>Selection="ChartSelectionMode.Points"</code>, clicking a box selects all its orders.
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="OrderValue" Items="OrderValues" YAxis="Euros" Height="280" Selection="SelectionMode.Points" @bind-SelectedItems="_orders">
+        <RioChart TItem="OrderValue" Items="OrderValues" YAxis="Euros" Height="280" Selection="ChartSelectionMode.Points" @bind-SelectedItems="_orders">
             <BoxPlotSeries Name="Web" Items="Web" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
             <BoxPlotSeries Name="App" Items="App" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
         </RioChart>
@@ -81,7 +81,7 @@
     private IReadOnlyCollection<OrderValue> _orders = [];
 
     private const string RawCode = """
-        <RioChart TItem="OrderValue" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+        <RioChart TItem="OrderValue" Selection="ChartSelectionMode.Points" @bind-SelectedItems="selected">
             <BoxPlotSeries Name="Web" Items="web" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
             <BoxPlotSeries Name="App" Items="app" XValue="o => o.Day" YValue="o => o.Value" Format="#,0 €" />
         </RioChart>

@@ -62,7 +62,7 @@
     [Fact]
     public void Clicking_a_candle_selects_its_readings()
     {
-        var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Selection="ChartSelectionMode.Points">
             <CandlestickSeries Id="t" XValue="t => t.Time" YValue="t => t.Value" Bucket="TimeBucket.Hour" />
         </RioChart>);
 

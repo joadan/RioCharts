@@ -43,7 +43,7 @@
     [Fact]
     public void Clicking_a_radar_point_selects_its_item()
     {
-        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Score>>(@<RioChart TItem="Score" Items="Scores" Selection="ChartSelectionMode.Points">
             <RadarSeries Id="u" XValue="s => s.Measure" YValue="s => s.Laptop" />
         </RioChart>);
 

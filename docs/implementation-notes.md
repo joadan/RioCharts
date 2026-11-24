@@ -1322,7 +1322,7 @@ Not in Design.md; added on request ("a way to set a colour on a value").
 Design.md "Programmatic interaction": selection (`@bind-SelectedItems`, `@bind-SelectedRange`,
 `OnSelectionChanged`) and `ShowTooltipAsync`/`HideTooltipAsync`.
 
-- **Modes:** `Selection="SelectionMode.Points"` or `Range`; `None` (default) still shows selections
+- **Modes:** `Selection="ChartSelectionMode.Points"` or `Range`; `None` (default) still shows selections
   set from code. Points: a click selects the point's items (all of them when the series
   aggregates), Ctrl/Cmd/Shift+click adds or removes, a click beside the points or clicking the only
   selected point again clears; Enter on a focused point selects it (Shift+Enter adds). Range: a

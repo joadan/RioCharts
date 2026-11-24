@@ -6,7 +6,7 @@
     {
         IReadOnlyCollection<Reading>? bound = null;
         SelectionChangedEventArgs<Reading>? changed = null;
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="SelectionMode.Points"
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="ChartSelectionMode.Points"
                                                       SelectedItemsChanged="@((IReadOnlyCollection<Reading> items) => bound = items)"
                                                       OnSelectionChanged="@((SelectionChangedEventArgs<Reading> e) => changed = e)">
             <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
@@ -30,7 +30,7 @@
     [Fact]
     public void Additive_clicks_add_and_remove_points()
     {
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="ChartSelectionMode.Points">
             <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>);
 
@@ -64,7 +64,7 @@
     {
         ChartRange? range = null;
         IReadOnlyCollection<Reading>? items = null;
-        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="SelectionMode.Range"
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Selection="ChartSelectionMode.Range"
                                                       SelectedRangeChanged="@((ChartRange? r) => range = r)"
                                                       SelectedItemsChanged="@((IReadOnlyCollection<Reading> i) => items = i)">
             <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
@@ -107,7 +107,7 @@
     [Fact]
     public void Bars_get_an_outline_when_selected()
     {
-        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Alarm>>(@<RioChart TItem="Alarm" Items="Alarms" Selection="ChartSelectionMode.Points">
             <BarSeries Id="alarms" Name="Alarm time" XValue="a => a.Store" YValue="a => a.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>);
 
@@ -176,7 +176,7 @@
         // Like @bind-SelectedRange and @bind-SelectedItems on a page with a Clear button.
         ChartRange? range = null;
         IReadOnlyCollection<Reading> items = [];
-        RenderFragment Chart() => @<RioChart TItem="Reading" Selection="SelectionMode.Range"
+        RenderFragment Chart() => @<RioChart TItem="Reading" Selection="ChartSelectionMode.Range"
                                              SelectedRange="range" SelectedRangeChanged="@((ChartRange? r) => range = r)"
                                              SelectedItems="items" SelectedItemsChanged="@((IReadOnlyCollection<Reading> i) => items = i)">
             <LineSeries Id="london" Items="London" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
