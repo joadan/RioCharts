@@ -3,6 +3,15 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
+## Unreleased
+
+- Funnel charts: `FunnelSeries` (`"type": "funnel"` in JSON, also `conversionFunnel`, `salesFunnel` and `pipeline`)
+  draws one centered bar per stage, top to bottom in the order of the items, each as wide as its share of the largest
+  stage, with a light band between bars showing the drop. Labels give each value and its share of the first stage;
+  the tooltip adds the share of the stage before. `Aggregate` combines items per stage, `ColorValue` colors a stage, and
+  selection outlines a stage. New texts: `ChartTexts.FunnelChart`, `FunnelOfFirst` and `FunnelOfPrevious` in all
+  built-in languages. Docs: a Funnels page and a gallery card.
+
 ## 0.5.2-preview (2026-11-24)
 
 - Time buckets follow the display time zone: with `TimeZone` on the chart (`"timeZone"` in JSON), `Bucket`

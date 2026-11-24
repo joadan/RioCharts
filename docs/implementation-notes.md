@@ -972,6 +972,34 @@ scale per series (`Min`, `Max`), `ColorBands` for the ranges and `Target`.
 - **Not yet:** vertical bullets, a shared scale across series, qualitative ranges in shades of one
   color by default, and per-row ranges.
 
+
+## Funnel
+
+Not in Design.md; added from `docs/chart-types.md` (candidate: often asked for, though a bar chart
+is usually easier to read). It follows the bullet chart: its own layout pass, rows labeled on the
+left, one color.
+
+- **Data:** every finite point is a stage, in source order (input order, or first appearance with
+  `Aggregate`), never sorted by value: a later stage may be larger (a funnel that widens is still
+  drawn as given). NaN stages are left out; negative values are drawn as zero with a warning. At
+  most 40 stages (warning).
+- **Layout:** `ChartLayout.ComputeFunnel`; other series types, a second funnel series and all
+  annotations are skipped with a warning. Rows at most 64 px apart, centered vertically; each bar
+  is 72 % of the row high, centered in the plot and as wide as its share of the largest stage
+  (at least 2 px for a value above zero), corner radius 2. A band from the bottom of each bar to
+  the top of the next (the series color at 15 % opacity) shows the drop; compact charts leave the
+  bands out. Stage names on the left as for bullets; no axis, grid or legend.
+- **Labels:** on unless `DataLabels` is false: "540 (45%)", the value and its share of the first
+  stage (the first stage only its value), inside the bar (`data-label-inverse`) when it fits, else
+  after the bar, else left out. Shares use the pie's `Percent` ("<1%" below half a percent).
+- **Tooltip and description:** the stage and value, with part rows "Of first stage" and "Of
+  previous stage" (`ChartTexts.FunnelOfFirst`, `FunnelOfPrevious`, all languages; empty for the
+  first stage, so left out). The hover area is the bar, at least 24 px wide. The description lists
+  "Sign-ups 540 (45%)" per stage (`ChartTexts.FunnelChart`). Selected stages get the bar outline.
+- **JSON definitions:** `"type": "funnel"` (also `funnelChart`, `conversionFunnel`, `salesFunnel`,
+  `pipeline`) with `x` and `y`, and `aggregate` to combine rows. `ChartRazor` writes `FunnelSeries`.
+- **Not yet:** two funnels compared side by side in one chart, labels on the right of the
+  bands, curved (smooth) sides, and a "percent of previous" label option.
 ## Waterfall
 
 Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high popularity, low complexity).

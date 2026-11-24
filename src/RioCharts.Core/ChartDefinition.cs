@@ -540,6 +540,9 @@ public enum SeriesType
     /// <summary>Bubbles on a world map at each point's latitude and longitude, sized by value (e.g. users per city).</summary>
     MapBubble,
 
+    /// <summary>A funnel: one centered bar per stage (x: the stage, y: how many reached it), top to bottom in input order, each as wide as its share of the largest, with its share of the first stage.</summary>
+    Funnel,
+
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,
 }

@@ -248,6 +248,13 @@ public class SnapshotTests
             Series = [new SeriesOptions { Id = "s", Name = "Sales", Type = SeriesType.Bullet, Format = "0 k€", DataLabels = true }],
         }, new() { ["s"] = Categories(["North", "South", "East", "West"], 182, 96, 141, 120).WithTargets([160.0, 130, 140, 100]) }, Width: 520, Height: 220),
 
+        // A sign-up funnel: stages narrowing down, with each share of the first.
+        ["funnel"] = new(new ChartDefinition
+        {
+            Title = "Sign-ups in March",
+            Series = [new SeriesOptions { Id = "f", Name = "Users", Type = SeriesType.Funnel, Format = "#,0" }],
+        }, new() { ["f"] = Categories(["Visits", "Sign-ups", "Trials", "Customers"], 12400, 3100, 1240, 310) }, Width: 520, Height: 260),
+
         // Disk use per drive: half-circle gauges in a row.
         ["gauges-half"] = new(new ChartDefinition
         {

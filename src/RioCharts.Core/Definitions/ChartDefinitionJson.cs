@@ -367,6 +367,11 @@ public static class ChartDefinitionJson
         ["bulletchart"] = ("bullet", null),
         ["bulletgraph"] = ("bullet", null),
         ["bulletbar"] = ("bullet", null),
+        ["funnel"] = ("funnel", null),
+        ["funnelchart"] = ("funnel", null),
+        ["conversionfunnel"] = ("funnel", null),
+        ["salesfunnel"] = ("funnel", null),
+        ["pipeline"] = ("funnel", null),
         ["rangebar"] = ("rangeBar", null),
         ["timeline"] = ("rangeBar", null),
         ["gantt"] = ("rangeBar", null),
@@ -480,7 +485,7 @@ public static class ChartDefinitionJson
                     else
                     {
                         errors.Add(new DefinitionError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, bullet, dumbbell, radar, treemap, map, mapBubble, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, bullet, dumbbell, funnel, radar, treemap, map, mapBubble, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt, pipeline)."));
                     }
                 }
 

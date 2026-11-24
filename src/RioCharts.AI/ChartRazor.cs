@@ -150,6 +150,7 @@ public static class ChartRazor
                 SeriesType.RangeBar => "RangeBarSeries",
                 SeriesType.Gauge => "GaugeSeries",
                 SeriesType.Bullet => "BulletSeries",
+                SeriesType.Funnel => "FunnelSeries",
                 SeriesType.Dumbbell => "DumbbellSeries",
                 SeriesType.Map => "MapSeries",
                 SeriesType.MapBubble => "MapBubbleSeries",

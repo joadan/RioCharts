@@ -306,6 +306,11 @@ public static partial class ChartLayout
             resolved.Add(r);
         }
 
+        if (resolved.Any(r => r.Spec.Type == SeriesType.Funnel))
+        {
+            return ComputeFunnel(spec, resolved, options, warnings, styles);
+        }
+
         if (resolved.Any(r => r.Spec.Type == SeriesType.Bullet))
         {
             return ComputeBullets(spec, resolved, options, warnings, styles);
