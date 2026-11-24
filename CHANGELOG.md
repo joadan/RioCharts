@@ -13,6 +13,7 @@ changes are called out under **Breaking**.
   `Aggregate` combines items per stage, `Color` makes it one color, `ColorValue` colors a stage, and selection outlines a
   stage. New texts: `ChartTexts.FunnelChart`, `FunnelOfFirst` and `FunnelOfPrevious` in all built-in languages. Docs: a
   Funnels page and a gallery card.
+- Docs and demo: a "Europe only" world map example that opens zoomed into Europe (`TreemapPath="Europe"`).
 
 ## 0.5.2-preview (2026-11-24)
 

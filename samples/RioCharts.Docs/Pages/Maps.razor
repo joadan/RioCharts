@@ -34,6 +34,25 @@
     </ChildContent>
 </Example>
 
+<Example Title="Europe only" Code="@EuropeCode">
+    <Description>
+        <p>
+            Start <code>TreemapPath</code> at a continent to show only that part of the world: here <code>"Europe"</code>, which ends at the
+            Urals. Countries outside it fade at the edges, so the map does not look cut off. A click on a country still zooms in, and
+            the path bar leads out to the world and back. The other continents are <code>"Africa"</code>, <code>"Asia"</code>,
+            <code>"North America"</code>, <code>"South America"</code> and <code>"Oceania"</code>; a country code zooms straight into
+            one country.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Place" Title="Active sessions in Europe" Height="420" @bind-TreemapPath="_europe">
+            <MapSeries Items="Countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
+            <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
+                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Bubbles only" Code="@BubblesCode">
     <Description>
         <p>
@@ -98,6 +117,7 @@
 
 @code {
     private string? _region;
+    private string? _europe = "Europe";
     private MapProjection _projection = MapProjection.Mercator;
 
     private static readonly LegendOptions NoLegend = new() { Mode = LegendMode.Hide };
@@ -130,6 +150,18 @@
         @code {
             string? region;
             record Place(string Name, double Sessions, double? Latitude = null, double? Longitude = null);
+        }
+        """;
+
+    private const string EuropeCode = """
+        <RioChart TItem="Place" Title="Active sessions in Europe" @bind-TreemapPath="region">
+            <MapSeries Items="countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
+            <MapBubbleSeries Items="cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
+                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+        </RioChart>
+
+        @code {
+            string? region = "Europe";   // or "Asia", "North America", a country code such as "SE"
         }
         """;
 
