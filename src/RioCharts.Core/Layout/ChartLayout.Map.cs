@@ -389,7 +389,20 @@ internal static partial class ChartLayout
         var description = (string.IsNullOrWhiteSpace(spec.Title) ? "" : spec.Title + ". ")
             + (values.Count > 0
                 ? texts.FillCount(nameof(ChartTexts.PolarItems), values.Count, culture, kind, values.Count, listed) + "."
+                : bubbles.Count > 0 ? ""
                 : hasData ? kind + "." : texts.Fill(nameof(ChartTexts.PolarNoData), culture, kind));
+
+        // The bubbles too, per series and largest first (before, a bubble-only map said just "Map.").
+        foreach (var series in bubbles.GroupBy(b => b.Series))
+        {
+            var bubbleValues = ValueFormat.Of(series.Key.Spec.Format, spec.Y);
+            var largest = series.OrderByDescending(b => b.Value).ToList();
+            var places = string.Join(", ", largest.Take(8).Select(b => $"{b.Label} {ValueFormatter.Format(b.Value, culture, bubbleValues, compactFrom: 1e5)}"))
+                + (largest.Count > 8 ? " " + texts.Fill(nameof(ChartTexts.More), culture, largest.Count - 8) : "");
+            var name = values.Count > 0 || bubbles.Select(b => b.Series).Distinct().Count() > 1 ? series.Key.Spec.DisplayName : kind;
+            description += (description.Length > 0 && !description.EndsWith(' ') ? " " : "")
+                + texts.FillCount(nameof(ChartTexts.PolarItems), largest.Count, culture, name, largest.Count, places) + ".";
+        }
 
         var scene = new Scene.Scene(
             new GroupNode(statics) { Class = "rio-static" },

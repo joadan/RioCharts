@@ -193,4 +193,12 @@ public class DumbbellTests
         Assert.Contains(" FromValue=\"r => r.Then\"", razor, StringComparison.Ordinal);
         Assert.Contains(" YValue=\"r => r.Now\"", razor, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Screen_readers_hear_both_ends_of_each_dumbbell()
+    {
+        var layout = Layout(Cities);
+
+        Assert.Equal("Chart with 1 series. 2016 → 2026: 3 values: Utrecht 33 to 41, Malmö 30 to 33, Lyon 6 to 12.", layout.Scene.Description);
+    }
 }

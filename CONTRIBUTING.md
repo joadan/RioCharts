@@ -56,7 +56,7 @@ the diff before committing.
 | `samples/RioCharts.Demo` | Blazor Server demo. |
 | `samples/RioCharts.Docs` | The docs site at https://riocharts.com (Blazor WebAssembly). |
 | `samples/RioCharts.Mcp.Sample` | Sample data and agent configuration for trying `riocharts-mcp`. |
-| `samples/RioCharts.RenderModes` | The same charts in every Blazor render mode (static, streaming, Server, WebAssembly, Auto; with and without prerendering), http://localhost:5033. Check a change that touches the component or its JS there: open each page and run `await rioCheck()` in the browser console. |
+| `samples/RioCharts.RenderModes` | The same charts in every Blazor render mode (static, streaming, Server, WebAssembly, Auto; with and without prerendering), http://localhost:5033. Check a change that touches the component or its JS there: open each page and run `await rioCheck()` in the browser console. Its "Every chart type" page (`/types`) has one chart of each type; `await rioKeys()` steps through each with the keyboard and reports what screen readers hear. |
 | `tools/` | `SocialCard.cs` (the docs site's link preview) and `ReadmeImage.cs` (the README picture): `dotnet run tools/ReadmeImage.cs` from the root. `prerender/` (Node + Playwright) saves each docs page as static HTML for search engines when the docs site is published. |
 
 ## Public API

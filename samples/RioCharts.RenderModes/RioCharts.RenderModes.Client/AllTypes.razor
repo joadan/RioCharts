@@ -1,0 +1,56 @@
+@using RioCharts.Core.Definitions
+@* Every chart type once, from JSON definitions with inline rows: for checking keyboard navigation and screen reader
+   text per type (run `await rioKeys()` in the browser console). *@
+
+<p class="mode" data-testid="mode">
+    Renderer: <strong>@RendererInfo.Name</strong>, interactive: <strong>@RendererInfo.IsInteractive</strong>
+</p>
+
+<div class="grid">
+    @foreach (var (name, definition) in Charts)
+    {
+        <section data-type="@name">
+            <h2>@name</h2>
+            <RioChart TItem="object" Definition="definition" Height="260" />
+        </section>
+    }
+</div>
+
+@code {
+    private const string Rows = """
+        "data":[{"c":"North","g":"East","v":5,"w":7,"lo":2,"hi":9,"o":4,"t":"2026-01-01","t2":"2026-01-03","q1":3,"q3":7,"tg":6,"lat":59.3,"lon":18.1,"cc":"SE","city":"Stockholm"},
+                {"c":"South","g":"East","v":8,"w":3,"lo":4,"hi":11,"o":7,"t":"2026-01-02","t2":"2026-01-05","q1":5,"q3":9,"tg":6,"lat":51.5,"lon":-0.1,"cc":"GB","city":"London"},
+                {"c":"West","g":"West","v":3,"w":6,"lo":1,"hi":6,"o":5,"t":"2026-01-03","t2":"2026-01-04","q1":2,"q3":5,"tg":6,"lat":48.9,"lon":2.4,"cc":"FR","city":"Paris"},
+                {"c":"Central","g":"West","v":6,"w":4,"lo":3,"hi":8,"o":6,"t":"2026-01-04","t2":"2026-01-06","q1":4,"q3":7,"tg":6,"lat":40.4,"lon":-3.7,"cc":"ES","city":"Madrid"}]
+        """;
+
+    private static readonly (string Name, string Series)[] Types =
+    [
+        ("line", """[{"type":"line","x":"t","y":"v","name":"Web","dataLabels":true},{"type":"line","x":"t","y":"w","name":"App"}]"""),
+        ("area", """[{"type":"area","x":"t","y":"v","name":"Web","dataLabels":true},{"type":"area","x":"t","y":"w","name":"App"}]"""),
+        ("bar", """[{"type":"bar","x":"c","y":"v","name":"Web","dataLabels":true},{"type":"bar","x":"c","y":"w","name":"App"}]"""),
+        ("scatter", """[{"type":"scatter","x":"v","y":"w","name":"Web","dataLabels":true},{"type":"scatter","x":"w","y":"v","name":"App"}]"""),
+        ("bubble", """[{"type":"scatter","x":"v","y":"w","size":"o","name":"Web","dataLabels":true}]"""),
+        ("heatmap", """[{"type":"heatmap","x":"c","y":"v","name":"Web","dataLabels":true},{"type":"heatmap","x":"c","y":"w","name":"App"}]"""),
+        ("rangeArea", """[{"type":"rangeArea","x":"t","low":"lo","y":"hi","name":"Web","dataLabels":true},{"type":"line","x":"t","y":"v","name":"App"}]"""),
+        ("boxPlot", """[{"type":"boxPlot","x":"c","low":"lo","q1":"q1","y":"v","q3":"q3","high":"hi","name":"Web","dataLabels":true}]"""),
+        ("candlestick", """[{"type":"candlestick","x":"t","open":"o","high":"hi","low":"lo","y":"v","name":"Web","dataLabels":true}]"""),
+        ("waterfall", """[{"type":"waterfall","x":"c","y":"v","name":"Web","dataLabels":true}]"""),
+        ("histogram", """[{"type":"histogram","y":"v","name":"Web","dataLabels":true},{"type":"histogram","y":"w","name":"App"}]"""),
+        ("rangeBar", """[{"type":"rangeBar","row":"c","start":"t","end":"t2","name":"Web","dataLabels":true},{"type":"rangeBar","row":"g","start":"t","end":"t2","name":"App"}]"""),
+        ("pie", """[{"type":"pie","x":"c","y":"v","name":"Web","dataLabels":true}]"""),
+        ("radialBar", """[{"type":"radialBar","x":"c","y":"v","name":"Web","dataLabels":true}]"""),
+        ("gauge", """[{"type":"gauge","x":"c","y":"v","max":10,"target":6,"name":"Web","dataLabels":true}]"""),
+        ("bullet", """[{"type":"bullet","x":"c","y":"v","targetField":"tg","max":12,"name":"Web","dataLabels":true}]"""),
+        ("dumbbell", """[{"type":"dumbbell","x":"c","from":"w","y":"v","name":"Web","dataLabels":true}]"""),
+        ("funnel", """[{"type":"funnel","x":"c","y":"v","name":"Web","dataLabels":true}]"""),
+        ("calendar", """[{"type":"calendar","x":"t","y":"v","name":"Web","dataLabels":true}]"""),
+        ("radar", """[{"type":"radar","x":"c","y":"v","name":"Web","dataLabels":true},{"type":"radar","x":"c","y":"w","name":"App"}]"""),
+        ("treemap", """[{"type":"treemap","path":["g","c"],"y":"v","name":"Web","dataLabels":true}]"""),
+        ("map", """[{"type":"map","x":"cc","y":"v","name":"Web","dataLabels":true}]"""),
+        ("mapBubble", """[{"type":"mapBubble","x":"city","groupByCountry":false,"y":"v","latitude":"lat","longitude":"lon","name":"Web","dataLabels":true}]"""),
+    ];
+
+    private static readonly (string Name, ChartDefinition Definition)[] Charts = [.. Types.Select(t =>
+        (t.Name, ChartDefinitionJson.Parse("{\"title\":\"" + t.Name + "\"," + Rows + ",\"series\":" + t.Series + "}").Definition!))];
+}
