@@ -1401,7 +1401,7 @@ public sealed class MapSeries<TItem> : SeriesBase<TItem>
 }
 
 /// <summary>
-/// Bubbles on a world map: a circle at each item's <see cref="Latitude"/> and <see cref="Longitude"/>,
+/// Bubbles on a world map: a circle at each item's <see cref="LatitudeValue"/> and <see cref="LongitudeValue"/>,
 /// its area proportional to <c>YValue</c> (e.g. users per city). <c>XValue</c> names the place in
 /// the tooltip. Items without a place, and values of zero or less, are not drawn. Draws on its own
 /// or on top of a <see cref="MapSeries{TItem}"/>.
@@ -1409,10 +1409,10 @@ public sealed class MapSeries<TItem> : SeriesBase<TItem>
 public sealed class MapBubbleSeries<TItem> : SeriesBase<TItem>
 {
     /// <summary>Each item's latitude in degrees north, e.g. <c>c =&gt; c.Latitude</c>.</summary>
-    [Parameter] public Func<TItem, double?>? Latitude { get; set; }
+    [Parameter] public Func<TItem, double?>? LatitudeValue { get; set; }
 
     /// <summary>Each item's longitude in degrees east, e.g. <c>c =&gt; c.Longitude</c>.</summary>
-    [Parameter] public Func<TItem, double?>? Longitude { get; set; }
+    [Parameter] public Func<TItem, double?>? LongitudeValue { get; set; }
 
     /// <summary>The diameter of the largest bubble in pixels. Default: from the map's size.</summary>
     [Parameter] public double? MarkerSize { get; set; }
@@ -1426,14 +1426,14 @@ public sealed class MapBubbleSeries<TItem> : SeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.MapBubble;
 
-    private protected override object? DataSettings => (Latitude is not null, Longitude is not null);
+    private protected override object? DataSettings => (LatitudeValue is not null, LongitudeValue is not null);
 
     /// <inheritdoc />
     protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { MarkerSize = MarkerSize, GroupByCountry = GroupByCountry };
 
     private protected override SeriesData Complete(SeriesData data, IReadOnlyList<TItem> items, IReadOnlyList<int[]>? groups)
     {
-        if (Latitude is not { } latitude || Longitude is not { } longitude)
+        if (LatitudeValue is not { } latitude || LongitudeValue is not { } longitude)
         {
             return data;
         }

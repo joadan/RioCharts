@@ -12,7 +12,7 @@
     {
         var cut = Render<RioChart<Place>>(@<RioChart TItem="Place" Culture="System.Globalization.CultureInfo.InvariantCulture">
             <MapSeries Items="Countries" Name="Users" XValue="c => c.Name" YValue="c => c.Users" />
-            <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Users" Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+            <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Users" LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
         </RioChart>);
 
         Assert.True(cut.FindAll(".rio-map-region").Count > 100);
