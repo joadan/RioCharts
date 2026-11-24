@@ -120,11 +120,11 @@ All target .NET 10 (LTS) and .NET 11, and are previews: add `--prerelease`.
 
 | Package | For |
 | --- | --- |
+| [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | The chart engine alone: scales, layout and a render-agnostic scene, no UI dependencies |
 | [RioCharts.Blazor](https://www.nuget.org/packages/RioCharts.Blazor) | The `<RioChart>` component and its series (includes Core) |
 | [RioCharts.Skia](https://www.nuget.org/packages/RioCharts.Skia) | PNG and SVG on the server |
 | [RioCharts.AI](https://www.nuget.org/packages/RioCharts.AI) | `create_chart` and `render_chart` tools for AI agents |
 | [RioCharts.Mcp](https://www.nuget.org/packages/RioCharts.Mcp) | `riocharts-mcp`, a local MCP server (a .NET tool) |
-| [RioCharts.Core](https://www.nuget.org/packages/RioCharts.Core) | The chart engine alone: scales, layout and a render-agnostic scene, no UI dependencies |
 
 ## Learn more
 
