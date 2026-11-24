@@ -321,6 +321,7 @@ internal static partial class ChartLayout
             Warnings = warnings,
             XKind = XKind.Category,
             XScale = xScale,
+            ZoomsX = false,
             YScale = yScale,
             YScales = new Dictionary<string, ContinuousScale> { ["y"] = yScale },
             HasData = hasData,

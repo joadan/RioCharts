@@ -140,6 +140,12 @@ internal sealed class ChartLayoutResult
     /// <summary>The full x range of the data (numeric and time axes), the bounds for zoom and pan.</summary>
     public (double Min, double Max)? XExtent { get; init; }
 
+    /// <summary>
+    /// False for layouts that have an x scale (for coordinates) but ignore <see cref="LayoutOptions.XRange"/>, such as
+    /// funnels and bullets: no zoom, pan or range selection there.
+    /// </summary>
+    public bool ZoomsX { get; init; } = true;
+
     /// <summary>True when <see cref="LayoutOptions.XRange"/> narrowed the x axis.</summary>
     public bool Zoomed { get; init; }
 
@@ -288,7 +294,7 @@ internal static partial class ChartLayout
 
             if (s.Type == SeriesType.Candlestick && d.Candles is null && d.Count > 0)
             {
-                warnings.Add($"series '{s.Id}': a candlestick needs candles (CandlestickSeries, SeriesData.WithCandles or FromCandleBuckets); nothing is drawn.");
+                warnings.Add($"series '{s.Id}': a candlestick needs candles (CandlestickSeries, or SeriesData.WithCandles); nothing is drawn.");
             }
 
             if (s.Type == SeriesType.BoxPlot && d.Box is null && d.Count > 0)

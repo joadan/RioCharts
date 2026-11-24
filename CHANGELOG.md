@@ -5,6 +5,11 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- Fixed: `Zoomable` and `Selection="ChartSelectionMode.Range"` on a funnel or bullet chart turned on drag-zoom and range
+  selection that did nothing; they now stay off there.
+- Fixed: the warning for a candlestick without candles named `SeriesData.FromCandleBuckets`, which is internal now.
+- Docs: "What each chart type supports" on the Gallery page: legend, data labels, highlight, zoom, live data and canvas
+  per chart type.
 - JSON definitions have a format version: `"version": 1` (`ChartDefinition.Version`, `ChartDefinitionJson.FormatVersion`).
   It is optional (missing means 1); `ChartDefinitionJson.Serialize` now writes it. Every 1.x will read version 1
   definitions: fields, chart type names and synonyms may be added, never removed. A newer or unreadable version is read
