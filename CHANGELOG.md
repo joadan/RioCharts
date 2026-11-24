@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
-## Unreleased
+## 0.7.2-preview (2026-11-24)
 
 - Heatmaps with stepped colors: `ColorBands` on the first `HeatmapSeries` (`"colorBands"` in JSON) gives each cell the
   solid color of the band its value is in (e.g. green, yellow and red ranges), and the legend lists the bands
