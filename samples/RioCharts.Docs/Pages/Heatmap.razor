@@ -92,6 +92,7 @@
         <tr><td><code>Midpoint</code>, <code>BelowColor</code></td><td>first row's</td><td>Colors diverge from the midpoint: above it the series color, below it <code>BelowColor</code> (default <code>--rio-negative</code>). JSON: <code>"midpoint"</code>, <code>"belowColor"</code>.</td></tr>
         <tr><td><code>ColorBands</code></td><td>first row's</td><td>Stepped colors: each cell takes the solid color of its value's band, and the legend lists the bands, by their <code>Label</code> (e.g. "High") or else their range. JSON: <code>"colorBands"</code>.</td></tr>
         <tr><td><code>ColorValue</code></td><td></td><td>A cell's own solid color (a CSS color or theme token); wins over the scale and the bands. JSON: <code>"colorField"</code>.</td></tr>
+        <tr><td><code>Legend</code> (on the chart)</td><td>top</td><td>The color scale sits above the rows, or below them with <code>Position = LegendPosition.Bottom</code>; <code>Mode = LegendMode.Hide</code> hides it.</td></tr>
         <tr><td><code>DataLabels</code></td><td>false</td><td>Write the values in the cells (when they fit).</td></tr>
         <tr><td>JSON</td><td></td><td><code>"type": "heatmap"</code> with <code>"groupBy"</code> on the row field makes one row per value, e.g. <code>"x": "hour", "y": "sessions", "groupBy": "weekday"</code>.</td></tr>
     </table>

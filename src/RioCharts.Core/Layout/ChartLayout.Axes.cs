@@ -292,7 +292,7 @@ public static partial class ChartLayout
 
         // Ticks no closer than the format tells apart (with "#,0": 0, 1, 2, not 0, 0.5, 1, 1.5, 2 shown as 0 1 1 2 2).
         var minStep = NumberFormatter.MinStep(axis.Format, culture) ?? 0;
-        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(min, max, target, minStep);
+        var (niceMin, niceMax, step) = NiceTicks.NiceDomain(min, max, target, minStep, axis.Spec.TickBase ?? 0);
 
         // Bar data labels go beyond the bar's end and are left out when they would leave the plot: when the highest or
         // lowest bar has no room for its label, the domain gets one more step on that side (the step stays, so the ticks
@@ -323,7 +323,7 @@ public static partial class ChartLayout
         }
 
         // Secondary axes put their ticks on the grid axis' lines when they can.
-        if (align is { Ticks.Count: > 1, Log: false } grid && axis.Spec.Min is null && axis.Spec.Max is null
+        if (align is { Ticks.Count: > 1, Log: false } grid && axis.Spec.Min is null && axis.Spec.Max is null && axis.Spec.TickBase is null
             && grid.Ticks[0] == grid.DomainMin && grid.Ticks[^1] == grid.DomainMax
             && NiceTicks.AlignedDomain(min, max, grid.Ticks.Count - 1) is { } aligned && aligned.Step >= minStep)
         {
@@ -459,7 +459,7 @@ public static partial class ChartLayout
         {
             for (var target = Math.Clamp((int)(plotWidth / 70), 2, 12); target >= 1; target--)
             {
-                var step = Math.Max(NiceTicks.Step(scale.DomainMax - scale.DomainMin, target), NumberFormatter.MinStep(ValueFormat.Of(axis), culture) ?? 0);
+                var step = Math.Max(NiceTicks.Step(scale.DomainMax - scale.DomainMin, target, axis.TickBase ?? 0), NumberFormatter.MinStep(ValueFormat.Of(axis), culture) ?? 0);
                 ticks = NiceTicks.Ticks(scale.DomainMin, scale.DomainMax, step);
                 var format = NumberFormatter.ForTicks(ticks, step, culture, ValueFormat.Of(axis));
                 labels = ticks.Select(format).ToList();

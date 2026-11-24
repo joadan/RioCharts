@@ -21,6 +21,22 @@ public static class NiceTicks
         return nice * magnitude;
     }
 
+    /// <summary>
+    /// <see cref="Step(double, int)"/> in the unit of the largest power of <paramref name="tickBase"/> that is not above the
+    /// raw step, e.g. with 1024 a step of 20 × 1024² for bytes. A base of 1 or below (or not finite) gives plain powers of ten.
+    /// </summary>
+    public static double Step(double span, int targetCount, double tickBase)
+    {
+        var raw = Math.Abs(span) / Math.Max(1, targetCount);
+        if (!(tickBase > 1) || !double.IsFinite(tickBase) || !(raw >= tickBase) || !double.IsFinite(raw))
+        {
+            return Step(span, targetCount);
+        }
+
+        var unit = Math.Pow(tickBase, Math.Floor(Math.Log(raw) / Math.Log(tickBase) + 1e-9));
+        return Step(span / unit, targetCount) * unit;
+    }
+
     /// <summary>Rounds a domain out to multiples of a nice step.</summary>
     public static (double Min, double Max, double Step) NiceDomain(double min, double max, int targetCount) => NiceDomain(min, max, targetCount, 0);
 
@@ -28,9 +44,16 @@ public static class NiceTicks
     /// Rounds a domain out to multiples of a nice step of at least <paramref name="minStep"/> (a power of ten, e.g. 1 for
     /// whole numbers; 0 for no minimum).
     /// </summary>
-    public static (double Min, double Max, double Step) NiceDomain(double min, double max, int targetCount, double minStep)
+    public static (double Min, double Max, double Step) NiceDomain(double min, double max, int targetCount, double minStep) =>
+        NiceDomain(min, max, targetCount, minStep, 0);
+
+    /// <summary>
+    /// Rounds a domain out to multiples of a nice step of at least <paramref name="minStep"/>, in units of a power of
+    /// <paramref name="tickBase"/> (see <see cref="Step(double, int, double)"/>; 0 for powers of ten).
+    /// </summary>
+    public static (double Min, double Max, double Step) NiceDomain(double min, double max, int targetCount, double minStep, double tickBase)
     {
-        var step = Math.Max(Step(max - min, targetCount), minStep);
+        var step = Math.Max(Step(max - min, targetCount, tickBase), minStep);
         var niceMin = Math.Floor(min / step + 1e-9) * step;
         var niceMax = Math.Ceiling(max / step - 1e-9) * step;
         if (!(niceMax > niceMin))
@@ -39,7 +62,7 @@ public static class NiceTicks
         }
 
         // Rounding out can change the best step; recompute once.
-        step = Math.Max(Step(niceMax - niceMin, targetCount), minStep);
+        step = Math.Max(Step(niceMax - niceMin, targetCount, tickBase), minStep);
         niceMin = Math.Floor(min / step + 1e-9) * step;
         niceMax = Math.Ceiling(max / step - 1e-9) * step;
         if (!(niceMax > niceMin))

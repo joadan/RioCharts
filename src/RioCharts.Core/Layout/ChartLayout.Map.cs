@@ -169,13 +169,21 @@ public static partial class ChartLayout
         }
 
         var showScale = !compact && values.Count > 0 && spec.Legend.Mode != LegendMode.Hide && (chrome.Legend || spec.Legend.Mode == LegendMode.Show);
-        if (showScale)
+        GroupNode Scale(double y) => mid is { } md
+            ? DivergingLegend(PadLeft, y, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
+                texts.Legend, MapMinOpacity, "heat")
+            : HeatLegend(PadLeft, y, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend, MapMinOpacity);
+
+        // Above the map, or below it with Legend.Position = Bottom.
+        var scaleAtBottom = showScale && spec.Legend.Position == LegendPosition.Bottom;
+        if (showScale && !scaleAtBottom)
         {
-            statics.Add(mid is { } md
-                ? DivergingLegend(PadLeft, y0, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
-                    texts.Legend, MapMinOpacity, "heat")
-                : HeatLegend(PadLeft, y0, lineHeight + 4, color, F(vMin), F(vMax), measure, font, styles, texts.Legend, MapMinOpacity));
-            y0 += lineHeight + 4 + 8;
+            statics.Add(Scale(y0));
+            y0 += ScaleRow(lineHeight);
+        }
+        else if (scaleAtBottom)
+        {
+            statics.Add(Scale(height - PadBottom - (lineHeight + 4)));
         }
 
         // ---------- Series legend: names the bubbles (the color scale explains the countries) ----------
@@ -203,7 +211,7 @@ public static partial class ChartLayout
 
         var plot = compact
             ? CompactPlot(width, height)
-            : new RectF((float)PadLeft, (float)y0, (float)Math.Max(10, width - PadLeft - PadRight), (float)Math.Max(10, height - PadBottom - y0));
+            : new RectF((float)PadLeft, (float)y0, (float)Math.Max(10, width - PadLeft - PadRight), (float)Math.Max(10, height - PadBottom - (scaleAtBottom ? ScaleRow(lineHeight) : 0) - y0));
 
         // ---------- Projection: the world, a continent, or the country zoomed into ----------
         var project = Projector(spec.Projection);
