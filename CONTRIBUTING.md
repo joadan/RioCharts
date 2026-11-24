@@ -61,7 +61,8 @@ the diff before committing.
 
 Run **Create Release** ([create-release.yml](.github/workflows/create-release.yml)) by hand from
 the Actions tab on `master`: it tests, packs and publishes all packages to nuget.org, then tags the
-commit and creates a GitHub release. The version comes from [version.json](version.json) and the git
+commit, creates a GitHub release and starts the **Docs site** workflow, so the site's badge and footer
+show the new package (the site reads the newest release tag when it is built). The version comes from [version.json](version.json) and the git
 height (Nerdbank.GitVersioning): `0.1-preview` gives `0.1.<height>-preview`. The package README on
 NuGet is [assets/nuget-readme.md](assets/nuget-readme.md).
 
