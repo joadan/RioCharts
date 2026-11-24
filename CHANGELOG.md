@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
-## Unreleased
+## 0.7.6-preview (2026-11-24)
 
 - Fixed: charts with an axis `Format` (e.g. `"#,0"`) or a log axis crashed with a `FormatException` when the current
   culture writes the minus sign as U+2212 (sv-SE, nb-NO, fi-FI and others). The power of ten for the tick step was
