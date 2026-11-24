@@ -146,6 +146,9 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// </summary>
     private protected virtual TimeBucket? XBucket => null;
 
+    /// <summary>How the items in one bucket combine when neither Aggregate nor YAggregate is set; null for not at all.</summary>
+    private protected virtual Core.Aggregate? BucketAggregate => YValue is not null ? Core.Aggregate.Average : null;
+
     /// <summary>Settings of a series type that change how its data is built (e.g. a candle bucket): a change rebuilds it.</summary>
     private protected virtual object? DataSettings => null;
 
@@ -268,7 +271,7 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
             var bucket = XBucket;
             // Per bucket without an aggregate: the average, as in JSON definitions.
             var aggregate = YAggregate ?? (Aggregate is { } a ? Aggregation.For(a, YValue)
-                : bucket is not null && YValue is not null ? Aggregation.For(Core.Aggregate.Average, YValue) : null);
+                : bucket is not null && BucketAggregate is { } byDefault ? Aggregation.For(byDefault, YValue) : null);
             if (Data is not null)
             {
                 _data = Data;
@@ -936,6 +939,40 @@ public sealed class FunnelSeries<TItem> : SeriesBase<TItem>
 {
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Funnel;
+}
+
+/// <summary>
+/// Calendar heatmap: a square per day, weeks as columns and weekdays as rows, colored by the day's
+/// value like a heatmap (one hue, stronger for higher values; <c>Midpoint</c> makes it diverge).
+/// <c>XValue</c> is a date or time; items on the same day (in the chart's <c>TimeZone</c> when set)
+/// add up, or combine with <c>Aggregate</c>, and without a <c>YValue</c> each day counts its items.
+/// Up to a year of data is one block from the first day to the last; longer data is one block per
+/// year. The week starts on the chart culture's first day. One calendar per chart; it cannot be mixed
+/// with other series.
+/// </summary>
+public sealed class CalendarSeries<TItem> : SeriesBase<TItem>
+{
+    /// <summary>The value that gets the full color (e.g. 100 for percentages). Default: the highest value.</summary>
+    [Parameter] public double? Max { get; set; }
+
+    /// <summary>
+    /// Colors diverge from this value, e.g. 0 for changes or 20 for °C: days above it take the series color,
+    /// days below it <see cref="BelowColor"/>, stronger the further they are from it. Default: one color, stronger for higher values.
+    /// </summary>
+    [Parameter] public double? Midpoint { get; set; }
+
+    /// <summary>With a <see cref="Midpoint"/>: the color of days below it. Default <c>--rio-negative</c>.</summary>
+    [Parameter] public string? BelowColor { get; set; }
+
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Calendar;
+
+    private protected override TimeBucket? XBucket => TimeBucket.Day;
+
+    private protected override Core.Aggregate? BucketAggregate => YValue is not null ? Core.Aggregate.Sum : Core.Aggregate.Count;
+
+    /// <inheritdoc />
+    protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with { Max = Max, Midpoint = Midpoint, BelowColor = BelowColor };
 }
 
 /// <summary>

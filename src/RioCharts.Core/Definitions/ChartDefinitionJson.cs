@@ -331,7 +331,11 @@ public static class ChartDefinitionJson
         ["minmax"] = ("rangeArea", null),
         ["heat"] = ("heatmap", null),
         ["matrix"] = ("heatmap", null),
-        ["calendar"] = ("heatmap", null),
+        ["calendar"] = ("calendar", null),
+        ["calendarheatmap"] = ("calendar", null),
+        ["calendarchart"] = ("calendar", null),
+        ["contributions"] = ("calendar", null),
+        ["contributiongraph"] = ("calendar", null),
         ["scatterplot"] = ("scatter", null),
         ["scatterchart"] = ("scatter", null),
         ["points"] = ("scatter", null),
@@ -485,7 +489,7 @@ public static class ChartDefinitionJson
                     else
                     {
                         errors.Add(new DefinitionError($"series[{i}].type",
-                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, bullet, dumbbell, funnel, radar, treemap, map, mapBubble, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt, pipeline)."));
+                            $"'{typeName}' is not supported; valid: line, area, bar, scatter, bubble, heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, rangeBar, pie, radialBar, gauge, bullet, dumbbell, funnel, calendar, radar, treemap, map, mapBubble, auto (also column, donut, stackedBar, spline, meter, points, spider, timeline, gantt, pipeline)."));
                     }
                 }
 

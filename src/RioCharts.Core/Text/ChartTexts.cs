@@ -198,6 +198,12 @@ public sealed record ChartTexts
     /// <summary>A funnel stage's share of the stage before it, in its tooltip.</summary>
     public string FunnelOfPrevious { get => Get(); init => Set(value); }
 
+    /// <summary>A calendar heatmap.</summary>
+    public string CalendarChart { get => Get(); init => Set(value); }
+
+    /// <summary>A calendar heatmap's summary for screen readers: the chart, how many days have values and the lowest and highest.</summary>
+    public string CalendarDays { get => Get(); init => Set(value); }
+
     /// <summary>A gauge's target value, e.g. "Target 80" in its tooltip and description.</summary>
     public string Target { get => Get(); init => Set(value); }
 
@@ -441,6 +447,8 @@ public sealed record ChartTexts
         [nameof(FunnelChart)] = "Funnel chart",
         [nameof(FunnelOfFirst)] = "Of first stage",
         [nameof(FunnelOfPrevious)] = "Of previous stage",
+        [nameof(CalendarChart)] = "Calendar heatmap",
+        [nameof(CalendarDays)] = "{0} with {1} day: {2}|{0} with {1} days: {2}",
         [nameof(Target)] = "Target",
         [nameof(RadarChart)] = "Radar chart",
         [nameof(Treemap)] = "Treemap",
@@ -524,6 +532,8 @@ public sealed record ChartTexts
         FunnelChart = "Trattdiagram",
         FunnelOfFirst = "Av första steget",
         FunnelOfPrevious = "Av föregående steg",
+        CalendarChart = "Kalenderdiagram",
+        CalendarDays = "{0} med {1} dag: {2}|{0} med {1} dagar: {2}",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trädkarta",
@@ -601,6 +611,8 @@ public sealed record ChartTexts
         FunnelChart = "Traktdiagram",
         FunnelOfFirst = "Av første trinn",
         FunnelOfPrevious = "Av forrige trinn",
+        CalendarChart = "Kalenderdiagram",
+        CalendarDays = "{0} med {1} dag: {2}|{0} med {1} dager: {2}",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trekart",
@@ -678,6 +690,8 @@ public sealed record ChartTexts
         FunnelChart = "Tragtdiagram",
         FunnelOfFirst = "Af første trin",
         FunnelOfPrevious = "Af forrige trin",
+        CalendarChart = "Kalenderdiagram",
+        CalendarDays = "{0} med {1} dag: {2}|{0} med {1} dage: {2}",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trækort",
@@ -755,6 +769,8 @@ public sealed record ChartTexts
         FunnelChart = "Suppilokaavio",
         FunnelOfFirst = "Ensimmäisestä vaiheesta",
         FunnelOfPrevious = "Edellisestä vaiheesta",
+        CalendarChart = "Kalenterikaavio",
+        CalendarDays = "{0}, {1} päivä: {2}|{0}, {1} päivää: {2}",
         Target = "Tavoite",
         RadarChart = "Tutkakaavio",
         Treemap = "Puukartta",
@@ -832,6 +848,8 @@ public sealed record ChartTexts
         FunnelChart = "Trichterdiagramm",
         FunnelOfFirst = "Von der ersten Stufe",
         FunnelOfPrevious = "Von der vorigen Stufe",
+        CalendarChart = "Kalenderdiagramm",
+        CalendarDays = "{0} mit {1} Tag: {2}|{0} mit {1} Tagen: {2}",
         Target = "Ziel",
         RadarChart = "Netzdiagramm",
         Treemap = "Treemap",
@@ -909,6 +927,8 @@ public sealed record ChartTexts
         FunnelChart = "Graphique en entonnoir",
         FunnelOfFirst = "De la première étape",
         FunnelOfPrevious = "De l'étape précédente",
+        CalendarChart = "Calendrier thermique",
+        CalendarDays = "{0} avec {1} jour : {2}|{0} avec {1} jours : {2}",
         Target = "Cible",
         RadarChart = "Graphique en radar",
         Treemap = "Carte proportionnelle",
@@ -986,6 +1006,8 @@ public sealed record ChartTexts
         FunnelChart = "Gráfico de embudo",
         FunnelOfFirst = "De la primera etapa",
         FunnelOfPrevious = "De la etapa anterior",
+        CalendarChart = "Calendario de calor",
+        CalendarDays = "{0} con {1} día: {2}|{0} con {1} días: {2}",
         Target = "Objetivo",
         RadarChart = "Gráfico radial",
         Treemap = "Mapa de árbol",

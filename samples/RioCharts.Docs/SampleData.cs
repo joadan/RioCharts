@@ -76,6 +76,17 @@ public static class SampleData
         .Select((d, i) => new Reading(d, Math.Round(220 + 60 * Math.Sin(d.DayOfYear / 5.0) + Noise(i, 7) * 25, 0)))
         .ToList();
 
+    /// <summary>
+    /// Orders per day through 2026: quieter weekends, a slow spring, a busy late summer and autumn (the hiking
+    /// season), and a few days when the shop was closed (no reading).
+    /// </summary>
+    public static readonly List<Reading> YearOrders = Enumerable.Range(0, 365)
+        .Where(i => i is not (0 or 1 or 104 or 358 or 359)) // New Year, Easter Monday, Christmas
+        .Select(i => new DateTime(2026, 1, 1).AddDays(i))
+        .Select((d, i) => new Reading(d, Math.Max(0, Math.Round(
+            (d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? 18 : 42) + 16 * Math.Sin((d.DayOfYear - 140) / 365.0 * 2 * Math.PI) + Noise(i, 11) * 18))))
+        .ToList();
+
     /// <summary>Server capacity in sessions per 15 minutes: scaled up for the day, down at night (a step line).</summary>
     public static readonly List<Reading> Capacity =
     [

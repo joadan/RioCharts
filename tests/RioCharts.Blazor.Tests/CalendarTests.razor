@@ -1,0 +1,48 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Order(DateTime At, double Amount);
+
+    private static readonly Order[] Orders =
+    [
+        new(new DateTime(2026, 2, 2, 9, 0, 0), 120), new(new DateTime(2026, 2, 2, 15, 0, 0), 80), new(new DateTime(2026, 2, 3, 11, 0, 0), 40),
+        new(new DateTime(2026, 2, 5, 10, 0, 0), 60),
+    ];
+
+    [Fact]
+    public void Items_on_the_same_day_add_up()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <CalendarSeries XValue="o => o.At" YValue="o => o.Amount" />
+        </RioChart>);
+
+        Assert.Equal(3, cut.Find(".rio-series-calendar").Children.Length);
+        Assert.Single(cut.FindAll(".rio-calendar-empty rect")); // 4 February
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal(["200", "40", "60"], series.GetProperty("v").EnumerateArray().Select(v => v.GetString()));
+    }
+
+    [Fact]
+    public void Without_a_value_each_day_counts_its_items()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <CalendarSeries XValue="o => o.At" />
+        </RioChart>);
+
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal(["2", "1", "1"], series.GetProperty("v").EnumerateArray().Select(v => v.GetString()));
+    }
+
+    [Fact]
+    public void Clicking_a_day_selects_its_items()
+    {
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Selection="SelectionMode.Points">
+            <CalendarSeries Id="c" XValue="o => o.At" YValue="o => o.Amount" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("c", 0, false));
+
+        Assert.Equal([Orders[0], Orders[1]], cut.Instance.GetSelectedItems());
+        Assert.Single(cut.FindAll(".rio-selected-bar"));
+    }
+}

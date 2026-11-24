@@ -1,0 +1,117 @@
+@page "/calendar"
+
+<PageTitle>Calendar heatmap · RioCharts for Blazor and .NET</PageTitle>
+
+<h1>Calendar heatmap</h1>
+<p class="lead">
+    A calendar heatmap shows a value for every day over months or years, such as orders, visits or activity. Each day is a square in
+    its week, colored by its value, so weekly rhythms, seasons and quiet days show at a glance.
+</p>
+
+<Example Title="A year of orders" Code="@YearCode">
+    <Description>
+        <p>
+            <code>CalendarSeries</code> draws a square per day: weeks are columns and weekdays are rows, with month names above. <code>XValue</code>
+            is a date or time and <code>YValue</code> the day's value; the color gets stronger with the value, on the same scale as
+            the <a href="heatmap">heatmap</a>. Days without a value are gray. The week starts on the chart culture's first day: Monday
+            in most of Europe, Sunday in the United States.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Items="SampleData.YearOrders" Title="Orders per day, 2026" Height="210">
+            <CalendarSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="From raw events" Code="@EventsCode">
+    <Description>
+        <p>
+            Items on the same day add up, so a list of orders gives the calendar directly; <code>Aggregate</code> combines them another way
+            (<code>Aggregate.Average</code> for an average order). Without a <code>YValue</code> each day counts its items. Days are
+            midnight to midnight in the chart's <code>TimeZone</code> when it is set. Up to a year of data is one block from the first day to the
+            last. With <code>Selection</code> on, clicking a day selects its items.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Order" Items="Orders" Title="Orders, spring" Height="200" Selection="SelectionMode.Points" @bind-SelectedItems="_picked">
+            <CalendarSeries Name="Orders" XValue="o => o.Placed" />
+        </RioChart>
+        <p class="note">@(_picked.Count == 0 ? "Click a day to select its orders." : $"{_picked.Count} orders selected, {_picked.Sum(o => o.Amount):#,0} € in all.")</p>
+    </ChildContent>
+</Example>
+
+<Example Title="Above and below a value" Code="@TemperatureCode">
+    <Description>
+        <p>
+            <code>Midpoint</code> splits the colors at a value, as for heatmaps: days above it take the series color, days below it
+            <code>BelowColor</code>, each stronger the further from the midpoint. More than a year of data is one block per year, each
+            labeled with its year. <code>Max</code> fixes the value that gets the full color.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Items="Temperatures" Title="Daily mean temperature" Height="340">
+            <CalendarSeries Name="Mean" XValue="r => r.Time" YValue="r => r.Value" Midpoint="10" Color="--rio-negative" BelowColor="--rio-series-1" Format="0.0 °C" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
+<h2>JSON definitions</h2>
+<p>
+    In a JSON definition, <code>"type": "calendar"</code> with a date or time <code>"x"</code> field. Rows on the same day add up, or
+    combine with <code>"aggregate"</code>; without <code>"y"</code> each day counts its rows.
+</p>
+<CodeBlock Language="json" Code="@JsonCode" />
+
+@code {
+    private IReadOnlyCollection<Order> _picked = [];
+
+    private sealed record Order(DateTime Placed, double Amount);
+
+    // About a tenth of each spring day's orders, spread over the day.
+    private static readonly Order[] Orders = [.. SampleData.YearOrders
+        .Where(r => r.Time.Month is >= 3 and <= 5)
+        .SelectMany((r, d) => Enumerable.Range(0, (int)(r.Value!.Value / 10))
+            .Select(k => new Order(r.Time.AddHours(9 + k * 2), Math.Round(60 + SampleData.Noise(d * 31 + k, 5) * 80))))];
+
+    // Two years of daily means in °C: a seasonal swing with weather on top.
+    private static readonly Reading[] Temperatures = [.. Enumerable.Range(0, 730)
+        .Select(i => new DateTime(2025, 1, 1).AddDays(i))
+        .Select((d, i) => new Reading(d, Math.Round(9 - 9 * Math.Cos((d.DayOfYear - 20) / 365.0 * 2 * Math.PI) + SampleData.Noise(i, 3) * 7, 1)))];
+
+    private const string YearCode = """
+        <RioChart Items="orders" Title="Orders per day, 2026">
+            <CalendarSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+
+        @code {
+            record Reading(DateTime Time, double? Value); // one per day
+        }
+        """;
+
+    private const string EventsCode = """
+        <RioChart Items="orders" Title="Orders, spring" Selection="SelectionMode.Points" @bind-SelectedItems="picked">
+            <CalendarSeries Name="Orders" XValue="o => o.Placed" />   @* no YValue: counts the orders per day *@
+        </RioChart>
+
+        @code {
+            IReadOnlyCollection<Order> picked = [];
+            record Order(DateTime Placed, double Amount);
+        }
+        """;
+
+    private const string TemperatureCode = """
+        <RioChart Items="temperatures" Title="Daily mean temperature">
+            <CalendarSeries Name="Mean" XValue="r => r.Time" YValue="r => r.Value"
+                            Midpoint="10" Color="--rio-negative" BelowColor="--rio-series-1" Format="0.0 °C" />
+        </RioChart>
+        """;
+
+    private const string JsonCode = """
+        {
+          "dataset": "orders",
+          "title": "Orders per day",
+          "series": [ { "type": "calendar", "x": "placed" } ]
+        }
+        """;
+}

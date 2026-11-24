@@ -13,6 +13,13 @@ changes are called out under **Breaking**.
   `Aggregate` combines items per stage, `Color` makes it one color, `ColorValue` colors a stage, and selection outlines a
   stage. New texts: `ChartTexts.FunnelChart`, `FunnelOfFirst` and `FunnelOfPrevious` in all built-in languages. Docs: a
   Funnels page and a gallery card.
+- Calendar heatmaps: `CalendarSeries` (`"type": "calendar"` in JSON, also `calendarHeatmap` and `contributions`)
+  draws a square per day, weeks as columns and weekdays as rows, colored like a heatmap (`Max`, `Midpoint`,
+  `BelowColor`). Items on the same day add up, or combine with `Aggregate`; without a `YValue` each day counts its
+  items. Days follow the chart's `TimeZone`, and the week starts on the culture's first day. Up to a year is one
+  block; longer data is one block per year. Clicking a day selects its items. New texts: `ChartTexts.CalendarChart`
+  and `CalendarDays` in all built-in languages. Docs: a Calendar heatmap page and a gallery card.
+  **Breaking (JSON):** `"type": "calendar"` used to mean a plain heatmap; it is now the calendar heatmap.
 - Docs and demo: a "Europe only" world map example that opens zoomed into Europe (`TreemapPath="Europe"`).
 
 ## 0.5.2-preview (2026-11-24)

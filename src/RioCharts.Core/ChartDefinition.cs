@@ -543,6 +543,9 @@ public enum SeriesType
     /// <summary>A funnel: one segment per stage (x: the stage, y: how many reached it), top to bottom in input order, each as wide as its share of the largest and narrowing to the next, with its value and its share of the stage before.</summary>
     Funnel,
 
+    /// <summary>A calendar heatmap: a square per day (x: a date or time), weeks as columns and weekdays as rows, colored by the day's value. Rows on the same day add up (or use aggregate); without y each day counts its rows. One block per year for more than a year of data.</summary>
+    Calendar,
+
     /// <summary>JSON definitions: picked from the data (time or numbers: line; categories: bar; shares of a whole: donut).</summary>
     Auto,
 }

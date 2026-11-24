@@ -43,6 +43,7 @@ Rules of thumb:
 | Scatter | `ScatterSeries` / `scatter` | Also `points`. |
 | Bubble | `ScatterSeries` with `SizeValue` / `bubble` (scatter with `size`) | Area ∝ size, one scale per chart, largest drawn first, a size legend. |
 | Heatmap | `HeatmapSeries` / `heatmap` | One row per series. One hue, or diverging from a `Midpoint`. |
+| Calendar heatmap | `CalendarSeries` / `calendar` (also `calendarHeatmap`, `contributions`) | A square per day, weeks as columns and weekdays as rows, heatmap colors; same-day values add up (or `aggregate`), no y counts. One block from the first to the last day, or one per year beyond a year. Week starts on the culture's first day. |
 | Range area | `RangeAreaSeries` / `rangeArea` | Low/high band. |
 | Box plot | `BoxPlotSeries` / `boxPlot` | Raw values or a precomputed summary. Upright or `Horizontal`. |
 | Candlestick | `CandlestickSeries` / `candlestick` | OHLC. |
@@ -65,7 +66,6 @@ Rules of thumb:
 | Type | Status | Popularity | Effort | Complexity | What it's for | Notes / why not yet |
 |---|---|---|---|---|---|---|
 | Polar area | In Design.md | Low | Small | Low | Categories compared around a circle | Angle = category band, radius = sqrt value. Fits `PolarSeriesType`. Rarely better than a bar chart, so not a priority. |
-| Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |
 | Streamgraph | Candidate | Low | Small | Low | Shares over time, organic look | A centered ("wiggle") offset as another `StackMode` next to `Percent` (100 % stacked, added). Rarely asked for. |
 | Nested donut / sunburst | In Design.md | Medium | Medium–Large | Medium | Hierarchical shares | One ring per level; can reuse the treemap hierarchy. Labels on thin rings are the hard part. |
 | Sankey | "Later, if ever" in Design.md | Medium | Large | High | Flows between nodes | Needs a node/link data model, a node ordering layout and curved links; touches tooltips, keyboard navigation and the describer in new ways. |
