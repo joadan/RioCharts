@@ -980,8 +980,6 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `ErrorLow`: `double[]?` (read-only) — Error bars: the low end of each point's error bar (a value, not a distance), NaN where it has none; null when the series has no error bars. Set with `SeriesData.WithErrors`.
 - `ErrorHigh`: `double[]?` (read-only) — Error bars: the high end of each point's error bar, NaN where it has none; null without error bars.
 - `Targets`: `double[]?` (read-only) — Bullets: each point's target value, NaN where it has none; null for other series. Set with `SeriesData.WithTargets`.
-- `Candles`: `CandleColumns?` (read-only) — Candlesticks: the open, high and low of each point (`SeriesData.Y` is the close); null for other series. Set with `SeriesData.WithCandles`.
-- `Box`: `BoxColumns?` (read-only) — Box plots: the quartiles, whiskers, extremes and outliers of each point (`SeriesData.Y` is the median); null for other series. Set with `SeriesData.WithBox`.
 - `TimeOffsets`: `double[]?` (read-only) — Time data: the UTC offset (milliseconds) of each point when the input had one (DateTimeOffset, or DateTime with Kind Utc or Local), NaN otherwise; null when no point had one. Used only when the chart has a display time zone; by default times are shown as given.
 - `Rows`: `string[]?` (read-only) — Range bars: the row of each point, e.g. the machine or task it belongs to (`SeriesData.X` is the start, `SeriesData.Y` the end, in the same units); null for other series. Set with `SeriesData.WithRows` or made by `SeriesData.FromRanges`.
 - `Empty`: `SeriesData` (static) — A series with no points.
@@ -995,8 +993,6 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `SeriesData WithErrors(ReadOnlySpan<double> low, ReadOnlySpan<double> high)` — The same points with an error bar each, from `low` to `high` (values on the y axis, e.g. y - sd and y + sd). Both are in input order, like the y values given when creating the data: index i belongs to input item (or group) i; NaN for none.
 - `SeriesData WithTargets(ReadOnlySpan<double> targets)` — The same points with a target each (bullet charts). `targets` is in input order, like the y values given when creating the data: index i is the target of input item (or group) i.
 - `SeriesData WithCandles(ReadOnlySpan<CandleSummary> candles)` — The same points as candles: `candles` is in input order (index i is the candle of input item or group i). Each point's y becomes its candle's close; an incomplete candle is a gap.
-- `static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value, TimeBucket bucket, IReadOnlyList<int[]> groups, TimeConversion? zone = null)` — Candles from raw readings: the items are grouped per time bucket (e.g. per hour or day, on their wall-clock time, or in `zone` when set) and each bucket gives the first, highest, lowest and last value in time order. Null values are skipped.
-- `static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups, TimeConversion? zone = null)` — Groups items per time bucket (e.g. per day or month, on their wall-clock time, or in `zone` when set) and makes one point per bucket at the bucket's start, with y from `aggregate` (null is a gap). `TimeBucket.Auto` picks the bucket from the span of the times. Items with a null x are left out; x values that are not times group by value. Selectors and the aggregate run once here, never per render.
 - `SeriesData WithBox(ReadOnlySpan<BoxSummary> boxes)` — The same points as boxes: `boxes` is in input order, like the y values given when creating the data (index i is the box of input item or group i). Each point's y becomes its box's median.
 - `static SeriesData FromBoxGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> value, IReadOnlyList<int[]> groups)` — Box plot data from raw values: items with the same x form one box, summarized with `BoxSummary.FromValues`. Categories keep the order of first appearance; numbers and times are sorted. Null values are skipped.
 - `SeriesData WithRows(IReadOnlyList<string?> rows)` — The same points as range bars, each in a row: `rows` is in input order, like the y values given when creating the data (index i is the row of input item i); a null or missing row is "". `SeriesData.X` is each bar's start and `SeriesData.Y` its end.
@@ -1010,7 +1006,6 @@ The single data representation inside Core: contiguous columns (structure of arr
 - `static SeriesData From(ReadOnlyMemory<DateTimeOffset> x, ReadOnlyMemory<double> y)` — Time x and y columns (copied).
 - `static SeriesData FromCategories(IReadOnlyList<string> categories, ReadOnlySpan<double> y)` — Category data; order of first appearance is kept.
 - `static SeriesData FromItems<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<TItem, double?> yValue)` — Builds columns from items. X may be a number, DateTime, DateTimeOffset, DateOnly or string (category); the first non-null value decides the kind. A null Y is a gap. Selectors run once here, never per render.
-- `static SeriesData FromBins<TItem>(IEnumerable<TItem> items, Func<TItem, double?> value, double? width, int? count, IReadOnlyList<int[]> groups, Bins bins)` — A histogram: the items' values (`value`; null and NaN are skipped) counted in equal-width bins (`Bins.For`). One point per bin, empty bins included: x is the bin's middle, y the number of values in it. Selectors run once here, never per render.
 - `static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate)`
 - `static SeriesData FromGroups<TItem>(IEnumerable<TItem> items, Func<TItem, object?> xValue, Func<IReadOnlyList<TItem>, double?> aggregate, IReadOnlyList<int[]> groups)` — Groups items with the same x and makes one point per group, with y from `aggregate` (null is a gap). Categories keep the order of first appearance; numbers and times are sorted as usual. Items with a null x are left out. Selectors and the aggregate run once here, never per render.
 
@@ -1203,34 +1198,6 @@ What the x values of a series are.
 - `Numeric` — Plain numbers.
 - `Time` — Times, stored as milliseconds (see `TimeValue`).
 - `Category` — Categories, stored as indexes into `SeriesData.Categories`.
-
-#### `CandleColumns` (class, RioCharts.Core.Data)
-
-The candlestick columns of a `SeriesData`, one entry per point in point order; the point's `SeriesData.Y` is its close. Treat as read-only.
-
-- `Open`: `double[]` (read-only) — The open per point.
-- `High`: `double[]` (read-only) — The high per point.
-- `Low`: `double[]` (read-only) — The low per point.
-- `Count`: `int[]` (read-only) — How many values each candle summarizes (0: not known).
-
-- `CandleSummary At(int point, double close)` — The candle of one point (its close is the series' y value).
-
-#### `BoxColumns` (class, RioCharts.Core.Data)
-
-The box plot columns of a `SeriesData`, one entry per point (in point order; the point's `SeriesData.Y` is its median). Treat as read-only.
-
-- `Min`: `double[]` (read-only) — The lowest value per point, outliers included.
-- `Low`: `double[]` (read-only) — The lower whisker end per point.
-- `Q1`: `double[]` (read-only) — The lower quartile per point.
-- `Q3`: `double[]` (read-only) — The upper quartile per point.
-- `High`: `double[]` (read-only) — The upper whisker end per point.
-- `Max`: `double[]` (read-only) — The highest value per point, outliers included.
-- `Count`: `int[]` (read-only) — How many values each point summarizes (0: not known).
-- `OutlierValues`: `double[]` (read-only) — All outliers, grouped by point in point order.
-- `OutlierPoints`: `int[]` (read-only) — The point of each outlier in `BoxColumns.OutlierValues`.
-
-- `ReadOnlySpan<double> OutliersOf(int point)` — The outliers of one point.
-- `BoxSummary At(int point, double median)` — The summary of one point (its median is the series' y value).
 
 #### `FieldType` (enum, RioCharts.Core.Definitions)
 

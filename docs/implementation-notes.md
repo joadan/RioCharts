@@ -1380,8 +1380,11 @@ The rest of Design.md "Programmatic interaction".
 
 ## Public API surface
 
-- Reviewed before the first release. Public: the definition model, data types, scales, formatters,
-  `ThemeTokens` and each package's entry points. Internal: SVG/canvas writers and the scene renderer
+- Reviewed before the first release, and again for 1.0. Public: the definition model, the data types users build
+  (`SeriesData`, `SeriesBuffer`, `TimeValue`, `BoxSummary`, `CandleSummary`), the `WorldMap` country lookup,
+  `ThemeTokens` and each package's entry points. Internal since the 1.0 review: scales, formatters, map
+  projections and the data helpers (`Lttb`, `Bins`, `TimeBuckets`, `Aggregation`, `AxisValue`, `ChartCsv`,
+  `TimeConversion`, the box and candle columns); the components and the binder use them. Internal: SVG/canvas writers and the scene renderer
   component in Blazor, Skia's color and path helpers, `ChartDefinitionJson.Options` (deserializing with
   it skips the defaults fix-up that `Parse` does) and the components' options.
 - **Scene and layout are internal (1.0 plan, docs/v1.md).** The scene types (`RioCharts.Core.Scene`),

@@ -254,7 +254,7 @@ public sealed class SeriesData
     /// Candlesticks: the open, high and low of each point (<see cref="Y"/> is the close); null for
     /// other series. Set with <see cref="WithCandles"/>.
     /// </summary>
-    public CandleColumns? Candles { get; private set; }
+    internal CandleColumns? Candles { get; private set; }
 
     /// <summary>
     /// The same points as candles: <paramref name="candles"/> is in input order (index i is the
@@ -282,7 +282,7 @@ public sealed class SeriesData
     /// </summary>
     /// <param name="groups">Each candle's item indexes; a point's source index is its group's index.</param>
     /// <param name="zone">A display zone (<see cref="TimeConversion.For"/>): buckets on wall-clock time there, starting at DateTimeOffsets in that zone. Null: on the times' own wall-clock time.</param>
-    public static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value,
+    internal static SeriesData FromCandleBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, Func<TItem, double?> value,
         TimeBucket bucket, out IReadOnlyList<int[]> groups, TimeConversion? zone = null)
     {
         ArgumentNullException.ThrowIfNull(time);
@@ -315,7 +315,7 @@ public sealed class SeriesData
     /// </summary>
     /// <param name="groups">Each bucket's item indexes; a point's source index is its group's index.</param>
     /// <param name="zone">A display zone (<see cref="TimeConversion.For"/>): buckets on wall-clock time there, starting at DateTimeOffsets in that zone. Null: on the times' own wall-clock time.</param>
-    public static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket,
+    internal static SeriesData FromTimeBuckets<TItem>(IEnumerable<TItem> items, Func<TItem, object?> time, TimeBucket bucket,
         Func<IReadOnlyList<TItem>, double?> aggregate, out IReadOnlyList<int[]> groups, TimeConversion? zone = null)
     {
         ArgumentNullException.ThrowIfNull(time);
@@ -343,7 +343,7 @@ public sealed class SeriesData
     /// Box plots: the quartiles, whiskers, extremes and outliers of each point (<see cref="Y"/> is
     /// the median); null for other series. Set with <see cref="WithBox"/>.
     /// </summary>
-    public BoxColumns? Box { get; private set; }
+    internal BoxColumns? Box { get; private set; }
 
     /// <summary>
     /// The same points as boxes: <paramref name="boxes"/> is in input order, like the y values given
@@ -687,7 +687,7 @@ public sealed class SeriesData
     /// <param name="count">About this many bins when <paramref name="width"/> is not set; null picks from the data.</param>
     /// <param name="groups">Each bin's item indexes (into <paramref name="items"/>); a point's source index is its bin.</param>
     /// <param name="bins">The bins used.</param>
-    public static SeriesData FromBins<TItem>(IEnumerable<TItem> items, Func<TItem, double?> value, double? width, int? count,
+    internal static SeriesData FromBins<TItem>(IEnumerable<TItem> items, Func<TItem, double?> value, double? width, int? count,
         out IReadOnlyList<int[]> groups, out Bins bins)
     {
         ArgumentNullException.ThrowIfNull(items);

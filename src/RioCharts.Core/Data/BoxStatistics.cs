@@ -81,7 +81,7 @@ public readonly record struct BoxSummary(double Min, double Low, double Q1, doub
 /// The box plot columns of a <see cref="SeriesData"/>, one entry per point (in point order; the
 /// point's <see cref="SeriesData.Y"/> is its median). Treat as read-only.
 /// </summary>
-public sealed class BoxColumns
+internal sealed class BoxColumns
 {
     internal BoxColumns(int count)
     {

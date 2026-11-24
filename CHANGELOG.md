@@ -14,6 +14,14 @@ changes are called out under **Breaking**.
   - The pie "Other" slice id is `SeriesOptions.OtherSliceKey` (was `ChartLayout.OtherSliceKey`).
   - `RioChart.Layout` is internal: export a component chart with `ExportPngAsync`/`ExportSvgAsync`, or save its
     `GetDefinition()`.
+- **Breaking:** more engine helpers are internal (1.0 API review): the scales (`ContinuousScale`, `BandScale`, `IScale`,
+  `NiceTicks`, `TimeTicks`, `TimeInterval`, `TimeUnit`), the formatters (`NumberFormatter`, `TimeFormatter`,
+  `ValueFormatter`), the map projections (`EqualEarth`, `Mercator`; pick one with `MapProjection`), and the data helpers
+  `Lttb`, `Bins`, `TimeBuckets`, `Aggregation`, `AxisValue`, `ChartCsv`, `TimeConversion`, `BoxColumns` and `CandleColumns`, with
+  `SeriesData.Box`, `SeriesData.Candles`, `SeriesData.FromTimeBuckets`, `FromCandleBuckets` and `FromBins`. The chart
+  components still group, bin and downsample as before. `riocharts-mcp`'s `LocalServer` and `ServerOptions` are internal
+  too. Still public: `SeriesData.WithBox`/`WithCandles` with `BoxSummary`/`CandleSummary`, `SeriesBuffer.ConsumeAsync`
+  and the `WorldMap` country lookup.
 - Color scale legends follow `Legend.Position`: with `LegendPosition.Bottom` (also from `RioChartDefaults`) the scale of
   a heatmap, calendar heatmap or map, and a heatmap's color bands, sit below the chart instead of above it. `Right`
   keeps them above (a scale is a wide strip).

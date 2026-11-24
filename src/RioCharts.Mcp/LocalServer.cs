@@ -8,7 +8,7 @@ using RioCharts.Core.Definitions;
 namespace RioCharts.Mcp;
 
 /// <summary>The chart tool and MCP tools of the local server.</summary>
-public static class LocalServer
+internal static class LocalServer
 {
     /// <summary>The chart tool for these options: datasets from the data folder, images saved to the output folder.</summary>
     public static ChartTool CreateChartTool(ServerOptions options)

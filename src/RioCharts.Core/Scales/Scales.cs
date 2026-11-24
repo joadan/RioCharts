@@ -1,7 +1,7 @@
 namespace RioCharts.Core.Scales;
 
 /// <summary>Maps a continuous domain to pixels.</summary>
-public interface IScale
+internal interface IScale
 {
     /// <summary>Lower end of the domain, in data units.</summary>
     double DomainMin { get; }
@@ -27,7 +27,7 @@ public interface IScale
 /// <see cref="IsLog"/>). Numeric and time axes use it; a time axis' domain is in milliseconds
 /// (see <see cref="Data.TimeValue"/>), only its ticks and formatting differ. Categories use <see cref="BandScale"/>.
 /// </summary>
-public sealed class ContinuousScale : IScale
+internal sealed class ContinuousScale : IScale
 {
     private readonly double _logMin;
     private readonly double _logSpan;
@@ -110,7 +110,7 @@ public sealed class ContinuousScale : IScale
 }
 
 /// <summary>Evenly spaced bands for categories (bar charts).</summary>
-public sealed class BandScale
+internal sealed class BandScale
 {
     /// <summary>Creates bands for the categories across a pixel range.</summary>
     /// <param name="categories">The categories, one band each, in order.</param>

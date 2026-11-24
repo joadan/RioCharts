@@ -4,7 +4,7 @@ using RioCharts.Skia;
 namespace RioCharts.Mcp;
 
 /// <summary>Command-line options of riocharts-mcp.</summary>
-public sealed record ServerOptions
+internal sealed record ServerOptions
 {
     /// <summary>The help text printed for <c>--help</c>.</summary>
     public const string Usage = """

@@ -7,7 +7,7 @@ namespace RioCharts.Core.Data;
 /// Converts an annotation value (a number, a time, a category name, an ISO 8601 string or a
 /// JSON element from a deserialized spec) to an axis position in data units.
 /// </summary>
-public static class AxisValue
+internal static class AxisValue
 {
     /// <summary>
     /// The value on an axis of the given kind: a number, milliseconds for time axes, or the

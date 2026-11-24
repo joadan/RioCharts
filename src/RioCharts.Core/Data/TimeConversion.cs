@@ -18,7 +18,7 @@ public enum UnspecifiedTimes
 /// labels and tooltips use wall-clock time in <see cref="Zone"/>. Lines never double back across
 /// a daylight saving change, and a day with a repeated hour is 25 hours wide.
 /// </summary>
-public sealed class TimeConversion
+internal sealed class TimeConversion
 {
     /// <summary>Creates a conversion for a display zone.</summary>
     /// <param name="zone">The zone ticks, labels and tooltips are shown in.</param>
