@@ -45,6 +45,24 @@
     <li>Update with a new <code>SeriesData</code> or a <code>DataVersion</code>; for streams use a <code>SeriesBuffer</code>.</li>
 </ul>
 
+<h2 id="canvas">Canvas compared with SVG</h2>
+<p>
+    With <code>SeriesLayer.Canvas</code> the series are painted on a canvas laid over the SVG chart; axes, grid, legend, labels and
+    annotations stay in SVG. Tooltips, clicks, zoom and pan work the same, since they use the chart's own hit testing. These differ:
+</p>
+<table class="docs">
+    <tr><th>What</th><th>On a canvas</th></tr>
+    <tr><td>Data labels and annotations</td><td>Drawn under the series, also annotations with <code>Layer="AnnotationLayer.Above"</code>. A line can cross a label.</td></tr>
+    <tr><td>Highlight</td><td>Hovering a legend item or <code>HighlightSeriesAsync</code> does not fade the other series.</td></tr>
+    <tr><td>Entry fade</td><td>The series appear at once instead of fading in.</td></tr>
+    <tr><td>Downsampling</td><td>Line and area series keep four times the plot width (at least 2000 points) instead of twice.</td></tr>
+    <tr><td>Styling</td><td>Colors and theme tokens apply, and the canvas repaints when the theme changes; your own CSS rules on the series' SVG elements do not.</td></tr>
+    <tr><td>Image export</td><td><code>ExportSvgAsync</code> writes the series as a PNG image inside the SVG; <code>ExportPngAsync</code> is unaffected. Server export with RioCharts.Skia always draws vectors.</td></tr>
+    <tr><td>Static rendering</td><td>Static server rendering and prerendering draw the series in SVG; the canvas takes over once the chart runs interactively.</td></tr>
+    <tr><td>Maps</td><td>Drawn in SVG, countries and bubbles; <code>SeriesLayer</code> has no effect.</td></tr>
+</table>
+<p>Use SVG unless the series have many thousands of drawn shapes; most charts never need the canvas.</p>
+
 @code {
     private static readonly AxisOptions Ms = new() { Title = "ms" };
     private static readonly SeriesData _big = Create();
