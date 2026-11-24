@@ -35,7 +35,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - `YValue` returns `double?`; `null` leaves a gap. Cast `decimal` to `double`.
 - Data over several powers of ten (1 to 1,000,000): a log y axis, `YAxis="@(new AxisOptions { Scale = ScaleType.Log })"` (`"scale": "log"` in JSON definitions). Values of zero or below are left out. The same on `XAxis` for numeric x under lines and scatter points (not bars), e.g. load time against page size, log on both axes.
 - Many categories (e.g. bars per country): labels that do not fit slope at 45 degrees, so all show. `XAxis="@(new AxisOptions { LabelRotation = 90 })"` sets another angle; `LabelRotation = 0` keeps them horizontal and shows every n-th.
-- Largest first: `Sort="SortOrder.Descending"` on a `BarSeries` orders the categories by its values after `Aggregate` (e.g. counts). Sorting `Items` does not help with aggregates.
+- Largest first: `Sort="ChartSort.Descending"` on a `BarSeries` orders the categories by its values after `Aggregate` (e.g. counts). Sorting `Items` does not help with aggregates.
 - One y axis per unit: `YAxes="@([new AxisOptions { Id = "kw", Title = "kW" }])"` on the chart and `YAxisId="kw"` on the series. Extra axes go right unless `Position = AxisPosition.Left`; several on one side sit side by side. Add `SeriesColor = true` to each axis to color it like its series.
 - Few points on a line (say under 20): `Highlight="PointHighlight.All"` puts a dot on every point (`MarkerSize` for the diameter). Other values mark single points: `First`, `Last`, `Min`, `Max`, combined with `|`.
 - Bars never take more than a fifth of the plot, so a lone bar after filtering stays narrow; `MaxBarWidth="40"` on a `BarSeries` caps them in pixels.

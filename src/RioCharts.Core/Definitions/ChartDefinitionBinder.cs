@@ -453,7 +453,7 @@ public static class ChartDefinitionBinder
                 lowLikeY: s.Type == SeriesType.Dumbbell);
             if (s.Sort is { } sort)
             {
-                points = sort == SortOrder.Ascending
+                points = sort == ChartSort.Ascending
                     ? [.. points.OrderBy(p => p.Y ?? double.PositiveInfinity)]
                     : [.. points.OrderByDescending(p => p.Y ?? double.NegativeInfinity)];
             }

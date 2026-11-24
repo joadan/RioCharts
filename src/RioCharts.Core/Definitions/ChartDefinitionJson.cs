@@ -75,7 +75,7 @@ public static class ChartDefinitionJson
         options.Converters.Add(new JsonStringEnumConverter<FilterOp>(camel));
         options.Converters.Add(new JsonStringEnumConverter<TimeBucket>(camel));
         options.Converters.Add(new JsonStringEnumConverter<Aggregate>(camel));
-        options.Converters.Add(new JsonStringEnumConverter<SortOrder>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<ChartSort>(camel));
         options.Converters.Add(new JsonStringEnumConverter<UnspecifiedTimes>(camel));
         options.MakeReadOnly();
         return options;

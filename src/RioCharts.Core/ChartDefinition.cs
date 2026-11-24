@@ -220,7 +220,7 @@ public sealed record SeriesOptions
     /// follow this series' values after aggregation (the first series with a sort decides).
     /// </summary>
     [Description("Order points by y (for categories, e.g. a ranking): ascending or descending. The category axis follows this series' values after aggregation.")]
-    public SortOrder? Sort { get; init; }
+    public ChartSort? Sort { get; init; }
 
     /// <summary>Keep only the first N points after sorting (e.g. top 10).</summary>
     [Description("Keep only the first N points after sorting (e.g. top 10).")]
@@ -891,8 +891,8 @@ public enum Aggregate
 }
 
 /// <summary>Order of points sorted by value.</summary>
-[JsonConverter(typeof(JsonStringEnumConverter<SortOrder>))]
-public enum SortOrder
+[JsonConverter(typeof(JsonStringEnumConverter<ChartSort>))]
+public enum ChartSort
 {
     /// <summary>Smallest first.</summary>
     Ascending,

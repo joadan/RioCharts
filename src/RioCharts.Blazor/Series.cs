@@ -467,9 +467,9 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
 
     /// <summary>
     /// Category x: orders the categories by this series' values (after <c>Aggregate</c>, e.g. counts), largest first with
-    /// <c>SortOrder.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
+    /// <c>ChartSort.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
     /// </summary>
-    [Parameter] public SortOrder? Sort { get; set; }
+    [Parameter] public ChartSort? Sort { get; set; }
 
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Line;
@@ -508,9 +508,9 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 
     /// <summary>
     /// Category x: orders the categories by this series' values (after <c>Aggregate</c>, e.g. counts), largest first with
-    /// <c>SortOrder.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
+    /// <c>ChartSort.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
     /// </summary>
-    [Parameter] public SortOrder? Sort { get; set; }
+    [Parameter] public ChartSort? Sort { get; set; }
 
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Area;
@@ -851,9 +851,9 @@ public sealed class BarSeries<TItem> : ErrorBarSeriesBase<TItem>
 
     /// <summary>
     /// Category x: orders the categories by this series' values (after <c>Aggregate</c>, e.g. counts), largest first with
-    /// <c>SortOrder.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
+    /// <c>ChartSort.Descending</c>. The first series with a sort decides for the whole chart. Time and number x ignore it.
     /// </summary>
-    [Parameter] public SortOrder? Sort { get; set; }
+    [Parameter] public ChartSort? Sort { get; set; }
 
     /// <inheritdoc />
     protected override SeriesType Type => SeriesType.Bar;

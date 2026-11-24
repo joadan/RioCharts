@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- **Breaking:** the sort enum `SortOrder` is now `ChartSort` (`Sort="ChartSort.Descending"`), since `SortOrder` also
+  exists in other libraries (Radzen, Microsoft.Data.SqlClient) and was ambiguous when both namespaces were imported.
+  JSON is unchanged (`"sort": "ascending|descending"`).
 - Funnel charts: `FunnelSeries` (`"type": "funnel"` in JSON, also `conversionFunnel`, `salesFunnel` and `pipeline`)
   draws one segment per stage, top to bottom in the order of the items, each as wide as its share of the largest stage
   and narrowing to the next, in a color of its own. Larger stages are also taller, while every stage keeps room for its
@@ -27,7 +30,7 @@ changes are called out under **Breaking**.
 - Axis colors: `AxisOptions.Color` (`"color"`) colors the tick labels and title of a y axis, and `SeriesColor = true`
   (`"seriesColor"`) takes the color of the first visible series on the axis, so with one axis per series each axis
   matches its line.
-- Sorting by aggregated values: `Sort` on `BarSeries`, `LineSeries` and `AreaSeries` (`SortOrder.Descending` for largest
+- Sorting by aggregated values: `Sort` on `BarSeries`, `LineSeries` and `AreaSeries` (`ChartSort.Descending` for largest
   first) orders a category axis by the series' values after `Aggregate`, e.g. countries by their count. In JSON
   definitions `"sort"` now orders the category axis the same way (before, only the points were reordered, which another
   series could undo). The Razor export writes `Sort` instead of a "do this in the query" note, unless there is a `limit`.
