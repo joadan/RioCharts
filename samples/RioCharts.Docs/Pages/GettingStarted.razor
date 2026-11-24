@@ -80,9 +80,16 @@
 <Example Title="Shared defaults" Code="@DefaultsCode">
     <Description>
         <p>
-            Settings that every chart in the app shares (culture, time zone, height, legend, axes) go in a <code>RioChartDefaults</code>,
-            cascaded once around the router instead of repeated on each chart. A parameter set on a chart wins; a chart's
-            <code>YAxis</code> replaces the default axis as a whole. Here both charts get the Swedish culture, 200 px and a legend at the bottom.
+            Settings that every chart in the app shares (culture, time zone, height, legend, axes) go in a <code>RioChartDefaults</code>
+            instead of on each chart. Register it once in <code>Program.cs</code> with <code>AddRioCharts</code>; that reaches every chart,
+            whatever its render mode. Nothing else needs registering, and without it charts use their built-in defaults.
+        </p>
+        <p>
+            To give part of the app other defaults, cascade a <code>RioChartDefaults</code> around it: each setting comes from the chart
+            itself, else the cascade, else the registered defaults. A cascade without <code>IsFixed</code> can be replaced at runtime,
+            e.g. on a language switch, and the charts follow. A cascade does not reach into components with another render mode, so prefer
+            <code>AddRioCharts</code> for app-wide settings. A chart's <code>YAxis</code> replaces the default axis as a whole. Here both
+            charts get the Swedish culture, 200 px and a legend at the bottom.
         </p>
     </Description>
     <ChildContent>
@@ -194,24 +201,24 @@
     };
 
     private const string DefaultsCode = """
-        @* App.razor or Routes.razor: every chart below gets these *@
-        <CascadingValue Value="chartDefaults" IsFixed="true">
-            <Router AppAssembly="typeof(Program).Assembly">...</Router>
+        // Program.cs: every chart in the app gets these (optional; works in every render mode)
+        builder.Services.AddRioCharts(new RioChartDefaults
+        {
+            Culture = CultureInfo.GetCultureInfo("sv-SE"),
+            TimeZone = "Europe/Stockholm",
+            Height = 200,
+            Legend = new LegendOptions { Position = LegendPosition.Bottom },
+            YAxis = new AxisOptions { Format = "#,0" },
+        });
+
+        @* A section with other defaults: cascade them (each setting falls back to the registered ones) *@
+        <CascadingValue Value="@(new RioChartDefaults { Height = 400 })" IsFixed="true">
+            ...
         </CascadingValue>
 
-        @code {
-            static readonly RioChartDefaults chartDefaults = new()
-            {
-                Culture = CultureInfo.GetCultureInfo("sv-SE"),
-                TimeZone = "Europe/Stockholm",
-                Height = 200,
-                Legend = new LegendOptions { Position = LegendPosition.Bottom },
-                YAxis = new AxisOptions { Format = "#,0" },
-            };
-        }
-
         @* A page: its own YAxis wins (with keeps the default's other settings) *@
-        <RioChart TItem="Reading" YAxis="@(chartDefaults.YAxis with { Title = "Total" })"> ... </RioChart>
+        @inject RioChartDefaults ChartDefaults
+        <RioChart TItem="Reading" YAxis="@(ChartDefaults.YAxis! with { Title = "Total" })"> ... </RioChart>
         """;
 
     private const string SeveralCode = """

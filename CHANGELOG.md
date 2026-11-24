@@ -12,6 +12,10 @@ changes are called out under **Breaking**.
 - Shared chart defaults: cascade a `RioChartDefaults` (Culture, TimeZone, UnspecifiedTimes, Height, Legend, Tooltip,
   XAxis, YAxis, Animate, KeyboardNavigation, Class) once, e.g. around the router, instead of repeating them on every
   chart. A parameter set on the chart wins. Docs: a "Shared defaults" example on Getting started.
+- `builder.Services.AddRioCharts(new RioChartDefaults { ... })` registers app-wide chart defaults (optional; charts still
+  need no registration). Unlike a cascade it reaches every render mode. Each setting comes from the chart, else a
+  cascaded `RioChartDefaults`, else the registered one, else the built-in default. Replaces ApexCharts' `AddApexCharts`
+  global options; listed on "Coming from ApexCharts".
 - Axis label functions: `AxisOptions.LabelFormatter` (`Func<double, string>`) writes the labels of a numeric axis when
   a format string is not enough, e.g. bytes as KB, MB or GB. Series on the axis without a `Format` of their own use it
   for tooltips, data labels and the screen reader text too. Not part of JSON definitions. Docs: "Labels from a function"

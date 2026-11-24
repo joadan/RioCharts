@@ -19,7 +19,7 @@ This is the complete guide for coding agents: setup, rules, examples that compil
    @using RioCharts.Core
    ```
 
-3. That is all. There are no services to register and no script or stylesheet tags: the styles come with the app's `{AssemblyName}.styles.css` bundle (already linked by the Blazor templates) and the JS module loads itself.
+3. That is all. There are no services to register (`AddRioCharts` is optional, for app-wide defaults) and no script or stylesheet tags: the styles come with the app's `{AssemblyName}.styles.css` bundle (already linked by the Blazor templates) and the JS module loads itself.
 
 Tooltips, zoom, clicks, selection, keyboard navigation and downloads need an interactive page (`@rendermode InteractiveServer`, `InteractiveWebAssembly` or `InteractiveAuto`, or a global interactive render mode). On a static page the chart renders as plain SVG without interaction.
 
@@ -49,7 +49,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - Size: the chart fills its container's width; `Height` is 300 px by default.
 - Number formats are .NET format strings (`Format="#,0 €"`, `"0.0 °C"`, `"0'%'"`) in the chart's `Culture` (default: the current culture). A series without `Format` uses its axis' `Format` in tooltips, data labels and the screen reader text, so setting it on the axis alone is enough; a series' `Format` never changes the axis. Ticks are never closer than the format can tell apart (`"#,0"` gives whole numbers).
 - Labels a format string cannot write (bytes as KB/MB/GB, durations): `YAxis="@(new AxisOptions { LabelFormatter = v => ... })"`, a `Func<double, string>` that also writes the tooltips of series without a `Format`. Keep the values unscaled.
-- Settings shared by every chart (Culture, TimeZone, Height, Legend, Tooltip, XAxis, YAxis, Animate, Class): cascade a `RioChartDefaults` once, `<CascadingValue Value="chartDefaults" IsFixed="true">` around the router. A chart's own parameter wins; its `YAxis` replaces the default axis as a whole (`chartDefaults.YAxis with { Title = "kWh" }` keeps the rest).
+- Settings shared by every chart (Culture, TimeZone, Height, Legend, Tooltip, XAxis, YAxis, Animate, Class): register them once in Program.cs, `builder.Services.AddRioCharts(new RioChartDefaults { Culture = ..., Height = 260 })` (optional; reaches every render mode). A cascaded `RioChartDefaults` (`<CascadingValue Value="sectionDefaults">`) overrides it for part of the app, or changes at runtime. Each setting: the chart's own parameter, else the cascade, else the registered one. A chart's `YAxis` replaces the default axis as a whole (`defaults.YAxis with { Title = "kWh" }` keeps the rest).
 - Colors: CSS colors or theme variables, e.g. `Color="#2563eb"` or `Color="--rio-negative"`. The palette and light/dark theme come from CSS variables (`--rio-series-1` ... `--rio-series-10`, `--rio-text`, ...). The dark theme follows the OS, or an ancestor with `data-theme="dark"`, Bootstrap's `data-bs-theme="dark"` or class `dark` (and `light` the same way), so an app's theme toggle works without extra code.
 - Namespaces beyond the two usings: `RioCharts.Core.Data` (`SeriesData`, `SeriesBuffer`), `RioCharts.Core.Definitions` (`ChartDataset`, `ChartDefinitionJson`).
 
@@ -279,7 +279,7 @@ A ChartDefinition (the same model as a chart definition in JSON) with datasets i
 - Animation options (ApexCharts `Animations`, Chart.js `animation`): there are none. Charts are not animated; the series only fade in on first render. `Animate="false"` turns that off.
 - Setting a width: not needed, the chart follows its container. Set `Height` for another height.
 - Types not found (`SeriesData`, `SeriesBuffer`, `ChartDataset`): add `@using RioCharts.Core.Data` or `@using RioCharts.Core.Definitions`.
-- Repeating `Culture`, `TimeZone`, `Height` or axis settings on every chart: cascade a `RioChartDefaults` instead.
+- Repeating `Culture`, `TimeZone`, `Height` or axis settings on every chart: register a `RioChartDefaults` with `AddRioCharts` instead (ApexCharts' `AddApexCharts` global options).
 - Fake values to get stepped heatmap colors (ApexCharts `colorScale.ranges`): use `ColorBands` on the first `HeatmapSeries`.
 - Hard-coded colors for light and dark: use theme variables such as `--rio-negative` and `--rio-positive`; they follow the theme.
 

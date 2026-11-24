@@ -1,0 +1,43 @@
+@using Microsoft.Extensions.DependencyInjection
+@inherits BunitContext
+
+@code {
+
+    // Defaults registered with AddRioCharts, before anything is resolved (ChartTestBase resolves services in its
+    // constructor, so this class sets up its own context with a loose JS fake).
+    public RegisteredDefaultsTests()
+    {
+        Services.AddRioCharts(new RioChartDefaults { Height = 240, Culture = new System.Globalization.CultureInfo("sv-SE") });
+        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Static", isInteractive: false));
+        JSInterop.Mode = JSRuntimeMode.Loose;
+    }
+
+    private sealed record Reading(DateTime Time, double Value);
+
+    private static readonly Reading[] London = [new(new DateTime(2026, 11, 16), 19.5), new(new DateTime(2026, 11, 16, 1, 0, 0), 20.1)];
+
+    [Fact]
+    public void Registered_defaults_apply_without_a_cascade()
+    {
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading" Items="London"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>);
+
+        Assert.Contains("height:240px", cut.Find(".rio-chart").GetAttribute("style"));
+        Assert.StartsWith("Diagram med 1 serie", cut.Find("desc").TextContent);
+    }
+
+    [Fact]
+    public void A_cascade_and_the_chart_win_over_registered_defaults_setting_by_setting()
+    {
+        var section = new RioChartDefaults { Height = 180 };
+
+        var cut = Render(@<CascadingValue Value="section" IsFixed="true">
+            <RioChart TItem="Reading" Items="London"><LineSeries Name="A" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+            <RioChart TItem="Reading" Items="London" Culture="System.Globalization.CultureInfo.InvariantCulture"><LineSeries Name="B" XValue="r => r.Time" YValue="r => r.Value" /></RioChart>
+        </CascadingValue>);
+
+        var charts = cut.FindAll(".rio-chart");
+        Assert.Contains("height:180px", charts[0].GetAttribute("style"));   // the cascade's height
+        Assert.StartsWith("Diagram med 1 serie", cut.FindAll("desc")[0].TextContent); // the registered culture
+        Assert.StartsWith("Chart with 1 series", cut.FindAll("desc")[1].TextContent); // the chart's own culture
+    }
+}
