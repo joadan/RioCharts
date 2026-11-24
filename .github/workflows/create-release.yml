@@ -1,6 +1,7 @@
 name: Create Release
 
-# Run by hand from the Actions tab. Tests, packs the five packages, pushes them to NuGet and tags the commit.
+# Run by hand from the Actions tab. Tests, packs the five packages, pushes them to NuGet, tags the commit and (from
+# master) rebuilds the docs site so it shows the new package.
 # The version is version.json's major.minor, the git height as patch, and version.json's prerelease tag if it
 # has one: "0.1-preview" gives 0.1.<height>-preview, "1.0" gives 1.0.<height>. The GitHub release is marked
 # prerelease exactly when the version carries a tag. Only master and release/v* branches are public-release
@@ -15,6 +16,7 @@ on: workflow_dispatch
 permissions:
   contents: write
   id-token: write
+  actions: write   # to start the docs workflow at the end
 
 jobs:
   release:
@@ -95,3 +97,11 @@ jobs:
           prerelease: ${{ steps.nbgv.outputs.PrereleaseVersion != '' }}
           generate_release_notes: true
           files: artifacts/*.nupkg
+
+      # The docs site shows the latest package on NuGet (its newest release tag, read at build time). A tag created
+      # with GITHUB_TOKEN starts no workflows, so start the docs build by hand; workflow_dispatch is allowed.
+      - name: Rebuild the docs site
+        if: ${{ github.ref_name == 'master' }}
+        run: gh workflow run docs.yml --ref master
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
