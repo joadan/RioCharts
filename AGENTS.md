@@ -71,6 +71,7 @@ not a reason to branch on the framework.
 - Keep the JS module tiny: measurement and high-frequency interaction only.
 - Temperatures in examples are in °C.
 - Libraries are `IsAotCompatible`: keep the build free of IL2xxx/IL3xxx warnings. JSON goes through source-generated contexts (`ChartDefinitionJsonContext`, `ChartToolJsonContext`), never reflection. A new definition record type needs an entry in `ChartDefinitionJson.Factories`.
+- Public API is locked: a new, changed or removed public symbol fails the build (RS0016/RS0017) until `PublicAPI.Unshipped.txt` of that package lists it (CONTRIBUTING.md, Public API). Keep the public surface small; prefer `internal` plus `InternalsVisibleTo`.
 - JS interop arguments are primitives, `byte[]` or element/.NET references only: payloads are records in `Rendering/Interop.cs`, sent as source-generated UTF-8 JSON (`InteropJson.Bytes`) and read with `json()` in the JS module. Never pass anonymous or other objects (they break trimmed WebAssembly apps; a bUnit test checks).
 - Blazor features that need JS check `Live` (interactive and rendered interactively), not `Interactive` alone.
 - Text a chart writes itself (empty states, buttons, screen reader text) comes from `ChartTexts`, never a string literal; add a key with English and all built-in languages. Warnings and errors for developers stay English.

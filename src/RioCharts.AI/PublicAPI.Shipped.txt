@@ -1,0 +1,137 @@
+#nullable enable
+RioCharts.AI.ChartCodeResult
+RioCharts.AI.ChartCodeResult.<Clone>$() -> RioCharts.AI.ChartCodeResult!
+RioCharts.AI.ChartCodeResult.ChartCodeResult() -> void
+RioCharts.AI.ChartCodeResult.Equals(RioCharts.AI.ChartCodeResult? other) -> bool
+RioCharts.AI.ChartCodeResult.Errors.get -> System.Collections.Generic.IReadOnlyList<string!>!
+RioCharts.AI.ChartCodeResult.Errors.init -> void
+RioCharts.AI.ChartCodeResult.ItemType.get -> string?
+RioCharts.AI.ChartCodeResult.ItemType.init -> void
+RioCharts.AI.ChartCodeResult.Items.get -> string?
+RioCharts.AI.ChartCodeResult.Items.init -> void
+RioCharts.AI.ChartCodeResult.Razor.get -> string?
+RioCharts.AI.ChartCodeResult.Razor.init -> void
+RioCharts.AI.ChartCodeResult.Success.get -> bool
+RioCharts.AI.ChartCodeResult.Success.init -> void
+RioCharts.AI.ChartCodeResult.ToMarkdown() -> string!
+RioCharts.AI.ChartCodeResult.Warnings.get -> System.Collections.Generic.IReadOnlyList<string!>!
+RioCharts.AI.ChartCodeResult.Warnings.init -> void
+RioCharts.AI.ChartImageFormat
+RioCharts.AI.ChartImageFormat.Png = 0 -> RioCharts.AI.ChartImageFormat
+RioCharts.AI.ChartImageFormat.Svg = 1 -> RioCharts.AI.ChartImageFormat
+RioCharts.AI.ChartImageRequest
+RioCharts.AI.ChartImageRequest.<Clone>$() -> RioCharts.AI.ChartImageRequest!
+RioCharts.AI.ChartImageRequest.ChartImageRequest() -> void
+RioCharts.AI.ChartImageRequest.Equals(RioCharts.AI.ChartImageRequest? other) -> bool
+RioCharts.AI.ChartImageRequest.FileName.get -> string?
+RioCharts.AI.ChartImageRequest.FileName.init -> void
+RioCharts.AI.ChartImageRequest.Format.get -> RioCharts.AI.ChartImageFormat
+RioCharts.AI.ChartImageRequest.Format.init -> void
+RioCharts.AI.ChartImageRequest.Height.get -> int?
+RioCharts.AI.ChartImageRequest.Height.init -> void
+RioCharts.AI.ChartImageRequest.Theme.get -> string?
+RioCharts.AI.ChartImageRequest.Theme.init -> void
+RioCharts.AI.ChartImageRequest.Width.get -> int?
+RioCharts.AI.ChartImageRequest.Width.init -> void
+RioCharts.AI.ChartRazor
+RioCharts.AI.ChartTool
+RioCharts.AI.ChartTool.AsAIFunction() -> Microsoft.Extensions.AI.AIFunction!
+RioCharts.AI.ChartTool.AsAIFunctions() -> System.Collections.Generic.IList<Microsoft.Extensions.AI.AITool!>!
+RioCharts.AI.ChartTool.AsRenderFunction() -> Microsoft.Extensions.AI.AIFunction!
+RioCharts.AI.ChartTool.ChartCreated -> System.Action<RioCharts.AI.ChartToolResult!>?
+RioCharts.AI.ChartTool.ChartTool(RioCharts.Core.Definitions.IChartDataSource! dataSource, RioCharts.AI.ChartToolOptions? options = null) -> void
+RioCharts.AI.ChartTool.CreateChartAsync(System.Text.Json.JsonElement definition, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.AI.ChartToolResult!>!
+RioCharts.AI.ChartTool.CreateChartAsync(string! definition, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.AI.ChartToolResult!>!
+RioCharts.AI.ChartTool.Description.get -> string!
+RioCharts.AI.ChartTool.GetRazorAsync(System.Text.Json.JsonElement definition, string? itemType = null, string? itemsName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.AI.ChartCodeResult!>!
+RioCharts.AI.ChartTool.GetRazorAsync(string! definition, string? itemType = null, string? itemsName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.AI.ChartCodeResult!>!
+RioCharts.AI.ChartTool.ListDatasets() -> string!
+RioCharts.AI.ChartTool.RenderChartAsync(System.Text.Json.JsonElement definition, RioCharts.AI.ChartImageRequest? request = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.AI.ChartToolResult!>!
+RioCharts.AI.ChartTool.RenderChartAsync(string! definition, RioCharts.AI.ChartImageRequest? request = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<RioCharts.AI.ChartToolResult!>!
+RioCharts.AI.ChartToolOptions
+RioCharts.AI.ChartToolOptions.<Clone>$() -> RioCharts.AI.ChartToolOptions!
+RioCharts.AI.ChartToolOptions.ChartToolOptions() -> void
+RioCharts.AI.ChartToolOptions.Equals(RioCharts.AI.ChartToolOptions? other) -> bool
+RioCharts.AI.ChartToolOptions.Export.get -> RioCharts.Skia.ExportOptions!
+RioCharts.AI.ChartToolOptions.Export.init -> void
+RioCharts.AI.ChartToolOptions.MaxImageSize.get -> int
+RioCharts.AI.ChartToolOptions.MaxImageSize.init -> void
+RioCharts.AI.ChartToolOptions.OutputDirectory.get -> string?
+RioCharts.AI.ChartToolOptions.OutputDirectory.init -> void
+RioCharts.AI.ChartToolOptions.RenderSvg.get -> bool
+RioCharts.AI.ChartToolOptions.RenderSvg.init -> void
+RioCharts.AI.ChartToolResult
+RioCharts.AI.ChartToolResult.<Clone>$() -> RioCharts.AI.ChartToolResult!
+RioCharts.AI.ChartToolResult.BoundDefinition.get -> RioCharts.Core.ChartDefinition?
+RioCharts.AI.ChartToolResult.BoundDefinition.init -> void
+RioCharts.AI.ChartToolResult.ChartToolResult() -> void
+RioCharts.AI.ChartToolResult.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Data.SeriesData!>?
+RioCharts.AI.ChartToolResult.Data.init -> void
+RioCharts.AI.ChartToolResult.Definition.get -> string?
+RioCharts.AI.ChartToolResult.Definition.init -> void
+RioCharts.AI.ChartToolResult.Equals(RioCharts.AI.ChartToolResult? other) -> bool
+RioCharts.AI.ChartToolResult.Errors.get -> System.Collections.Generic.IReadOnlyList<string!>!
+RioCharts.AI.ChartToolResult.Errors.init -> void
+RioCharts.AI.ChartToolResult.File.get -> string?
+RioCharts.AI.ChartToolResult.File.init -> void
+RioCharts.AI.ChartToolResult.Format.get -> string?
+RioCharts.AI.ChartToolResult.Format.init -> void
+RioCharts.AI.ChartToolResult.Height.get -> int?
+RioCharts.AI.ChartToolResult.Height.init -> void
+RioCharts.AI.ChartToolResult.Png.get -> byte[]?
+RioCharts.AI.ChartToolResult.Png.init -> void
+RioCharts.AI.ChartToolResult.Success.get -> bool
+RioCharts.AI.ChartToolResult.Success.init -> void
+RioCharts.AI.ChartToolResult.Summary.get -> string?
+RioCharts.AI.ChartToolResult.Summary.init -> void
+RioCharts.AI.ChartToolResult.Svg.get -> string?
+RioCharts.AI.ChartToolResult.Svg.init -> void
+RioCharts.AI.ChartToolResult.Tool.get -> string!
+RioCharts.AI.ChartToolResult.Tool.init -> void
+RioCharts.AI.ChartToolResult.Warnings.get -> System.Collections.Generic.IReadOnlyList<string!>!
+RioCharts.AI.ChartToolResult.Warnings.init -> void
+RioCharts.AI.ChartToolResult.Width.get -> int?
+RioCharts.AI.ChartToolResult.Width.init -> void
+RioCharts.AI.RioChartsMcpServerBuilderExtensions
+RioCharts.AI.RioChartsMcpTools
+RioCharts.AI.RioChartsMcpTools.CreateChart(System.Text.Json.JsonElement definition, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<ModelContextProtocol.Protocol.CallToolResult!>!
+RioCharts.AI.RioChartsMcpTools.GetChartSchema() -> string!
+RioCharts.AI.RioChartsMcpTools.ListDatasets() -> string!
+RioCharts.AI.RioChartsMcpTools.RenderChart(System.Text.Json.JsonElement definition, RioCharts.AI.ChartImageFormat format = RioCharts.AI.ChartImageFormat.Png, int? width = null, int? height = null, string? theme = null, string? fileName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<ModelContextProtocol.Protocol.CallToolResult!>!
+RioCharts.AI.RioChartsMcpTools.RioChartsMcpTools(RioCharts.AI.ChartTool! tool) -> void
+RioCharts.AI.RioChartsUsage
+const RioCharts.AI.ChartTool.RenderDescription = "Renders a chart from a JSON definition (the same definition as create_chart) and returns the image to you as PNG or SVG, with a short description of the chart, or errors to fix (then call again). Use it when you need the image itself, e.g. for a report, document, email or message; use create_chart to show a chart to the user. Options: format (png|svg), width and height in pixels, theme (light|dark). Use inline \"data\" rows in the definition to chart numbers that are not in a dataset." -> string!
+const RioCharts.AI.ChartTool.RenderToolName = "render_chart" -> string!
+const RioCharts.AI.ChartTool.ToolName = "create_chart" -> string!
+override RioCharts.AI.ChartCodeResult.Equals(object? obj) -> bool
+override RioCharts.AI.ChartCodeResult.GetHashCode() -> int
+override RioCharts.AI.ChartCodeResult.ToString() -> string!
+override RioCharts.AI.ChartImageRequest.Equals(object? obj) -> bool
+override RioCharts.AI.ChartImageRequest.GetHashCode() -> int
+override RioCharts.AI.ChartImageRequest.ToString() -> string!
+override RioCharts.AI.ChartToolOptions.Equals(object? obj) -> bool
+override RioCharts.AI.ChartToolOptions.GetHashCode() -> int
+override RioCharts.AI.ChartToolOptions.ToString() -> string!
+override RioCharts.AI.ChartToolResult.Equals(object? obj) -> bool
+override RioCharts.AI.ChartToolResult.GetHashCode() -> int
+override RioCharts.AI.ChartToolResult.ToString() -> string!
+static RioCharts.AI.ChartCodeResult.operator !=(RioCharts.AI.ChartCodeResult? left, RioCharts.AI.ChartCodeResult? right) -> bool
+static RioCharts.AI.ChartCodeResult.operator ==(RioCharts.AI.ChartCodeResult? left, RioCharts.AI.ChartCodeResult? right) -> bool
+static RioCharts.AI.ChartImageRequest.operator !=(RioCharts.AI.ChartImageRequest? left, RioCharts.AI.ChartImageRequest? right) -> bool
+static RioCharts.AI.ChartImageRequest.operator ==(RioCharts.AI.ChartImageRequest? left, RioCharts.AI.ChartImageRequest? right) -> bool
+static RioCharts.AI.ChartRazor.FromDefinition(RioCharts.Core.ChartDefinition! spec, string! itemType = "Row", string! itemsName = "rows") -> string!
+static RioCharts.AI.ChartRazor.ItemRecord(RioCharts.Core.Definitions.ChartDataset! dataset, string! itemType) -> string!
+static RioCharts.AI.ChartRazor.ItemTypeName(string! datasetName) -> string!
+static RioCharts.AI.ChartRazor.ItemsList(RioCharts.Core.Definitions.ChartDataset! dataset, string! itemType, string! itemsName, int maxRows = 100) -> string!
+static RioCharts.AI.ChartRazor.ItemsName(string! datasetName) -> string!
+static RioCharts.AI.ChartTool.GetSchema() -> string!
+static RioCharts.AI.ChartTool.StandaloneRenderDescription.get -> string!
+static RioCharts.AI.ChartTool.ToAIContents(RioCharts.AI.ChartToolResult! result) -> System.Collections.Generic.List<Microsoft.Extensions.AI.AIContent!>!
+static RioCharts.AI.ChartToolOptions.operator !=(RioCharts.AI.ChartToolOptions? left, RioCharts.AI.ChartToolOptions? right) -> bool
+static RioCharts.AI.ChartToolOptions.operator ==(RioCharts.AI.ChartToolOptions? left, RioCharts.AI.ChartToolOptions? right) -> bool
+static RioCharts.AI.ChartToolResult.operator !=(RioCharts.AI.ChartToolResult? left, RioCharts.AI.ChartToolResult? right) -> bool
+static RioCharts.AI.ChartToolResult.operator ==(RioCharts.AI.ChartToolResult? left, RioCharts.AI.ChartToolResult? right) -> bool
+static RioCharts.AI.RioChartsMcpServerBuilderExtensions.WithRioChartsTools(this Microsoft.Extensions.DependencyInjection.IMcpServerBuilder! builder, RioCharts.AI.ChartTool! tool) -> Microsoft.Extensions.DependencyInjection.IMcpServerBuilder!
+static RioCharts.AI.RioChartsUsage.Full.get -> string!
+static RioCharts.AI.RioChartsUsage.Get(string? topic) -> string!
+static RioCharts.AI.RioChartsUsage.Overview.get -> string!

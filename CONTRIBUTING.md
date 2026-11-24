@@ -57,6 +57,22 @@ the diff before committing.
 | `samples/RioCharts.Mcp.Sample` | Sample data and agent configuration for trying `riocharts-mcp`. |
 | `tools/` | `SocialCard.cs` (the docs site's link preview) and `ReadmeImage.cs` (the README picture): `dotnet run tools/ReadmeImage.cs` from the root. `prerender/` (Node + Playwright) saves each docs page as static HTML for search engines when the docs site is published. |
 
+## Public API
+
+The library packages (Core, Blazor, Skia, AI) list every public symbol in `PublicAPI.Shipped.txt`
+next to the project, checked by `Microsoft.CodeAnalysis.PublicApiAnalyzers`
+([Directory.Build.targets](Directory.Build.targets)). A public API change that the files don't list fails the build:
+
+- **Added** (RS0016): add the symbol to `PublicAPI.Unshipped.txt`. The IDE's quick fix on the
+  error does it, or from the command line:
+  `dotnet format analyzers src/RioCharts.Core/RioCharts.Core.csproj --diagnostics RS0016 --severity info`
+  (Razor-generated members are not covered by the fix; copy them from the error message).
+- **Removed or changed** (RS0017): remove the old line too, and call out the break in
+  [CHANGELOG.md](CHANGELOG.md).
+
+The diff of these files is the public API change in a pull request. At a release, move the
+Unshipped lines into Shipped (sorted). riocharts-mcp is a tool, not a library, and has no baseline.
+
 ## Releasing
 
 Run **Create Release** ([create-release.yml](.github/workflows/create-release.yml)) by hand from
@@ -64,6 +80,7 @@ the Actions tab on `master`: it tests, packs and publishes all packages to nuget
 commit, creates a GitHub release and starts the **Docs site** workflow, so the site's badge and footer
 show the new package (the site reads the newest release tag when it is built). The version comes from [version.json](version.json) and the git
 height (Nerdbank.GitVersioning): `0.1-preview` gives `0.1.<height>-preview`. The package README on
-NuGet is [assets/nuget-readme.md](assets/nuget-readme.md).
+NuGet is [assets/nuget-readme.md](assets/nuget-readme.md). Before releasing, move each package's
+`PublicAPI.Unshipped.txt` lines into `PublicAPI.Shipped.txt` (see Public API).
 
 Keep [CHANGELOG.md](CHANGELOG.md) up to date and call out breaking changes.

@@ -1,0 +1,46 @@
+#nullable enable
+RioCharts.Skia.ChartExport
+RioCharts.Skia.ExportOptions
+RioCharts.Skia.ExportOptions.<Clone>$() -> RioCharts.Skia.ExportOptions!
+RioCharts.Skia.ExportOptions.Background.get -> string?
+RioCharts.Skia.ExportOptions.Background.init -> void
+RioCharts.Skia.ExportOptions.CssVariables.get -> bool
+RioCharts.Skia.ExportOptions.CssVariables.init -> void
+RioCharts.Skia.ExportOptions.Culture.get -> System.Globalization.CultureInfo!
+RioCharts.Skia.ExportOptions.Culture.init -> void
+RioCharts.Skia.ExportOptions.Equals(RioCharts.Skia.ExportOptions? other) -> bool
+RioCharts.Skia.ExportOptions.ExportOptions() -> void
+RioCharts.Skia.ExportOptions.FontFamily.get -> string!
+RioCharts.Skia.ExportOptions.FontFamily.init -> void
+RioCharts.Skia.ExportOptions.FontSize.get -> double
+RioCharts.Skia.ExportOptions.FontSize.init -> void
+RioCharts.Skia.ExportOptions.Height.get -> double
+RioCharts.Skia.ExportOptions.Height.init -> void
+RioCharts.Skia.ExportOptions.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>?
+RioCharts.Skia.ExportOptions.HiddenSeries.init -> void
+RioCharts.Skia.ExportOptions.Scale.get -> double
+RioCharts.Skia.ExportOptions.Scale.init -> void
+RioCharts.Skia.ExportOptions.Texts.get -> RioCharts.Core.ChartTexts?
+RioCharts.Skia.ExportOptions.Texts.init -> void
+RioCharts.Skia.ExportOptions.Theme.get -> RioCharts.Skia.ExportTheme!
+RioCharts.Skia.ExportOptions.Theme.init -> void
+RioCharts.Skia.ExportOptions.ViewerTimeZone.get -> string?
+RioCharts.Skia.ExportOptions.ViewerTimeZone.init -> void
+RioCharts.Skia.ExportOptions.Width.get -> double
+RioCharts.Skia.ExportOptions.Width.init -> void
+RioCharts.Skia.ExportOptions.XRange.get -> (double Min, double Max)?
+RioCharts.Skia.ExportOptions.XRange.init -> void
+RioCharts.Skia.ExportTheme
+RioCharts.Skia.ExportTheme.Colors.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+RioCharts.Skia.ExportTheme.Resolve(string? color) -> string!
+RioCharts.Skia.ExportTheme.With(string! token, string! color) -> RioCharts.Skia.ExportTheme!
+override RioCharts.Skia.ExportOptions.Equals(object? obj) -> bool
+override RioCharts.Skia.ExportOptions.GetHashCode() -> int
+override RioCharts.Skia.ExportOptions.ToString() -> string!
+static RioCharts.Skia.ChartExport.ToPng(RioCharts.Core.ChartDefinition! spec, System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Data.SeriesData!>! data, RioCharts.Skia.ExportOptions? options = null) -> byte[]!
+static RioCharts.Skia.ChartExport.ToSvg(RioCharts.Core.ChartDefinition! spec, System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Data.SeriesData!>! data, RioCharts.Skia.ExportOptions? options = null) -> string!
+static RioCharts.Skia.ChartExport.WritePngAsync(System.IO.Stream! output, RioCharts.Core.ChartDefinition! spec, System.Collections.Generic.IReadOnlyDictionary<string!, RioCharts.Core.Data.SeriesData!>! data, RioCharts.Skia.ExportOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static RioCharts.Skia.ExportOptions.operator !=(RioCharts.Skia.ExportOptions? left, RioCharts.Skia.ExportOptions? right) -> bool
+static RioCharts.Skia.ExportOptions.operator ==(RioCharts.Skia.ExportOptions? left, RioCharts.Skia.ExportOptions? right) -> bool
+static RioCharts.Skia.ExportTheme.Dark.get -> RioCharts.Skia.ExportTheme!
+static RioCharts.Skia.ExportTheme.Light.get -> RioCharts.Skia.ExportTheme!
