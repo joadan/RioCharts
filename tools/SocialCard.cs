@@ -87,7 +87,7 @@ Text(First, taglineLeft, 240, tagline, Ink);
 Text(Second, taglineLeft + tagline.MeasureText(First), 240, tagline, Blue);
 
 using var outputs = Font(24, SKFontStyleWeight.Normal);
-const string Outputs = "Interactive in Blazor  ·  PNG and SVG on the server  ·  Made by AI agents";
+const string Outputs = "Interactive in Blazor  ·  PNG and SVG on the server  ·  Ready for AI agents";
 Text(Outputs, (Width - outputs.MeasureText(Outputs)) / 2, 282, outputs, Muted);
 
 // The chart on a white card with a soft shadow, centered below.
