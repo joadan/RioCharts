@@ -54,6 +54,19 @@ public class FunnelTests
     }
 
     [Fact]
+    public void Heights_follow_the_values_with_room_for_every_label()
+    {
+        var layout = Funnel(Shop, options: Wide);
+
+        var heights = layout.Tooltip.Series.Single().CellHeights!;
+        Assert.True(heights.Zip(heights.Skip(1)).All(p => p.First > p.Second)); // larger stages are taller
+        Assert.All(heights, h => Assert.True(h >= 14, $"{h}")); // the smallest still fits its label
+
+        var equal = Funnel(SeriesData.FromCategories(["A", "B", "C"], [5.0, 5, 5]), options: Wide).Tooltip.Series.Single().CellHeights!;
+        Assert.All(equal, h => Assert.Equal(equal[0], h, 1));
+    }
+
+    [Fact]
     public void Each_stage_has_its_own_color_unless_the_series_sets_one()
     {
         var colors = Stages(Funnel(Signups)).Select(p => p.Style).Distinct().Count();

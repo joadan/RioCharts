@@ -94,9 +94,15 @@ public static partial class ChartLayout
         var side = showLabels ? shown.Max(l => measure.Measure(l, small)) + 2 * PillPad + Leader : 0;
         var funnelWidth = Math.Max(2, plot.Width - 2 * side);
 
-        var rowHeight = stages.Count == 0 ? 0 : Math.Clamp(plot.Height / stages.Count, compact ? 2 : Math.Max(10, pillHeight + 2), compact ? 1e4 : 72);
-        var gap = compact ? Math.Min(1, rowHeight * 0.1) : Math.Clamp(rowHeight * 0.08, 2, 5);
-        var top = plot.Y + Math.Max(0, (plot.Height - stages.Count * rowHeight) / 2);
+        // Heights follow the values: each stage gets a minimum (room for its label), and the rest
+        // of the funnel's height is shared in proportion to the stages' values.
+        var n = stages.Count;
+        var floor = n == 0 ? 0 : compact ? Math.Min(2, plot.Height / n) : Math.Max(10, pillHeight + 2);
+        var total = n == 0 ? 0 : Math.Max(n * floor, Math.Min(plot.Height, n * (compact ? 1e4 : 72)));
+        var gap = n == 0 ? 0 : compact ? Math.Min(1, total / n * 0.1) : Math.Clamp(total / n * 0.08, 2, 5);
+        var sum = stages.Sum(i => Math.Max(0, r0!.Data.Y[i]));
+        var heights = stages.Select(i => floor + (total - n * floor) * (sum > 0 ? Math.Max(0, r0!.Data.Y[i]) / sum : 1.0 / n)).ToArray();
+        var top = plot.Y + Math.Max(0, (plot.Height - total) / 2);
         var largest = stages.Count == 0 ? 0 : stages.Max(i => Math.Max(0, r0!.Data.Y[i]));
         var widthScale = new ContinuousScale(0, largest > 0 ? largest : 1, 0, funnelWidth);
 
@@ -130,12 +136,15 @@ public static partial class ChartLayout
             var parts = new List<string[]>();
             var colors = new List<string>();
             var before = double.NaN;
+            var y = top;
+            var cellHeights = new List<float>();
             for (var k = 0; k < stages.Count; k++)
             {
                 var i = stages[k];
                 var v = data.Y[i];
-                var y1 = top + rowHeight * k;
-                var y2 = y1 + rowHeight - gap;
+                var y1 = y;
+                var y2 = y1 + Math.Max(1, heights[k] - gap);
+                y += heights[k];
                 var cy = (y1 + y2) / 2;
 
                 // Narrows to the next stage, never widens: a larger later stage is a wider segment of its own.
@@ -207,6 +216,7 @@ public static partial class ChartLayout
 
                 hits.Add(((float)cx, (float)cy, i));
                 widths.Add((float)Math.Max(Math.Max(wTop, wBottom), 24)); // a thin stage is still easy to hover
+                cellHeights.Add((float)(y2 - y1));
                 tipLabels.Add(label.Length > 0 ? label : s.DisplayName);
                 tipValues.Add(valueText);
                 parts.Add([ofFirst ?? "", k == 0 ? "" : ofPrevious ?? ""]);
@@ -227,7 +237,8 @@ public static partial class ChartLayout
             hitTest.Add(hitList);
             tooltipSeries.Add(new TooltipSeries(s.Id, s.DisplayName, color, SeriesType.Funnel, 0, 0, 0, hitList.X, hitList.Y, hitList.Index, [.. tipLabels], [.. tipValues])
             {
-                CellHeight = (float)Math.Max(1, rowHeight - gap),
+                CellHeight = cellHeights.Count > 0 ? cellHeights.Max() : 0,
+                CellHeights = [.. cellHeights],
                 CellWidths = [.. widths],
                 PartLabels = [texts.FunnelOfFirst, texts.FunnelOfPrevious],
                 PartValues = [.. parts],

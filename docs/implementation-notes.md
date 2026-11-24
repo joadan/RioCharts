@@ -985,7 +985,10 @@ plain one-color funnel.
   `Aggregate`), never sorted by value. NaN stages are left out; negative values are drawn as zero
   with a warning. At most 40 stages (warning).
 - **Layout:** `ChartLayout.ComputeFunnel`; other series types, a second funnel series and all
-  annotations are skipped with a warning. Rows at most 72 px apart, centered vertically, with a
+  annotations are skipped with a warning. Heights follow the values: each stage gets a minimum
+  (room for its label, the label height + 2 px) and the rest of the funnel's height (the plot,
+  at most 72 px per stage, centered vertically) is shared in proportion to the values, equally
+  when all are zero. Tooltip hover areas use each segment's height (`CellHeights`), with a
   2–5 px gap between segments. A segment is centered, as wide at its top as its share of the
   largest stage (at least 2 px above zero) and at its bottom as the next stage, but never wider
   than its top: a larger later stage starts a wider segment of its own; the last one is a
