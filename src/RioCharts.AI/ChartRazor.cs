@@ -151,6 +151,7 @@ public static class ChartRazor
                 SeriesType.Gauge => "GaugeSeries",
                 SeriesType.Bullet => "BulletSeries",
                 SeriesType.Funnel => "FunnelSeries",
+                SeriesType.Calendar => "CalendarSeries",
                 SeriesType.Dumbbell => "DumbbellSeries",
                 SeriesType.Map => "MapSeries",
                 SeriesType.MapBubble => "MapBubbleSeries",
@@ -367,7 +368,7 @@ public static class ChartRazor
                 sb.Append($" Max=\"{Number(max)}\"");
             }
 
-            if (s.Type is SeriesType.Heatmap or SeriesType.Map && s.Midpoint is { } midpoint)
+            if (s.Type is SeriesType.Heatmap or SeriesType.Map or SeriesType.Calendar && s.Midpoint is { } midpoint)
             {
                 sb.Append($" Midpoint=\"{Number(midpoint)}\"");
                 Optional(sb, "BelowColor", s.BelowColor);

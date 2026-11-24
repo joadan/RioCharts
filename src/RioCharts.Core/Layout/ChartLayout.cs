@@ -311,6 +311,11 @@ public static partial class ChartLayout
             return ComputeFunnel(spec, resolved, options, warnings, styles);
         }
 
+        if (resolved.Any(r => r.Spec.Type == SeriesType.Calendar))
+        {
+            return ComputeCalendar(spec, resolved, options, warnings, styles, time);
+        }
+
         if (resolved.Any(r => r.Spec.Type == SeriesType.Bullet))
         {
             return ComputeBullets(spec, resolved, options, warnings, styles);

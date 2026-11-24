@@ -1017,6 +1017,30 @@ plain one-color funnel.
 - **Not yet:** two funnels compared side by side in one chart, curved sides, and a choice of share
   (of the first stage) in the labels.
 
+## Calendar heatmap
+
+Not in Design.md; added from `docs/chart-types.md` (candidate). The look follows the familiar
+contribution calendar: a square per day, weeks as columns and weekdays as rows.
+
+- **Series:** `CalendarSeries` (`"calendar"` in JSON). It always buckets per day (in the chart's
+  `TimeZone` when set). Same-day values **add up** when no `Aggregate` is set, and without a `YValue`
+  each day counts its items. That departs from `Bucket` on other series, which averages: a calendar
+  usually shows totals (orders, visits), so the sum is the useful default. `SeriesBase.BucketAggregate`
+  carries the per-type default.
+- **Layout:** its own pass (`ComputeCalendar`). Up to 371 days is one block from the first day to the
+  last; more is one block per calendar year (Jan 1 to Dec 31, days without data gray), each with its
+  year at the left of its month row. Cells are square, as large as width and height allow, at most
+  40 px. The week starts on the culture's `FirstDayOfWeek` (Sunday for the invariant culture).
+  Weekday names: all seven when a cell is as tall as a line, else Monday, Wednesday and Friday, else
+  none. A month's name goes above its first full week; a month that has barely begun at the start of
+  a block, or a name that would overlap the one before, is left out.
+- **Colors:** the heatmap's scale (one hue by value, `Max`, or diverging from `Midpoint` with
+  `BelowColor`) and its legend; days without a value use the grid color.
+- **Tooltip and selection:** cells reuse the heatmap's cell hit test (`CellHeight`); the label is the
+  weekday and short date in the chart culture, or `X.Format`.
+- **Not yet:** month outlines between blocks of weeks, a vertical layout (weeks as rows), and
+  several calendars in one chart.
+
 ## Waterfall
 
 Not in Design.md; added from `docs/chart-types.md` (candidate, medium–high popularity, low complexity).

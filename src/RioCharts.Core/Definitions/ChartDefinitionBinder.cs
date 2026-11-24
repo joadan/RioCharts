@@ -133,7 +133,8 @@ public static class ChartDefinitionBinder
         }
 
         // ---------- Fields ----------
-        var count = s.Aggregate == Aggregate.Count;
+        // A calendar without y counts the rows per day.
+        var count = s.Aggregate == Aggregate.Count || (s.Type == SeriesType.Calendar && s.Y is null && s.Aggregate is null);
         var histogram = s.Type == SeriesType.Histogram;
         if (histogram && s.X is null && s.Y is not null)
         {
@@ -317,7 +318,11 @@ public static class ChartDefinitionBinder
             }
         }
 
-        if (s.TimeBucket is not null && x is not null && x.Type != FieldType.Time)
+        if (s.Type == SeriesType.Calendar && x is not null && x.Type != FieldType.Time)
+        {
+            errors.Add(new DefinitionError($"{path}.x", $"a calendar needs a date or time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()}. Time fields: {string.Join(", ", dataset.Fields.Where(f => f.Type == FieldType.Time).Select(f => f.Name))}."));
+        }
+        else if (s.TimeBucket is not null && x is not null && x.Type != FieldType.Time)
         {
             errors.Add(new DefinitionError($"{path}.timeBucket", $"needs a time x field; '{x.Name}' is {x.Type.ToString().ToLowerInvariant()}."));
         }
@@ -344,7 +349,8 @@ public static class ChartDefinitionBinder
         }
 
         // Auto picks one bucket from all the series' rows, so groups (groupBy) share it.
-        var bucket = s.TimeBucket is { } requested ? TimeBuckets.Resolve(requested, rows.Select(r => x.Values[r])) : (TimeBucket?)null;
+        var bucket = s.TimeBucket is { } requested ? TimeBuckets.Resolve(requested, rows.Select(r => x.Values[r]))
+            : s.Type == SeriesType.Calendar && x.Type == FieldType.Time ? TimeBucket.Day : (TimeBucket?)null; // a calendar has a cell per day
         if (s.TimeBucket == TimeBucket.Auto)
         {
             warnings.Add($"{path}.timeBucket: auto chose {bucket.ToString()!.ToLowerInvariant()}.");
@@ -372,6 +378,10 @@ public static class ChartDefinitionBinder
         if (s.Type == SeriesType.Candlestick)
         {
             // Candles are their own aggregate (first, highest, lowest, last).
+        }
+        else if (aggregate is null && s.Type == SeriesType.Calendar)
+        {
+            aggregate = y is null ? Aggregate.Count : Aggregate.Sum; // a day's rows add up
         }
         else if (aggregate is null && s.TimeBucket is not null)
         {

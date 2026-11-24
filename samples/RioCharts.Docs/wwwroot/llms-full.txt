@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, funnel, radar, heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap and world map, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, funnel, radar, heatmap, calendar heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap and world map, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 
@@ -60,6 +60,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 | Values against targets in little space (KPIs) | `BulletSeries` | one per measure with `Value`, `Max`, `Target`; or Items with `XValue`, `YValue`, `TargetValue` |
 | Stages narrowing down (visits → cart → purchase) | `FunnelSeries` | `XValue` (the stage), `YValue`; stages keep the items' order, each shows its share of the stage before; one funnel per chart |
 | Several measures per item | `RadarSeries` | one series per item |
+| A value per day over months or a year (orders, activity) | `CalendarSeries` | `XValue` a date or time; items on the same day add up (`Aggregate` to change), no `YValue` counts them; one calendar per chart |
 | Values over two categories (hour × day) | `HeatmapSeries` | one series per row (`Name`); `XValue` the column, `YValue` the color; `Midpoint="0"` for changes (two colors) |
 | Spread of values | `BoxPlotSeries` | raw values, or `Q1Value`, `MedianValue`, `Q3Value`; `Horizontal="true"` on the chart for rows |
 | Distribution of values (e.g. response times) | `HistogramSeries` | one item per value, `XValue` the value; `BinWidth` or `BinCount` |
@@ -506,6 +507,14 @@ Funnel: one segment per stage, top to bottom in the order of the items, each as 
 
 No parameters of its own.
 
+#### `<CalendarSeries>` (`CalendarSeries<TItem>`)
+
+Calendar heatmap: a square per day, weeks as columns and weekdays as rows, colored by the day's value like a heatmap (one hue, stronger for higher values; `Midpoint` makes it diverge). `XValue` is a date or time; items on the same day (in the chart's `TimeZone` when set) add up, or combine with `Aggregate`, and without a `YValue` each day counts its items. Up to a year of data is one block from the first day to the last; longer data is one block per year. The week starts on the chart culture's first day. One calendar per chart; it cannot be mixed with other series.
+
+- `Max`: `double?` — The value that gets the full color (e.g. 100 for percentages). Default: the highest value.
+- `Midpoint`: `double?` — Colors diverge from this value, e.g. 0 for changes or 20 for °C: days above it take the series color, days below it `CalendarSeries.BelowColor`, stronger the further they are from it. Default: one color, stronger for higher values.
+- `BelowColor`: `string?` — With a `CalendarSeries.Midpoint`: the color of days below it. Default `--rio-negative`.
+
 #### `<PieSeries>` (`PieSeries<TItem>`)
 
 Pie: one slice per category (the x value), sized by its share of the total. Several pie series in one chart are drawn as nested rings, the first one outermost.
@@ -765,7 +774,7 @@ How times without a zone (DateTime with Kind Unspecified, DateOnly, plain string
 
 The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
 
-82 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `BulletChart`, `FunnelChart`, `FunnelOfFirst`, `FunnelOfPrevious`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `Map`, `MapWorld`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+84 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `BulletChart`, `FunnelChart`, `FunnelOfFirst`, `FunnelOfPrevious`, `CalendarChart`, `CalendarDays`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `Map`, `MapWorld`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
 
 - `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
 - `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.

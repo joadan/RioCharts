@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: one chart model (line, area, bar, scatter, pie, donut, radial bar, gauge, bullet, funnel, radar, heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap, world map), interactive in Blazor, PNG and SVG on the server (RioCharts.Skia), and created by AI agents from JSON definitions. Preview packages for .NET 10 and .NET 11.
+> Charts for .NET: one chart model (line, area, bar, scatter, pie, donut, radial bar, gauge, bullet, funnel, radar, heatmap, calendar heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap, world map), interactive in Blazor, PNG and SVG on the server (RioCharts.Skia), and created by AI agents from JSON definitions. Preview packages for .NET 10 and .NET 11.
 
 Setup: `dotnet add package RioCharts.Blazor --prerelease`, then `@using RioCharts.Blazor` and `@using RioCharts.Core` in `_Imports.razor`. Nothing to register. A chart:
 
@@ -25,6 +25,7 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 - [Bars and stacking](https://riocharts.com/bars)
 - [Scatter and bubbles](https://riocharts.com/scatter)
 - [Heatmap](https://riocharts.com/heatmap)
+- [Calendar heatmap](https://riocharts.com/calendar)
 - [Box plots](https://riocharts.com/box-plots)
 - [Histogram](https://riocharts.com/histogram)
 - [Dumbbell charts](https://riocharts.com/dumbbells)
@@ -37,6 +38,7 @@ Tooltips, zoom and clicks need an interactive render mode. Set `TItem` on `<RioC
 - [Pie, donut and radial](https://riocharts.com/pies)
 - [Gauges](https://riocharts.com/gauges)
 - [Bullet charts](https://riocharts.com/bullets)
+- [Funnels](https://riocharts.com/funnels)
 - [Axes and time](https://riocharts.com/axes)
 - [Annotations](https://riocharts.com/annotations)
 - [Error bars](https://riocharts.com/error-bars): on bar, line and scatter series

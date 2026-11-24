@@ -255,6 +255,19 @@ public class SnapshotTests
             Series = [new SeriesOptions { Id = "f", Name = "Users", Type = SeriesType.Funnel, Format = "#,0" }],
         }, new() { ["f"] = Categories(["Visits", "Product views", "Cart", "Checkout", "Purchase"], 15000, 10000, 7000, 4000, 2000) }, Width: 560, Height: 300),
 
+        // Orders per day for a year: quieter weekends, a busier autumn, a few days without data.
+        ["calendar"] = new(new ChartDefinition
+        {
+            Title = "Orders per day",
+            Series = [new SeriesOptions { Id = "c", Name = "Orders", Type = SeriesType.Calendar }],
+        }, new()
+        {
+            ["c"] = SeriesData.From(
+                [.. Enumerable.Range(0, 365).Where(i => i % 23 != 5).Select(i => new DateTime(2026, 1, 1).AddDays(i))],
+                [.. Enumerable.Range(0, 365).Where(i => i % 23 != 5).Select(i => Math.Round(
+                    (new DateTime(2026, 1, 1).AddDays(i).DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? 6 : 16) + 6 * Math.Sin((i - 150) / 365.0 * 2 * Math.PI) + i * 7 % 5))]),
+        }, Width: 760, Height: 200),
+
         // Disk use per drive: half-circle gauges in a row.
         ["gauges-half"] = new(new ChartDefinition
         {
