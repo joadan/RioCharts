@@ -32,6 +32,7 @@
 <h2>Concepts</h2>
 <table class="docs">
     <tr><th>Blazor-ApexCharts</th><th>RioCharts</th></tr>
+    <tr><td><code>AddApexCharts(o =&gt; o.GlobalOptions = ...)</code>, <code>IApexChartService</code></td><td>Optional: <code>builder.Services.AddRioCharts(new RioChartDefaults { Culture = ..., Height = ... })</code> for app-wide defaults; a cascaded <code>RioChartDefaults</code> for part of the app, or to change them at runtime (the charts follow). Theme switches need no call: colors follow the page's theme. See <a href="getting-started">Getting started</a>.</td></tr>
     <tr><td><code>&lt;ApexChart TItem Title Height&gt;</code></td><td><code>&lt;RioChart TItem Title Height&gt;</code>; the width follows the container.</td></tr>
     <tr><td><code>&lt;ApexPointSeries SeriesType="SeriesType.Bar"&gt;</code></td><td>One component per type: <code>LineSeries</code>, <code>AreaSeries</code>, <code>BarSeries</code>, <code>ScatterSeries</code>, <code>PieSeries</code>, <code>DonutSeries</code>, <code>RadialBarSeries</code>, <code>RadarSeries</code>, <code>HeatmapSeries</code>, <code>TreemapSeries</code>.</td></tr>
     <tr><td><code>XValue</code>, <code>YValue</code>, <code>YAggregate</code></td><td>The same names. Common aggregates also as <code>Aggregate="Aggregate.Sum"</code> (Average, Min, Max, Count, Last).</td></tr>

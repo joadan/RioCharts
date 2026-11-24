@@ -405,6 +405,26 @@ public partial class RioChart<TItem> : IChartContext
     /// <summary>Defaults for every chart below, cascaded by the app (see <see cref="RioChartDefaults"/>).</summary>
     [CascadingParameter] private RioChartDefaults? Defaults { get; set; }
 
+    [Inject] private IServiceProvider Services { get; set; } = null!;
+
+    // Defaults registered with AddRioCharts (optional), looked up once.
+    private RioChartDefaults? _registeredDefaults;
+    private bool _lookedUpDefaults;
+
+    private RioChartDefaults? RegisteredDefaults
+    {
+        get
+        {
+            if (!_lookedUpDefaults)
+            {
+                _registeredDefaults = Services.GetService(typeof(RioChartDefaults)) as RioChartDefaults;
+                _lookedUpDefaults = true;
+            }
+
+            return _registeredDefaults;
+        }
+    }
+
     /// <inheritdoc />
     public override Task SetParametersAsync(ParameterView parameters)
     {
@@ -417,61 +437,62 @@ public partial class RioChart<TItem> : IChartContext
     // parameter set, so a changed default reaches charts that do not set the parameter themselves.
     private void ApplyDefaults(ParameterView parameters)
     {
-        var d = Defaults;
+        // Each setting on its own: the cascaded defaults' value, else the registered one (AddRioCharts), else built in.
+        var (d, r) = (Defaults, RegisteredDefaults);
         bool Unset<T>(string name) => !parameters.TryGetValue<T>(name, out _);
         if (Unset<double>(nameof(Height)))
         {
-            Height = d?.Height ?? 300;
+            Height = d?.Height ?? r?.Height ?? 300;
         }
 
         if (Unset<CultureInfo?>(nameof(Culture)))
         {
-            Culture = d?.Culture;
+            Culture = d?.Culture ?? r?.Culture;
         }
 
         if (Unset<string?>(nameof(TimeZone)))
         {
-            TimeZone = d?.TimeZone;
+            TimeZone = d?.TimeZone ?? r?.TimeZone;
         }
 
         if (Unset<UnspecifiedTimes?>(nameof(UnspecifiedTimes)))
         {
-            UnspecifiedTimes = d?.UnspecifiedTimes;
+            UnspecifiedTimes = d?.UnspecifiedTimes ?? r?.UnspecifiedTimes;
         }
 
         if (Unset<AxisOptions?>(nameof(XAxis)))
         {
-            XAxis = d?.XAxis;
+            XAxis = d?.XAxis ?? r?.XAxis;
         }
 
         if (Unset<AxisOptions?>(nameof(YAxis)))
         {
-            YAxis = d?.YAxis;
+            YAxis = d?.YAxis ?? r?.YAxis;
         }
 
         if (Unset<LegendOptions?>(nameof(Legend)))
         {
-            Legend = d?.Legend;
+            Legend = d?.Legend ?? r?.Legend;
         }
 
         if (Unset<TooltipOptions?>(nameof(Tooltip)))
         {
-            Tooltip = d?.Tooltip;
+            Tooltip = d?.Tooltip ?? r?.Tooltip;
         }
 
         if (Unset<bool>(nameof(Animate)))
         {
-            Animate = d?.Animate ?? true;
+            Animate = d?.Animate ?? r?.Animate ?? true;
         }
 
         if (Unset<bool?>(nameof(KeyboardNavigation)))
         {
-            KeyboardNavigation = d?.KeyboardNavigation;
+            KeyboardNavigation = d?.KeyboardNavigation ?? r?.KeyboardNavigation;
         }
 
         if (Unset<string?>(nameof(Class)))
         {
-            Class = d?.Class;
+            Class = d?.Class ?? r?.Class;
         }
     }
 
