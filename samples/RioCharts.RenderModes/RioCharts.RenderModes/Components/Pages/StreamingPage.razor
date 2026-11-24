@@ -1,0 +1,26 @@
+@page "/streaming"
+@attribute [StreamRendering]
+
+<PageTitle>Static server rendering, streaming · RioCharts</PageTitle>
+
+<h1>Static server rendering, streaming</h1>
+<p><a href="">All modes</a></p>
+
+@if (_ready)
+{
+    <ChartSet />
+}
+else
+{
+    <p>Loading…</p>
+}
+
+@code {
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+        _ready = true;
+    }
+}
