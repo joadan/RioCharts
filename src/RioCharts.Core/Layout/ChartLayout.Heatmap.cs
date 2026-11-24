@@ -243,7 +243,8 @@ public static partial class ChartLayout
             var xTicks = new List<Node>();
             if (band is not null)
             {
-                AddCategoryLabels(band, measure, font, plot.Bottom, xTicks);
+                // Heatmap columns keep horizontal labels (thinned when they do not fit): the rows above need the height.
+                AddCategoryLabels(PlanCategoryLabels(band, 0, measure, font, lineHeight, height), band, plot.Bottom, xTicks);
             }
             else
             {

@@ -20,6 +20,14 @@ changes are called out under **Breaking**.
   block; longer data is one block per year. Clicking a day selects its items. New texts: `ChartTexts.CalendarChart`
   and `CalendarDays` in all built-in languages. Docs: a Calendar heatmap page and a gallery card.
   **Breaking (JSON):** `"type": "calendar"` used to mean a plain heatmap; it is now the calendar heatmap.
+- Several y axes on one side no longer overlap: an axis that is not next to the plot gets a column as wide as its
+  title (up to a fifth of the chart, shortened with "…" beyond that), so the titles above the axes sit side by side
+  instead of on top of each other. Charts with one axis per side are unchanged.
+- Category labels that do not fit side by side now slope at 45 degrees, so every category keeps its label; before,
+  only every n-th label was shown. Long rotated labels are shortened with "…". `AxisOptions.LabelRotation`
+  (`"labelRotation"` in JSON) sets the angle (0 to 90); `LabelRotation = 0` keeps the old behavior (horizontal, every
+  n-th label). Heatmap columns keep horizontal labels. A behavior change for bar and category charts with crowded labels.
+  Docs: a "Category labels" example on the Axes page.
 - Docs and demo: a "Europe only" world map example that opens zoomed into Europe (`TreemapPath="Europe"`).
 
 ## 0.5.2-preview (2026-11-24)

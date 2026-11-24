@@ -44,6 +44,15 @@ public static partial class ChartLayout
         public List<string> Labels { get; set; } = [];
         public double LabelWidth { get; set; }
 
+        /// <summary>
+        /// Width of the axis' column: its widest tick label, or its title when that is wider and the axis is not the one
+        /// next to the plot (titles sit in one row above the labels, so an outer axis' title must not run into the next one).
+        /// </summary>
+        public double ColumnWidth { get; set; }
+
+        /// <summary>The title as drawn (shortened when it is capped); null when the axis shows none.</summary>
+        public string? ShownTitle { get; set; }
+
         /// <summary>X of the label column's edge next to the plot.</summary>
         public double LabelX { get; set; }
 
@@ -361,13 +370,38 @@ public static partial class ChartLayout
         axis.LabelWidth = axis.Visible ? axis.Labels.Select(l => measure.Measure(l, font)).DefaultIfEmpty(0).Max() : 0;
     }
 
+    /// <summary>
+    /// Sizes the label columns of the axes on one side, listed from the plot edge outward. The axis next to the plot
+    /// keeps the width of its labels (its title may run on over the plot); the outer ones also fit their title, capped at
+    /// <paramref name="maxTitle"/> and shortened with "…" beyond it, so titles on the same side never overlap.
+    /// </summary>
+    private static void SizeAxisColumns(List<YAxisLayout> axes, bool titles, double maxTitle, ITextMeasurer measure, double font)
+    {
+        for (var i = 0; i < axes.Count; i++)
+        {
+            var axis = axes[i];
+            axis.ColumnWidth = axis.LabelWidth;
+            axis.ShownTitle = titles && !string.IsNullOrWhiteSpace(axis.Spec.Title) ? axis.Spec.Title : null;
+            if (i > 0 && axis.ShownTitle is { } title)
+            {
+                var shown = Shorten(title, Math.Max(axis.LabelWidth, maxTitle), measure, font);
+                axis.ShownTitle = shown;
+                axis.ColumnWidth = Math.Max(axis.LabelWidth, measure.Measure(shown, font));
+            }
+        }
+    }
+
+    /// <summary>Total width of the label columns on one side, with the gaps between them.</summary>
+    private static double ColumnsWidth(List<YAxisLayout> axes) =>
+        axes.Count == 0 ? 0 : LabelGap + axes.Sum(a => a.ColumnWidth) + (axes.Count - 1) * AxisGap;
+
     /// <summary>Places label columns outward from the plot edge (direction -1: left, 1: right).</summary>
     private static void PlaceAxisColumns(List<YAxisLayout> axes, double edge, int direction)
     {
         foreach (var axis in axes)
         {
             axis.LabelX = edge;
-            edge += direction * (axis.LabelWidth + AxisGap);
+            edge += direction * (axis.ColumnWidth + AxisGap);
         }
     }
 
@@ -497,21 +531,78 @@ public static partial class ChartLayout
         return true;
     }
 
-    private static void AddCategoryLabels(BandScale band, ITextMeasurer measure, double font, double plotBottom, List<Node> output)
+    /// <summary>Category labels as drawn: their angle, which ones show (every n-th), their text and the height of the row.</summary>
+    private readonly record struct CategoryLabelPlan(double Angle, int Every, List<string> Texts, double Height, double LineHeight);
+
+    /// <summary>
+    /// Plans the category labels. Horizontal when every label fits under its band. Otherwise (or with
+    /// <paramref name="rotation"/> set) they slope down to the left at 45 degrees (or the set angle), which fits many
+    /// more of them; only when even those overlap is every n-th label shown. A rotation of 0 keeps them horizontal and
+    /// thins them. Rotated labels are shortened with "…" to stay within a third of the chart's height and inside its left edge.
+    /// </summary>
+    private static CategoryLabelPlan PlanCategoryLabels(BandScale band, double? rotation, ITextMeasurer measure, double font,
+        double lineHeight, double chartHeight)
     {
-        if (band.Categories.Count == 0)
+        var categories = band.Categories;
+        if (categories.Count == 0)
         {
+            return new CategoryLabelPlan(0, 1, [], lineHeight + 6, lineHeight);
+        }
+
+        var step = Math.Max(1, band.Step);
+        var widest = categories.Max(c => measure.Measure(c, font));
+        var horizontalEvery = Math.Max(1, (int)Math.Ceiling((widest + 8) / step));
+        var angle = rotation is { } r && double.IsFinite(r) ? Math.Clamp(Math.Abs(r), 0, 90) : horizontalEvery == 1 ? 0 : 45;
+        if (angle == 0)
+        {
+            return new CategoryLabelPlan(0, horizontalEvery, [.. categories], lineHeight + 6, lineHeight);
+        }
+
+        var radians = angle * Math.PI / 180;
+        var (sin, cos) = (Math.Sin(radians), Math.Cos(radians));
+
+        // Rotated labels are parallel: neighbours are step × sin apart, and need a line of text between them.
+        var every = Math.Max(1, (int)Math.Ceiling((lineHeight + 2) / (step * sin)));
+        var maxLength = Math.Max(font * 4, chartHeight / 3 / sin);
+        var texts = new List<string>(categories.Count);
+        var longest = 0.0;
+        for (var i = 0; i < categories.Count; i++)
+        {
+            // A label runs from its band's center down to the left: keep it inside the chart's left edge.
+            var limit = cos > 0.01 ? Math.Min(maxLength, (band.Center(i) - 2) / cos) : maxLength;
+            var text = Shorten(categories[i], Math.Max(font, limit), measure, font);
+            texts.Add(text);
+            if (i % every == 0)
+            {
+                longest = Math.Max(longest, measure.Measure(text, font));
+            }
+        }
+
+        return new CategoryLabelPlan(angle, every, texts, 4 + lineHeight * cos + longest * sin + 2, lineHeight);
+    }
+
+    private static void AddCategoryLabels(CategoryLabelPlan plan, BandScale band, double plotBottom, List<Node> output)
+    {
+        if (plan.Angle == 0)
+        {
+            for (var i = 0; i < plan.Texts.Count; i += plan.Every)
+            {
+                output.Add(new TextNode(plan.Texts[i], new PointF((float)band.Center(i), (float)(plotBottom + 6)), new TextStyle("axis-label"), Anchor.Middle)
+                {
+                    Baseline = Baseline.Top,
+                });
+            }
+
             return;
         }
 
-        // Show every k-th label when they do not all fit.
-        var widest = band.Categories.Max(c => measure.Measure(c, font));
-        var every = Math.Max(1, (int)Math.Ceiling((widest + 8) / Math.Max(1, band.Step)));
-        for (var i = 0; i < band.Categories.Count; i += every)
+        // The label ends at its band's center and its middle line runs through that point, so the top edge clears the baseline.
+        var y = plotBottom + 4 + plan.LineHeight / 2 * Math.Cos(plan.Angle * Math.PI / 180);
+        for (var i = 0; i < plan.Texts.Count; i += plan.Every)
         {
-            output.Add(new TextNode(band.Categories[i], new PointF((float)band.Center(i), (float)(plotBottom + 6)), new TextStyle("axis-label"), Anchor.Middle)
+            output.Add(new TextNode(plan.Texts[i], new PointF((float)band.Center(i), (float)y), new TextStyle("axis-label"), Anchor.End)
             {
-                Baseline = Baseline.Top,
+                Rotation = (float)-plan.Angle,
             });
         }
     }

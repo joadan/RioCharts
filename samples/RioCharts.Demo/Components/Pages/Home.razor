@@ -92,6 +92,25 @@
         </section>
 
         <section>
+            <h2>Four Y axes</h2>
+            <RioChart TItem="Reading" Height="280" YAxis="_conversionAxis" YAxes="_manyAxes">
+                <LineSeries Items="_hourlySessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" YAxisId="sessions" />
+                <BarSeries Items="_hourlyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Format="0" />
+                <LineSeries Items="_hourlyRevenue" Name="Revenue" XValue="r => r.Time" YValue="r => r.Value" YAxisId="revenue" Format="#,0" />
+                <LineSeries Items="_hourlyConversion" Name="Conversion" XValue="r => r.Time" YValue="r => r.Value" Format="P1" />
+            </RioChart>
+            <p class="note">Two axes on each side (<code>Position = AxisPosition.Left</code>): each sits under its own title.</p>
+        </section>
+
+        <section>
+            <h2>Many categories</h2>
+            <RioChart TItem="(string Country, double Count)" Items="_signups" Height="260">
+                <BarSeries Name="Sign-ups" XValue="c => c.Country" YValue="c => c.Count" Format="#,0" />
+            </RioChart>
+            <p class="note">Labels that do not fit side by side slope at 45 degrees (<code>AxisOptions.LabelRotation</code>).</p>
+        </section>
+
+        <section>
             <h2>Stacked bars with data labels</h2>
             <RioChart TItem="CategoryMix" Title="Revenue per month" YAxis="_keur">
                 <BarSeries Items="_mix" Name="Shoes" XValue="m => m.Month" YValue="m => m.Shoes" Stack="revenue" DataLabels="true" />
@@ -361,12 +380,27 @@
     private readonly AxisOptions _keur = new() { Title = "k€" };
     private readonly AxisOptions _ms = new() { Title = "ms" };
     private readonly IReadOnlyList<AxisOptions> _ordersAxes = [new() { Id = "orders", Title = "Orders" }];
+    private readonly AxisOptions _conversionAxis = new() { Title = "Conversion" };
+    private readonly IReadOnlyList<AxisOptions> _manyAxes =
+    [
+        new() { Id = "sessions", Title = "Sessions per hour", Position = AxisPosition.Left },
+        new() { Id = "orders", Title = "Orders" },
+        new() { Id = "revenue", Title = "Revenue, EUR" },
+    ];
+
+    private static readonly (string Country, double Count)[] _signups = [.. new[]
+    {
+        "Germany", "France", "United Kingdom", "Spain", "Italy", "Netherlands", "Poland", "Sweden", "Belgium", "Austria",
+        "Switzerland", "Denmark", "Norway", "Finland", "Portugal", "Ireland", "Czech Republic", "Greece",
+    }.Select((name, i) => (name, Math.Round(4200 * Math.Pow(0.82, i))))];
     private readonly TooltipOptions _singleTooltip = new() { Shared = false };
 
     private DateTime _incidentStart, _incidentEnd, _now, _alert, _deploy;
     private double _limit = 300;
     private List<Reading> _hourlyOrders = [];
     private List<Reading> _hourlySessions = [];
+    private List<Reading> _hourlyRevenue = [];
+    private List<Reading> _hourlyConversion = [];
     private List<Reading> _organic = [];
     private List<Reading> _ads = [];
     private List<Reading> _email = [];
@@ -458,6 +492,10 @@
             _ads.Add(new Reading(t, Math.Round(Math.Max(10, 260 + 200 * dayCycle + random.NextDouble() * 40))));
             _email.Add(new Reading(t, Math.Round((morning ? 180 : 40) + random.NextDouble() * 20)));
         }
+
+        // Revenue and conversion per hour, from the orders and sessions above (no new random numbers, so the other charts stay the same).
+        _hourlyRevenue = _hourlyOrders.Select((o, h) => new Reading(o.Time, Math.Round(o.Value!.Value * (64 + 6 * Math.Sin(h / 3.0))))).ToList();
+        _hourlyConversion = _hourlyOrders.Zip(_hourlySessions, (o, s) => new Reading(o.Time, o.Value / s.Value)).ToList();
 
         _onePoint = [new(start, 420)];
         _flat = Enumerable.Range(0, 24).Select(h => new Reading(start.AddHours(h), 300)).ToList();

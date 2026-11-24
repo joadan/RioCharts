@@ -105,6 +105,14 @@ public sealed record AxisOptions
     [Description("Draw grid lines. Null uses the default: on for the primary vertical axis, off otherwise.")]
     public bool? GridLines { get; init; }
 
+    /// <summary>
+    /// Angle of category labels on the x axis, in degrees from 0 to 90; they slope down to the left. Null (the default):
+    /// horizontal when every label fits, otherwise 45 degrees. 0 keeps them horizontal and shows every n-th label when
+    /// they do not all fit. Rotated labels still thin out when even they overlap.
+    /// </summary>
+    [Description("Angle of category labels on the x axis, 0 to 90 degrees (sloping down to the left). Null: horizontal when they fit, else 45. 0: horizontal, every n-th label when they do not fit.")]
+    public double? LabelRotation { get; init; }
+
     /// <summary>Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.</summary>
     [Description("Side of a vertical axis. Auto: the primary axis on the left, additional axes on the right.")]
     public AxisPosition Position { get; init; } = AxisPosition.Auto;

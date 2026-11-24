@@ -289,6 +289,42 @@ public class SnapshotTests
             ["p"] = Hourly(24, i => Math.Max(0, 30 - 3 * (4 + 5 * Math.Sin((i - 9) / 24.0 * 2 * Math.PI))), step: 2),
         }),
 
+        // One axis per series, two on each side: outer columns are as wide as their titles, so no title overlaps.
+        ["many-axes"] = new(new ChartDefinition
+        {
+            Y = new AxisOptions { Title = "Temperature °C" },
+            YAxes =
+            [
+                new AxisOptions { Id = "kpa", Title = "Pressure kPa", Position = AxisPosition.Left },
+                new AxisOptions { Id = "kw", Title = "Power kW" },
+                new AxisOptions { Id = "rh", Title = "Humidity %" },
+            ],
+            Series =
+            [
+                new SeriesOptions { Id = "t", Name = "Temperature" },
+                new SeriesOptions { Id = "p", Name = "Pressure", YAxisId = "kpa" },
+                new SeriesOptions { Id = "w", Name = "Power", YAxisId = "kw" },
+                new SeriesOptions { Id = "h", Name = "Humidity", YAxisId = "rh" },
+            ],
+        }, new()
+        {
+            ["t"] = Hourly(24, London, step: 2),
+            ["p"] = Hourly(24, i => 101.3 + 0.4 * Math.Sin(i / 6.0), step: 2),
+            ["w"] = Hourly(24, i => 1200 + 300 * Math.Cos(i / 5.0), step: 2),
+            ["h"] = Hourly(24, i => 55 + 10 * Math.Sin(i / 4.0), step: 2),
+        }, Width: 720),
+
+        // More categories than fit side by side: the labels slope at 45 degrees and all show.
+        ["bar-rotated-labels"] = new(new ChartDefinition
+        {
+            Series = [new SeriesOptions { Id = "s", Name = "Issues", Type = SeriesType.Bar }],
+        }, new()
+        {
+            ["s"] = Categories(["Sweden", "Norway", "Denmark", "Finland", "Germany", "Netherlands", "Belgium", "France", "Spain", "Portugal",
+                "Italy", "Switzerland", "Austria", "Poland", "Czech Republic", "United Kingdom", "Ireland", "Estonia"],
+                42, 31, 28, 25, 22, 19, 17, 15, 14, 12, 11, 9, 8, 7, 6, 5, 4, 3),
+        }),
+
         ["annotations"] = new(new ChartDefinition
         {
             Series = [new SeriesOptions { Id = "s", Name = "London" }],

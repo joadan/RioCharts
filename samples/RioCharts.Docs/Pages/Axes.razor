@@ -25,7 +25,7 @@
 </Example>
 
 <Example Title="Two Y axes" Code="@TwoAxesCode">
-    <Description><p>Extra axes go on the right; series pick one with <code>YAxisId</code>. Their ticks line up with the main grid. Here sessions per hour on the left and the orders they turn into on the right.</p></Description>
+    <Description><p>Extra axes go on the right (or left, with <code>Position = AxisPosition.Left</code>); series pick one with <code>YAxisId</code>. Their ticks line up with the main grid. Several axes on one side sit side by side, each under its own title. Here sessions per hour on the left and the orders they turn into on the right.</p></Description>
     <ChildContent>
         <RioChart TItem="Reading" YAxis="SessionsAxis" YAxes="_ordersAxis">
             <BarSeries Items="_hourlyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Format="#,0 'orders'" />
@@ -40,6 +40,24 @@
         <RioChart TItem="Sales" YAxis="_currency" Culture="_german" Height="240">
             <BarSeries Items="Quarters" Name="2026" XValue="s => s.Quarter" YValue="s => s.ThisYear" />
         </RioChart>
+    </ChildContent>
+</Example>
+
+<Example Title="Category labels" Code="@CategoryLabelsCode">
+    <Description>
+        <p>
+            Category labels that do not fit side by side slope at 45 degrees, so every bar keeps its name; long names are shortened
+            with "…" (the tooltip has the full name). Set <code>LabelRotation</code> on the x axis for another angle (0 to 90), or
+            <code>LabelRotation = 0</code> to keep them horizontal and show every n-th. In JSON definitions: <code>"x": { "labelRotation": 45 }</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart Items="SignupsByCountry" XAxis="@(_horizontalLabels ? HorizontalLabels : null)" Height="280">
+            <BarSeries Name="Sign-ups" XValue="c => c.Name" YValue="c => c.Value" Format="#,0" />
+        </RioChart>
+        <p class="note">
+            <label><input type="checkbox" @bind="_horizontalLabels" /> <code>LabelRotation = 0</code></label>
+        </p>
     </ChildContent>
 </Example>
 
@@ -151,6 +169,24 @@
     private bool _log = true;
     private static readonly AxisOptions Visits = new() { Title = "Visits per month" };
     private static readonly AxisOptions VisitsLog = Visits with { Scale = ScaleType.Log };
+
+    private sealed record Named(string Name, double Value);
+
+    private bool _horizontalLabels;
+    private static readonly AxisOptions HorizontalLabels = new() { LabelRotation = 0 };
+
+    private static readonly Named[] SignupsByCountry = [.. new[]
+    {
+        "Germany", "France", "United Kingdom", "Spain", "Italy", "Netherlands", "Poland", "Sweden", "Belgium", "Austria",
+        "Switzerland", "Denmark", "Norway", "Finland", "Portugal", "Ireland", "Czech Republic", "Greece",
+    }.Select((name, i) => new Named(name, Math.Round(4200 * Math.Pow(0.82, i))))];
+
+    private const string CategoryLabelsCode = """
+        @* Labels that do not fit slope at 45 degrees. XAxis="@(new AxisOptions { LabelRotation = 0 })" keeps them horizontal. *@
+        <RioChart Items="signupsByCountry">
+            <BarSeries Name="Sign-ups" XValue="c => c.Name" YValue="c => c.Value" Format="#,0" />
+        </RioChart>
+        """;
 
     private sealed record PageLoad(double SizeKb, double Ms);
 
