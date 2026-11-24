@@ -306,6 +306,11 @@ public static partial class ChartLayout
             resolved.Add(r);
         }
 
+        if (resolved.Any(r => r.Spec.Type == SeriesType.Funnel))
+        {
+            return ComputeFunnel(spec, resolved, options, warnings, styles);
+        }
+
         if (resolved.Any(r => r.Spec.Type == SeriesType.Bullet))
         {
             return ComputeBullets(spec, resolved, options, warnings, styles);
@@ -996,6 +1001,7 @@ public static partial class ChartLayout
         styles.Add("legend-hit", new Style { Fill = "transparent" });
         styles.Add("data-label", new TextStyleDef { FontSize = small, Fill = ThemeTokens.Text });
         styles.Add("data-label-inverse", new TextStyleDef { FontSize = small, FontWeight = 500, Fill = ThemeTokens.DataLabelInverse });
+        styles.Add("data-label-dark", new TextStyleDef { FontSize = small, FontWeight = 500, Fill = ThemeTokens.DataLabelDark });
         styles.Add("annotation-line", new Style { Stroke = ThemeTokens.Annotation, StrokeWidth = 1.25f, DashArray = "4 3" });
         styles.Add("annotation-band", new Style { Fill = ThemeTokens.Annotation, FillOpacity = 0.1f });
         styles.Add("annotation-label", new TextStyleDef { FontSize = small, Fill = ThemeTokens.Annotation });

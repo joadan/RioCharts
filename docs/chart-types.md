@@ -50,6 +50,7 @@ Rules of thumb:
 | Radial bar | `RadialBarSeries` / `radialBar` | Also `radial`. |
 | Gauge | `GaugeSeries` / `gauge` (also `meter`, `dial`) | One value on a min–max scale; color bands as a scale ring, a target marker, the value in the middle. One gauge per point, in a grid. No needle. |
 | Bullet | `BulletSeries` / `bullet` | A bar against a target over tinted ranges, a row per point; each series its own scale. Horizontal only. |
+| Funnel | `FunnelSeries` / `funnel` (also `conversionFunnel`, `salesFunnel`, `pipeline`) | A segment per stage, as wide as its share of the largest and narrowing to the next, a color each; value and share of the stage before inside, names in a column on the left. One per chart. |
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |
@@ -67,7 +68,6 @@ Rules of thumb:
 | Calendar heatmap | Candidate | Low–Medium | Medium | Medium | Daily values over months or a year | A heatmap with its own week × weekday layout and month labels. Reuses the heatmap color scale; the layout is isolated. |
 | Streamgraph | Candidate | Low | Small | Low | Shares over time, organic look | A centered ("wiggle") offset as another `StackMode` next to `Percent` (100 % stacked, added). Rarely asked for. |
 | Nested donut / sunburst | In Design.md | Medium | Medium–Large | Medium | Hierarchical shares | One ring per level; can reuse the treemap hierarchy. Labels on thin rings are the hard part. |
-| Funnel | Candidate | Medium | Small–Medium | Low | Stages narrowing down | Rarely the best choice (a bar chart is easier to read), but often asked for. |
 | Sankey | "Later, if ever" in Design.md | Medium | Large | High | Flows between nodes | Needs a node/link data model, a node ordering layout and curved links; touches tooltips, keyboard navigation and the describer in new ways. |
 
 ## Out of scope

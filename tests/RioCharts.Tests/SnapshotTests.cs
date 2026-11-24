@@ -248,6 +248,13 @@ public class SnapshotTests
             Series = [new SeriesOptions { Id = "s", Name = "Sales", Type = SeriesType.Bullet, Format = "0 k€", DataLabels = true }],
         }, new() { ["s"] = Categories(["North", "South", "East", "West"], 182, 96, 141, 120).WithTargets([160.0, 130, 140, 100]) }, Width: 520, Height: 220),
 
+        // A shop funnel: stages narrowing down, each with its share of the stage before.
+        ["funnel"] = new(new ChartDefinition
+        {
+            Title = "Shop funnel",
+            Series = [new SeriesOptions { Id = "f", Name = "Users", Type = SeriesType.Funnel, Format = "#,0" }],
+        }, new() { ["f"] = Categories(["Visits", "Product views", "Cart", "Checkout", "Purchase"], 15000, 10000, 7000, 4000, 2000) }, Width: 560, Height: 300),
+
         // Disk use per drive: half-circle gauges in a row.
         ["gauges-half"] = new(new ChartDefinition
         {

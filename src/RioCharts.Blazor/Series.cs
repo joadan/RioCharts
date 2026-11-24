@@ -925,6 +925,20 @@ public sealed class WaterfallSeries<TItem> : SeriesBase<TItem>
 }
 
 /// <summary>
+/// Funnel: one segment per stage, top to bottom in the order of the items, each as wide at its top
+/// as its share of the largest stage and narrowing to the next, in a color of its own (one color
+/// when <c>Color</c> is set; <c>ColorValue</c> colors a stage). <c>XValue</c> is the stage,
+/// <c>YValue</c> how many reached it. Each stage shows its value and its share of the stage before
+/// (<c>DataLabels="false"</c> hides them), with its name in a column on the left; the tooltip
+/// adds the share of the first stage. One funnel per chart; it cannot be mixed with other series.
+/// </summary>
+public sealed class FunnelSeries<TItem> : SeriesBase<TItem>
+{
+    /// <inheritdoc />
+    protected override SeriesType Type => SeriesType.Funnel;
+}
+
+/// <summary>
 /// Pie: one slice per category (the x value), sized by its share of the total. Several pie
 /// series in one chart are drawn as nested rings, the first one outermost.
 /// </summary>

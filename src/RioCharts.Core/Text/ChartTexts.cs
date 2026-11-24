@@ -189,6 +189,15 @@ public sealed record ChartTexts
     /// <summary>A bullet chart.</summary>
     public string BulletChart { get => Get(); init => Set(value); }
 
+    /// <summary>A funnel chart.</summary>
+    public string FunnelChart { get => Get(); init => Set(value); }
+
+    /// <summary>A funnel stage's share of the first stage, in its tooltip.</summary>
+    public string FunnelOfFirst { get => Get(); init => Set(value); }
+
+    /// <summary>A funnel stage's share of the stage before it, in its tooltip.</summary>
+    public string FunnelOfPrevious { get => Get(); init => Set(value); }
+
     /// <summary>A gauge's target value, e.g. "Target 80" in its tooltip and description.</summary>
     public string Target { get => Get(); init => Set(value); }
 
@@ -429,6 +438,9 @@ public sealed record ChartTexts
         [nameof(RadialBarChart)] = "Radial bar chart",
         [nameof(GaugeChart)] = "Gauge",
         [nameof(BulletChart)] = "Bullet chart",
+        [nameof(FunnelChart)] = "Funnel chart",
+        [nameof(FunnelOfFirst)] = "Of first stage",
+        [nameof(FunnelOfPrevious)] = "Of previous stage",
         [nameof(Target)] = "Target",
         [nameof(RadarChart)] = "Radar chart",
         [nameof(Treemap)] = "Treemap",
@@ -509,6 +521,9 @@ public sealed record ChartTexts
         RadialBarChart = "Radiellt stapeldiagram",
         GaugeChart = "Mätare",
         BulletChart = "Bulletdiagram",
+        FunnelChart = "Trattdiagram",
+        FunnelOfFirst = "Av första steget",
+        FunnelOfPrevious = "Av föregående steg",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trädkarta",
@@ -583,6 +598,9 @@ public sealed record ChartTexts
         RadialBarChart = "Radielt stolpediagram",
         GaugeChart = "Måler",
         BulletChart = "Bulletdiagram",
+        FunnelChart = "Traktdiagram",
+        FunnelOfFirst = "Av første trinn",
+        FunnelOfPrevious = "Av forrige trinn",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trekart",
@@ -657,6 +675,9 @@ public sealed record ChartTexts
         RadialBarChart = "Radialt søjlediagram",
         GaugeChart = "Måler",
         BulletChart = "Bulletdiagram",
+        FunnelChart = "Tragtdiagram",
+        FunnelOfFirst = "Af første trin",
+        FunnelOfPrevious = "Af forrige trin",
         Target = "Mål",
         RadarChart = "Radardiagram",
         Treemap = "Trækort",
@@ -731,6 +752,9 @@ public sealed record ChartTexts
         RadialBarChart = "Säteittäinen pylväskaavio",
         GaugeChart = "Mittari",
         BulletChart = "Bullet-kaavio",
+        FunnelChart = "Suppilokaavio",
+        FunnelOfFirst = "Ensimmäisestä vaiheesta",
+        FunnelOfPrevious = "Edellisestä vaiheesta",
         Target = "Tavoite",
         RadarChart = "Tutkakaavio",
         Treemap = "Puukartta",
@@ -805,6 +829,9 @@ public sealed record ChartTexts
         RadialBarChart = "Radiales Balkendiagramm",
         GaugeChart = "Messanzeige",
         BulletChart = "Bullet-Diagramm",
+        FunnelChart = "Trichterdiagramm",
+        FunnelOfFirst = "Von der ersten Stufe",
+        FunnelOfPrevious = "Von der vorigen Stufe",
         Target = "Ziel",
         RadarChart = "Netzdiagramm",
         Treemap = "Treemap",
@@ -879,6 +906,9 @@ public sealed record ChartTexts
         RadialBarChart = "Graphique à barres radiales",
         GaugeChart = "Jauge",
         BulletChart = "Graphique à puces",
+        FunnelChart = "Graphique en entonnoir",
+        FunnelOfFirst = "De la première étape",
+        FunnelOfPrevious = "De l'étape précédente",
         Target = "Cible",
         RadarChart = "Graphique en radar",
         Treemap = "Carte proportionnelle",
@@ -953,6 +983,9 @@ public sealed record ChartTexts
         RadialBarChart = "Gráfico de barras radiales",
         GaugeChart = "Indicador",
         BulletChart = "Gráfico de viñetas",
+        FunnelChart = "Gráfico de embudo",
+        FunnelOfFirst = "De la primera etapa",
+        FunnelOfPrevious = "De la etapa anterior",
         Target = "Objetivo",
         RadarChart = "Gráfico radial",
         Treemap = "Mapa de árbol",

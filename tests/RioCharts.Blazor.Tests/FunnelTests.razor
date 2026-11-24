@@ -1,0 +1,36 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Step(string Name, double Users);
+
+    private static readonly Step[] Steps = [new("Visit", 700), new("Visit", 500), new("Cart", 300), new("Checkout", 120), new("Cart", 60)];
+
+    [Fact]
+    public void Items_give_a_stage_each_in_first_appearance_order()
+    {
+        var cut = Render<RioChart<Step>>(@<RioChart TItem="Step" Items="Steps" Culture="System.Globalization.CultureInfo.InvariantCulture">
+            <FunnelSeries XValue="s => s.Name" YValue="s => s.Users" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        // Names on the left; each value inside its segment, or just after a thin one.
+        Assert.Equal(["Visit", "Cart", "Checkout"], cut.FindAll(".rio-row-label").Select(l => l.TextContent));
+        Assert.Equal(["1,200 (100%)", "360 (30%)", "120 (33.3%)"], cut.FindAll(".rio-data-label").Select(l => l.TextContent));
+        Assert.Equal(3, cut.FindAll(".rio-funnel-stage").Count);
+        Assert.Equal(3, cut.FindAll(".rio-funnel-leader").Count);
+        var series = Payload(Calls("update")[^1]).GetProperty("series")[0];
+        Assert.Equal("360", series.GetProperty("v")[1].GetString());
+    }
+
+    [Fact]
+    public void Clicking_a_stage_selects_its_items()
+    {
+        var cut = Render<RioChart<Step>>(@<RioChart TItem="Step" Items="Steps" Selection="SelectionMode.Points">
+            <FunnelSeries Id="f" XValue="s => s.Name" YValue="s => s.Users" Aggregate="Aggregate.Sum" />
+        </RioChart>);
+
+        cut.InvokeAsync(() => cut.Instance.OnPointClicked("f", 1, false));
+
+        Assert.Equal([Steps[2], Steps[4]], cut.Instance.GetSelectedItems());
+        Assert.Single(cut.FindAll(".rio-selected-bar"));
+    }
+}

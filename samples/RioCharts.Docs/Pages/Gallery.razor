@@ -177,6 +177,12 @@
         </RioChart>
         <span class="tile-label">Bullet <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="funnels">
+        <RioChart TItem="(string Stage, double Users)" Items="FunnelStages" Height="170">
+            <FunnelSeries Name="Users" XValue="s => s.Stage" YValue="s => s.Users" Format="#,0" />
+        </RioChart>
+        <span class="tile-label">Funnel <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="compact">
         <div class="gallery-sparks">
             <RioChart TItem="Reading" Items="WebSessions" Compact="true" Interactive="false" Height="40">
@@ -203,6 +209,7 @@
 
     private static readonly BikeShare[] BikeShares = [new("Utrecht", 33, 41), new("Ghent", 22, 35), new("Bologna", 9, 18), new("Lyon", 6, 12)];
 
+    private static readonly (string Stage, double Users)[] FunnelStages = [("Visits", 15000), ("Views", 10000), ("Cart", 7000), ("Paid", 4000)];
     private static readonly ColorBand[] RevenueBands = [new() { Below = 150, Color = "--rio-negative" }, new() { Above = 225, Color = "--rio-positive" }];
     private static readonly ColorBand[] Load = [new() { Above = 60, Color = "--rio-series-2" }, new() { Above = 85, Color = "--rio-negative" }];
 
