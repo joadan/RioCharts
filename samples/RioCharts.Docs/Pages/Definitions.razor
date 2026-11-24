@@ -134,6 +134,14 @@
     <code>ChartDefinitionJson.Schema()</code> returns the JSON schema with a description of every option.
 </p>
 
+<h2 id="versions">Saved definitions keep working</h2>
+<p>
+    A definition can say which format it is in: <code>"version": 1</code>. It is optional (missing means 1), and
+    <code>ChartDefinitionJson.Serialize</code> writes it. Every RioCharts 1.x reads version 1 definitions: fields, chart type names,
+    their synonyms and option words may be added, but none is removed or changes meaning, so a definition you save today renders in
+    every later 1.x. A definition from a newer version is still read, with a warning, and fields this version does not know are left out.
+</p>
+
 <h2 id="datasets">Where the data comes from</h2>
 <p>
     A dataset is a named table: one value per row for each field. Field types (time, number, text) are read from the values, and an
