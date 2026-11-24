@@ -79,7 +79,7 @@
     [Fact]
     public void Clicking_an_item_selects_it()
     {
-        var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Folder>>(@<RioChart TItem="Folder" Items="Folders" Selection="ChartSelectionMode.Points">
             <TreemapSeries Id="d" XValue="f => f.Name" ParentValue="f => f.Parent" YValue="f => f.Gigabytes" />
         </RioChart>);
 

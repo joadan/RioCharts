@@ -621,9 +621,9 @@ public partial class RioChart<TItem> : IChartContext
             SelectedPoints = selectedPoints,
             TreemapPath = _treemapPath,
             InteractiveTreemap = Live,
-            TreemapDrillOnItems = !OnPointClick.HasDelegate && Selection != SelectionMode.Points,
+            TreemapDrillOnItems = !OnPointClick.HasDelegate && Selection != ChartSelectionMode.Points,
             MapRegion = _treemapPath,
-            InteractiveMap = Live && !OnPointClick.HasDelegate && Selection != SelectionMode.Points,
+            InteractiveMap = Live && !OnPointClick.HasDelegate && Selection != ChartSelectionMode.Points,
         };
 
         try
@@ -889,9 +889,9 @@ public partial class RioChart<TItem> : IChartContext
         }
 
         var model = CustomTooltip(_layout);
-        var click = OnPointClick.HasDelegate || Selection == SelectionMode.Points;
+        var click = OnPointClick.HasDelegate || Selection == ChartSelectionMode.Points;
         var scale = _layout.XScale;
-        var select = Selection == SelectionMode.Range && scale is not null && _layout.HasData ? "range" : Selection == SelectionMode.Points ? "points" : null;
+        var select = Selection == ChartSelectionMode.Range && scale is not null && _layout.HasData ? "range" : Selection == ChartSelectionMode.Points ? "points" : null;
         var zoom = Zoomable && scale is not null && _layout.HasData;
         var drags = _layout.DragHandles;
         // UTF-8 JSON from source-generated metadata (Rendering/Interop.cs): trimming and AOT safe.

@@ -34,7 +34,7 @@
     [Fact]
     public void Clicking_a_box_selects_all_its_items()
     {
-        var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Temp>>(@<RioChart TItem="Temp" Items="Temps" Selection="ChartSelectionMode.Points">
             <BoxPlotSeries Id="t" Name="Temperature" XValue="t => t.Station" YValue="t => t.Value" />
         </RioChart>);
 

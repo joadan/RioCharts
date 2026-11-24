@@ -47,7 +47,7 @@
     [Fact]
     public void Clicking_a_bucket_selects_its_items()
     {
-        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Selection="SelectionMode.Points">
+        var cut = Render<RioChart<Order>>(@<RioChart TItem="Order" Items="Orders" Selection="ChartSelectionMode.Points">
             <BarSeries Id="o" XValue="o => o.Time" YValue="o => o.Amount" Bucket="TimeBucket.Day" Aggregate="Aggregate.Sum" />
         </RioChart>);
 

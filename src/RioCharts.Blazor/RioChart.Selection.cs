@@ -23,7 +23,7 @@ public partial class RioChart<TItem>
     /// from code (<see cref="SelectedItems"/>, <see cref="SelectedRange"/>, <see cref="SelectItemsAsync"/>)
     /// show either way. Points need items (not columnar data). Drawn on vertical cartesian charts.
     /// </summary>
-    [Parameter] public SelectionMode Selection { get; set; }
+    [Parameter] public ChartSelectionMode Selection { get; set; }
 
     /// <summary>The selected items. Two-way bindable with <c>@bind-SelectedItems</c>.</summary>
     [Parameter] public IReadOnlyCollection<TItem>? SelectedItems { get; set; }
@@ -315,7 +315,7 @@ public partial class RioChart<TItem>
     /// <summary>A click on a point with Selection="Points": select it, or add/remove it (additive: Ctrl/Cmd/Shift).</summary>
     private Task SelectPointAsync(IReadOnlyList<TItem> items, bool additive)
     {
-        if (Selection != SelectionMode.Points || items.Count == 0)
+        if (Selection != ChartSelectionMode.Points || items.Count == 0)
         {
             return Task.CompletedTask;
         }
@@ -343,7 +343,7 @@ public partial class RioChart<TItem>
     internal Task OnRangeSelected(double min, double max)
     {
         (min, max) = (FromScaleUnits(min), FromScaleUnits(max));
-        if (Selection != SelectionMode.Range || !double.IsFinite(min) || !double.IsFinite(max) || max <= min)
+        if (Selection != ChartSelectionMode.Range || !double.IsFinite(min) || !double.IsFinite(max) || max <= min)
         {
             return Task.CompletedTask;
         }
@@ -352,5 +352,5 @@ public partial class RioChart<TItem>
     }
 
     /// <summary>Called by JS on a click on an empty part of the plot (or a range click without a drag).</summary>
-    internal Task OnSelectionCleared() => Selection == SelectionMode.None ? Task.CompletedTask : ClearSelectionAsync();
+    internal Task OnSelectionCleared() => Selection == ChartSelectionMode.None ? Task.CompletedTask : ClearSelectionAsync();
 }

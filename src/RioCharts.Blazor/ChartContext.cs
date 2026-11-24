@@ -130,7 +130,7 @@ public enum SeriesLayer
 }
 
 /// <summary>What the user can select on a chart with the pointer or keyboard.</summary>
-public enum SelectionMode
+public enum ChartSelectionMode
 {
     /// <summary>Nothing (default). Selections set from code still show.</summary>
     None,

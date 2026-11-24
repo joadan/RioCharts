@@ -5,6 +5,8 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- **Breaking:** the selection enum `SelectionMode` is now `ChartSelectionMode` (`Selection="ChartSelectionMode.Points"`),
+  since MudBlazor has a `SelectionMode` too and apps importing both namespaces failed to compile (CS0104).
 - **Breaking:** the scene and layout engine are internal, the first step of the 1.0 plan (`docs/v1.md`): the
   `RioCharts.Core.Scene` and `RioCharts.Core.Layout` types (`ChartLayout`, `ChartLayoutResult`, `LayoutOptions`,
   `Scene`, nodes, styles, hit-test and tooltip models), `LineGenerator`, the text measurers, and in RioCharts.Skia

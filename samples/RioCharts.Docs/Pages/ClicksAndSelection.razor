@@ -73,13 +73,13 @@
 <Example Title="Selecting a range" Code="@RangeCode">
     <Description>
         <p>
-            <code>Selection="SelectionMode.Range"</code>: drag across the plot to select a range, click to clear it. Bind
+            <code>Selection="ChartSelectionMode.Range"</code>: drag across the plot to select a range, click to clear it. Bind
             <code>@@bind-SelectedRange</code> and <code>@@bind-SelectedItems</code>, or handle <code>OnSelectionChanged</code>.
             A range selects the items of the visible series inside it.
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Reading" Height="200" YAxis="Sessions" Selection="SelectionMode.Range"
+        <RioChart TItem="Reading" Height="200" YAxis="Sessions" Selection="ChartSelectionMode.Range"
                   @bind-SelectedRange="_selectedRange" @bind-SelectedItems="_selectedReadings">
             <LineSeries Items="WebSessions" Name="Web" XValue="r => r.Time" YValue="r => r.Value" Curve="CurveType.Monotone" />
         </RioChart>
@@ -100,12 +100,12 @@
 <Example Title="Selecting points" Code="@PointsCode">
     <Description>
         <p>
-            <code>Selection="SelectionMode.Points"</code>: click a point or bar to select it, Ctrl/⌘ or Shift+click to add or remove one,
+            <code>Selection="ChartSelectionMode.Points"</code>: click a point or bar to select it, Ctrl/⌘ or Shift+click to add or remove one,
             click beside the points to clear. <code>@@bind-SelectedItems</code> gets the items behind the selected points.
         </p>
     </Description>
     <ChildContent>
-        <RioChart TItem="Ticket" Items="Tickets" Height="200" YAxis="Minutes" Selection="SelectionMode.Points" @bind-SelectedItems="_selectedTickets">
+        <RioChart TItem="Ticket" Items="Tickets" Height="200" YAxis="Minutes" Selection="ChartSelectionMode.Points" @bind-SelectedItems="_selectedTickets">
             <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>
         <p class="note">
@@ -131,10 +131,10 @@
     </Description>
     <ChildContent>
         <div class="row">
-            <RioChart TItem="Ticket" Items="Tickets" Height="200" YAxis="Minutes" Horizontal="true" Selection="SelectionMode.Points" @bind-SelectedItems="_sharedTickets">
+            <RioChart TItem="Ticket" Items="Tickets" Height="200" YAxis="Minutes" Horizontal="true" Selection="ChartSelectionMode.Points" @bind-SelectedItems="_sharedTickets">
                 <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
             </RioChart>
-            <RioChart TItem="Ticket" Items="Tickets" Height="200" Selection="SelectionMode.Points" @bind-SelectedItems="_sharedTickets">
+            <RioChart TItem="Ticket" Items="Tickets" Height="200" Selection="ChartSelectionMode.Points" @bind-SelectedItems="_sharedTickets">
                 <DonutSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
             </RioChart>
         </div>
@@ -162,10 +162,10 @@
     private IReadOnlyCollection<Ticket> _sharedTickets = [];
 
     private const string AnyChartCode = """
-        <RioChart TItem="Ticket" Items="tickets" Horizontal="true" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+        <RioChart TItem="Ticket" Items="tickets" Horizontal="true" Selection="ChartSelectionMode.Points" @bind-SelectedItems="selected">
             <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>
-        <RioChart TItem="Ticket" Items="tickets" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+        <RioChart TItem="Ticket" Items="tickets" Selection="ChartSelectionMode.Points" @bind-SelectedItems="selected">
             <DonutSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>
         """;
@@ -237,7 +237,7 @@
         """;
 
     private const string RangeCode = """
-        <RioChart TItem="Reading" Selection="SelectionMode.Range" @bind-SelectedRange="range" @bind-SelectedItems="readings">
+        <RioChart TItem="Reading" Selection="ChartSelectionMode.Range" @bind-SelectedRange="range" @bind-SelectedItems="readings">
             <LineSeries Items="web" Name="Web" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>
 
@@ -245,7 +245,7 @@
         """;
 
     private const string PointsCode = """
-        <RioChart TItem="Ticket" Items="tickets" Selection="SelectionMode.Points" @bind-SelectedItems="selected">
+        <RioChart TItem="Ticket" Items="tickets" Selection="ChartSelectionMode.Points" @bind-SelectedItems="selected">
             <BarSeries Name="Handling time" XValue="t => t.Topic" YValue="t => t.Minutes" Aggregate="Aggregate.Sum" />
         </RioChart>
 

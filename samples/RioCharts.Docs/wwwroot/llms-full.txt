@@ -331,7 +331,7 @@ A chart. Series are added as child components: `<RioChart Items="readings"><Line
 - `Class`: `string?` — Extra CSS class on the container.
 - `Definition`: `ChartDefinition?` — A chart definition (e.g. from JSON or an AI agent) instead of child components: series read their x and y fields from `RioChart.Datasets` or the definition's inline data. Layout options such as Height, Culture and HiddenSeries still come from the component.
 - `Datasets`: `IReadOnlyDictionary<string, ChartDataset>?` — Datasets that a `RioChart.Definition` refers to, by name.
-- `Selection`: `SelectionMode` — What the user can select: points (click) or an x range (drag). Default none. Selections from code (`RioChart.SelectedItems`, `RioChart.SelectedRange`, `RioChart.SelectItemsAsync`) show either way. Points need items (not columnar data). Drawn on vertical cartesian charts.
+- `Selection`: `ChartSelectionMode` — What the user can select: points (click) or an x range (drag). Default none. Selections from code (`RioChart.SelectedItems`, `RioChart.SelectedRange`, `RioChart.SelectItemsAsync`) show either way. Points need items (not columnar data). Drawn on vertical cartesian charts.
 - `SelectedItems`: `IReadOnlyCollection<TItem>?` — The selected items. Two-way bindable with `@bind-SelectedItems`.
 - `SelectedRange`: `ChartRange?` — The selected x range (null: none). Two-way bindable with `@bind-SelectedRange`.
 - `OnLegendClicking`: `EventCallback<LegendClickingEventArgs>` — Raised before a legend click shows or hides a series; set `Cancel` to keep it as it is. `RioChart.OnLegendClick` follows only when the series was toggled.
@@ -917,7 +917,7 @@ Tabular data that chart definitions refer to by name and fields, so a definition
 - `static ChartDataset FromJson(string name, JsonElement array, string? description = null)` — Builds a dataset from a JSON array of objects.
 - `static ChartDataset FromCsv(string name, string csv, string? description = null, IReadOnlyDictionary<string, string>? fieldDescriptions = null)` — Builds a dataset from CSV text with a header row. The delimiter (comma, semicolon or tab) is detected from the header. Quoted cells may hold delimiters, quotes ("") and line breaks. Numbers use a decimal point; with a semicolon or tab delimiter a decimal comma also works (as Excel writes in many locales). ISO 8601 cells become times, empty cells are gaps.
 
-#### `SelectionMode` (enum, RioCharts.Blazor)
+#### `ChartSelectionMode` (enum, RioCharts.Blazor)
 
 What the user can select on a chart with the pointer or keyboard.
 
