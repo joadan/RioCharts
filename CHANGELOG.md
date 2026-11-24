@@ -20,6 +20,10 @@ changes are called out under **Breaking**.
   block; longer data is one block per year. Clicking a day selects its items. New texts: `ChartTexts.CalendarChart`
   and `CalendarDays` in all built-in languages. Docs: a Calendar heatmap page and a gallery card.
   **Breaking (JSON):** `"type": "calendar"` used to mean a plain heatmap; it is now the calendar heatmap.
+- Docs: the site now shows the latest package on NuGet in its header badge, and says in the footer when it runs a
+  newer build from master (Nerdbank.GitVersioning numbers every master build, so the site said 0.5.21-preview while
+  NuGet had 0.5.2-preview); the docs project records the newest release tag at build time. Also documented: times and
+  numbers on x are sorted by the chart (no need to sort `Items`), and what a click on a line hits (within 16 px of a point).
 - Axis colors: `AxisOptions.Color` (`"color"`) colors the tick labels and title of a y axis, and `SeriesColor = true`
   (`"seriesColor"`) takes the color of the first visible series on the axis, so with one axis per series each axis
   matches its line.

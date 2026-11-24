@@ -38,7 +38,8 @@
 <Example Title="Irregular time series" Code="@IrregularCode">
     <Description>
         <p>
-            Points are placed at their real times, so series do not need a fixed interval or the same timestamps. Here the stock of a product
+            Points are placed at their real times, so series do not need a fixed interval or the same timestamps, and the items need not be
+            sorted: the chart sorts numbers and times by x itself (clicks and tooltips still give the right item). Here the stock of a product
             is logged only when it has moved by 3 items, or after an hour without a reading (@StockOnChange.Count readings: many while it
             sells fast and when a delivery comes in, few at night), and the reorder level is a step line that changes at irregular times.
             Hover a stock reading: the tooltip also lists the reorder level in effect at that moment, marked on the step line at the point

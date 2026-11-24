@@ -32,7 +32,10 @@ public abstract class SeriesBase<TItem> : ComponentBase, ISeriesSource, IDisposa
     /// <summary>Items to plot. Defaults to the chart's Items.</summary>
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
 
-    /// <summary>X value: a number, DateTime, DateTimeOffset, DateOnly or string (category).</summary>
+    /// <summary>
+    /// X value: a number, DateTime, DateTimeOffset, DateOnly or string (category). Numbers and times are sorted by x, so the
+    /// items can come in any order (clicks and tooltips still give the right item); categories keep the order of the items.
+    /// </summary>
     [Parameter] public Func<TItem, object?>? XValue { get; set; }
 
     /// <summary>Y value; null leaves a gap.</summary>

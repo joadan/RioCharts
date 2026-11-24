@@ -21,4 +21,31 @@
     <ProjectReference Include="..\..\src\RioCharts.Blazor\RioCharts.Blazor.csproj" />
   </ItemGroup>
 
+  <!--
+    The site is built from master, usually ahead of the latest package on NuGet (Nerdbank.GitVersioning counts every
+    commit, so master says 0.5.21-preview while NuGet has 0.5.2-preview). Record the latest release tag and how far
+    the build is past it, so the site can say which package to install. Without git or tags, nothing is recorded.
+  -->
+  <Target Name="RecordLatestRelease" BeforeTargets="GetAssemblyAttributes">
+    <Exec Command="git describe --tags --abbrev=0 --match &quot;[0-9]*&quot;" ConsoleToMsBuild="true" IgnoreExitCode="true"
+          StandardOutputImportance="low" StandardErrorImportance="low" ContinueOnError="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="RioLatestRelease" />
+      <Output TaskParameter="ExitCode" PropertyName="RioDescribeExit" />
+    </Exec>
+    <Exec Command="git rev-list --count $(RioLatestRelease)..HEAD" Condition="'$(RioDescribeExit)' == '0'" ConsoleToMsBuild="true"
+          IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low" ContinueOnError="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="RioCommitsSinceRelease" />
+    </Exec>
+    <ItemGroup Condition="'$(RioDescribeExit)' == '0'">
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>LatestRelease</_Parameter1>
+        <_Parameter2>$(RioLatestRelease)</_Parameter2>
+      </AssemblyAttribute>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>CommitsSinceRelease</_Parameter1>
+        <_Parameter2>$(RioCommitsSinceRelease)</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
+
 </Project>

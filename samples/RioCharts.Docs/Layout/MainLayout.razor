@@ -16,7 +16,7 @@
             <span>Rio<b>Charts</b></span>
         </a>
         <a class="badge" href="https://github.com/joadan/RioCharts/blob/master/CHANGELOG.md" target="_blank" rel="noopener"
-           title="@(LibraryVersion.Commit is { } commit ? $"RioCharts {LibraryVersion.Version}, commit {commit}. What's new" : "What's new")">@(LibraryVersion.Version is { Length: > 0 } version ? $"v{version}" : "preview")</a>
+           title="@BadgeTitle">@(LibraryVersion.PackageVersion is { Length: > 0 } version ? $"v{version}" : "preview")</a>
         <span class="spacer"></span>
         <nav class="header-nav">
             <a href="getting-started">Docs</a>
@@ -95,6 +95,12 @@
 </div>
 
 @code {
+    // The badge shows the package to install; the site itself may run a newer build from master.
+    private static string BadgeTitle =>
+        LibraryVersion.Unreleased
+            ? $"Latest package: RioCharts {LibraryVersion.LatestRelease}. This site runs a newer build from master ({LibraryVersion.Version}, commit {LibraryVersion.Commit}). What's new"
+            : LibraryVersion.Commit is { } commit ? $"RioCharts {LibraryVersion.Version}, commit {commit}. What's new" : "What's new";
+
     private bool _dark;
     private bool _menuOpen;
     private int _index;
