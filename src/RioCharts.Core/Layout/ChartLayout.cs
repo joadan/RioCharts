@@ -1179,7 +1179,7 @@ public static partial class ChartLayout
                 }
             }
 
-            var descending = by.Spec.Sort == SortOrder.Descending;
+            var descending = by.Spec.Sort == ChartSort.Descending;
             result = [.. result
                 .Select((c, i) => (c, i, Has: values.TryGetValue(c, out var v), V: v))
                 .OrderBy(t => t.Has ? 0 : 1)

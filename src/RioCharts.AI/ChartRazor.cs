@@ -377,7 +377,7 @@ public static class ChartRazor
 
             if (sortParameter)
             {
-                sb.Append($" Sort=\"SortOrder.{s.Sort}\"");
+                sb.Append($" Sort=\"ChartSort.{s.Sort}\"");
             }
 
             if (s.Type == SeriesType.Pie && s.InnerRadius is { } inner && inner is not 0 and not 0.6)

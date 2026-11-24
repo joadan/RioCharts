@@ -16,7 +16,7 @@
     public void Counted_categories_are_ordered_by_their_count()
     {
         var cut = Render<RioChart<Issue>>(@<RioChart TItem="Issue" Items="Issues">
-            <BarSeries Name="Issues" XValue="i => i.Country" Aggregate="Aggregate.Count" Sort="SortOrder.Descending" />
+            <BarSeries Name="Issues" XValue="i => i.Country" Aggregate="Aggregate.Count" Sort="ChartSort.Descending" />
         </RioChart>);
 
         Assert.Equal(["Spain", "France", "Sweden"], Categories(cut));

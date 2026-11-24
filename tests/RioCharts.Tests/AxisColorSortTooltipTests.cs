@@ -63,9 +63,9 @@ public class AxisColorSortTooltipTests
         All(r.Scene.Static).OfType<GroupNode>().Single(g => g.Class == "rio-axis-x").Children.OfType<TextNode>().Select(t => t.Text).ToList();
 
     [Theory]
-    [InlineData(SortOrder.Descending, new[] { "Spain", "France", "Sweden" })]
-    [InlineData(SortOrder.Ascending, new[] { "Sweden", "France", "Spain" })]
-    public void Sort_orders_the_categories_by_the_series_values(SortOrder order, string[] expected)
+    [InlineData(ChartSort.Descending, new[] { "Spain", "France", "Sweden" })]
+    [InlineData(ChartSort.Ascending, new[] { "Sweden", "France", "Spain" })]
+    public void Sort_orders_the_categories_by_the_series_values(ChartSort order, string[] expected)
     {
         var spec = new ChartDefinition
         {
@@ -88,7 +88,7 @@ public class AxisColorSortTooltipTests
     {
         var spec = new ChartDefinition
         {
-            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar, Sort = SortOrder.Descending }, new SeriesOptions { Id = "b", Type = SeriesType.Bar }],
+            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar, Sort = ChartSort.Descending }, new SeriesOptions { Id = "b", Type = SeriesType.Bar }],
         };
         var data = new Dictionary<string, SeriesData>
         {
@@ -105,7 +105,7 @@ public class AxisColorSortTooltipTests
         var spec = new ChartDefinition
         {
             Horizontal = true,
-            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar, Sort = SortOrder.Descending }],
+            Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar, Sort = ChartSort.Descending }],
         };
         var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(["Small", "Large", "Medium"], [1.0, 9, 5]) };
 
@@ -154,7 +154,7 @@ public class AxisColorSortTooltipTests
         Assert.Contains("XAxis=\"@(new AxisOptions { TooltipFormat = \"HH:mm\" })\"", razor, StringComparison.Ordinal);
         Assert.Contains("SeriesColor = true", razor, StringComparison.Ordinal);
         Assert.Contains("Color = \"#d9480f\"", razor, StringComparison.Ordinal);
-        Assert.Contains("Sort=\"SortOrder.Descending\"", razor, StringComparison.Ordinal);
+        Assert.Contains("Sort=\"ChartSort.Descending\"", razor, StringComparison.Ordinal);
         Assert.DoesNotContain("sorted descending", razor, StringComparison.Ordinal);
     }
 }
