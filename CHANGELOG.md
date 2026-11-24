@@ -11,6 +11,8 @@ changes are called out under **Breaking**.
 - `AxisOptions.TickBase` (`"tickBase"` in JSON): tick steps in units of a power of this base, e.g. 1024 for bytes, so
   with a 1024-based `LabelFormatter` the ticks read 20 MB, 40 MB instead of 47.7 MB, 95.4 MB. Docs: the bytes example
   on the Axes page now uses it.
+- Docs site: a visit is one Clarity session again. Clarity runs without cookies, and it restarted (as a new visitor)
+  on every page change; it now records the whole visit and tags each page opened (`page`).
 
 ## 0.7.6-preview (2026-11-24)
 
