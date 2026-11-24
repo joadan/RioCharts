@@ -884,6 +884,7 @@ How a map draws the round world flat.
 
 The chart model. Plain, serializable data: Razor components and (later) JSON definitions both compile to this. Data is not part of the definition; it is passed separately by series id.
 
+- `Version`: `int?` — The format version of the definition (`ChartDefinitionJson.FormatVersion`). Optional: missing means 1. Saving writes the current version; every RioCharts 1.x reads version 1 definitions.
 - `Title`: `string?` — Optional chart title.
 - `Compact`: `bool` — Compact chart (sparkline): no axes, grid, legend or title; the series fill the box and the y range fits the data tightly (bars keep zero). For small charts in tables and tiles.
 - `AutoCompact`: `bool` = `true` — Default true: as the chart gets small, leave out axis titles, then the legend, title and axis labels; very small charts become compact. False keeps everything at any size.

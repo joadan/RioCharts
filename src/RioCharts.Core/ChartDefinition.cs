@@ -9,6 +9,13 @@ namespace RioCharts.Core;
 /// </summary>
 public sealed record ChartDefinition
 {
+    /// <summary>
+    /// The format version of the definition (<see cref="Definitions.ChartDefinitionJson.FormatVersion"/>). Optional:
+    /// missing means 1. Saving writes the current version; every RioCharts 1.x reads version 1 definitions.
+    /// </summary>
+    [Description("Format version of this definition. Optional; leave it out or use 1.")]
+    public int? Version { get; init; }
+
     /// <summary>Optional chart title.</summary>
     [Description("Optional chart title.")]
     public string? Title { get; init; }

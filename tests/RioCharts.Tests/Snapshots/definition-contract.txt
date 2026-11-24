@@ -1,0 +1,393 @@
+# The JSON definition format, version 1: what every RioCharts 1.x reads. Lines may be added, never removed.
+# Written by DefinitionContractTests; see docs/definition-format.md.
+field annotations
+field annotations[].axis
+field annotations[].color
+field annotations[].draggable
+field annotations[].expandsDomain
+field annotations[].from
+field annotations[].id
+field annotations[].label
+field annotations[].labelPosition
+field annotations[].layer
+field annotations[].offsetX
+field annotations[].offsetY
+field annotations[].to
+field annotations[].type
+field annotations[].value
+field annotations[].x
+field annotations[].y
+field annotations[].yAxisId
+field autoCompact
+field compact
+field data
+field dataset
+field horizontal
+field legend
+field legend.mode
+field legend.position
+field legend.sizes
+field projection
+field series
+field series[].aggregate
+field series[].belowColor
+field series[].binCount
+field series[].binWidth
+field series[].color
+field series[].colorBands
+field series[].colorBands[].above
+field series[].colorBands[].below
+field series[].colorBands[].color
+field series[].colorBands[].label
+field series[].colorField
+field series[].curve
+field series[].dataLabels
+field series[].dataset
+field series[].directionColors
+field series[].end
+field series[].endAngle
+field series[].error
+field series[].errorField
+field series[].errorHigh
+field series[].errorLow
+field series[].filter
+field series[].filter[].field
+field series[].filter[].op
+field series[].filter[].value
+field series[].format
+field series[].from
+field series[].groupBy
+field series[].groupByCountry
+field series[].groupSmallSlices
+field series[].high
+field series[].highlight
+field series[].id
+field series[].innerRadius
+field series[].latitude
+field series[].limit
+field series[].longitude
+field series[].low
+field series[].markerSize
+field series[].max
+field series[].maxBarWidth
+field series[].midpoint
+field series[].min
+field series[].name
+field series[].open
+field series[].path
+field series[].pathSeparator
+field series[].q1
+field series[].q3
+field series[].row
+field series[].size
+field series[].sizeFormat
+field series[].sizeName
+field series[].sort
+field series[].stack
+field series[].start
+field series[].startAngle
+field series[].strokeWidth
+field series[].target
+field series[].targetField
+field series[].timeBucket
+field series[].total
+field series[].trendLine
+field series[].type
+field series[].visibleLevels
+field series[].x
+field series[].y
+field series[].yAxisId
+field series[].zIndex
+field timeZone
+field title
+field tooltip
+field tooltip.enabled
+field tooltip.shared
+field unspecifiedTimes
+field version
+field x
+field x.color
+field x.format
+field x.gridLines
+field x.id
+field x.labelRotation
+field x.max
+field x.min
+field x.position
+field x.scale
+field x.seriesColor
+field x.stacking
+field x.tickBase
+field x.title
+field x.tooltipFormat
+field y
+field y.color
+field y.format
+field y.gridLines
+field y.id
+field y.labelRotation
+field y.max
+field y.min
+field y.position
+field y.scale
+field y.seriesColor
+field y.stacking
+field y.tickBase
+field y.title
+field y.tooltipFormat
+field yAxes
+field yAxes[].color
+field yAxes[].format
+field yAxes[].gridLines
+field yAxes[].id
+field yAxes[].labelRotation
+field yAxes[].max
+field yAxes[].min
+field yAxes[].position
+field yAxes[].scale
+field yAxes[].seriesColor
+field yAxes[].stacking
+field yAxes[].tickBase
+field yAxes[].title
+field yAxes[].tooltipFormat
+seriesType 100stackedarea -> area
+seriesType 100stackedbar -> bar
+seriesType 100stackedcolumn -> bar
+seriesType area -> area
+seriesType areachart -> area
+seriesType auto -> auto
+seriesType band -> rangeArea
+seriesType bar -> bar
+seriesType barbell -> dumbbell
+seriesType barchart -> bar
+seriesType barh -> bar
+seriesType bars -> bar
+seriesType box -> boxPlot
+seriesType boxandwhisker -> boxPlot
+seriesType boxplot -> boxPlot
+seriesType bridge -> waterfall
+seriesType bubble -> scatter
+seriesType bubblechart -> scatter
+seriesType bubblemap -> mapBubble
+seriesType bubbles -> scatter
+seriesType bullet -> bullet
+seriesType bulletbar -> bullet
+seriesType bulletchart -> bullet
+seriesType bulletgraph -> bullet
+seriesType calendar -> calendar
+seriesType calendarchart -> calendar
+seriesType calendarheatmap -> calendar
+seriesType candle -> candlestick
+seriesType candles -> candlestick
+seriesType candlestick -> candlestick
+seriesType cascade -> waterfall
+seriesType choropleth -> map
+seriesType choroplethmap -> map
+seriesType column -> bar
+seriesType columnchart -> bar
+seriesType columns -> bar
+seriesType connecteddot -> dumbbell
+seriesType connecteddotplot -> dumbbell
+seriesType contributiongraph -> calendar
+seriesType contributions -> calendar
+seriesType conversionfunnel -> funnel
+seriesType dial -> gauge
+seriesType distribution -> histogram
+seriesType donut -> pie
+seriesType dotplot -> dumbbell
+seriesType dots -> scatter
+seriesType doughnut -> pie
+seriesType dumbbell -> dumbbell
+seriesType dumbbellchart -> dumbbell
+seriesType dumbbelldot -> dumbbell
+seriesType filledmap -> map
+seriesType funnel -> funnel
+seriesType funnelchart -> funnel
+seriesType gantt -> rangeBar
+seriesType ganttchart -> rangeBar
+seriesType gauge -> gauge
+seriesType gaugechart -> gauge
+seriesType geobubble -> mapBubble
+seriesType geomap -> map
+seriesType hbar -> bar
+seriesType heat -> heatmap
+seriesType heatmap -> heatmap
+seriesType hist -> histogram
+seriesType histogram -> histogram
+seriesType horizontalbar -> bar
+seriesType horizontalbarchart -> bar
+seriesType horizontalbars -> bar
+seriesType kpigauge -> gauge
+seriesType line -> line
+seriesType linechart -> line
+seriesType map -> map
+seriesType mapbubble -> mapBubble
+seriesType matrix -> heatmap
+seriesType meter -> gauge
+seriesType minmax -> rangeArea
+seriesType ohlc -> candlestick
+seriesType percentarea -> area
+seriesType percentbar -> bar
+seriesType percentstackedarea -> area
+seriesType percentstackedbar -> bar
+seriesType percentstackedcolumn -> bar
+seriesType pie -> pie
+seriesType piechart -> pie
+seriesType pipeline -> funnel
+seriesType point -> scatter
+seriesType pointmap -> mapBubble
+seriesType points -> scatter
+seriesType radar -> radar
+seriesType radarchart -> radar
+seriesType radial -> radialBar
+seriesType radialbar -> radialBar
+seriesType range -> rangeArea
+seriesType rangearea -> rangeArea
+seriesType rangeband -> rangeArea
+seriesType rangebar -> rangeBar
+seriesType ring -> pie
+seriesType salesfunnel -> funnel
+seriesType scatter -> scatter
+seriesType scatterchart -> scatter
+seriesType scatterplot -> scatter
+seriesType schedule -> rangeBar
+seriesType smooth -> line
+seriesType smoothline -> line
+seriesType speedometer -> gauge
+seriesType spider -> radar
+seriesType spiderweb -> radar
+seriesType spline -> line
+seriesType stackedarea -> area
+seriesType stackedarea100 -> area
+seriesType stackedbar -> bar
+seriesType stackedbar100 -> bar
+seriesType stackedcolumn -> bar
+seriesType stackedcolumn100 -> bar
+seriesType statetimeline -> rangeBar
+seriesType stepline -> line
+seriesType stock -> candlestick
+seriesType symbolmap -> mapBubble
+seriesType timeline -> rangeBar
+seriesType timeseries -> line
+seriesType tree -> treemap
+seriesType treemap -> treemap
+seriesType treemapchart -> treemap
+seriesType waterfall -> waterfall
+seriesType web -> radar
+seriesType whisker -> boxPlot
+seriesType worldmap -> map
+seriesType xy -> scatter
+word annotations.axis x
+word annotations.axis y
+word annotations.labelPosition end
+word annotations.labelPosition middle
+word annotations.labelPosition start
+word annotations.layer above
+word annotations.layer below
+word annotations.type band
+word annotations.type callout
+word annotations.type line
+word annotations.type point
+word axis.position auto
+word axis.position left
+word axis.position right
+word axis.scale auto
+word axis.scale band
+word axis.scale linear
+word axis.scale log
+word axis.scale time
+word axis.stacking 100 -> percent
+word axis.stacking absolute -> normal
+word axis.stacking expand -> percent
+word axis.stacking normal -> normal
+word axis.stacking normalize -> percent
+word axis.stacking normalized -> percent
+word axis.stacking percent -> percent
+word axis.stacking percentage -> percent
+word axis.stacking relative -> percent
+word axis.stacking stacked -> normal
+word legend.mode auto
+word legend.mode hide
+word legend.mode show
+word legend.position bottom
+word legend.position right
+word legend.position top
+word projection default -> equalEarth
+word projection epsg3857 -> mercator
+word projection equalarea -> equalEarth
+word projection equalearth -> equalEarth
+word projection mercator -> mercator
+word projection web -> mercator
+word projection webmercator -> mercator
+word series.aggregate average -> average
+word series.aggregate avg -> average
+word series.aggregate count -> count
+word series.aggregate last -> last
+word series.aggregate latest -> last
+word series.aggregate max -> max
+word series.aggregate maximum -> max
+word series.aggregate mean -> average
+word series.aggregate min -> min
+word series.aggregate minimum -> min
+word series.aggregate n -> count
+word series.aggregate sum -> sum
+word series.aggregate total -> sum
+word series.curve curved -> monotone
+word series.curve linear -> linear
+word series.curve monotone -> monotone
+word series.curve smooth -> monotone
+word series.curve spline -> monotone
+word series.curve step -> step
+word series.curve stepafter -> step
+word series.curve stepped -> step
+word series.curve steps -> step
+word series.curve straight -> linear
+word series.filter.op != -> ne
+word series.filter.op < -> lt
+word series.filter.op <= -> lte
+word series.filter.op <> -> ne
+word series.filter.op = -> eq
+word series.filter.op == -> eq
+word series.filter.op > -> gt
+word series.filter.op >= -> gte
+word series.filter.op contains -> contains
+word series.filter.op eq -> eq
+word series.filter.op equals -> eq
+word series.filter.op ge -> gte
+word series.filter.op gt -> gt
+word series.filter.op gte -> gte
+word series.filter.op le -> lte
+word series.filter.op like -> contains
+word series.filter.op lt -> lt
+word series.filter.op lte -> lte
+word series.filter.op ne -> ne
+word series.filter.op notequals -> ne
+word series.highlight all
+word series.highlight first
+word series.highlight last
+word series.highlight max
+word series.highlight min
+word series.highlight none
+word series.sort asc -> ascending
+word series.sort ascending -> ascending
+word series.sort desc -> descending
+word series.sort descending -> descending
+word series.timeBucket annual -> year
+word series.timeBucket auto -> auto
+word series.timeBucket automatic -> auto
+word series.timeBucket daily -> day
+word series.timeBucket date -> day
+word series.timeBucket day -> day
+word series.timeBucket hour -> hour
+word series.timeBucket hourly -> hour
+word series.timeBucket minute -> minute
+word series.timeBucket month -> month
+word series.timeBucket monthly -> month
+word series.timeBucket quarter -> quarter
+word series.timeBucket quarterly -> quarter
+word series.timeBucket week -> week
+word series.timeBucket weekly -> week
+word series.timeBucket year -> year
+word series.timeBucket yearly -> year
+word unspecifiedTimes displayZone
+word unspecifiedTimes utc

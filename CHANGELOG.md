@@ -5,6 +5,10 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- JSON definitions have a format version: `"version": 1` (`ChartDefinition.Version`, `ChartDefinitionJson.FormatVersion`).
+  It is optional (missing means 1); `ChartDefinitionJson.Serialize` now writes it. Every 1.x will read version 1
+  definitions: fields, chart type names and synonyms may be added, never removed. A newer or unreadable version is read
+  with a warning. Docs: "Saved definitions keep working" on the Definitions page.
 - **Breaking:** `MapBubbleSeries.Latitude` and `Longitude` are now `LatitudeValue` and `LongitudeValue`
   (`LatitudeValue="c => c.Latitude"`), like every other item function (`XValue`, `SizeValue`, ...). JSON definitions keep
   `latitude` and `longitude`.

@@ -85,8 +85,15 @@ public static class ChartDefinitionJson
 
     // ---------- Writing ----------
 
-    /// <summary>The definition as compact JSON (only what differs from the defaults).</summary>
-    public static string Serialize(ChartDefinition spec) => JsonSerializer.Serialize(spec, SpecInfo);
+    /// <summary>
+    /// The definition format this version of RioCharts writes and reads. Every 1.x release reads version 1
+    /// definitions: fields, chart type names and their synonyms may be added, never removed or changed in meaning.
+    /// </summary>
+    public const int FormatVersion = 1;
+
+    /// <summary>The definition as compact JSON (only what differs from the defaults), with its format <c>version</c>.</summary>
+    public static string Serialize(ChartDefinition spec) =>
+        JsonSerializer.Serialize(spec.Version is null ? spec with { Version = FormatVersion } : spec, SpecInfo);
 
     /// <summary>
     /// The definition types, created with their defaults. Source generation treats init-only properties
@@ -438,6 +445,8 @@ public static class ChartDefinitionJson
     /// <summary>Fixes the shape and vocabulary of a definition in place, collecting errors for what cannot be read.</summary>
     private static void Normalize(JsonObject root, List<DefinitionError> errors, List<string> warnings)
     {
+        Version(root, warnings);
+
         // A single series given flat ({ "type": "line", "x": ..., "y": ... }) or as an object.
         if (root["series"] is null && (root.ContainsKey("x") || root.ContainsKey("y")))
         {
@@ -591,6 +600,117 @@ public static class ChartDefinitionJson
                 CheckEnum<AnnotationLayer>(list[i], "layer", $"annotations[{i}].layer", errors);
             }
         }
+    }
+
+    /// <summary>
+    /// version: missing means 1. A whole number (also "1", 1.0 or "1.0"); anything else is left out with a warning, and a
+    /// newer version is read as this one (fields this version does not know are ignored, as always).
+    /// </summary>
+    private static void Version(JsonObject root, List<string> warnings)
+    {
+        if (!root.TryGetPropertyValue("version", out var node) || node is null)
+        {
+            return;
+        }
+
+        var number = node is JsonValue value
+            ? value.TryGetValue<double>(out var d) ? d
+            : value.TryGetValue<string>(out var text) && double.TryParse(text.Trim(), System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : double.NaN
+            : double.NaN;
+        if (number >= 1 && number == Math.Floor(number) && number <= int.MaxValue)
+        {
+            var version = (int)number;
+            root["version"] = version;
+            if (version > FormatVersion)
+            {
+                warnings.Add($"version: {version} is newer than this RioCharts reads ({FormatVersion}); read as version {FormatVersion}, unknown fields are ignored.");
+            }
+        }
+        else
+        {
+            root.Remove("version");
+            warnings.Add($"version: '{node.ToJsonString()}' is not a format version (a whole number, {FormatVersion} for this format); left out.");
+        }
+    }
+
+    /// <summary>
+    /// The 1.x contract of the JSON format, one line per promise: every field (as a path), every chart type name and
+    /// synonym, and every word an enum field reads. A test compares it with a committed list, so a removal is caught.
+    /// </summary>
+    internal static IEnumerable<string> ContractLines()
+    {
+        var lines = new SortedSet<string>(StringComparer.Ordinal);
+        void Fields(JsonNode? schema, string path, int depth)
+        {
+            if (schema is not JsonObject obj || depth > 6)
+            {
+                return;
+            }
+
+            if (obj["properties"] is JsonObject properties)
+            {
+                foreach (var (name, child) in properties)
+                {
+                    lines.Add($"field {path}{name}");
+                    Fields(child, $"{path}{name}.", depth + 1);
+                }
+            }
+
+            if (obj["items"] is { } items)
+            {
+                Fields(items, path.TrimEnd('.') + "[].", depth + 1);
+            }
+
+            if (obj["type"] is JsonArray || obj["anyOf"] is JsonArray)
+            {
+                foreach (var option in (obj["anyOf"] as JsonArray) ?? [])
+                {
+                    Fields(option, path, depth + 1);
+                }
+            }
+        }
+
+        Fields(Schema(), "", 0);
+        foreach (var (alias, target) in SeriesTypes)
+        {
+            lines.Add($"seriesType {alias} -> {target.Type}");
+        }
+
+        void Words(string field, Dictionary<string, string> words)
+        {
+            foreach (var (word, value) in words)
+            {
+                lines.Add($"word {field} {word} -> {value}");
+            }
+        }
+
+        Words("series.curve", Curves);
+        Words("series.aggregate", Aggregates);
+        Words("series.timeBucket", Buckets);
+        Words("series.sort", Sorts);
+        Words("series.filter.op", FilterOps);
+        Words("axis.stacking", Stackings);
+        Words("projection", Projections);
+        void Enum<TEnum>(string field) where TEnum : struct, System.Enum
+        {
+            foreach (var name in System.Enum.GetNames<TEnum>())
+            {
+                lines.Add($"word {field} {JsonNamingPolicy.CamelCase.ConvertName(name)}");
+            }
+        }
+
+        Enum<PointHighlight>("series.highlight");
+        Enum<ScaleType>("axis.scale");
+        Enum<AxisPosition>("axis.position");
+        Enum<LegendMode>("legend.mode");
+        Enum<LegendPosition>("legend.position");
+        Enum<UnspecifiedTimes>("unspecifiedTimes");
+        Enum<AnnotationType>("annotations.type");
+        Enum<AnnotationAxis>("annotations.axis");
+        Enum<LabelPosition>("annotations.labelPosition");
+        Enum<AnnotationLayer>("annotations.layer");
+        return lines;
     }
 
     /// <summary>Lower case without separators ("Stacked-Bar" → "stackedbar"); symbols such as "&gt;=" stay as they are.</summary>

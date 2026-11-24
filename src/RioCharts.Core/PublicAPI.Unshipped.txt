@@ -1,1 +1,4 @@
 #nullable enable
+const RioCharts.Core.Definitions.ChartDefinitionJson.FormatVersion = 1 -> int
+RioCharts.Core.ChartDefinition.Version.get -> int?
+RioCharts.Core.ChartDefinition.Version.init -> void
