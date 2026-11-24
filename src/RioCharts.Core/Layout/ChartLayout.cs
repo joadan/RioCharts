@@ -522,45 +522,74 @@ public static partial class ChartLayout
 
         // Compact: the series fill the box, inset just enough for strokes and highlight dots.
         var inset = CompactInset(drawable);
-        var plotTop = compact ? inset : y0 + legendTop + yTitleHeight + font / 2; // room for the top label, centered on its grid line
-        var plotBottom = compact ? height - inset : height - PadBottom - legendBottom - xTitleHeight - xLabelHeight;
-        var plotHeight = Math.Max(compact ? 2 : 10, plotBottom - plotTop);
-        plotBottom = plotTop + plotHeight;
-
-        // ---------- Y ticks (they decide the side margins) ----------
-        var yTarget = Math.Clamp((int)(plotHeight / 42), 2, 10);
         // The first visible axis owns the grid and the zero line; the others align to its ticks.
         var gridAxis = visibleAxes.FirstOrDefault() ?? primary;
-        if (compact)
+        var showYTitles = !compact && chrome.YTitles && hasData;
+        double plotTop, plotBottom, plotHeight, plotLeft, plotRight, plotWidth;
+        List<YAxisLayout> left, right;
+        PlotInsets neededInsets;
+        var labelRows = xKind == XKind.Category && hasData && !compact && chrome.XLabels;
+        double? xLabelAngle = null;
+
+        // Two passes at most: category labels that need more than one line of height (rotated, see PlanCategoryLabels)
+        // only know so once the plot width is known, and the taller label row then shortens the plot.
+        for (var pass = 0; ; pass++)
         {
-            foreach (var axis in axes)
+            plotTop = compact ? inset : y0 + legendTop + yTitleHeight + font / 2; // room for the top label, centered on its grid line
+            plotBottom = compact ? height - inset : height - PadBottom - legendBottom - xTitleHeight - xLabelHeight;
+            plotHeight = Math.Max(compact ? 2 : 10, plotBottom - plotTop);
+            plotBottom = plotTop + plotHeight;
+
+            // ---------- Y ticks (they decide the side margins) ----------
+            var yTarget = Math.Clamp((int)(plotHeight / 42), 2, 10);
+            if (compact)
             {
-                TightDomain(axis);
+                foreach (var axis in axes)
+                {
+                    TightDomain(axis);
+                }
             }
-        }
-        else
-        {
-            ComputeYTicks(gridAxis, yTarget, culture, measure, font, plotHeight);
-            foreach (var axis in axes.Where(a => a != gridAxis))
+            else
             {
-                ComputeYTicks(axis, yTarget, culture, measure, font, plotHeight, axis.Visible ? gridAxis : null);
+                ComputeYTicks(gridAxis, yTarget, culture, measure, font, plotHeight);
+                foreach (var axis in axes.Where(a => a != gridAxis))
+                {
+                    ComputeYTicks(axis, yTarget, culture, measure, font, plotHeight, axis.Visible ? gridAxis : null);
+                }
             }
+
+            left = compact || !chrome.YLabels ? [] : visibleAxes.Where(a => !a.Right).ToList();
+            right = compact || !chrome.YLabels ? [] : visibleAxes.Where(a => a.Right).ToList();
+            SizeAxisColumns(left, showYTitles, width * 0.2, measure, font);
+            SizeAxisColumns(right, showYTitles, width * 0.2, measure, font);
+            plotLeft = compact ? inset : PadLeft + ColumnsWidth(left);
+            plotRight = compact ? width - inset : width - PadRight - legendRight - ColumnsWidth(right);
+            neededInsets = new PlotInsets(plotLeft, width - plotRight);
+            if (!compact && options.MinInsets is { } min)
+            {
+                plotLeft = Math.Max(plotLeft, min.Left);
+                plotRight = Math.Min(plotRight, width - min.Right);
+            }
+
+            plotWidth = Math.Max(compact ? 2 : 10, plotRight - plotLeft);
+            plotRight = plotLeft + plotWidth;
+
+            if (!labelRows || pass > 0)
+            {
+                break;
+            }
+
+            var plan = PlanCategoryLabels(new BandScale(categories, plotLeft, plotLeft + plotWidth, hasBars ? 0.2 : 0, hasBars ? 0.1 : 0),
+                spec.X.LabelRotation, measure, font, lineHeight, height);
+            xLabelAngle = plan.Angle;
+            if (plan.Height <= xLabelHeight)
+            {
+                break;
+            }
+
+            xLabelHeight = plan.Height;
         }
 
-        var left = compact || !chrome.YLabels ? [] : visibleAxes.Where(a => !a.Right).ToList();
-        var right = compact || !chrome.YLabels ? [] : visibleAxes.Where(a => a.Right).ToList();
-        var plotLeft = compact ? inset : PadLeft + (left.Count > 0 ? LabelGap + left.Sum(a => a.LabelWidth) + (left.Count - 1) * AxisGap : 0);
-        var plotRight = compact ? width - inset
-            : width - PadRight - legendRight - (right.Count > 0 ? LabelGap + right.Sum(a => a.LabelWidth) + (right.Count - 1) * AxisGap : 0);
-        var neededInsets = new PlotInsets(plotLeft, width - plotRight);
-        if (!compact && options.MinInsets is { } min)
-        {
-            plotLeft = Math.Max(plotLeft, min.Left);
-            plotRight = Math.Min(plotRight, width - min.Right);
-        }
-
-        var plotWidth = Math.Max(compact ? 2 : 10, plotRight - plotLeft);
-        plotRight = plotLeft + plotWidth;
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)plotWidth, (float)plotHeight);
 
         PlaceAxisColumns(left, plotLeft - LabelGap, -1);
@@ -584,7 +613,7 @@ public static partial class ChartLayout
             xBand = new BandScale(categories, plotLeft, plotLeft + plotWidth, hasBars ? 0.2 : 0, hasBars ? 0.1 : 0);
             if (hasData && !compact)
             {
-                AddCategoryLabels(xBand, measure, font, plotBottom, xTickNodes);
+                AddCategoryLabels(PlanCategoryLabels(xBand, xLabelAngle ?? spec.X.LabelRotation, measure, font, lineHeight, height), xBand, plotBottom, xTickNodes);
             }
         }
         else
@@ -676,15 +705,17 @@ public static partial class ChartLayout
 
         var titleY = (float)(plotTop - font / 2 - yTitleHeight / 2 - 2);
         double topRowUsed = 0;
-        foreach (var axis in compact || !chrome.YTitles ? [] : hasData ? visibleAxes : [primary])
+        foreach (var axis in compact || !chrome.YTitles ? [] : hasData ? left.Concat(right) : [primary])
         {
-            if (!string.IsNullOrWhiteSpace(axis.Spec.Title))
+            // Without data the primary axis' title shows on its own; with data, the axes with labels show theirs.
+            var title = hasData ? axis.ShownTitle : axis.Spec.Title;
+            if (!string.IsNullOrWhiteSpace(title))
             {
                 var (tx, anchor) = !hasData ? (PadLeft, Anchor.Start)
-                    : axis.Right ? (axis.LabelX + axis.LabelWidth, Anchor.End)
-                    : (axis.LabelX - axis.LabelWidth, Anchor.Start);
-                statics.Add(new TextNode(axis.Spec.Title!, new PointF((float)tx, titleY), new TextStyle("axis-title"), anchor) { Class = "rio-axis-title" });
-                topRowUsed = Math.Max(topRowUsed, anchor == Anchor.End ? tx : tx + measure.Measure(axis.Spec.Title!, font));
+                    : axis.Right ? (axis.LabelX + axis.ColumnWidth, Anchor.End)
+                    : (axis.LabelX - axis.ColumnWidth, Anchor.Start);
+                statics.Add(new TextNode(title, new PointF((float)tx, titleY), new TextStyle("axis-title"), anchor) { Class = "rio-axis-title" });
+                topRowUsed = Math.Max(topRowUsed, anchor == Anchor.End ? tx : tx + measure.Measure(title, font));
             }
         }
 

@@ -67,7 +67,16 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
 - **Multiple Y axes.** `ChartDefinition.YAxes` adds axes (right side by default, outward when there are
   several). The first axis with visible series owns the grid and the zero line; the others choose
   a domain with the same number of nice steps, so their labels sit on its grid lines. An axis whose
-  series are all hidden is not shown. Zeros of different axes are not aligned.
+  series are all hidden is not shown. Zeros of different axes are not aligned. Titles sit in one row
+  above the label columns; the axis next to the plot keeps the width of its labels (its title may run
+  on over the plot), and outer axes get a column as wide as their title (capped at a fifth of the
+  chart width, shortened with "…") so titles on one side never overlap.
+- **Category labels.** Horizontal when every label fits its band; otherwise they slope down to the
+  left at 45 degrees (`AxisOptions.LabelRotation` sets the angle; 0 keeps the old horizontal labels
+  showing every n-th). Rotated labels end at their band's center, are shortened to a third of the
+  chart height and to stay inside its left edge, and thin out only when even they overlap. The plot
+  height depends on the label row, so the layout runs the vertical/horizontal sizing a second time
+  when rotation adds height. Heatmap columns always use horizontal labels.
 - **Log axes.** `ScaleType.Log` on a y axis. `ContinuousScale.Log` maps log10 of the value (the same
   class as linear and time axes, flagged `IsLog`, so `ChartLayoutResult.YScale` keeps its type);
   zero and below map to the bottom of the range, so bars and areas start there. The domain is the
