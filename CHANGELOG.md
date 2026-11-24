@@ -5,6 +5,9 @@ changes are called out under **Breaking**.
 
 ## Unreleased
 
+- **Breaking:** `MapBubbleSeries.Latitude` and `Longitude` are now `LatitudeValue` and `LongitudeValue`
+  (`LatitudeValue="c => c.Latitude"`), like every other item function (`XValue`, `SizeValue`, ...). JSON definitions keep
+  `latitude` and `longitude`.
 - **Breaking:** the selection enum `SelectionMode` is now `ChartSelectionMode` (`Selection="ChartSelectionMode.Points"`),
   since MudBlazor has a `SelectionMode` too and apps importing both namespaces failed to compile (CS0104).
 - **Breaking:** the scene and layout engine are internal, the first step of the 1.0 plan (`docs/v1.md`): the

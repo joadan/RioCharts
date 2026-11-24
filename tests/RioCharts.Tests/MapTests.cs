@@ -329,7 +329,7 @@ public class MapTests
 
         Assert.Contains("<MapSeries XValue=\"r => r.Country\"", razor, StringComparison.Ordinal);
         Assert.Contains("<MapBubbleSeries XValue=\"r => r.City\"", razor, StringComparison.Ordinal);
-        Assert.Contains(" Latitude=\"r => r.Lat\" Longitude=\"r => r.Lon\"", razor, StringComparison.Ordinal);
+        Assert.Contains(" LatitudeValue=\"r => r.Lat\" LongitudeValue=\"r => r.Lon\"", razor, StringComparison.Ordinal);
         Assert.Contains(" GroupByCountry=\"false\"", razor, StringComparison.Ordinal);
     }
 

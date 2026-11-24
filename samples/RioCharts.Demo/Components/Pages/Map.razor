@@ -17,7 +17,7 @@
             <p>Shown: @(_region ?? "the world")</p>
             <RioChart TItem="Place" Height="460" Title="Active sessions" @bind-TreemapPath="_region">
                 <MapSeries Items="_countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
-                <MapBubbleSeries Items="_cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions" Latitude="c => c.Latitude" Longitude="c => c.Longitude" Color="#d63939" />
+                <MapBubbleSeries Items="_cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions" LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" Color="#d63939" />
             </RioChart>
         </section>
 
@@ -26,7 +26,7 @@
             <p>Starts zoomed into Europe (TreemapPath = "Europe"). Shown: @(_europe ?? "the world")</p>
             <RioChart TItem="Place" Height="460" Title="Active sessions in Europe" @bind-TreemapPath="_europe">
                 <MapSeries Items="_countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
-                <MapBubbleSeries Items="_cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions" Latitude="c => c.Latitude" Longitude="c => c.Longitude" Color="#d63939" />
+                <MapBubbleSeries Items="_cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions" LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" Color="#d63939" />
             </RioChart>
         </section>
 
@@ -40,7 +40,7 @@
         <section>
             <h2>Bubbles only</h2>
             <RioChart TItem="Place" Height="300">
-                <MapBubbleSeries Items="_cities" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+                <MapBubbleSeries Items="_cities" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
             </RioChart>
         </section>
     </div>

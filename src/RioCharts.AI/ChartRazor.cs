@@ -313,7 +313,7 @@ public static class ChartRazor
             {
                 if (s.Latitude is { } latitudeField && s.Longitude is { } longitudeField)
                 {
-                    sb.Append($" Latitude=\"r => r.{Property(latitudeField)}\" Longitude=\"r => r.{Property(longitudeField)}\"");
+                    sb.Append($" LatitudeValue=\"r => r.{Property(latitudeField)}\" LongitudeValue=\"r => r.{Property(longitudeField)}\"");
                 }
 
                 if (s.MarkerSize is { } bubbleSize)

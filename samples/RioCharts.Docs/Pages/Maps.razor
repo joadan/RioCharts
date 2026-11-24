@@ -29,7 +29,7 @@
         <RioChart TItem="Place" Title="Active sessions" Height="420" @bind-TreemapPath="_region">
             <MapSeries Items="Countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
             <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -48,7 +48,7 @@
         <RioChart TItem="Place" Title="Active sessions in Europe" Height="420" @bind-TreemapPath="_europe">
             <MapSeries Items="Countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
             <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -63,7 +63,7 @@
     <ChildContent>
         <RioChart TItem="Place" Height="300" Legend="NoLegend">
             <MapBubbleSeries Items="Cities" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" MarkerSize="36" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" MarkerSize="36" />
         </RioChart>
     </ChildContent>
 </Example>
@@ -97,7 +97,7 @@
         <RioChart TItem="Place" Height="420" Projection="_projection">
             <MapSeries Items="Countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
             <MapBubbleSeries Items="Cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
         </RioChart>
         <p class="note">
             @foreach (var projection in Enum.GetValues<MapProjection>())
@@ -144,7 +144,7 @@
         <RioChart TItem="Place" Title="Active sessions" @bind-TreemapPath="region">
             <MapSeries Items="countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
             <MapBubbleSeries Items="cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
         </RioChart>
 
         @code {
@@ -157,7 +157,7 @@
         <RioChart TItem="Place" Title="Active sessions in Europe" @bind-TreemapPath="region">
             <MapSeries Items="countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
             <MapBubbleSeries Items="cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
         </RioChart>
 
         @code {
@@ -184,14 +184,14 @@
         <RioChart TItem="Place" Projection="MapProjection.Mercator">
             <MapSeries Items="countries" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions" />
             <MapBubbleSeries Items="cities" Name="Cities" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" />
         </RioChart>
         """;
 
     private const string BubblesCode = """
         <RioChart TItem="Place">
             <MapBubbleSeries Items="cities" Name="Sessions" XValue="c => c.Name" YValue="c => c.Sessions"
-                             Latitude="c => c.Latitude" Longitude="c => c.Longitude" MarkerSize="36" />
+                             LatitudeValue="c => c.Latitude" LongitudeValue="c => c.Longitude" MarkerSize="36" />
         </RioChart>
         """;
 }
