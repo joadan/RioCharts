@@ -25,7 +25,7 @@
 </Example>
 
 <Example Title="Two Y axes" Code="@TwoAxesCode">
-    <Description><p>Extra axes go on the right (or left, with <code>Position = AxisPosition.Left</code>); series pick one with <code>YAxisId</code>. Their ticks line up with the main grid. Several axes on one side sit side by side, each under its own title. Here sessions per hour on the left and the orders they turn into on the right.</p></Description>
+    <Description><p>Extra axes go on the right (or left, with <code>Position = AxisPosition.Left</code>); series pick one with <code>YAxisId</code>. Their ticks line up with the main grid. Several axes on one side sit side by side, each under its own title. <code>SeriesColor = true</code> colors the labels and title of an axis like its series, so it is clear which axis belongs to which line (or set <code>Color</code>). Here sessions per hour on the left and the orders they turn into on the right.</p></Description>
     <ChildContent>
         <RioChart TItem="Reading" YAxis="SessionsAxis" YAxes="_ordersAxis">
             <BarSeries Items="_hourlyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" Format="#,0 'orders'" />
@@ -102,7 +102,8 @@
         <p>
             By default times are shown exactly as given. With <code>TimeZone</code> (<code>"UTC"</code>, <code>"local"</code> for the visitor's zone, or an IANA id),
             times are plotted on instants and labelled in that zone, so a line runs straight through the repeated hour when summer time ends.
-            Tooltips show the offset when it differs from yours.
+            Tooltips show the offset when it differs from yours. <code>TooltipFormat</code> on the x axis sets the tooltip's time format
+            instead (e.g. <code>"d MMM HH:mm"</code>, without seconds), with no offset added; the axis labels keep theirs.
         </p>
     </Description>
     <ChildContent>
@@ -160,9 +161,9 @@
         </RioChart>
         """;
 
-    private static readonly AxisOptions SessionsAxis = new() { Title = "Sessions per hour" };
+    private static readonly AxisOptions SessionsAxis = new() { Title = "Sessions per hour", SeriesColor = true };
     private static readonly AxisOptions OrdersPerHour = new() { Title = "Orders per hour" };
-    private static readonly IReadOnlyList<AxisOptions> _ordersAxis = [new() { Id = "orders", Title = "Orders" }];
+    private static readonly IReadOnlyList<AxisOptions> _ordersAxis = [new() { Id = "orders", Title = "Orders", SeriesColor = true }];
     private static readonly AxisOptions _currency = new() { Title = "EUR", Format = "C0", Min = 0 };
     private static readonly System.Globalization.CultureInfo _german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
     private string? _zone = "Europe/Stockholm";
@@ -228,7 +229,8 @@
         """;
 
     private const string TwoAxesCode = """
-        <RioChart TItem="Reading" YAxis="@(new AxisOptions { Title = "Sessions per hour" })" YAxes="@([new AxisOptions { Id = "orders", Title = "Orders" }])">
+        <RioChart TItem="Reading" YAxis="@(new AxisOptions { Title = "Sessions per hour", SeriesColor = true })"
+                  YAxes="@([new AxisOptions { Id = "orders", Title = "Orders", SeriesColor = true }])">
             <BarSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" YAxisId="orders" />
             <LineSeries Items="sessions" Name="Sessions" XValue="r => r.Time" YValue="r => r.Value" />
         </RioChart>

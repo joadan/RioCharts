@@ -675,6 +675,14 @@ public static partial class ChartLayout
             });
         }
 
+        // An axis' labels and title in its Color, or its first visible series' color (SeriesColor); else the muted axis style.
+        TextStyle AxisTextStyle(YAxisLayout axis, string part)
+        {
+            var color = axis.Spec.Color ?? (axis.Spec.SeriesColor ? axis.Series.FirstOrDefault(r => r.Visible && !r.Empty)?.Color : null);
+            return color is null ? new TextStyle("axis-" + part)
+                : styles.Add($"axis-{axis.Id}-{part}", new TextStyleDef { FontSize = (float)options.FontSize, FontWeight = part == "title" ? 500 : 400, Fill = color });
+        }
+
         if (hasData && !compact)
         {
             foreach (var axis in chrome.YLabels ? visibleAxes : [])
@@ -682,7 +690,7 @@ public static partial class ChartLayout
                 var nodes = new List<Node>();
                 for (var i = 0; i < axis.Ticks.Count; i++)
                 {
-                    nodes.Add(new TextNode(axis.Labels[i], new PointF((float)axis.LabelX, (float)axis.Scale.Map(axis.Ticks[i])), new TextStyle("axis-label"),
+                    nodes.Add(new TextNode(axis.Labels[i], new PointF((float)axis.LabelX, (float)axis.Scale.Map(axis.Ticks[i])), AxisTextStyle(axis, "label"),
                         axis.Right ? Anchor.Start : Anchor.End));
                 }
 
@@ -714,7 +722,7 @@ public static partial class ChartLayout
                 var (tx, anchor) = !hasData ? (PadLeft, Anchor.Start)
                     : axis.Right ? (axis.LabelX + axis.ColumnWidth, Anchor.End)
                     : (axis.LabelX - axis.ColumnWidth, Anchor.Start);
-                statics.Add(new TextNode(title, new PointF((float)tx, titleY), new TextStyle("axis-title"), anchor) { Class = "rio-axis-title" });
+                statics.Add(new TextNode(title, new PointF((float)tx, titleY), AxisTextStyle(axis, "title"), anchor) { Class = "rio-axis-title" });
                 topRowUsed = Math.Max(topRowUsed, anchor == Anchor.End ? tx : tx + measure.Measure(title, font));
             }
         }
@@ -763,7 +771,8 @@ public static partial class ChartLayout
         var seriesNodes = new List<(int Order, int Index, Node Node)>();
         var selectedMarks = new List<Node>();
         var labelAnchors = new List<(Resolved Series, List<LabelAnchor> Anchors)>();
-        var formatX = TimeFormat(xKind, drawable.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.Format, time, options.ViewerTimeZone);
+        var formatX = TimeFormat(xKind, drawable.SelectMany(r => r.Data.X).Take(5000), culture, spec.X.TooltipFormat ?? spec.X.Format, time, options.ViewerTimeZone,
+            showOffset: spec.X.TooltipFormat is null);
         // Series with the same x values (common: several measurements per timestamp) share their
         // tooltip x labels by point index, so each date is formatted once, not once per series. Not
         // for large series: they are downsampled per series (few shared points), and the array would
@@ -1154,6 +1163,29 @@ public static partial class ChartLayout
                     result.Add(c);
                 }
             }
+        }
+
+        // A series with Sort orders the categories by its values (after aggregation, e.g. counts): the first such series
+        // decides. Categories it has no value for keep their order after the others.
+        if (series.FirstOrDefault(r => r.Spec.Sort is not null && r.Data.Kind == XKind.Category) is { } by)
+        {
+            var values = new Dictionary<string, double>(StringComparer.Ordinal);
+            for (var i = 0; i < by.Data.Count; i++)
+            {
+                if ((int)by.Data.X[i] is var c && c >= 0 && c < by.Data.Categories.Count && double.IsFinite(by.Data.Y[i]))
+                {
+                    var name = by.Data.Categories[c];
+                    values[name] = values.GetValueOrDefault(name) + by.Data.Y[i];
+                }
+            }
+
+            var descending = by.Spec.Sort == SortOrder.Descending;
+            result = [.. result
+                .Select((c, i) => (c, i, Has: values.TryGetValue(c, out var v), V: v))
+                .OrderBy(t => t.Has ? 0 : 1)
+                .ThenBy(t => descending ? -t.V : t.V)
+                .ThenBy(t => t.i)
+                .Select(t => t.c)];
         }
 
         return result;

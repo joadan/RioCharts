@@ -1,0 +1,34 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Issue(string Country, string Title);
+
+    // Items in the order they come from the database: one row per issue.
+    private static readonly Issue[] Issues =
+    [
+        new("Sweden", "a"), new("Spain", "b"), new("France", "c"), new("Spain", "d"), new("Spain", "e"), new("France", "f"),
+    ];
+
+    private static List<string> Categories(IRenderedComponent<RioChart<Issue>> cut) =>
+        [.. cut.FindAll(".rio-axis-x text").Select(t => t.TextContent)];
+
+    [Fact]
+    public void Counted_categories_are_ordered_by_their_count()
+    {
+        var cut = Render<RioChart<Issue>>(@<RioChart TItem="Issue" Items="Issues">
+            <BarSeries Name="Issues" XValue="i => i.Country" Aggregate="Aggregate.Count" Sort="SortOrder.Descending" />
+        </RioChart>);
+
+        Assert.Equal(["Spain", "France", "Sweden"], Categories(cut));
+    }
+
+    [Fact]
+    public void Without_a_sort_categories_keep_the_order_of_the_items()
+    {
+        var cut = Render<RioChart<Issue>>(@<RioChart TItem="Issue" Items="Issues">
+            <BarSeries Name="Issues" XValue="i => i.Country" Aggregate="Aggregate.Count" />
+        </RioChart>);
+
+        Assert.Equal(["Sweden", "Spain", "France"], Categories(cut));
+    }
+}

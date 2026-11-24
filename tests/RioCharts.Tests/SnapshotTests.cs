@@ -289,15 +289,15 @@ public class SnapshotTests
             ["p"] = Hourly(24, i => Math.Max(0, 30 - 3 * (4 + 5 * Math.Sin((i - 9) / 24.0 * 2 * Math.PI))), step: 2),
         }),
 
-        // One axis per series, two on each side: outer columns are as wide as their titles, so no title overlaps.
+        // One axis per series, two on each side: outer columns are as wide as their titles, so no title overlaps; each axis in its series' color.
         ["many-axes"] = new(new ChartDefinition
         {
-            Y = new AxisOptions { Title = "Temperature °C" },
+            Y = new AxisOptions { Title = "Temperature °C", SeriesColor = true },
             YAxes =
             [
-                new AxisOptions { Id = "kpa", Title = "Pressure kPa", Position = AxisPosition.Left },
-                new AxisOptions { Id = "kw", Title = "Power kW" },
-                new AxisOptions { Id = "rh", Title = "Humidity %" },
+                new AxisOptions { Id = "kpa", Title = "Pressure kPa", Position = AxisPosition.Left, SeriesColor = true },
+                new AxisOptions { Id = "kw", Title = "Power kW", SeriesColor = true },
+                new AxisOptions { Id = "rh", Title = "Humidity %", SeriesColor = true },
             ],
             Series =
             [

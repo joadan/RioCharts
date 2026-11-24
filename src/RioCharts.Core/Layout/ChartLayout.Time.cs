@@ -35,7 +35,7 @@ public static partial class ChartLayout
     /// wall-clock time in that zone, followed by its offset when it differs from the viewer's.
     /// </summary>
     private static Func<double, string> TimeFormat(XKind kind, IEnumerable<double> values, CultureInfo culture, string? format, TimeConversion? time,
-        string? viewerZone)
+        string? viewerZone, bool showOffset = true)
     {
         if (time is null || kind != XKind.Time)
         {
@@ -44,7 +44,7 @@ public static partial class ChartLayout
 
         var local = ValueFormatter.ForX(kind, values.Select(time.ToDisplay), culture, format);
         var viewer = viewerZone is null ? null : TimeConversion.FindZone(viewerZone, null);
-        var showZone = viewer is null || !SameZone(viewer, time.Zone);
+        var showZone = showOffset && (viewer is null || !SameZone(viewer, time.Zone));
         return v => showZone ? $"{local(time.ToDisplay(v))} {time.OffsetLabel(v)}" : local(time.ToDisplay(v));
     }
 

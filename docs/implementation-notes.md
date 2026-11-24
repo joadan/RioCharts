@@ -78,6 +78,16 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   band. `MaxBarWidth` caps each bar (the group: slots × (max + 2 px gap)). Only when every slotted series
   is a plain bar: histogram bins touch, and boxes and candles size themselves. Horizontal bars use the
   plot height the same way. Tooltip hover bands keep the full band.
+- **Axis colors.** `AxisOptions.Color` or `SeriesColor` give a y axis its own text styles
+  (`axis-{id}-label`, `axis-{id}-title`) with that fill; `SeriesColor` takes the first visible, non-empty
+  series on the axis, so hiding it hands the color to the next one.
+- **Sort.** `SeriesOptions.Sort` orders the merged categories (`MergeCategories`) by the first sorting
+  series' values, summed per category, after aggregation; categories without a value keep their order
+  after the others. Done in Core, so Blazor series (which aggregate items themselves) and JSON
+  definitions (whose binder also sorts the points and applies `Limit`) behave the same. Time and
+  number x axes ignore it. `Limit` stays a definition-only feature.
+- **Tooltip format.** `AxisOptions.TooltipFormat` replaces `Format` for tooltip headers only and turns
+  off the zone offset there. Horizontal bars ignore it: their row labels double as tooltip headers.
 - **Category labels.** Horizontal when every label fits its band; otherwise they slope down to the
   left at 45 degrees (`AxisOptions.LabelRotation` sets the angle; 0 keeps the old horizontal labels
   showing every n-th). Rotated labels end at their band's center, are shortened to a third of the

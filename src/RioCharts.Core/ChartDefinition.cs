@@ -85,6 +85,28 @@ public sealed record AxisOptions
     [Description("Axis title.")]
     public string? Title { get; init; }
 
+    /// <summary>
+    /// Vertical axes: CSS color of the tick labels and title, e.g. to show which axis belongs to which line. Null: the
+    /// muted axis color (or the series color with <see cref="SeriesColor"/>).
+    /// </summary>
+    [Description("Vertical axes: CSS color of the tick labels and title. Null: the muted axis color.")]
+    public string? Color { get; init; }
+
+    /// <summary>
+    /// Vertical axes: color the tick labels and title like the first visible series on the axis, so with one axis per
+    /// series each axis matches its line. <see cref="Color"/> wins when both are set.
+    /// </summary>
+    [Description("Vertical axes: color the tick labels and title like the first visible series on the axis (one axis per series). color wins when both are set.")]
+    public bool SeriesColor { get; init; }
+
+    /// <summary>
+    /// X axis: .NET format string for the x value in tooltip headers only, e.g. "HH:mm" or "d MMM HH:mm". Unlike
+    /// <see cref="Format"/> it leaves the axis labels alone, and on a time axis it also leaves out the time zone offset
+    /// that tooltips otherwise add when the chart's zone differs from the viewer's. Null: automatic.
+    /// </summary>
+    [Description("X axis: .NET format string for the x value in tooltip headers, e.g. \"d MMM HH:mm\". The axis labels keep their format; no time zone offset is added. Null: automatic.")]
+    public string? TooltipFormat { get; init; }
+
     /// <summary>Fixed minimum. When null it comes from the data.</summary>
     [Description("Fixed minimum. When null it comes from the data.")]
     public double? Min { get; init; }
@@ -193,8 +215,11 @@ public sealed record SeriesOptions
     [Description("Field to split by: one series per distinct value (e.g. one line per sales channel).")]
     public string? GroupBy { get; init; }
 
-    /// <summary>Order points by y (for categories, e.g. a ranking): ascending or descending.</summary>
-    [Description("Order points by y (for categories, e.g. a ranking): ascending or descending.")]
+    /// <summary>
+    /// Order points by y (for categories, e.g. a ranking): ascending or descending. On a category x axis the categories
+    /// follow this series' values after aggregation (the first series with a sort decides).
+    /// </summary>
+    [Description("Order points by y (for categories, e.g. a ranking): ascending or descending. The category axis follows this series' values after aggregation.")]
     public SortOrder? Sort { get; init; }
 
     /// <summary>Keep only the first N points after sorting (e.g. top 10).</summary>
