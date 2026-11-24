@@ -12,11 +12,10 @@ public static partial class ChartLayout
     private const int MaxFunnelStages = 40;
 
     /// <summary>
-    /// A funnel: one segment per stage, top to bottom in input order. Each segment is centered,
-    /// as wide at its top as its share of the largest stage and narrowing to the next stage's
-    /// width, in a palette color of its own. The value and its share of the stage before are
-    /// written inside; the stage's name sits in an outlined label beside the funnel, on
-    /// alternating sides, joined to its segment by a line. One funnel series per chart.
+    /// A funnel: one segment per stage, top to bottom in input order, taller and wider for a larger
+    /// stage and narrowing to the next stage's width, in a palette color of its own. The value and
+    /// its share of the stage before are written inside (or just after a thin segment); the stage's
+    /// name sits in a column on the left, joined to its segment by a thin line. One funnel per chart.
     /// </summary>
     private static ChartLayoutResult ComputeFunnel(ChartDefinition spec, List<Resolved> resolved, LayoutOptions options, List<string> warnings, StyleTable styles)
     {
@@ -79,7 +78,7 @@ public static partial class ChartLayout
             y0 += titleHeight + 6;
         }
 
-        // ---------- Plot: the funnel in the middle, stage labels on both sides ----------
+        // ---------- Plot: stage names in a column on the left, the funnel beside them ----------
         var plotLeft = compact ? 1 : PadLeft;
         var plotRight = compact ? width - 1 : width - PadRight;
         var plotTop = compact ? 1 : y0;
@@ -88,16 +87,16 @@ public static partial class ChartLayout
 
         var labels = stages.Select(LabelOf).ToList();
         var showLabels = !compact && chrome.YLabels && labels.Any(l => l.Length > 0);
-        const double PillPad = 6, Leader = 18;
-        var pillHeight = small * 1.7;
-        var shown = labels.Select(l => Shorten(l, plot.Width * 0.22, measure, small)).ToList();
-        var side = showLabels ? shown.Max(l => measure.Measure(l, small)) + 2 * PillPad + Leader : 0;
-        var funnelWidth = Math.Max(2, plot.Width - 2 * side);
+        const double Leader = 16;
+        var shown = labels.Select(l => Shorten(l, plot.Width * 0.3, measure, font)).ToList();
+        var nameWidth = showLabels ? shown.Max(l => measure.Measure(l, font)) : 0;
+        var funnelLeft = plot.X + (showLabels ? nameWidth + Leader : 0);
+        var funnelWidth = Math.Max(2, plot.Right - funnelLeft);
 
-        // Heights follow the values: each stage gets a minimum (room for its label), and the rest
+        // Heights follow the values: each stage gets a minimum (room for its name), and the rest
         // of the funnel's height is shared in proportion to the stages' values.
         var n = stages.Count;
-        var floor = n == 0 ? 0 : compact ? Math.Min(2, plot.Height / n) : Math.Max(10, pillHeight + 2);
+        var floor = n == 0 ? 0 : compact ? Math.Min(2, plot.Height / n) : Math.Max(10, font * 1.3 + 4);
         var total = n == 0 ? 0 : Math.Max(n * floor, Math.Min(plot.Height, n * (compact ? 1e4 : 72)));
         var gap = n == 0 ? 0 : compact ? Math.Min(1, total / n * 0.1) : Math.Clamp(total / n * 0.08, 2, 5);
         var sum = stages.Sum(i => Math.Max(0, r0!.Data.Y[i]));
@@ -105,9 +104,8 @@ public static partial class ChartLayout
         var top = plot.Y + Math.Max(0, (plot.Height - total) / 2);
         var largest = stages.Count == 0 ? 0 : stages.Max(i => Math.Max(0, r0!.Data.Y[i]));
         var widthScale = new ContinuousScale(0, largest > 0 ? largest : 1, 0, funnelWidth);
+        styles.Add("funnel-leader", new Style { Stroke = ThemeTokens.Axis, StrokeWidth = 1 });
 
-        styles.Add("funnel-pill", new Style { Fill = ThemeTokens.Surface });
-        styles.Add("funnel-pill-text", new TextStyleDef { FontSize = (float)small, Fill = ThemeTokens.Text });
 
         var seriesNodes = new List<Node>();
         var labelNodes = new List<Node>();
@@ -120,7 +118,7 @@ public static partial class ChartLayout
         {
             var s = r0.Spec;
             var data = r0.Data;
-            var cx = (double)plot.CenterX;
+            var cx = funnelLeft + funnelWidth / 2;
             var color = s.Color is null ? ThemeTokens.Series(0) : r0.Color;
             var selected = options.SelectedPoints is { } picks && picks.TryGetValue(s.Id, out var picked) && picked.Count > 0 ? picked : null;
             string Format(double v) => ValueFormatter.Format(v, culture, s.Format, compactFrom: 1e6);
@@ -170,8 +168,9 @@ public static partial class ChartLayout
                 var ofPrevious = k == 0 ? FunnelPercent(1, culture) : Share(v, before);
                 var text = ofPrevious is null ? valueText : $"{valueText} ({ofPrevious})";
 
-                // The value inside the segment when it fits at the text's lower edge, else in the stage's label.
-                var inside = false;
+
+                // The value inside the segment when it fits at the text's lower edge, else just after it.
+                var edge = (wTop + wBottom) / 4; // the segment's side at mid-height
                 if (s.DataLabels != false && !compact)
                 {
                     var textWidth = measure.Measure(text, small);
@@ -182,37 +181,29 @@ public static partial class ChartLayout
                         // Dark text on the palette's light colors, white on the others.
                         var ink = ThemeTokens.IsLightSeries(stageColor) ? "data-label-dark" : "data-label-inverse";
                         labelNodes.Add(new TextNode(text, new PointF((float)cx, (float)cy), new TextStyle(ink), Anchor.Middle) { Class = "rio-data-label" });
-                        inside = true;
+                    }
+                    else if (cx + edge + 6 + textWidth <= plot.Right)
+                    {
+                        labelNodes.Add(new TextNode(text, new PointF((float)(cx + edge + 6), (float)cy), new TextStyle("data-label"), Anchor.Start) { Class = "rio-data-label" });
                     }
                 }
 
+                // The stage's name in the column on the left, with a line to its segment.
                 var label = labels[k];
-                if (showLabels && (label.Length > 0 || !inside))
+                if (showLabels && label.Length > 0)
                 {
-                    var name = shown[k];
-                    var pillText = inside || s.DataLabels == false ? name : name.Length > 0 ? $"{name} · {text}" : text;
-                    var left = k % 2 == 0;
-                    var edge = (wTop + wBottom) / 4; // the segment's side at mid-height
-                    // Up to the segment, keeping a short leader: a name always fits in the side column.
-                    var room = Math.Max(2 * PillPad + 8, cx - edge - 2 - 8 - plot.X);
-                    var pillWidth = measure.Measure(pillText, small) + 2 * PillPad;
-                    if (pillWidth > room)
+                    var nameRight = plot.X + nameWidth;
+                    calloutNodes.Add(new TextNode(shown[k], new PointF((float)nameRight, (float)cy), new TextStyle("axis-label"), Anchor.End) { Class = "rio-row-label" });
+                    var lineEnd = cx - edge - 3;
+                    if (lineEnd - (nameRight + 4) >= 4)
                     {
-                        pillText = Shorten(pillText, room - 2 * PillPad, measure, small);
-                        pillWidth = room;
+                        calloutNodes.Add(new PathNode(new PathBuilder().MoveTo(nameRight + 4, cy).LineTo(lineEnd, cy).Build(), new StyleRef("funnel-leader"))
+                        {
+                            Class = "rio-funnel-leader",
+                        });
                     }
-                    var pillX = left ? plot.X : plot.Right - pillWidth;
-                    var from = left ? cx - edge - 2 : cx + edge + 2;
-                    var to = left ? pillX + pillWidth : pillX;
-                    var leaderStyle = styles.Add("funnel-leader-" + stageColor, new Style { Stroke = stageColor, StrokeWidth = 1 });
-                    var pillStyle = styles.Add("funnel-pill-" + stageColor, new Style { Fill = ThemeTokens.Surface, Stroke = stageColor, StrokeWidth = 1 });
-                    calloutNodes.Add(new GroupNode(
-                    [
-                        new PathNode(new PathBuilder().MoveTo(from, cy).LineTo(to, cy).Build(), leaderStyle) { Class = "rio-funnel-leader" },
-                        new RectNode(new RectF((float)pillX, (float)(cy - pillHeight / 2), (float)pillWidth, (float)pillHeight), pillStyle) { CornerRadius = 4, Class = "rio-funnel-pill" },
-                        new TextNode(pillText, new PointF((float)(pillX + PillPad), (float)cy), new TextStyle("funnel-pill-text"), Anchor.Start) { Class = "rio-row-label" },
-                    ]));
                 }
+
 
                 hits.Add(((float)cx, (float)cy, i));
                 widths.Add((float)Math.Max(Math.Max(wTop, wBottom), 24)); // a thin stage is still easy to hover

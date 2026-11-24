@@ -502,7 +502,7 @@ Waterfall: how a start value becomes an end value, e.g. a month's result from re
 
 #### `<FunnelSeries>` (`FunnelSeries<TItem>`)
 
-Funnel: one segment per stage, top to bottom in the order of the items, each as wide at its top as its share of the largest stage and narrowing to the next, in a color of its own (one color when `Color` is set; `ColorValue` colors a stage). `XValue` is the stage, `YValue` how many reached it. Each stage shows its value and its share of the stage before (`DataLabels="false"` hides them), with its name in a label beside the funnel; the tooltip adds the share of the first stage. One funnel per chart; it cannot be mixed with other series.
+Funnel: one segment per stage, top to bottom in the order of the items, each as wide at its top as its share of the largest stage and narrowing to the next, in a color of its own (one color when `Color` is set; `ColorValue` colors a stage). `XValue` is the stage, `YValue` how many reached it. Each stage shows its value and its share of the stage before (`DataLabels="false"` hides them), with its name in a column on the left; the tooltip adds the share of the first stage. One funnel per chart; it cannot be mixed with other series.
 
 No parameters of its own.
 

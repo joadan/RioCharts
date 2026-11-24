@@ -9,7 +9,7 @@ changes are called out under **Breaking**.
   draws one segment per stage, top to bottom in the order of the items, each as wide as its share of the largest stage
   and narrowing to the next, in a color of its own. Larger stages are also taller, while every stage keeps room for its
   label. Each segment shows its value and its share of the stage before; its
-  name sits in an outlined label beside the funnel, on alternating sides. The tooltip adds the share of the first stage.
+  stage names sit in a column on the left, each with a thin line to its segment. The tooltip adds the share of the first stage.
   `Aggregate` combines items per stage, `Color` makes it one color, `ColorValue` colors a stage, and selection outlines a
   stage. New texts: `ChartTexts.FunnelChart`, `FunnelOfFirst` and `FunnelOfPrevious` in all built-in languages. Docs: a
   Funnels page and a gallery card.

@@ -50,7 +50,7 @@ Rules of thumb:
 | Radial bar | `RadialBarSeries` / `radialBar` | Also `radial`. |
 | Gauge | `GaugeSeries` / `gauge` (also `meter`, `dial`) | One value on a min–max scale; color bands as a scale ring, a target marker, the value in the middle. One gauge per point, in a grid. No needle. |
 | Bullet | `BulletSeries` / `bullet` | A bar against a target over tinted ranges, a row per point; each series its own scale. Horizontal only. |
-| Funnel | `FunnelSeries` / `funnel` (also `conversionFunnel`, `salesFunnel`, `pipeline`) | A segment per stage, as wide as its share of the largest and narrowing to the next, a color each; value and share of the stage before inside, names in labels beside it. One per chart. |
+| Funnel | `FunnelSeries` / `funnel` (also `conversionFunnel`, `salesFunnel`, `pipeline`) | A segment per stage, as wide as its share of the largest and narrowing to the next, a color each; value and share of the stage before inside, names in a column on the left. One per chart. |
 | Radar | `RadarSeries` / `radar` | Also `spider`. |
 | Treemap | `TreemapSeries` / `treemap` | Squarified layout, hierarchy. |
 | Histogram | `HistogramSeries` / `histogram` | Equal-width bins with nice edges (auto, `BinWidth`, `BinCount`); several overlay. |

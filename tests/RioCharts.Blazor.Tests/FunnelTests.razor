@@ -12,12 +12,9 @@
             <FunnelSeries XValue="s => s.Name" YValue="s => s.Users" Aggregate="Aggregate.Sum" />
         </RioChart>);
 
-        // Each stage's name in its label, its value inside when it fits, else after the name.
-        var names = cut.FindAll(".rio-row-label").Select(l => l.TextContent).ToList();
-        var inside = cut.FindAll(".rio-data-label").Select(l => l.TextContent).ToList();
-        Assert.Equal(["Visit", "Cart", "Checkout"], names.Select(n => n.Split(" · ")[0]));
-        Assert.Contains("1,200 (100%)", inside);
-        Assert.Equal(["1,200 (100%)", "360 (30%)", "120 (33.3%)"], names.Select((n, k) => n.Contains(" · ") ? n.Split(" · ")[1] : inside[k]));
+        // Names on the left; each value inside its segment, or just after a thin one.
+        Assert.Equal(["Visit", "Cart", "Checkout"], cut.FindAll(".rio-row-label").Select(l => l.TextContent));
+        Assert.Equal(["1,200 (100%)", "360 (30%)", "120 (33.3%)"], cut.FindAll(".rio-data-label").Select(l => l.TextContent));
         Assert.Equal(3, cut.FindAll(".rio-funnel-stage").Count);
         Assert.Equal(3, cut.FindAll(".rio-funnel-leader").Count);
         var series = Payload(Calls("update")[^1]).GetProperty("series")[0];

@@ -47,7 +47,8 @@ public class FunnelTests
         Assert.Equal(4, Stages(layout).Count);
         var s = layout.Tooltip.Series.Single();
         Assert.Equal(540.0 / 1200, s.CellWidths![1] / s.CellWidths[0], 2); // a segment's top edge
-        Assert.All(s.X, x => Assert.Equal(layout.Plot.X + layout.Plot.Width / 2, x, 1));
+        Assert.All(s.X, x => Assert.Equal(s.X[0], x, 1)); // one center line, right of the name column
+        Assert.True(s.X[0] > layout.Plot.X + layout.Plot.Width / 2);
         Assert.True(s.Y.Zip(s.Y.Skip(1)).All(p => p.First < p.Second)); // first stage on top
         Assert.Equal(4, Texts(layout, "rio-row-label").Count);
         Assert.Equal(4, All<PathNode>(layout.Scene.Static).Count(p => p.Class == "rio-funnel-leader"));
@@ -88,15 +89,16 @@ public class FunnelTests
     }
 
     [Fact]
-    public void A_value_that_does_not_fit_goes_into_its_stage_label()
+    public void A_value_that_does_not_fit_goes_just_after_its_segment()
     {
         var layout = Funnel(Signups);
 
-        var inside = Texts(layout, "rio-data-label");
-        var names = Texts(layout, "rio-row-label");
-        Assert.Contains("1,200 (100%)", inside);
-        Assert.Contains("Customers · 45 (25%)", names); // too thin for its value
-        Assert.Equal(4, inside.Count + names.Count(n => n.Contains(" · ", StringComparison.Ordinal)));
+        var values = All<TextNode>(layout.Scene.Series).Where(t => t.Class == "rio-data-label").ToList();
+        Assert.Equal(["1,200 (100%)", "540 (45%)", "180 (33.3%)", "45 (25%)"], values.Select(t => t.Text));
+        var thin = values.Single(t => t.Text == "45 (25%)"); // too thin for its value
+        Assert.Equal(Anchor.Start, thin.Anchor);
+        Assert.True(thin.At.X > layout.Tooltip.Series.Single().X[3]);
+        Assert.Equal(["Visits", "Sign-ups", "Trials", "Customers"], Texts(layout, "rio-row-label")); // names stay plain
     }
 
     [Fact]

@@ -929,7 +929,7 @@ public sealed class WaterfallSeries<TItem> : SeriesBase<TItem>
 /// as its share of the largest stage and narrowing to the next, in a color of its own (one color
 /// when <c>Color</c> is set; <c>ColorValue</c> colors a stage). <c>XValue</c> is the stage,
 /// <c>YValue</c> how many reached it. Each stage shows its value and its share of the stage before
-/// (<c>DataLabels="false"</c> hides them), with its name in a label beside the funnel; the tooltip
+/// (<c>DataLabels="false"</c> hides them), with its name in a column on the left; the tooltip
 /// adds the share of the first stage. One funnel per chart; it cannot be mixed with other series.
 /// </summary>
 public sealed class FunnelSeries<TItem> : SeriesBase<TItem>

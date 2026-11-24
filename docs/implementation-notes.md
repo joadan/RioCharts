@@ -977,7 +977,7 @@ scale per series (`Min`, `Max`), `ColorBands` for the ranges and `Target`.
 
 Not in Design.md; added from `docs/chart-types.md` (candidate: often asked for, though a bar chart
 is usually easier to read). The look follows the common funnel the owner pointed to: stacked
-trapezoids in a color each, values inside, names in outlined labels beside it. That goes against
+trapezoids in a color each, values inside, names beside it. That goes against
 "one color unless color means something" in Design.md's visual design; a series `Color` gives the
 plain one-color funnel.
 
@@ -986,7 +986,7 @@ plain one-color funnel.
   with a warning. At most 40 stages (warning).
 - **Layout:** `ChartLayout.ComputeFunnel`; other series types, a second funnel series and all
   annotations are skipped with a warning. Heights follow the values: each stage gets a minimum
-  (room for its label, the label height + 2 px) and the rest of the funnel's height (the plot,
+  (room for its name, a text line + 4 px) and the rest of the funnel's height (the plot,
   at most 72 px per stage, centered vertically) is shared in proportion to the values, equally
   when all are zero. Tooltip hover areas use each segment's height (`CellHeights`), with a
   2–5 px gap between segments. A segment is centered, as wide at its top as its share of the
@@ -994,15 +994,17 @@ plain one-color funnel.
   than its top: a larger later stage starts a wider segment of its own; the last one is a
   rectangle. Stage colors are `ThemeTokens.Series(k)` per stage; a series `Color` makes them one
   color, `ColorValue` a stage's own. No axis, grid or legend.
-- **Labels:** stage names in outlined labels (surface fill, a 1 px border in the stage's color,
-  radius 4) at the plot's left and right edges, alternating from the left, joined to the side of
-  their segment by a line in its color. The funnel takes the width between two label columns as
-  wide as the widest name. Unless `DataLabels` is false, "10,000 (66.7%)" (the value and its share
-  of the stage before; 100% for the first) is written inside the segment (`data-label-inverse`, or
-  `data-label-dark` on the palette's light colors: a new token, `--rio-data-label-dark`)
-  when it fits at the text's lower edge, else after the name in the label ("Checkout · 4,000
-  (57.1%)"), shortened to the room up to the segment. Shares have one decimal (`FunnelPercent`;
-  "<0.1%" for a tiny share). Compact: segments only.
+- **Labels:** stage names in plain text (`axis-label`) in a column on the left, right-aligned to
+  the widest name (shortened past 30 % of the plot), each joined to the side of its segment by a
+  1 px line in the axis color when there is room for one. The funnel takes the width to the right
+  of that column and is centered in it. Outlined badges on alternating sides, as in the reference,
+  were tried first and dropped: three colored marks per name, a zigzag reading order, and values
+  squeezed into the badges when a segment was thin. Unless `DataLabels` is false, "10,000
+  (66.7%)" (the value and its share of the stage before; 100% for the first) is written inside
+  the segment (`data-label-inverse`, or `data-label-dark` on the palette's light colors: a new
+  token, `--rio-data-label-dark`) when it fits at the text's lower edge, else just after the
+  segment (`data-label`), else left out. Shares have one decimal (`FunnelPercent`; "<0.1%" for a
+  tiny share). Compact: segments only.
 - **Tooltip and description:** the stage and value, with part rows "Of first stage" and "Of
   previous stage" (`ChartTexts.FunnelOfFirst`, `FunnelOfPrevious`, all languages; empty for the
   first stage, so left out). The hover area is the segment's wider edge by its height, at least
