@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
-## Unreleased
+## 0.5.2-preview (2026-11-24)
 
 - Time buckets follow the display time zone: with `TimeZone` on the chart (`"timeZone"` in JSON), `Bucket`
   (`"timeBucket"`) groups on wall-clock time in that zone, so a day runs from midnight to midnight there and a day with a
