@@ -78,7 +78,7 @@ public sealed class NumberFormatter
         var zero = format.Format(0, culture);
         for (var e = -9; e <= 15; e++)
         {
-            var p = double.Parse($"1e{e}", CultureInfo.InvariantCulture);
+            var p = NiceTicks.Pow10(1, e);
             if (format.Format(p, culture) != zero)
             {
                 return e == -9 ? null : p;

@@ -101,7 +101,7 @@ public static partial class ChartLayout
         if (showScale)
         {
             statics.Add(bands is not null
-                ? BandLegend(PadLeft, y0, lineHeight + 4, Series.ColorBands.Ranges(bands, color), F, measure, font, styles, texts.Legend)
+                ? BandLegend(PadLeft, y0, lineHeight + 4, Series.ColorBands.Ranges(bands, color), bands, F, measure, font, styles, texts.Legend)
                 : mid is { } md
                 ? DivergingLegend(PadLeft, y0, lineHeight + 4, below, color, vMin < md ? F(vMin) : null, F(md), vMax > md ? F(vMax) : null, measure, font, styles,
                     texts.Legend, HeatMinOpacity, "heat")
@@ -344,10 +344,11 @@ public static partial class ChartLayout
     }
 
     /// <summary>
-    /// The legend of stepped colors: a swatch and the range of each band, low to high, e.g. "&lt; 50", "50–80", "&gt; 80".
+    /// The legend of stepped colors: a swatch and the label or range of each band, low to high, e.g. "Low" or "&lt; 50",
+    /// "50–80", "&gt; 80".
     /// </summary>
-    private static GroupNode BandLegend(double x, double y, double height, List<(double From, double To, string Color)> ranges, Func<double, string> format,
-        Text.ITextMeasurer measure, double font, StyleTable styles, string label)
+    private static GroupNode BandLegend(double x, double y, double height, List<(double From, double To, string Color)> ranges, IReadOnlyList<ColorBand> bands,
+        Func<double, string> format, Text.ITextMeasurer measure, double font, StyleTable styles, string label)
     {
         var cy = y + height / 2;
         var nodes = new List<Node>();
@@ -355,7 +356,8 @@ public static partial class ChartLayout
         var at = x;
         foreach (var (from, to, color) in ranges)
         {
-            var name = double.IsInfinity(from) && double.IsInfinity(to) ? ""
+            var name = Series.ColorBands.LabelOf(bands, Series.ColorBands.Probe(from, to)) is { } own ? own
+                : double.IsInfinity(from) && double.IsInfinity(to) ? ""
                 : double.IsInfinity(from) ? "< " + format(to)
                 : double.IsInfinity(to) ? "> " + format(from)
                 : format(from) + "–" + format(to);

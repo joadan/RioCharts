@@ -3,6 +3,17 @@
 All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
 changes are called out under **Breaking**.
 
+## Unreleased
+
+- Fixed: charts with an axis `Format` (e.g. `"#,0"`) or a log axis crashed with a `FormatException` when the current
+  culture writes the minus sign as U+2212 (sv-SE, nb-NO, fi-FI and others). The power of ten for the tick step was
+  written in the current culture and parsed back in the invariant one. A new test renders every reference chart with
+  the current culture set to sv-SE and checks it against its snapshot.
+- A chart whose layout fails no longer takes the page down: it logs the exception through the app's `ILogger` and
+  shows its empty state with "The chart could not be drawn" (`ChartTexts.ChartFailed`, in all built-in languages).
+- `ColorBand.Label` (`"label"` in JSON) names a band, e.g. "High"; a heatmap's legend shows it instead of the range.
+- `llms-full.txt` now lists `RioChartDefaults` and its settings.
+
 ## 0.7.2-preview (2026-11-24)
 
 - Heatmaps with stepped colors: `ColorBands` on the first `HeatmapSeries` (`"colorBands"` in JSON) gives each cell the

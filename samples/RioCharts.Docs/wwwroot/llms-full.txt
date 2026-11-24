@@ -797,7 +797,7 @@ How times without a zone (DateTime with Kind Unspecified, DateOnly, plain string
 
 The texts a chart shows or reads out itself: empty states, the legend and axis names for screen readers, the chart description, "Reset zoom", the download menu and the keyboard help. Your own texts (titles, series names, formats) are not here.
 
-84 properties: `Chart`, `NoData`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `BulletChart`, `FunnelChart`, `FunnelOfFirst`, `FunnelOfPrevious`, `CalendarChart`, `CalendarDays`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `Map`, `MapWorld`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
+85 properties: `Chart`, `NoData`, `ChartFailed`, `AllSeriesHidden`, `AllSlicesHidden`, `Other`, `Total`, `Size`, `ResetZoom`, `Download`, `DownloadFormat`, `DownloadChart`, `ChartRole`, `Legend`, `XAxis`, `YAxis`, `AxisRange`, `SeriesPoints`, `Summary`, `SummaryTitled`, `SeriesValues`, `LowestHighest`, `Trend`, `Rising`, `Falling`, `Stable`, `ValueRange`, `LastValue`, `HistogramPeak`, `RangeBarSummary`, `DurationUnits`, `BoxMax`, `BoxUpperQuartile`, `BoxMedian`, `BoxLowerQuartile`, `BoxMin`, `BoxCount`, `BoxOutliers`, `CandleOpen`, `CandleHigh`, `CandleLow`, `CandleClose`, `CandleChange`, `NoDataShort`, `PieChart`, `DonutChart`, `RadialBarChart`, `GaugeChart`, `BulletChart`, `FunnelChart`, `FunnelOfFirst`, `FunnelOfPrevious`, `CalendarChart`, `CalendarDays`, `Target`, `RadarChart`, `Treemap`, `ShareOfGroup`, `ShareOfTotal`, `TreemapAll`, `TreemapShow`, `TreemapPathLabel`, `Map`, `MapWorld`, `TreemapLeftOut`, `PolarItems`, `PolarNoData`, `More`, `KeysPoints`, `KeysPointsAndSeries`, `KeysSlices`, `KeysZoom`, `KeysSelect`, `KeysLeave`, `Position`, `Keys`, `English`, `Swedish`, `Norwegian`, `Danish`, `Finnish`, `German`, `French`, `Spanish`, `BuiltIn`.
 
 - `static void Register(string culture, ChartTexts texts)` — Adds or replaces the texts for a culture or language ("pl", "pt-BR"), for every chart in the app. Call it at startup. Takes precedence over the built-in languages.
 - `static ChartTexts For(CultureInfo? culture)` — The texts for a culture: registered ones, then built-in ones, trying the culture and its parents (sv-FI, then sv); English when none match. Null: the current UI culture.
@@ -1020,6 +1020,7 @@ A color for values in a range, e.g. { "above": 120, "color": "--rio-negative" }:
 - `Above`: `double?` — Values above this take the color. Null: no lower bound.
 - `Below`: `double?` — Values below this take the color. Null: no upper bound.
 - `Color`: `string` — A CSS color or a theme token such as "--rio-negative".
+- `Label`: `string?` — A name for the band, e.g. "High": a heatmap's legend shows it instead of the band's range. Null: the range ("> 80").
 
 #### `SeriesBuffer` (class, RioCharts.Core.Data)
 
@@ -1102,6 +1103,22 @@ Where an annotation label sits along its line or band.
 - `Start` — At the start: the left of a horizontal line, the bottom of a vertical line.
 - `Middle` — In the middle.
 - `End` — At the end: the right of a horizontal line, the top of a vertical line.
+
+#### `RioChartDefaults` (record, RioCharts.Blazor)
+
+Settings shared by charts instead of repeated on each one, e.g. `new RioChartDefaults { Culture = new("sv-SE"), TimeZone = "Europe/Stockholm", Height = 260 }`. Register them for the whole app in Program.cs with `builder.Services.AddRioCharts(defaults)` (reaches every render mode), and/or cascade them to part of the app with `<CascadingValue Value="defaults" IsFixed="true">` (a cascade does not cross into components with another render mode). Each setting comes from the chart's own parameter, else the cascaded defaults, else the registered ones, else the built-in default; null leaves it to the next. A chart's `YAxis` replaces the default axis as a whole: write `defaults.YAxis with { Title = "kWh" }` to change one setting. A non-fixed cascade can be replaced at runtime (e.g. on a language switch) and the charts follow.
+
+- `Height`: `double?` — Height in pixels. Null: 300.
+- `Culture`: `CultureInfo?` — Culture for labels. Null: the current culture.
+- `TimeZone`: `string?` — Display time zone: "UTC", "local" or an IANA id such as "Europe/Stockholm". Null: times are shown as given.
+- `UnspecifiedTimes`: `UnspecifiedTimes?` — With a TimeZone: how DateTime values with Kind Unspecified are read.
+- `XAxis`: `AxisOptions?` — The horizontal axis, e.g. its format.
+- `YAxis`: `AxisOptions?` — The primary vertical axis, e.g. its format or grid lines.
+- `Legend`: `LegendOptions?` — Legend settings, e.g. `new LegendOptions { Position = LegendPosition.Bottom }`.
+- `Tooltip`: `TooltipOptions?` — Tooltip settings.
+- `Animate`: `bool?` — False turns off the fades on every chart. Null: on.
+- `KeyboardNavigation`: `bool?` — Keyboard navigation of points. Null: on for charts that are not compact.
+- `Class`: `string?` — Extra CSS class on every chart's container.
 
 #### `ExportFormat` (enum, RioCharts.Blazor)
 

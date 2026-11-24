@@ -49,6 +49,9 @@ public sealed record ChartTexts
     /// <summary>In the plot when there is nothing to draw.</summary>
     public string NoData { get => Get(); init => Set(value); }
 
+    /// <summary>Shown instead of a chart that could not be drawn (an error is logged for the developer).</summary>
+    public string ChartFailed { get => Get(); init => Set(value); }
+
     /// <summary>In the plot when every series is hidden through the legend.</summary>
     public string AllSeriesHidden { get => Get(); init => Set(value); }
 
@@ -398,6 +401,7 @@ public sealed record ChartTexts
     {
         [nameof(Chart)] = "Chart",
         [nameof(NoData)] = "No data available",
+        [nameof(ChartFailed)] = "The chart could not be drawn",
         [nameof(AllSeriesHidden)] = "All series are hidden",
         [nameof(AllSlicesHidden)] = "All slices are hidden",
         [nameof(Other)] = "Other",
@@ -483,6 +487,7 @@ public sealed record ChartTexts
     {
         Chart = "Diagram",
         NoData = "Inga data",
+        ChartFailed = "Diagrammet kunde inte ritas",
         AllSeriesHidden = "Alla serier är dolda",
         AllSlicesHidden = "Alla delar är dolda",
         Other = "Övrigt",
@@ -562,6 +567,7 @@ public sealed record ChartTexts
     {
         Chart = "Diagram",
         NoData = "Ingen data",
+        ChartFailed = "Diagrammet kunne ikke tegnes",
         AllSeriesHidden = "Alle serier er skjult",
         AllSlicesHidden = "Alle deler er skjult",
         Other = "Annet",
@@ -641,6 +647,7 @@ public sealed record ChartTexts
     {
         Chart = "Diagram",
         NoData = "Ingen data",
+        ChartFailed = "Diagrammet kunne ikke tegnes",
         AllSeriesHidden = "Alle serier er skjult",
         AllSlicesHidden = "Alle dele er skjult",
         Other = "Andet",
@@ -720,6 +727,7 @@ public sealed record ChartTexts
     {
         Chart = "Kaavio",
         NoData = "Ei tietoja",
+        ChartFailed = "Kaaviota ei voitu piirtää",
         AllSeriesHidden = "Kaikki sarjat on piilotettu",
         AllSlicesHidden = "Kaikki osat on piilotettu",
         Other = "Muut",
@@ -799,6 +807,7 @@ public sealed record ChartTexts
     {
         Chart = "Diagramm",
         NoData = "Keine Daten vorhanden",
+        ChartFailed = "Das Diagramm konnte nicht gezeichnet werden",
         AllSeriesHidden = "Alle Reihen sind ausgeblendet",
         AllSlicesHidden = "Alle Segmente sind ausgeblendet",
         Other = "Sonstige",
@@ -878,6 +887,7 @@ public sealed record ChartTexts
     {
         Chart = "Graphique",
         NoData = "Aucune donnée disponible",
+        ChartFailed = "Le graphique n’a pas pu être dessiné",
         AllSeriesHidden = "Toutes les séries sont masquées",
         AllSlicesHidden = "Toutes les parts sont masquées",
         Other = "Autres",
@@ -957,6 +967,7 @@ public sealed record ChartTexts
     {
         Chart = "Gráfico",
         NoData = "No hay datos disponibles",
+        ChartFailed = "No se pudo dibujar el gráfico",
         AllSeriesHidden = "Todas las series están ocultas",
         AllSlicesHidden = "Todos los sectores están ocultos",
         Other = "Otros",

@@ -169,8 +169,13 @@ public static class NiceTicks
         return ticks;
     }
 
-    /// <summary>m × 10^e without floating point noise (parsed, so 5e-3 is the double closest to 0.005).</summary>
-    private static double Pow10(int m, int e) => double.Parse($"{m}e{e}", System.Globalization.CultureInfo.InvariantCulture);
+    /// <summary>
+    /// m × 10^e without floating point noise (parsed, so 5e-3 is the double closest to 0.005). The text is written in the
+    /// invariant culture too: interpolation alone would write a negative exponent with the current culture's minus sign
+    /// (U+2212 in sv-SE), which the parse rejects.
+    /// </summary>
+    internal static double Pow10(int m, int e) =>
+        double.Parse(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{m}e{e}"), System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>Removes floating point noise and negative zero.</summary>
     public static double Clean(double value)

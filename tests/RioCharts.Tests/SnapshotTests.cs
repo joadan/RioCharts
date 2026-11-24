@@ -688,6 +688,40 @@ public class SnapshotTests
         Verify(name, svg);
     }
 
+    /// <summary>
+    /// The chart's culture alone decides its text: with the thread's culture set to one with another minus sign (U+2212 in
+    /// sv-SE), decimal comma and digit grouping, every reference chart is the same as its snapshot and nothing throws. Catches
+    /// interpolated numbers that are parsed or written into SVG in the current culture.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Names))]
+    public void The_current_culture_does_not_change_a_chart(string name)
+    {
+        var c = Cases[name];
+        var (culture, uiCulture) = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("sv-SE");
+            var layout = ChartLayout.Compute(c.Spec, c.Data, new LayoutOptions
+            {
+                Width = c.Width,
+                Height = c.Height,
+                Culture = CultureInfo.GetCultureInfo(c.Culture),
+                ViewerTimeZone = "Europe/Stockholm",
+                XRange = c.XRange,
+            });
+            var svg = SvgExporter.Write(layout.Scene, ExportTheme.Light, "sans-serif", "#ffffff").ReplaceLineEndings("\n");
+
+            var file = Path.Combine(SnapshotDir(), name + ".svg");
+            Assert.True(File.Exists(file), $"{name}.svg is missing: run Chart_matches_its_snapshot first.");
+            Assert.Equal(File.ReadAllText(file).ReplaceLineEndings("\n"), svg);
+        }
+        finally
+        {
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = (culture, uiCulture);
+        }
+    }
+
     private static void Verify(string name, string actual)
     {
         var dir = SnapshotDir();

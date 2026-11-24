@@ -108,6 +108,9 @@ internal static partial class AgentGuide
                 Component(type, stopAt: typeof(AnnotationBase));
             }
 
+            // Not a parameter type, but set up by the app (AddRioCharts or a cascade): its settings belong in the reference too.
+            Collect(typeof(RioChartDefaults));
+
             _sb.Append("### Types used by parameters\n\n");
             for (var i = 0; i < _types.Count; i++)
             {

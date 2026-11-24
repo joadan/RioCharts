@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using RioCharts.Blazor.Rendering;
 using RioCharts.Core;
@@ -603,7 +604,7 @@ public partial class RioChart<TItem> : IChartContext
 
         _layoutData = data;
         SelectionForLayout(out var selectedRange, out var selectedPoints);
-        _layout = ChartLayout.Compute(CurrentDefinition(), data, new LayoutOptions
+        var options = new LayoutOptions
         {
             Width = Width ?? _measuredWidth ?? DefaultWidth,
             Height = Height,
@@ -623,9 +624,43 @@ public partial class RioChart<TItem> : IChartContext
             TreemapDrillOnItems = !OnPointClick.HasDelegate && Selection != SelectionMode.Points,
             MapRegion = _treemapPath,
             InteractiveMap = Live && !OnPointClick.HasDelegate && Selection != SelectionMode.Points,
-        });
+        };
+
+        try
+        {
+            _layout = ChartLayout.Compute(CurrentDefinition(), data, options);
+        }
+        catch (Exception e)
+        {
+            // A bug, or an exception from the app's own code (a LabelFormatter): log it and draw this chart's empty state
+            // with a message, so one chart does not take the whole page down.
+            Logger?.LogError(e, "RioChart '{Title}' could not be laid out; it shows a placeholder instead.", Title);
+            var texts = CurrentTexts;
+            _layoutData = new Dictionary<string, SeriesData>();
+            _layout = ChartLayout.Compute(new ChartDefinition { Title = Title }, _layoutData,
+                options with { Texts = texts with { NoData = texts.ChartFailed } });
+        }
+
         _dirty = false;
         return _layout;
+    }
+
+    // The app's logger, when it has one (looked up once).
+    private ILogger? _logger;
+    private bool _lookedUpLogger;
+
+    private ILogger? Logger
+    {
+        get
+        {
+            if (!_lookedUpLogger)
+            {
+                _logger = (Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory)?.CreateLogger("RioCharts.Blazor.RioChart");
+                _lookedUpLogger = true;
+            }
+
+            return _logger;
+        }
     }
 
     // ---------- Legend and annotation clicks ----------
