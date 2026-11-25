@@ -39,7 +39,10 @@
             @foreach (var g in ChartKinds.Goals)
             {
                 var selected = g.Id == goal;
-                <button type="button" class="ce-goal @(selected ? "selected" : null)" aria-pressed="@(selected ? "true" : "false")" title="@g.Hint"
+                // A goal none of whose charts this data can draw stays clickable, greyed, to say what it would need.
+                var fits = g.Id == kind?.Goal || ChartKinds.Of(g.Id).Any(k => ChartKinds.Missing(k, dataset) is null);
+                <button type="button" class="ce-goal @(selected ? "selected" : null) @(fits ? null : "unfit")" aria-pressed="@(selected ? "true" : "false")"
+                        title="@(fits ? g.Hint : $"{g.Hint}. Not with this data.")"
                         @onclick="() => PickGoal(g, kind, series, dataset)">
                     <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="@g.Icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     <span>@g.Label</span>
@@ -53,10 +56,20 @@
                 @foreach (var k in ChartKinds.Of(goal))
                 {
                     var selected = k == kind;
+                    // The chart the series is stays pickable even when the data does not fit it.
+                    var missing = selected ? null : ChartKinds.Missing(k, dataset);
                     <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")" class="ce-kind @(selected ? "selected" : null)"
+                            disabled="@(missing is not null)" title="@(missing is null ? null : $"Needs {missing}")"
                             @onclick="() => PickKind(k, kind, series, dataset)">@k.Label</button>
                 }
             </div>
+            var unfit = ChartKinds.Of(goal).Where(k => k != kind).Select(k => (k.Label, Missing: ChartKinds.Missing(k, dataset))).Where(k => k.Missing is not null).ToList();
+            @if (unfit.Count > 0)
+            {
+                <p class="ce-hint ce-unfit">
+                    Not with this data: @string.Join("; ", unfit.Select(k => $"{k.Label} needs {k.Missing}")).
+                </p>
+            }
         }
 
         @if (series is null)
@@ -186,6 +199,7 @@
         if (!ReferenceEquals(_visitedFor, Definition))
         {
             _visited.Clear();
+            _lastKind.Clear();
             _visitedFor = Definition;
         }
     }
@@ -196,13 +210,32 @@
         _goal = null;
     }
 
-    // A goal only shows its charts; the chart changes when the user picks one. (It used to switch to the goal's
-    // first chart at once, so looking at another goal and coming back had already rewritten the series.)
-    private void PickGoal(ChartGoal goal, ChartKind? current, JsonObject? series, ChartDataset? dataset) => _goal = goal.Id;
+    // A goal switches to a chart at once: the one this series last was under that goal, else the goal's first.
+    // Going back to a chart restores the series as it was there (see _visited), so looking around loses nothing.
+    private Task PickGoal(ChartGoal goal, ChartKind? current, JsonObject? series, ChartDataset? dataset)
+    {
+        _goal = goal.Id;
+        if (current?.Goal == goal.Id)
+        {
+            return Task.CompletedTask;
+        }
+
+        // The data must fit: a remembered chart may not after the dataset changed. None fits: the goal only shows
+        // its charts, greyed, with what they need.
+        var remembered = series is not null && _lastKind.TryGetValue(series, out var last) && last.TryGetValue(goal.Id, out var id)
+            ? ChartKinds.All.First(k => k.Id == id)
+            : null;
+        var kind = remembered is not null && ChartKinds.Missing(remembered, dataset) is null
+            ? remembered
+            : ChartKinds.Of(goal.Id).FirstOrDefault(k => ChartKinds.Missing(k, dataset) is null);
+        return kind is null ? Task.CompletedTask : PickKind(kind, current, series, dataset);
+    }
 
     // Each series as it was under each chart it has been, so going back to a chart brings its fields back
-    // instead of filling them in again. Kept until the definition is replaced (an example, the JSON edited).
+    // instead of filling them in again, and the chart it last was under each goal. Kept until the definition is
+    // replaced (an example, the JSON edited).
     private readonly Dictionary<JsonObject, Dictionary<string, JsonObject>> _visited = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<JsonObject, Dictionary<string, string>> _lastKind = new(ReferenceEqualityComparer.Instance);
     private JsonObject? _visitedFor;
 
     private Task PickKind(ChartKind kind, ChartKind? current, JsonObject? series, ChartDataset? dataset)
@@ -224,10 +257,18 @@
             _visited[series] = states = [];
         }
 
+        if (!_lastKind.TryGetValue(series, out var lastKind))
+        {
+            _lastKind[series] = lastKind = [];
+        }
+
         if (current is not null)
         {
             states[current.Id] = (JsonObject)series.DeepClone();
+            lastKind[current.Goal] = current.Id;
         }
+
+        lastKind[kind.Goal] = kind.Id;
 
         if (states.TryGetValue(kind.Id, out var earlier))
         {
@@ -322,5 +363,6 @@
         _series = 0;
         _goal = null;
         _visited.Clear();
+        _lastKind.Clear();
     }
 }

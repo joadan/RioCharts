@@ -5,6 +5,16 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+- Docs site: the tables on Large data and Server export scroll on their own on a phone, instead of making the whole
+  page scroll sideways.
+- Docs site: in the editor, picking what to show (Compare, Parts of a whole...) switches the chart at once, to the
+  chart you last used there or else the first one. Going back brings that chart and its fields back as they were.
+  Horizontal bars over time group the rows per day, month... like Bars, instead of drawing a bar for every row.
+- Docs site: the editor only offers the charts the data can draw. The others are greyed, with what they would need
+  ("Scatter needs another number field", "Countries needs a field with country names or codes"), and a goal none of
+  whose charts fit is greyed too. Picking a goal starts on a chart that fits. A funnel sorts its stages largest first
+  (Sort and filter to change it), so it narrows whatever the order of the rows; charts without a Sort section, such as
+  a line, drop the sort.
 - Docs site: the home page has the menu button on small screens too. Before, phones saw no way to the docs from
   the home page, since the header links are hidden there.
 - `ChartDefinitionJson.Serialize` writes text as it is (`"#,0 €"`, `"°C"`) instead of escaping every non-ASCII

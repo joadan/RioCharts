@@ -2339,6 +2339,24 @@ table.hover-table td.num {
     color: var(--doc-surface);
 }
 
+/* Charts (and goals) the data cannot draw: greyed, with what they need in the hint below. */
+.site .doc button.ce-kind:disabled {
+    border-style: dashed;
+    border-color: var(--doc-border);
+    color: var(--doc-muted);
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.site .doc button.ce-goal.ce-goal.unfit:not(.selected) {
+    border-style: dashed;
+    opacity: 0.55;
+}
+
+.ce-unfit {
+    margin-top: 6px !important;
+}
+
 .ce-row {
     display: grid;
     grid-template-columns: minmax(96px, 2fr) minmax(0, 5fr);

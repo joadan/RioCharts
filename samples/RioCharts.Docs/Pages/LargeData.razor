@@ -50,6 +50,7 @@
     With <code>SeriesLayer.Canvas</code> the series are painted on a canvas laid over the SVG chart; axes, grid, legend, labels and
     annotations stay in SVG. Tooltips, clicks, zoom and pan work the same, since they use the chart's own hit testing. These differ:
 </p>
+<div class="table-scroll">
 <table class="docs">
     <tr><th>What</th><th>On a canvas</th></tr>
     <tr><td>Data labels and annotations</td><td>Drawn under the series, also annotations with <code>Layer="AnnotationLayer.Above"</code>. A line can cross a label.</td></tr>
@@ -61,6 +62,7 @@
     <tr><td>Static rendering</td><td>Static server rendering and prerendering draw the series in SVG; the canvas takes over once the chart runs interactively.</td></tr>
     <tr><td>Maps</td><td>Drawn in SVG, countries and bubbles; <code>SeriesLayer</code> has no effect.</td></tr>
 </table>
+</div>
 <p>Use SVG unless the series have many thousands of drawn shapes; most charts never need the canvas.</p>
 
 @code {
