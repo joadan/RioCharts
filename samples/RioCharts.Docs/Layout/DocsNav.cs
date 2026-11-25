@@ -27,7 +27,7 @@ public static class DocsNav
             new("live-data", "Live data"), new("large-data", "Large data"), new("compact", "Compact charts"), new("theming", "Theming"),
             new("languages", "Languages and texts"), new("export", "Export and download"),
         ]),
-        new("Beyond Blazor", [new("definitions", "Chart definitions (playground)"), new("dashboards", "Dashboards and the editor"), new("server-export", "Server-side export"), new("ai", "AI agents and MCP")]),
+        new("Beyond Blazor", [new("definitions", "Chart definitions"), new("dashboards", "Dashboards and the editor"), new("server-export", "Server-side export"), new("ai", "AI agents and MCP")]),
     ];
 
     public static readonly Page[] All = Groups.SelectMany(g => g.Pages).ToArray();
