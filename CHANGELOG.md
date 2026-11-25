@@ -5,6 +5,18 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+### Fixed
+
+- `SeriesBuffer` with a `TimeWindow` kept every point after one arrived out of order (a late sample): it now keeps
+  trimming to the window, measured from the last point appended.
+- A chart disposed while its JS module was still loading (navigating away right after the page opened) started the
+  module anyway and left its observers, listeners and .NET callback object behind. It now releases them, and a JS
+  error during dispose no longer skips the cleanup.
+- Time strings with an offset but no `T` (`"2026-03-01 12:00+02:00"`) or with an hours-only offset (`"…T12:00-05"`) in
+  annotations and ranges were read in the server's time zone when a chart `TimeZone` was set. They are now instants.
+- `ExportCsv` wrote the repeated hour of a daylight saving change (02:30+02:00 and 02:30+01:00) as one row with the
+  first offset. Each offset now gets its own row, in time order.
+
 ## 1.0.2-rc (2026-11-25)
 
 Release candidate for 1.0. Everything below is in it.

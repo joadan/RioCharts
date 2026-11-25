@@ -19,7 +19,6 @@ public sealed class SeriesBuffer
     private double[] _y;
     private int _start;
     private int _count;
-    private bool _sorted = true;
     private long _version;
 
     /// <param name="capacity">Most points kept; older ones are dropped.</param>
@@ -125,7 +124,6 @@ public sealed class SeriesBuffer
         {
             _start = 0;
             _count = 0;
-            _sorted = true;
             _version++;
         }
 
@@ -160,11 +158,6 @@ public sealed class SeriesBuffer
         if (_count == _x.Length && _x.Length < Capacity)
         {
             Grow();
-        }
-
-        if (_count > 0 && x < _x[(_start + _count - 1) % _x.Length])
-        {
-            _sorted = false;
         }
 
         if (_count == _x.Length)
@@ -202,11 +195,13 @@ public sealed class SeriesBuffer
 
     private void Trim()
     {
-        if (TimeWindow is not { } window || _count == 0 || !_sorted)
+        if (TimeWindow is not { } window || _count == 0)
         {
             return;
         }
 
+        // Measured from the last point appended. A late (out of order) point never drops newer ones, and drops
+        // out itself once it is the oldest and outside the window.
         var newest = _x[(_start + _count - 1) % _x.Length];
         var oldestAllowed = newest - window.TotalMilliseconds;
         while (_count > 0 && _x[_start] < oldestAllowed)
