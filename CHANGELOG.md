@@ -5,7 +5,8 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
-- `ChartDefinitionJson.Serialize` writes text as it is: `"#,0 €"` and `"°C"`, not `"#,0 €"`. Characters
+- `ChartDefinitionJson.Serialize` writes text as it is (`"#,0 €"`, `"°C"`) instead of escaping every non-ASCII
+  character as a `\u…` sequence. Characters
   that matter in HTML (`<`, `>`, `&`, quotes) are still escaped. Saved definitions read the same either way.
 - Docs site: the playground has a property panel next to the JSON. It lists every option with its description,
   searchable, with pickers for the dataset's fields; the panel and the JSON stay in sync. **Your data** charts a CSV or
