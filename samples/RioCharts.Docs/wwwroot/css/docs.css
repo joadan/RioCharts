@@ -767,7 +767,6 @@ table.docs tr:last-child td {
 
 .about-logo {
     flex: none;
-    transform: rotate(-6deg);
 }
 
 .about-logo .rio-logo {
