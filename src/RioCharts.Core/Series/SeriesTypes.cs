@@ -352,12 +352,14 @@ internal sealed class LineSeriesType : ISeriesType
     /// </summary>
     private static double[] ShapeOf(SeriesBuildContext c)
     {
-        if (c.Lower is not { } lower)
+        // A copy only when a base is missing under a top (a range area's gap); stacked areas have none, so no copy.
+        var upper = c.Upper;
+        if (c.Lower is not { } lower || !HasLowGap(upper, lower))
         {
-            return c.Upper;
+            return upper;
         }
 
-        var shape = (double[])c.Upper.Clone();
+        var shape = (double[])upper.Clone();
         for (var i = 0; i < shape.Length; i++)
         {
             if (!double.IsFinite(lower[i]))
@@ -367,6 +369,19 @@ internal sealed class LineSeriesType : ISeriesType
         }
 
         return shape;
+
+        static bool HasLowGap(double[] upper, double[] lower)
+        {
+            for (var i = 0; i < upper.Length; i++)
+            {
+                if (double.IsFinite(upper[i]) && !double.IsFinite(lower[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /// <summary>
