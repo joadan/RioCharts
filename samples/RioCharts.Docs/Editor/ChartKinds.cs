@@ -13,11 +13,25 @@ public sealed record ChartGoal(string Id, string Label, string Hint, string Icon
 
 /// <summary>A data slot of a chart: which definition property it sets, in words a user knows.</summary>
 public sealed record ChartSlot(string Property, string Label, string Hint, FieldType[] Accepts, SlotPart Part = SlotPart.None, bool Required = true,
-    string? NameHint = null)
+    string? NameHint = null, string? Needs = null, Func<DataField, bool>? Check = null)
 {
-    /// <summary>Whether a field may fill this slot on its own: the right type and, for slots like latitude, a fitting name.</summary>
+    /// <summary>
+    /// Whether a field may fill this slot on its own: the right type and, for slots like latitude, a fitting name or,
+    /// for countries, fitting values.
+    /// </summary>
     public bool Fits(DataField field) =>
-        Accepts.Contains(field.Type) && (NameHint is null || NameHint.Split('|').Any(h => field.Name.Contains(h, StringComparison.OrdinalIgnoreCase)));
+        Accepts.Contains(field.Type)
+        && (NameHint is null || NameHint.Split('|').Any(h => field.Name.Contains(h, StringComparison.OrdinalIgnoreCase)))
+        && (Check is null || Check(field));
+
+    /// <summary>What the slot needs in a user's words, for "Needs a time field": the field it takes, without the article.</summary>
+    public string Need => Needs ?? (Accepts switch
+    {
+        [FieldType.Time] => "time field",
+        [FieldType.Number] => "number field",
+        [FieldType.Text] => "text field",
+        _ => "field",
+    });
 
     public bool IsList => Property == "path";
 }
@@ -121,7 +135,7 @@ public static class ChartKinds
             ["titles", "sort", "axis", "legend", "lines"],
             (c, s, d) => s.Type == SeriesType.Bar && !c.Horizontal && s.Stack is null),
         new("horizontal-bars", "compare", "Horizontal bars", "bar",
-            [new("x", "Categories", "One bar for each value, listed down the side. Good for long names and rankings.", Category),
+            [new("x", "Categories", "One bar for each value, listed down the side. Good for long names and rankings.", Category, SlotPart.TimeBucket),
              Value("Bar length", "Rows with the same category are combined."),
              SplitBy("Split by", "Bars in a different color for each value.")],
             ["titles", "sort", "axis", "legend", "lines"],
@@ -180,8 +194,11 @@ public static class ChartKinds
         new("funnel", "shares", "Funnel", "funnel",
             [new("x", "Stages", "One stage per value, in the order of the rows.", Names),
              Value("Count", "How many are left at each stage.")],
-            ["titles"],
-            (c, s, d) => s.Type == SeriesType.Funnel),
+            ["titles", "sort"],
+            (c, s, d) => s.Type == SeriesType.Funnel,
+            // Largest first: stages that only get smaller, as a funnel should, whatever the order of the rows (months
+            // become a ranking, not a funnel that widens). Data that is a funnel already keeps its order.
+            (c, s) => s["sort"] ??= "descending"),
 
         // ----- Relation -----
         new("scatter", "relation", "Scatter", "scatter",
@@ -223,14 +240,14 @@ public static class ChartKinds
 
         // ----- On a map -----
         new("country-map", "map", "Countries", "map",
-            [new("x", "Country", "Country codes (SE, DE) or names.", Text),
+            [new("x", "Country", "Country codes (SE, DE) or names.", Text, Needs: "field with country names or codes", Check: HoldsCountries),
              Value("Color by", "How dark each country is.")],
             ["titles"],
             (c, s, d) => s.Type == SeriesType.Map),
         new("bubble-map", "map", "Places", "mapBubble",
             [new("x", "Place", "The name shown in the tooltip.", Text),
-             new("latitude", "Latitude", "Degrees north.", Number, NameHint: "lat"),
-             new("longitude", "Longitude", "Degrees east.", Number, NameHint: "lon|lng"),
+             new("latitude", "Latitude", "Degrees north.", Number, NameHint: "lat", Needs: "latitude field"),
+             new("longitude", "Longitude", "Degrees east.", Number, NameHint: "lon|lng", Needs: "longitude field"),
              Value("Bubble size", "Each bubble's area.")],
             ["titles"],
             (c, s, d) => s.Type == SeriesType.MapBubble),
@@ -359,6 +376,12 @@ public static class ChartKinds
         }
 
         series["type"] = kind.Type;
+        // Ranking only where the chart shows the Sort section: a line or a calendar sorted by value is out of order.
+        if (!kind.Sections.Contains("sort"))
+        {
+            series.Remove("sort");
+        }
+
         kind.Apply?.Invoke(chart, series);
 
         // Combining rows only where a slot says how (a scatter shows every row).
@@ -379,15 +402,24 @@ public static class ChartKinds
         }
 
         var used = new HashSet<string>(kind.Slots.Select(s => series[s.Property]?.ToString()).OfType<string>());
-        foreach (var slot in kind.Slots.Where(s => s.Required && series[s.Property] is null))
+        var empty = kind.Slots.Where(s => s.Required && series[s.Property] is null).ToArray();
+        // All the empty slots at once when the fields left allow (a line's time slot must not take the only number).
+        // When the fields kept stand in the way (the previous chart's value took the latitude a map of places
+        // needs), all the required slots afresh, and optional ones lose a field a required one now uses. Otherwise
+        // each slot the first fitting field left, so the chart fills in what it can.
+        var fill = Assign(empty, dataset, used);
+        if (fill is null && Assign([.. kind.Slots.Where(s => s.Required)], dataset, new HashSet<string>()) is { } fresh)
         {
-            var field = dataset.Fields.FirstOrDefault(f => slot.Fits(f) && !used.Contains(f.Name));
-            if (field is null)
+            fill = fresh;
+            var taken = fresh.Select(f => f.Field.Name).ToHashSet();
+            foreach (var slot in kind.Slots.Where(s => !s.Required && series[s.Property]?.ToString() is { } f && taken.Contains(f)))
             {
-                continue;
+                series.Remove(slot.Property);
             }
+        }
 
-            used.Add(field.Name);
+        foreach (var (slot, field) in fill ?? FillEach(empty, dataset, used))
+        {
             series[slot.Property] = slot.IsList ? new JsonArray(field.Name) : field.Name;
             if (slot.Part == SlotPart.Aggregate && series["aggregate"] is null)
             {
@@ -406,6 +438,144 @@ public static class ChartKinds
         {
             series["timeBucket"] = "auto";
         }
+    }
+
+    /// <summary>
+    /// What a dataset lacks for a kind, in a user's words ("a text field and two time fields"); null when its fields
+    /// can fill every required slot, each field once. Null without a dataset: there is nothing to judge.
+    /// </summary>
+    public static string? Missing(ChartKind kind, ChartDataset? dataset)
+    {
+        if (dataset is null)
+        {
+            return null;
+        }
+
+        var cache = Fit.GetOrCreateValue(dataset);
+        lock (cache)
+        {
+            if (!cache.TryGetValue(kind.Id, out var missing))
+            {
+                cache[kind.Id] = missing = Lacking([.. kind.Slots.Where(s => s.Required)], dataset);
+            }
+
+            return missing;
+        }
+    }
+
+    // What is lacking is what the most slots the fields can fill leave over: a timeline on data with a text field
+    // and one time field needs "a time field", not all three again.
+    private static string? Lacking(ChartSlot[] required, ChartDataset dataset)
+    {
+        if (Assign(required, dataset, new HashSet<string>()) is not null)
+        {
+            return null;
+        }
+
+        for (var size = required.Length - 1; size > 0; size--)
+        {
+            foreach (var kept in Combinations(required, size))
+            {
+                if (Assign(kept, dataset, new HashSet<string>()) is not null)
+                {
+                    return Describe(required.Except(kept), kept);
+                }
+            }
+        }
+
+        return Describe(required, []);
+    }
+
+    private static IEnumerable<ChartSlot[]> Combinations(ChartSlot[] slots, int size, int start = 0)
+    {
+        if (size == 0)
+        {
+            yield return [];
+            yield break;
+        }
+
+        for (var i = start; i <= slots.Length - size; i++)
+        {
+            foreach (var rest in Combinations(slots, size - 1, i + 1))
+            {
+                yield return [slots[i], .. rest];
+            }
+        }
+    }
+
+    // Per dataset (a loaded one lives as long as the page), so a render only looks up what fits.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChartDataset, Dictionary<string, string?>> Fit = new();
+
+    /// <summary>A field for every slot, each field once and none in <paramref name="used"/>; earlier fields first; null when none.</summary>
+    private static List<(ChartSlot Slot, DataField Field)>? Assign(IReadOnlyList<ChartSlot> slots, ChartDataset dataset, ISet<string> used)
+    {
+        var taken = new HashSet<string>(used, StringComparer.Ordinal);
+        var result = new List<(ChartSlot, DataField)>();
+        return Next(0) ? result : null;
+
+        bool Next(int i)
+        {
+            if (i == slots.Count)
+            {
+                return true;
+            }
+
+            foreach (var field in dataset.Fields.Where(f => slots[i].Fits(f) && !taken.Contains(f.Name)))
+            {
+                taken.Add(field.Name);
+                result.Add((slots[i], field));
+                if (Next(i + 1))
+                {
+                    return true;
+                }
+
+                taken.Remove(field.Name);
+                result.RemoveAt(result.Count - 1);
+            }
+
+            return false;
+        }
+    }
+
+    private static List<(ChartSlot Slot, DataField Field)> FillEach(IEnumerable<ChartSlot> slots, ChartDataset dataset, ISet<string> used)
+    {
+        var taken = new HashSet<string>(used, StringComparer.Ordinal);
+        var result = new List<(ChartSlot, DataField)>();
+        foreach (var slot in slots)
+        {
+            if (dataset.Fields.FirstOrDefault(f => slot.Fits(f) && !taken.Contains(f.Name)) is { } field)
+            {
+                taken.Add(field.Name);
+                result.Add((slot, field));
+            }
+        }
+
+        return result;
+    }
+
+    // "a text field and two time fields": what the slots left over take, counted, specific needs first. "Another"
+    // and "more" where the data has some of that kind already (a scatter on data with one number).
+    private static string Describe(IEnumerable<ChartSlot> slots, IEnumerable<ChartSlot> filled)
+    {
+        string[] counts = ["", "a", "two", "three", "four"];
+        var some = filled.Select(s => s.Need).ToHashSet();
+        var parts = slots.GroupBy(s => s.Need).OrderBy(g => g.Key == "field" ? 1 : 0)
+            .Select(g => (g.Key, Count: g.Count(), More: g.Key == "field" || some.Contains(g.Key)) switch
+            {
+                (_, 1, true) => $"another {g.Key}",
+                (_, var n, true) => $"{counts[n]} more {g.Key.Replace("field", "fields")}",
+                (_, 1, false) => $"{(g.Key[0] is 'a' or 'e' or 'i' or 'o' or 'u' ? "an" : "a")} {g.Key}",
+                (_, var n, false) => $"{counts[n]} {g.Key.Replace("field", "fields")}",
+            })
+            .ToList();
+        return parts.Count == 1 ? parts[0] : string.Join(", ", parts[..^1]) + " and " + parts[^1];
+    }
+
+    // A text field holds countries when most of its values (a sample) are country names or codes the map knows.
+    private static bool HoldsCountries(DataField field)
+    {
+        var values = field.Values.OfType<string>().Where(v => v.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Take(200).ToList();
+        return values.Count > 0 && values.Count(v => RioCharts.Core.Geo.WorldMap.Find(v) is not null) * 2 >= values.Count;
     }
 
     /// <summary>Makes a series a chart it has been before: its fields as they were then, and the chart's variant options.</summary>
