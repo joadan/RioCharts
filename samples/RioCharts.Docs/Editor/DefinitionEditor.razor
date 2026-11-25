@@ -48,7 +48,7 @@
         </div>
         @if (goal is not null)
         {
-            <p class="ce-hint ce-goal-hint">@ChartKinds.Goal(goal).Hint</p>
+            <p class="ce-hint ce-goal-hint">@ChartKinds.Goal(goal).Hint@(kind is not null && kind.Goal != goal ? $". Pick one to switch from {kind.Label}." : "")</p>
             <div class="ce-kinds" role="radiogroup" aria-label="Chart">
                 @foreach (var k in ChartKinds.Of(goal))
                 {
@@ -180,8 +180,15 @@
     private int _series;
 
     // The definition as read (synonyms such as column or donut resolved), to tell which chart it is.
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
         _parsed = Definition is null ? null : ChartDefinitionJson.Parse(Definition.ToJsonString()).Definition;
+        if (!ReferenceEquals(_visitedFor, Definition))
+        {
+            _visited.Clear();
+            _visitedFor = Definition;
+        }
+    }
 
     private void SelectSeries(int index)
     {
@@ -189,22 +196,48 @@
         _goal = null;
     }
 
-    private Task PickGoal(ChartGoal goal, ChartKind? current, JsonObject? series, ChartDataset? dataset)
-    {
-        _goal = goal.Id;
-        return current?.Goal == goal.Id ? Task.CompletedTask : PickKind(ChartKinds.Of(goal.Id).First(), current, series, dataset);
-    }
+    // A goal only shows its charts; the chart changes when the user picks one. (It used to switch to the goal's
+    // first chart at once, so looking at another goal and coming back had already rewritten the series.)
+    private void PickGoal(ChartGoal goal, ChartKind? current, JsonObject? series, ChartDataset? dataset) => _goal = goal.Id;
+
+    // Each series as it was under each chart it has been, so going back to a chart brings its fields back
+    // instead of filling them in again. Kept until the definition is replaced (an example, the JSON edited).
+    private readonly Dictionary<JsonObject, Dictionary<string, JsonObject>> _visited = new(ReferenceEqualityComparer.Instance);
+    private JsonObject? _visitedFor;
 
     private Task PickKind(ChartKind kind, ChartKind? current, JsonObject? series, ChartDataset? dataset)
     {
         _goal = kind.Goal;
+        if (kind == current)
+        {
+            return Task.CompletedTask;
+        }
+
         if (series is null)
         {
             series = [];
             DefinitionProperties.List(Definition!, "series", create: true)!.Add(series);
         }
 
-        ChartKinds.Apply(kind, current, Definition!, series, dataset);
+        if (!_visited.TryGetValue(series, out var states))
+        {
+            _visited[series] = states = [];
+        }
+
+        if (current is not null)
+        {
+            states[current.Id] = (JsonObject)series.DeepClone();
+        }
+
+        if (states.TryGetValue(kind.Id, out var earlier))
+        {
+            ChartKinds.Restore(kind, Definition!, series, earlier);
+        }
+        else
+        {
+            ChartKinds.Apply(kind, current, Definition!, series, dataset);
+        }
+
         return Changed.InvokeAsync();
     }
 
@@ -288,5 +321,6 @@
     {
         _series = 0;
         _goal = null;
+        _visited.Clear();
     }
 }

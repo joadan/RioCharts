@@ -1490,7 +1490,9 @@ It now works like a chart builder:
 1. **What do you want to show?** Seven goals (change over time, compare, parts of a whole,
    relation, spread and timelines, on a map, one number), then the charts for that goal (Line,
    Stacked area, Horizontal bars, Donut, Timeline...). A chart is a type plus the options that make
-   the variant (horizontal, a stack, percent stacking, an inner radius).
+   the variant (horizontal, a stack, percent stacking, an inner radius). Picking a goal only shows its charts;
+   the chart changes when one is picked. The editor keeps each series as it was under every chart it
+   has been, so going back to a chart restores its fields (until the definition is replaced).
 2. **Your data:** the dataset, then the slots that chart needs, named for it: a bar chart asks for
    Categories, Bar height (Sum of revenue) and Split by; a gauge for a Value. Each slot lists only
    fields of a fitting type and has its hint always visible. Picking a chart fills empty slots with

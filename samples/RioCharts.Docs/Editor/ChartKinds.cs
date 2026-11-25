@@ -408,6 +408,26 @@ public static class ChartKinds
         }
     }
 
+    /// <summary>Makes a series a chart it has been before: its fields as they were then, and the chart's variant options.</summary>
+    public static void Restore(ChartKind kind, JsonObject chart, JsonObject series, JsonObject earlier)
+    {
+        foreach (var (scope, property) in Variants)
+        {
+            Target(chart, series, scope, create: false)?.Remove(property);
+        }
+
+        // The chart's own variant options (horizontal, percent stacking) from the kind; the series' (a stack name,
+        // an inner radius) as they were.
+        kind.Apply?.Invoke(chart, series);
+        series.Clear();
+        foreach (var (name, value) in earlier)
+        {
+            series[name] = value?.DeepClone();
+        }
+
+        series["type"] = kind.Type;
+    }
+
     /// <summary>The JSON object an option lives in; with <paramref name="create"/> a missing axis or legend object is added.</summary>
     public static JsonObject? Target(JsonObject chart, JsonObject? series, OptionScope scope, bool create)
     {
