@@ -2339,6 +2339,134 @@ table.hover-table td.num {
     color: var(--doc-surface);
 }
 
+/* Data first: the dataset's fields as chips to pick, then cards of the charts that fit them. */
+.ce-fields-hint {
+    margin: 10px 0 6px !important;
+}
+
+.ce-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.site .doc button.ce-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px 4px 6px;
+    border: 1px solid var(--doc-border-strong);
+    border-radius: 8px;
+    background: var(--doc-surface);
+    box-shadow: none;
+    color: var(--doc-text);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.ce-field-type {
+    min-width: 20px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--doc-surface-2);
+    color: var(--doc-muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.site .doc button.ce-field.picked {
+    border-color: var(--doc-accent);
+    background: var(--doc-accent-soft);
+    color: var(--doc-accent);
+    font-weight: 500;
+}
+
+.ce-field.picked .ce-field-type {
+    background: var(--doc-accent);
+    color: var(--doc-surface);
+}
+
+.ce-suggestions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.ce-suggestion {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--doc-border);
+    border-radius: 10px;
+    background: var(--doc-surface);
+}
+
+.ce-suggestion:hover {
+    border-color: var(--doc-border-strong);
+}
+
+.ce-suggestion.selected {
+    border-color: var(--doc-accent);
+    box-shadow: 0 0 0 1px var(--doc-accent);
+}
+
+.ce-suggestion-chart {
+    height: 84px;
+    padding: 6px 8px 0;
+    pointer-events: none;
+}
+
+.site .doc .ce-suggestion button.ce-pick {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    width: 100%;
+    padding: 6px 10px 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--doc-text);
+    font-size: 13px;
+    font-weight: 400;
+    text-align: left;
+}
+
+/* The whole card is the button. */
+.site .doc .ce-suggestion button.ce-pick::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.ce-suggestion button strong {
+    font-weight: 600;
+}
+
+.ce-suggestion.selected button strong {
+    color: var(--doc-accent);
+}
+
+.ce-suggestion button span {
+    overflow: hidden;
+    max-width: 100%;
+    color: var(--doc-muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ce-more {
+    align-items: center;
+    margin-top: 8px;
+}
+
+.ce-all-charts {
+    margin-top: 14px;
+}
+
 /* Charts (and goals) the data cannot draw: greyed, with what they need in the hint below. */
 .site .doc button.ce-kind:disabled {
     border-style: dashed;

@@ -1,5 +1,5 @@
-@* A chart editor for people, not for the JSON: pick what to show, fill in the data the chart needs, then
-   fine-tune in a few folded sections that say what is set. "All options" at the end lists every option of
+@* A chart editor for people, not for the JSON: pick the data and the fields to show, then one of the charts
+   that fit them (drawn small with the data), adjust which field goes where, and fine-tune in a few folded sections that say what is set. "All options" at the end lists every option of
    the definition by its JSON name, for developers. It edits the JSON object it is given and raises Changed
    after every edit. Built in the docs site with a future editor component in mind; not part of 1.0. *@
 @using System.Text.Json.Nodes
@@ -34,47 +34,137 @@
             </div>
         }
 
-        <h4 class="ce-step"><span>1</span> What do you want to show?</h4>
-        <div class="ce-goals">
-            @foreach (var g in ChartKinds.Goals)
+        <h4 class="ce-step"><span>1</span> Your data</h4>
+        <div class="ce-row">
+            <label class="ce-label" for="ce-dataset">Data</label>
+            <div class="ce-inputs">
+                <select id="ce-dataset" value="@(Definition["dataset"]?.ToString() ?? "")" @onchange="e => SetDataset(e.Value?.ToString(), kind, series)">
+                    @if (Definition["data"] is JsonArray { Count: > 0 })
+                    {
+                        <option value="">Rows in the definition</option>
+                    }
+                    else if (Definition["dataset"] is null)
+                    {
+                        <option value="">Choose</option>
+                    }
+                    @foreach (var name in Datasets.Keys)
+                    {
+                        <option value="@name" selected="@(string.Equals(name, Definition["dataset"]?.ToString(), StringComparison.OrdinalIgnoreCase))">@name</option>
+                    }
+                </select>
+            </div>
+            @if (dataset?.Description is { Length: > 0 } about)
             {
-                var selected = g.Id == goal;
-                // A goal none of whose charts this data can draw stays clickable, greyed, to say what it would need.
-                var fits = g.Id == kind?.Goal || ChartKinds.Of(g.Id).Any(k => ChartKinds.Missing(k, dataset) is null);
-                <button type="button" class="ce-goal @(selected ? "selected" : null) @(fits ? null : "unfit")" aria-pressed="@(selected ? "true" : "false")"
-                        title="@(fits ? g.Hint : $"{g.Hint}. Not with this data.")"
-                        @onclick="() => PickGoal(g, kind, series, dataset)">
-                    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="@g.Icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                    <span>@g.Label</span>
-                </button>
+                <p class="ce-hint">@about</p>
             }
         </div>
-        @if (goal is not null)
+
+        @if (dataset is not null)
         {
-            <p class="ce-hint ce-goal-hint">@ChartKinds.Goal(goal).Hint@(kind is not null && kind.Goal != goal ? $". Pick one to switch from {kind.Label}." : "")</p>
-            <div class="ce-kinds" role="radiogroup" aria-label="Chart">
-                @foreach (var k in ChartKinds.Of(goal))
+            var picked = Picked(series, dataset);
+            <p class="ce-hint ce-fields-hint">Pick the fields to show:</p>
+            <div class="ce-fields" role="group" aria-label="Fields to show">
+                @foreach (var field in dataset.Fields)
                 {
-                    var selected = k == kind;
-                    // The chart the series is stays pickable even when the data does not fit it.
-                    var missing = selected ? null : ChartKinds.Missing(k, dataset);
-                    <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")" class="ce-kind @(selected ? "selected" : null)"
-                            disabled="@(missing is not null)" title="@(missing is null ? null : $"Needs {missing}")"
-                            @onclick="() => PickKind(k, kind, series, dataset)">@k.Label</button>
+                    var on = picked.Contains(field);
+                    <button type="button" class="ce-field @(on ? "picked" : null)" aria-pressed="@(on ? "true" : "false")"
+                            @onclick="() => TogglePick(field, series, dataset)">
+                        <span class="ce-field-type" aria-hidden="true">@TypeMark(field.Type)</span>@field.Name
+                    </button>
                 }
             </div>
-            var unfit = ChartKinds.Of(goal).Where(k => k != kind).Select(k => (k.Label, Missing: ChartKinds.Missing(k, dataset))).Where(k => k.Missing is not null).ToList();
-            @if (unfit.Count > 0)
+
+            <h4 class="ce-step"><span>2</span> Pick a chart</h4>
+            var suggestions = Suggestions(picked, index, dataset);
+            @if (picked.Count == 0)
             {
-                <p class="ce-hint ce-unfit">
-                    Not with this data: @string.Join("; ", unfit.Select(k => $"{k.Label} needs {k.Missing}")).
-                </p>
+                <p class="ce-note">Pick one or more fields above, and the charts that fit them show here.</p>
+            }
+            else if (suggestions.Count == 0)
+            {
+                <p class="ce-note">No chart shows these fields together. Pick fewer, or another mix, or choose under All charts.</p>
+            }
+            else
+            {
+                var shown = FieldsOf(series, dataset);
+                <div class="ce-suggestions">
+                    @foreach (var (suggestion, preview) in suggestions.Take(4))
+                    {
+                        var current = suggestion.Kind == kind && shown.SetEquals(suggestion.Placed.Select(p => p.Field.Name));
+                        <div class="ce-suggestion @(current ? "selected" : null)" @key="@($"{suggestion.Kind.Id}/{suggestion.Caption}")">
+                            <div class="ce-suggestion-chart" aria-hidden="true">
+                                @if (preview is not null)
+                                {
+                                    <RioChart TItem="object" Definition="preview" Datasets="Datasets" Height="84" Compact="true" Interactive="false" Animate="false" />
+                                }
+                            </div>
+                            <button type="button" class="ce-pick" aria-pressed="@(current ? "true" : "false")" @onclick="() => UseSuggestion(suggestion, kind, series, dataset)">
+                                <strong>@suggestion.Kind.Label</strong>
+                                <span>@suggestion.Caption</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+                @if (suggestions.Count > 4)
+                {
+                    <div class="ce-kinds ce-more">
+                        <span class="ce-hint">Also:</span>
+                        @foreach (var (suggestion, _) in suggestions.Skip(4))
+                        {
+                            var current = suggestion.Kind == kind && shown.SetEquals(suggestion.Placed.Select(p => p.Field.Name));
+                            <button type="button" class="ce-kind @(current ? "selected" : null)" title="@suggestion.Caption"
+                                    @onclick="() => UseSuggestion(suggestion, kind, series, dataset)">@suggestion.Kind.Label</button>
+                        }
+                    </div>
+                }
             }
         }
 
+        <details class="ce-section ce-all-charts" open="@(dataset is null)">
+            <summary><span class="ce-section-label">All charts</span><span class="ce-summary">@(kind?.Label ?? "By what you want to show")</span></summary>
+            <div class="ce-section-body">
+                <div class="ce-goals">
+                    @foreach (var g in ChartKinds.Goals)
+                    {
+                        var selected = g.Id == goal;
+                        // A goal none of whose charts this data can draw stays clickable, greyed, to say what it would need.
+                        var fits = g.Id == kind?.Goal || ChartKinds.Of(g.Id).Any(k => ChartKinds.Missing(k, dataset) is null);
+                        <button type="button" class="ce-goal @(selected ? "selected" : null) @(fits ? null : "unfit")" aria-pressed="@(selected ? "true" : "false")"
+                                title="@(fits ? g.Hint : $"{g.Hint}. Not with this data.")"
+                                @onclick="() => PickGoal(g, kind, series, dataset)">
+                            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="@g.Icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            <span>@g.Label</span>
+                        </button>
+                    }
+                </div>
+                @if (goal is not null)
+                {
+                    <p class="ce-hint ce-goal-hint">@ChartKinds.Goal(goal).Hint@(kind is not null && kind.Goal != goal ? $". Pick one to switch from {kind.Label}." : "")</p>
+                    <div class="ce-kinds" role="radiogroup" aria-label="Chart">
+                        @foreach (var k in ChartKinds.Of(goal))
+                        {
+                            var selected = k == kind;
+                            // The chart the series is stays pickable even when the data does not fit it.
+                            var missing = selected ? null : ChartKinds.Missing(k, dataset);
+                            <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")" class="ce-kind @(selected ? "selected" : null)"
+                                    disabled="@(missing is not null)" title="@(missing is null ? null : $"Needs {missing}")"
+                                    @onclick="() => PickKind(k, kind, series, dataset)">@k.Label</button>
+                        }
+                    </div>
+                    var unfit = ChartKinds.Of(goal).Where(k => k != kind).Select(k => (k.Label, Missing: ChartKinds.Missing(k, dataset))).Where(k => k.Missing is not null).ToList();
+                    @if (unfit.Count > 0)
+                    {
+                        <p class="ce-hint ce-unfit">
+                            Not with this data: @string.Join("; ", unfit.Select(k => $"{k.Label} needs {k.Missing}")).
+                        </p>
+                    }
+                }
+            </div>
+        </details>
+
         @if (series is null)
         {
-            <p class="ce-note">This definition has no series yet. Pick a chart above to start one.</p>
+            <p class="ce-note">This definition has no series yet. Pick fields and a chart above to start one.</p>
         }
         else if (kind is null && _parsed?.Series.ElementAtOrDefault(index)?.Type == SeriesType.Auto)
         {
@@ -89,30 +179,7 @@
         }
         else
         {
-            <h4 class="ce-step"><span>2</span> Your data</h4>
-            <div class="ce-row">
-                <label class="ce-label" for="ce-dataset">Data</label>
-                <div class="ce-inputs">
-                    <select id="ce-dataset" value="@(Definition["dataset"]?.ToString() ?? "")" @onchange="e => SetDataset(e.Value?.ToString(), kind, series)">
-                        @if (Definition["data"] is JsonArray { Count: > 0 })
-                        {
-                            <option value="">Rows in the definition</option>
-                        }
-                        else if (Definition["dataset"] is null)
-                        {
-                            <option value="">Choose</option>
-                        }
-                        @foreach (var name in Datasets.Keys)
-                        {
-                            <option value="@name" selected="@(string.Equals(name, Definition["dataset"]?.ToString(), StringComparison.OrdinalIgnoreCase))">@name</option>
-                        }
-                    </select>
-                </div>
-                @if (dataset?.Description is { Length: > 0 } about)
-                {
-                    <p class="ce-hint">@about</p>
-                }
-            </div>
+            <h4 class="ce-step"><span>3</span> Fields</h4>
 
             @foreach (var slot in kind.Slots)
             {
@@ -129,7 +196,7 @@
                 <button type="button" class="ce-link" @onclick="() => RemoveSeries(series)">Remove this series</button>
             }
 
-            <h4 class="ce-step"><span>3</span> Fine-tune</h4>
+            <h4 class="ce-step"><span>4</span> Fine-tune</h4>
             <div class="ce-sections">
                 @foreach (var id in kind.Sections)
                 {
@@ -200,6 +267,7 @@
         {
             _visited.Clear();
             _lastKind.Clear();
+            _picked = null;
             _visitedFor = Definition;
         }
     }
@@ -208,6 +276,7 @@
     {
         _series = index;
         _goal = null;
+        _picked = null;
     }
 
     // A goal switches to a chart at once: the one this series last was under that goal, else the goal's first.
@@ -246,12 +315,31 @@
             return Task.CompletedTask;
         }
 
-        if (series is null)
+        series ??= NewSeries();
+        var states = Remember(series, current, kind);
+        if (states.TryGetValue(kind.Id, out var earlier))
         {
-            series = [];
-            DefinitionProperties.List(Definition!, "series", create: true)!.Add(series);
+            ChartKinds.Restore(kind, Definition!, series, earlier);
+        }
+        else
+        {
+            ChartKinds.Apply(kind, current, Definition!, series, dataset);
         }
 
+        _picked = null;
+        return Changed.InvokeAsync();
+    }
+
+    private JsonObject NewSeries()
+    {
+        var series = new JsonObject();
+        DefinitionProperties.List(Definition!, "series", create: true)!.Add(series);
+        return series;
+    }
+
+    // Keeps the series as it is under the chart it is leaving, and which chart it was under each goal.
+    private Dictionary<string, JsonObject> Remember(JsonObject series, ChartKind? current, ChartKind next)
+    {
         if (!_visited.TryGetValue(series, out var states))
         {
             _visited[series] = states = [];
@@ -268,21 +356,81 @@
             lastKind[current.Goal] = current.Id;
         }
 
-        lastKind[kind.Goal] = kind.Id;
+        lastKind[next.Goal] = next.Id;
+        return states;
+    }
 
-        if (states.TryGetValue(kind.Id, out var earlier))
+    // ----- Data first: pick fields, then one of the charts that fit them -----
+
+    // The fields picked; null while they are the ones the chart shows (they follow the field pickers below).
+    private List<string>? _picked;
+
+    private IReadOnlyList<DataField> Picked(JsonObject? series, ChartDataset dataset) => _picked is null
+        ? ChartKinds.FieldsOf(series, dataset)
+        : [.. _picked.Select(dataset.Field).OfType<DataField>()];
+
+    private static HashSet<string> FieldsOf(JsonObject? series, ChartDataset dataset) =>
+        [.. ChartKinds.FieldsOf(series, dataset).Select(f => f.Name)];
+
+    private void TogglePick(DataField field, JsonObject? series, ChartDataset dataset)
+    {
+        _picked ??= [.. ChartKinds.FieldsOf(series, dataset).Select(f => f.Name)];
+        if (!_picked.Remove(field.Name))
         {
-            ChartKinds.Restore(kind, Definition!, series, earlier);
+            _picked.Add(field.Name);
         }
-        else
+    }
+
+    private static string TypeMark(FieldType type) => type switch
+    {
+        FieldType.Number => "#",
+        FieldType.Time => "◷",
+        _ => "Aa",
+    };
+
+    // The suggestions and their previews, made again only when what they are made from changes.
+    private IReadOnlyList<(ChartSuggestion Suggestion, ChartDefinition? Preview)> _suggestions = [];
+    private string? _suggestionsFor;
+
+    private IReadOnlyList<(ChartSuggestion Suggestion, ChartDefinition? Preview)> Suggestions(IReadOnlyList<DataField> picked, int index, ChartDataset dataset)
+    {
+        var key = $"{index}\n{dataset.Name}\n{string.Join("\n", picked.Select(f => f.Name))}\n{Definition!.ToJsonString()}";
+        if (key != _suggestionsFor)
         {
-            ChartKinds.Apply(kind, current, Definition!, series, dataset);
+            var all = ChartKinds.Suggest(picked);
+            _suggestions = [.. all.Select((s, i) => (s, i < 4 ? Preview(s, index, dataset) : null))];
+            _suggestionsFor = key;
         }
 
+        return _suggestions;
+    }
+
+    // The chart as the suggestion would make it, small: this series alone, no title, legend or reference lines.
+    private ChartDefinition? Preview(ChartSuggestion suggestion, int index, ChartDataset dataset)
+    {
+        var chart = (JsonObject)Definition!.DeepClone();
+        var list = DefinitionProperties.List(chart, "series", create: true)!;
+        var series = index < list.Count && list[index] is JsonObject s ? s : new JsonObject();
+        list.Clear();
+        list.Add(series);
+        ChartKinds.Use(suggestion, null, chart, series, dataset);
+        chart.Remove("title");
+        chart.Remove("annotations");
+        chart["legend"] = new JsonObject { ["mode"] = "hide" };
+        return ChartDefinitionJson.Parse(chart.ToJsonString()).Definition;
+    }
+
+    private Task UseSuggestion(ChartSuggestion suggestion, ChartKind? current, JsonObject? series, ChartDataset? dataset)
+    {
+        series ??= NewSeries();
+        Remember(series, current, suggestion.Kind);
+        ChartKinds.Use(suggestion, current, Definition!, series, dataset);
+        _goal = suggestion.Kind.Goal;
+        _picked = null;
         return Changed.InvokeAsync();
     }
 
-    private Task SetDataset(string? name, ChartKind kind, JsonObject series)
+    private Task SetDataset(string? name, ChartKind? kind, JsonObject? series)
     {
         if (string.IsNullOrEmpty(name))
         {
@@ -291,6 +439,12 @@
 
         Definition!["dataset"] = name;
         Definition.Remove("data");
+        _picked = null;
+        if (kind is null || series is null)
+        {
+            return Changed.InvokeAsync();
+        }
+
         series.Remove("dataset");
         // The fields of another dataset rarely have the same names: start the slots again from its fields.
         if (Datasets.TryGetValue(name, out var dataset))
@@ -364,5 +518,6 @@
         _goal = null;
         _visited.Clear();
         _lastKind.Clear();
+        _picked = null;
     }
 }
