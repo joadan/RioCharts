@@ -65,6 +65,26 @@ public class Milestone4Tests
     }
 
     [Fact]
+    public void Buffer_keeps_its_time_window_after_a_late_point()
+    {
+        var buffer = new SeriesBuffer(timeWindow: TimeSpan.FromMinutes(1));
+        var start = new DateTime(2026, 1, 1);
+        for (var s = 0; s < 300; s++)
+        {
+            buffer.Append(start.AddSeconds(s), s);
+            if (s == 100)
+            {
+                buffer.Append(start.AddSeconds(95), -1); // arrives late
+            }
+        }
+
+        var data = buffer.ToSeriesData();
+
+        Assert.Equal(61, data.Count); // still 239 s .. 299 s, not every point since the late one
+        Assert.Equal(TimeValue.FromDateTime(start.AddSeconds(239)), data.X[0]);
+    }
+
+    [Fact]
     public void Buffer_drops_the_oldest_points_at_capacity_and_grows_until_then()
     {
         var buffer = new SeriesBuffer(capacity: 3000, kind: XKind.Numeric);

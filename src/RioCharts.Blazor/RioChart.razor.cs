@@ -823,8 +823,20 @@ public partial class RioChart<TItem> : IChartContext
             if (firstRender)
             {
                 _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RioCharts.Blazor/RioChart.razor.js");
+                if (_disposed)
+                {
+                    // Disposed while the module loaded (e.g. the user navigated away): never start it.
+                    await ReleaseJsAsync();
+                    return;
+                }
+
                 _dotnet = DotNetObjectReference.Create(new JsCallbacks(this));
                 var info = ChartContainerInfo.From(await _module.InvokeAsync<System.Text.Json.JsonElement>("init", _container, _dotnet));
+                if (_disposed)
+                {
+                    await ReleaseJsAsync();
+                    return;
+                }
                 var changed = false;
                 if (info.Widths is { Length: > 0 } widths)
                 {
@@ -870,7 +882,7 @@ public partial class RioChart<TItem> : IChartContext
 #pragma warning disable BL0016
     private async Task SyncInteractionAsync()
     {
-        if (_module is null || _layout is null)
+        if (_module is not { } module || _layout is null)
         {
             return;
         }
@@ -885,7 +897,7 @@ public partial class RioChart<TItem> : IChartContext
         _sentInteraction = key;
         if (UsesCanvas)
         {
-            await _module.InvokeVoidAsync("paint", _container, InteropJson.Bytes(CanvasSeriesWriter.Build(_layout.Scene)));
+            await module.InvokeVoidAsync("paint", _container, InteropJson.Bytes(CanvasSeriesWriter.Build(_layout.Scene)));
         }
 
         var model = CustomTooltip(_layout);
@@ -927,13 +939,13 @@ public partial class RioChart<TItem> : IChartContext
                 Sel: _selected.Count > 0 || _selectedRange is not null,
                 Radar: model.Radar is { } radar ? new RadarModel(radar.Cx, radar.Cy, radar.Radius, radar.Count) : null))
             : null;
-        await _module.InvokeVoidAsync("update", _container, payload);
+        await module.InvokeVoidAsync("update", _container, payload);
         if (_shareZoom)
         {
             _shareZoom = false;
             if (Group is not null)
             {
-                await _module.InvokeVoidAsync("zoomGroup", _container, _range?.Min, _range?.Max);
+                await module.InvokeVoidAsync("zoomGroup", _container, _range?.Min, _range?.Max);
             }
         }
 
@@ -1138,23 +1150,45 @@ public partial class RioChart<TItem> : IChartContext
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
-        if (_module is not null)
+        await ReleaseJsAsync();
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases the JS module, its state for this chart and the callback object. Safe to call more than once:
+    /// the first render calls it too when the chart was disposed while it was loading the module.
+    /// </summary>
+    private async ValueTask ReleaseJsAsync()
+    {
+        var (module, dotnet) = (_module, _dotnet);
+        (_module, _dotnet) = (null, null);
+        try
         {
-            try
+            if (module is not null)
             {
-                await _module.InvokeVoidAsync("dispose", _container);
-                await _module.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-            }
-            catch (TaskCanceledException)
-            {
+                try
+                {
+                    await module.InvokeVoidAsync("dispose", _container);
+                }
+                finally
+                {
+                    await module.DisposeAsync();
+                }
             }
         }
-
-        _dotnet?.Dispose();
-        GC.SuppressFinalize(this);
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+        finally
+        {
+            dotnet?.Dispose();
+        }
     }
 
     /// <summary>

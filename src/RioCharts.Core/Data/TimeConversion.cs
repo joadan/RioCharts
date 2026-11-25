@@ -156,16 +156,14 @@ internal sealed class TimeConversion
 
     private double FromString(string s)
     {
-        // With an explicit offset or "Z" the string is an instant; without, it is unspecified.
-        var hasZone = s.EndsWith('Z') || s.EndsWith('z') || System.Text.RegularExpressions.Regex.IsMatch(s, @"T.*[+-]\d{2}:?\d{2}$");
-        if (hasZone && DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var o))
+        // With an offset or "Z" (any spelling .NET reads: "T" or a space, "+02", "+0200", "+02:00") the string is an
+        // instant and comes back as UTC; without, it stays unspecified. Never converted to the machine's zone.
+        if (!DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var d))
         {
-            return TimeValue.FromDateTime(o.UtcDateTime);
+            return double.NaN;
         }
 
-        return DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
-            ? ToInstant(TimeValue.FromDateTime(d), double.NaN)
-            : double.NaN;
+        return d.Kind == DateTimeKind.Utc ? TimeValue.FromDateTime(d) : ToInstant(TimeValue.FromDateTime(d), double.NaN);
     }
 
     /// <summary>

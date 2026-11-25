@@ -24,6 +24,18 @@ public class TimeZoneBucketTests
     }
 
     [Fact]
+    public void Time_strings_with_an_offset_are_instants_whatever_the_machine_zone()
+    {
+        static double Ms(int hour) => TimeValue.FromDateTime(new DateTime(2026, 3, 1, hour, 0, 0));
+
+        Assert.Equal(Ms(10), Stockholm.ToInstant("2026-03-01 12:00+02:00")); // a space instead of "T"
+        Assert.Equal(Ms(17), Stockholm.ToInstant("2026-03-01T12:00-05")); // hours only
+        Assert.Equal(Ms(12), Stockholm.ToInstant("2026-03-01T12:00:00Z"));
+        Assert.Equal(Ms(12), Stockholm.ToInstant("2026-03-01T12:00")); // unspecified: UTC here
+        Assert.True(double.IsNaN(Stockholm.ToInstant("not a time")));
+    }
+
+    [Fact]
     public void Months_and_weeks_follow_the_zone_calendar()
     {
         // 03:00 UTC on 1 December is still 30 November (a Monday) in New York.

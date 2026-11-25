@@ -51,6 +51,19 @@ public class ExportTests
     }
 
     [Fact]
+    public void Csv_keeps_the_repeated_autumn_hour_apart()
+    {
+        // Stockholm leaves summer time on 25 October 2026: 02:30 comes twice, at +02:00 and then +01:00.
+        var data = SeriesData.From(
+            [new DateTimeOffset(2026, 10, 25, 2, 30, 0, TimeSpan.FromHours(2)), new DateTimeOffset(2026, 10, 25, 2, 30, 0, TimeSpan.FromHours(1))],
+            [1.0, 2]);
+
+        var csv = ChartCsv.Write([("t", data)], new CsvOptions { NewLine = "\n" });
+
+        Assert.Equal("x,t\n2026-10-25T02:30:00+02:00,1\n2026-10-25T02:30:00+01:00,2\n", csv);
+    }
+
+    [Fact]
     public void Csv_uses_the_given_culture_and_delimiter()
     {
         var data = SeriesData.From([1.5], [20.25]);

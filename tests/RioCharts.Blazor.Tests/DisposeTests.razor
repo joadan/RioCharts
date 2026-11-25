@@ -1,0 +1,64 @@
+@inherits BunitContext
+@using Microsoft.Extensions.DependencyInjection
+
+@code {
+    // Not a ChartTestBase: these tests bring their own JS runtime, registered before anything is rendered.
+
+    private sealed record Reading(DateTime Time, double Value);
+
+    private static readonly Reading[] Readings = [new(new DateTime(2026, 11, 16), 19.5), new(new DateTime(2026, 11, 16, 1, 0, 0), 20.1)];
+
+    [Fact]
+    public async Task A_chart_disposed_while_its_module_loads_never_starts_it()
+    {
+        // The module import is still pending when the chart goes away (the user navigated on).
+        var js = new PendingImportRuntime();
+        Services.AddSingleton<IJSRuntime>(js);
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        var cut = Render<RioChart<Reading>>(@<RioChart TItem="Reading">
+            <LineSeries Items="Readings" Name="London" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>);
+
+        await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+        var module = new RecordingModule();
+        await cut.InvokeAsync(() => js.Import.SetResult(module));
+
+        cut.WaitForAssertion(() => Assert.True(module.Disposed));
+        Assert.DoesNotContain("init", module.Calls);
+    }
+
+    /// <summary>A JS runtime whose module import completes when the test says so.</summary>
+    private sealed class PendingImportRuntime : IJSRuntime
+    {
+        public TaskCompletionSource<IJSObjectReference> Import { get; } = new();
+
+        public async ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
+            identifier == "import" ? (TValue)await Import.Task : throw new InvalidOperationException(identifier);
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
+            InvokeAsync<TValue>(identifier, args);
+    }
+
+    /// <summary>A JS module that records its calls.</summary>
+    private sealed class RecordingModule : IJSObjectReference
+    {
+        public List<string> Calls { get; } = [];
+
+        public bool Disposed { get; private set; }
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
+        {
+            Calls.Add(identifier);
+            return ValueTask.FromResult(default(TValue)!);
+        }
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
+            InvokeAsync<TValue>(identifier, args);
+
+        public ValueTask DisposeAsync()
+        {
+            Disposed = true;
+            return ValueTask.CompletedTask;
+        }
+    }
+}

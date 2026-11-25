@@ -36,21 +36,24 @@ internal static class ChartCsv
         // Series with another kind of x (rare) cannot share the x column: they are left out.
         var columns = series.Where(s => s.Data.Count == 0 || s.Data.Kind == kind).ToList();
 
-        // Rows keyed by x: the category name, or the number (time: wall-clock milliseconds).
+        // Rows keyed by x: the category name, or the number (time: wall-clock milliseconds, with the UTC offset when
+        // the input had one, so the same wall-clock time at two offsets, as in the repeated hour in autumn, is two rows).
         var keys = new List<object>();
         var lookup = new Dictionary<object, int>();
         var cells = new List<List<double>[]>(); // per key: per column, the y values at that x in order
-        var offsets = new Dictionary<object, double>(); // time keys: a UTC offset, when the input had one
         for (var c = 0; c < columns.Count; c++)
         {
             var data = columns[c].Data;
             for (var i = 0; i < data.Count; i++)
             {
-                object key = kind == XKind.Category ? CategoryOf(data, i) : data.X[i];
-                if (key is double d && !double.IsFinite(d))
+                if (kind != XKind.Category && !double.IsFinite(data.X[i]))
                 {
                     continue;
                 }
+
+                object key = kind == XKind.Category ? CategoryOf(data, i)
+                    : data.TimeOffsets is { } o && double.IsFinite(o[i]) ? new TimeKey(data.X[i], o[i])
+                    : data.X[i];
 
                 if (!lookup.TryGetValue(key, out var row))
                 {
@@ -61,21 +64,24 @@ internal static class ChartCsv
                 }
 
                 (cells[row][c] ??= []).Add(data.Y[i]);
-                if (data.TimeOffsets is { } o && double.IsFinite(o[i]))
-                {
-                    offsets.TryAdd(key, o[i]);
-                }
             }
         }
 
         var order = Enumerable.Range(0, keys.Count).ToList();
         if (kind != XKind.Category)
         {
-            order.Sort((a, b) => ((double)keys[a]).CompareTo((double)keys[b]));
+            // In time order when every time has an offset; else by wall-clock time (then instant).
+            var instants = keys.All(k => k is TimeKey);
+            order.Sort((a, b) =>
+            {
+                var (wallA, instantA) = SortOf(keys[a]);
+                var (wallB, instantB) = SortOf(keys[b]);
+                return instants || wallA == wallB ? instantA.CompareTo(instantB) : wallA.CompareTo(wallB);
+            });
         }
 
         // Dates alone when every time is at midnight (daily data); else date and time on every row.
-        var dateOnly = kind == XKind.Time && keys.All(k => TimeValue.ToDateTime((double)k).TimeOfDay == TimeSpan.Zero);
+        var dateOnly = kind == XKind.Time && keys.All(k => TimeValue.ToDateTime(SortOf(k).Wall).TimeOfDay == TimeSpan.Zero);
         var text = new StringBuilder();
         var delimiter = options.Delimiter;
         text.Append(Escape(options.XHeader, delimiter));
@@ -88,7 +94,7 @@ internal static class ChartCsv
         foreach (var row in order)
         {
             var key = keys[row];
-            var x = Escape(FormatX(key, kind, dateOnly, offsets, options.Culture), delimiter);
+            var x = Escape(FormatX(key, kind, dateOnly, options.Culture), delimiter);
             var repeat = cells[row].Max(values => values?.Count ?? 0);
             for (var r = 0; r < repeat; r++)
             {
@@ -115,25 +121,32 @@ internal static class ChartCsv
         return index >= 0 && index < data.Categories.Count ? data.Categories[index] : "";
     }
 
-    private static string FormatX(object key, XKind kind, bool dateOnly, Dictionary<object, double> offsets, CultureInfo culture)
+    private static string FormatX(object key, XKind kind, bool dateOnly, CultureInfo culture)
     {
         if (key is string category)
         {
             return category;
         }
 
-        var value = (double)key;
-        if (kind != XKind.Time)
+        // ISO 8601, as given: with the input's UTC offset when it had one.
+        if (key is TimeKey t)
         {
-            return value.ToString("R", culture);
+            return new DateTimeOffset(TimeValue.ToDateTime(t.Wall), TimeSpan.FromMilliseconds(t.Offset))
+                .ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFzzz", CultureInfo.InvariantCulture);
         }
 
-        // ISO 8601, as given: with the input's UTC offset when it had one.
-        var time = TimeValue.ToDateTime(value);
-        return offsets.TryGetValue(key, out var offset)
-            ? new DateTimeOffset(time, TimeSpan.FromMilliseconds(offset)).ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFzzz", CultureInfo.InvariantCulture)
-            : time.ToString(dateOnly ? "yyyy-MM-dd" : "yyyy-MM-ddTHH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture);
+        var value = (double)key;
+        return kind != XKind.Time
+            ? value.ToString("R", culture)
+            : TimeValue.ToDateTime(value).ToString(dateOnly ? "yyyy-MM-dd" : "yyyy-MM-ddTHH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture);
     }
+
+    /// <summary>A row's x for sorting: its wall-clock time and its instant (the same when the offset is not known).</summary>
+    private static (double Wall, double Instant) SortOf(object key) =>
+        key is TimeKey t ? (t.Wall, t.Wall - t.Offset) : ((double)key, (double)key);
+
+    /// <summary>A time row's key when the input had a UTC offset: wall-clock milliseconds and the offset.</summary>
+    private readonly record struct TimeKey(double Wall, double Offset);
 
     /// <summary>Quotes a cell that holds the delimiter, a quote or a line break (RFC 4180).</summary>
     private static string Escape(string value, char delimiter) =>
