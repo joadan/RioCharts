@@ -6,7 +6,7 @@ This is the complete guide for coding agents: setup, rules, examples that compil
 
 ## Setup
 
-1. Add the package (a preview, so `--prerelease` is needed):
+1. Add the package (a 1.0 release candidate, so `--prerelease` is needed):
 
    ```shell
    dotnet add package RioCharts.Blazor --prerelease
