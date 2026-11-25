@@ -167,6 +167,20 @@ public class CalendarTests
     };
 
     [Theory]
+    [InlineData("week")]
+    [InlineData("auto")]
+    public void A_json_calendar_buckets_by_day_whatever_timeBucket_says(string bucket)
+    {
+        var parsed = ChartDefinitionJson.Parse($$"""{ "dataset": "orders", "series": [ { "type": "calendar", "x": "at", "y": "amount", "timeBucket": "{{bucket}}" } ] }""");
+
+        var bound = ChartDefinitionBinder.Bind(parsed.Definition!, Orders());
+
+        Assert.True(bound.Success, string.Join("; ", bound.Errors.Select(e => e.Message)));
+        Assert.Contains(bound.Warnings, w => w.Contains($"'{bucket}' is ignored", StringComparison.Ordinal));
+        Assert.Equal([200.0, 40], bound.Data.Values.Single().Y); // one value per day, as without timeBucket
+    }
+
+    [Theory]
     [InlineData("""{ "dataset": "orders", "series": [ { "type": "calendar", "x": "at", "y": "amount" } ] }""", "200", "40")]
     [InlineData("""{ "dataset": "orders", "series": [ { "type": "calendarHeatmap", "x": "at" } ] }""", "2", "1")]
     public void A_json_calendar_sums_or_counts_rows_per_day(string json, string first, string second)

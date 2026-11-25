@@ -752,7 +752,7 @@ internal static partial class ChartLayout
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
-                plotBottom + xLabelHeight + xTitleHeight + 8, lineHeight, styles, texts.Legend));
+                plotBottom + xLabelHeight + xTitleHeight + 8, lineHeight, styles, texts));
         }
 
         if (sizeLegend is not null)
@@ -903,7 +903,7 @@ internal static partial class ChartLayout
             Styles = styles,
             Description = compact
                 ? ChartDescriber.DescribeCompact(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts, Facts)
-                : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts, Facts),
+                : ChartDescriber.Describe(spec, resolved.Select(r => (r.Spec, r.Data, r.Visible)).ToList(), xKind, culture, texts, Facts, time),
         };
 
         var bandWidth = xKind == XKind.Category ? xBand!.Step : hasBars ? fullSlotWidth / 0.8 : 0;
@@ -1469,7 +1469,15 @@ internal static partial class ChartLayout
             max += spacing / 2;
         }
 
-        return (axis.Min ?? min, axis.Max ?? max, spacing);
+        // One end fixed and every value beyond it: the axis keeps the data's width from the fixed end, not an inverted range.
+        var span = max > min ? max - min : 1;
+        var (lo, hi) = (axis.Min ?? min, axis.Max ?? max);
+        if (double.IsFinite(lo) && double.IsFinite(hi) && !(hi > lo))
+        {
+            (lo, hi) = axis.Max is null ? (lo, lo + span) : axis.Min is null ? (hi - span, hi) : (lo, hi);
+        }
+
+        return (lo, hi, spacing);
     }
 
     /// <summary>

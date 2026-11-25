@@ -204,7 +204,7 @@ internal static partial class ChartLayout
             if (!LegendTooTall(spec, legendHeight, height))
             {
                 statics.Add(BuildLegend(legendItems, legendRows, LegendPosition.Top, width - PadRight, new RectF((float)PadLeft, (float)y0, 1, 1), y0, y0,
-                    lineHeight, styles, texts.Legend));
+                    lineHeight, styles, texts));
                 y0 += legendHeight + 6;
             }
         }

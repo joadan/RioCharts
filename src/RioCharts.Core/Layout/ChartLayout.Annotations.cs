@@ -300,10 +300,13 @@ internal static partial class ChartLayout
         var label = a.Spec.Label;
         if (a.Type == AnnotationType.Callout && !string.IsNullOrWhiteSpace(label))
         {
+            label = Shorten(label, Math.Max(1, plot.Width - 14), measure, small); // the box stays within the plot
             var w = measure.Measure(label, small);
             var (boxW, boxH) = (w + 14, textHeight + 8);
-            var bx = Math.Clamp(px + (a.Spec.OffsetX ?? 24) - (a.Spec.OffsetX < 0 ? boxW : 0), plot.X, plot.Right - boxW);
-            var by = Math.Clamp(py + (a.Spec.OffsetY ?? -32) - boxH / 2, plot.Y, plot.Bottom - boxH);
+
+            // A box larger than the plot (a very small chart) starts at the plot's top left corner.
+            var bx = Math.Clamp(px + (a.Spec.OffsetX ?? 24) - (a.Spec.OffsetX < 0 ? boxW : 0), plot.X, Math.Max(plot.X, plot.Right - boxW));
+            var by = Math.Clamp(py + (a.Spec.OffsetY ?? -32) - boxH / 2, plot.Y, Math.Max(plot.Y, plot.Bottom - boxH));
             var box = new RectF((float)bx, (float)by, (float)boxW, (float)boxH);
 
             // Connector from the point to the nearest point on the box edge.

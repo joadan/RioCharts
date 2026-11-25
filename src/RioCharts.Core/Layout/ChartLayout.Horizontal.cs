@@ -491,7 +491,7 @@ internal static partial class ChartLayout
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, LegendPosition.Top, 0, plot, y0 - legendRows.Count * (lineHeight + 4) - 8, 0, lineHeight, styles,
-                texts.Legend));
+                texts));
         }
 
         // ---------- Bars ----------
@@ -527,7 +527,7 @@ internal static partial class ChartLayout
                 var row = rowOf(r.Data, i);
                 var top = band.Start(row) + groupOffset + slot * thickness + gap / 2.0;
                 var h = Math.Max(1, thickness - gap);
-                var (x0, x1) = (valueScale.Map(Math.Min(start, end)), valueScale.Map(Math.Max(start, end)));
+                var (x0, x1) = (Math.Clamp(valueScale.Map(Math.Min(start, end)), plot.X, plot.Right), Math.Clamp(valueScale.Map(Math.Max(start, end)), plot.X, plot.Right));
                 if (IsWaterfall(r))
                 {
                     // Rises in the positive color, falls in the negative one, totals in the series color; a thin
@@ -726,7 +726,7 @@ internal static partial class ChartLayout
         }
         var seriesLayer = new GroupNode(
         [
-            new GroupNode(plotNodes) { Class = "rio-plot" },
+            new GroupNode(plotNodes, Clip: Inflate(plot, 2)) { Class = "rio-plot" }, // a fixed value range cuts bars at the plot
             new GroupNode(labelNodes) { Class = "rio-labels" },
         ])
         {

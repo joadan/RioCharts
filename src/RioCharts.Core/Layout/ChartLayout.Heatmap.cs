@@ -302,7 +302,7 @@ internal static partial class ChartLayout
             new GroupNode(selectedCells.Count == 0
                 ? [new GroupNode(cellNodes) { Key = "series:heatmap", Class = "rio-series rio-series-heatmap" }]
                 : [new GroupNode(cellNodes) { Key = "series:heatmap", Class = "rio-series rio-series-heatmap" },
-                    new GroupNode(selectedCells) { Key = "selection:points", Class = "rio-selected-points" }]) { Class = "rio-plot" },
+                    new GroupNode(selectedCells) { Key = "selection:points", Class = "rio-selected-points" }], Clip: Inflate(plot, 2)) { Class = "rio-plot" }, // a fixed x range cuts cells at the plot
             new GroupNode(labelNodes) { Class = "rio-labels" },
         ])
         {

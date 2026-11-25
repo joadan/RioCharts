@@ -246,6 +246,12 @@ public sealed record ChartTexts
     /// <summary>Description of an empty pie or radial bar chart. {0}: the kind of chart.</summary>
     public string PolarNoData { get => Get(); init => Set(value); }
 
+    /// <summary>Screen reader name of a legend item whose series is hidden. {0}: the series name.</summary>
+    public string LegendHidden { get => Get(); init => Set(value); }
+
+    /// <summary>Screen reader name of a legend item whose series has no data. {0}: the series name.</summary>
+    public string LegendNoData { get => Get(); init => Set(value); }
+
     /// <summary>After a shortened list. {0}: how many were left out.</summary>
     public string More { get => Get(); init => Set(value); }
 
@@ -466,6 +472,8 @@ public sealed record ChartTexts
         [nameof(TreemapLeftOut)] = "{0} item with zero or negative value left out|{0} items with zero or negative values left out",
         [nameof(PolarItems)] = "{0} with {1} item: {2}|{0} with {1} items: {2}",
         [nameof(PolarNoData)] = "{0}, no data.",
+        [nameof(LegendHidden)] = "{0}, hidden",
+        [nameof(LegendNoData)] = "{0}, no data",
         [nameof(More)] = "and {0} more",
         [nameof(KeysPoints)] = "Use Left and Right to move between points.",
         [nameof(KeysPointsAndSeries)] = "Use Left and Right to move between points, Up and Down to change series.",
@@ -552,6 +560,8 @@ public sealed record ChartTexts
         TreemapLeftOut = "{0} post med noll eller negativt värde utelämnad|{0} poster med noll eller negativa värden utelämnade",
         PolarItems = "{0} med {1} post: {2}|{0} med {1} poster: {2}",
         PolarNoData = "{0}, inga data.",
+        LegendHidden = "{0}, dold",
+        LegendNoData = "{0}, inga data",
         More = "och {0} till",
         KeysPoints = "Använd vänster- och högerpil för att flytta mellan punkter.",
         KeysPointsAndSeries = "Använd vänster- och högerpil för att flytta mellan punkter, upp- och nedpil för att byta serie.",
@@ -632,6 +642,8 @@ public sealed record ChartTexts
         TreemapLeftOut = "{0} post med null eller negativ verdi utelatt|{0} poster med null eller negative verdier utelatt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
+        LegendHidden = "{0}, skjult",
+        LegendNoData = "{0}, ingen data",
         More = "og {0} til",
         KeysPoints = "Bruk venstre- og høyrepil for å flytte mellom punkter.",
         KeysPointsAndSeries = "Bruk venstre- og høyrepil for å flytte mellom punkter, opp- og nedpil for å bytte serie.",
@@ -712,6 +724,8 @@ public sealed record ChartTexts
         TreemapLeftOut = "{0} post med nul eller negativ værdi udeladt|{0} poster med nul eller negative værdier udeladt",
         PolarItems = "{0} med {1} element: {2}|{0} med {1} elementer: {2}",
         PolarNoData = "{0}, ingen data.",
+        LegendHidden = "{0}, skjult",
+        LegendNoData = "{0}, ingen data",
         More = "og {0} mere",
         KeysPoints = "Brug venstre- og højrepil til at flytte mellem punkter.",
         KeysPointsAndSeries = "Brug venstre- og højrepil til at flytte mellem punkter, op- og nedpil til at skifte serie.",
@@ -792,6 +806,8 @@ public sealed record ChartTexts
         TreemapLeftOut = "{0} kohde, jonka arvo on nolla tai negatiivinen, jätetty pois|{0} kohdetta, joiden arvo on nolla tai negatiivinen, jätetty pois",
         PolarItems = "{0}, {1} kohde: {2}|{0}, {1} kohdetta: {2}",
         PolarNoData = "{0}, ei tietoja.",
+        LegendHidden = "{0}, piilotettu",
+        LegendNoData = "{0}, ei tietoja",
         More = "ja {0} muuta",
         KeysPoints = "Siirry pisteestä toiseen vasemmalla ja oikealla nuolinäppäimellä.",
         KeysPointsAndSeries = "Siirry pisteestä toiseen vasemmalla ja oikealla nuolinäppäimellä, vaihda sarjaa ylä- ja alanuolella.",
@@ -872,6 +888,8 @@ public sealed record ChartTexts
         TreemapLeftOut = "{0} Eintrag mit Wert null oder negativ ausgelassen|{0} Einträge mit Wert null oder negativ ausgelassen",
         PolarItems = "{0} mit {1} Eintrag: {2}|{0} mit {1} Einträgen: {2}",
         PolarNoData = "{0}, keine Daten.",
+        LegendHidden = "{0}, ausgeblendet",
+        LegendNoData = "{0}, keine Daten",
         More = "und {0} weitere",
         KeysPoints = "Mit Links und Rechts zwischen Punkten wechseln.",
         KeysPointsAndSeries = "Mit Links und Rechts zwischen Punkten wechseln, mit Auf und Ab die Reihe wechseln.",
@@ -952,6 +970,8 @@ public sealed record ChartTexts
         TreemapLeftOut = "{0} élément de valeur nulle ou négative omis|{0} éléments de valeur nulle ou négative omis",
         PolarItems = "{0} avec {1} élément : {2}|{0} avec {1} éléments : {2}",
         PolarNoData = "{0}, aucune donnée.",
+        LegendHidden = "{0}, masquée",
+        LegendNoData = "{0}, aucune donnée",
         More = "et {0} de plus",
         KeysPoints = "Utilisez Gauche et Droite pour passer d'un point à l'autre.",
         KeysPointsAndSeries = "Utilisez Gauche et Droite pour passer d'un point à l'autre, Haut et Bas pour changer de série.",
@@ -1032,6 +1052,8 @@ public sealed record ChartTexts
         TreemapLeftOut = "{0} elemento con valor cero o negativo omitido|{0} elementos con valor cero o negativo omitidos",
         PolarItems = "{0} con {1} elemento: {2}|{0} con {1} elementos: {2}",
         PolarNoData = "{0}, sin datos.",
+        LegendHidden = "{0}, oculta",
+        LegendNoData = "{0}, sin datos",
         More = "y {0} más",
         KeysPoints = "Use Izquierda y Derecha para moverse entre puntos.",
         KeysPointsAndSeries = "Use Izquierda y Derecha para moverse entre puntos, Arriba y Abajo para cambiar de serie.",

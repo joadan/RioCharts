@@ -2,3 +2,7 @@
 const RioCharts.Core.Definitions.ChartDefinitionJson.FormatVersion = 1 -> int
 RioCharts.Core.ChartDefinition.Version.get -> int?
 RioCharts.Core.ChartDefinition.Version.init -> void
+RioCharts.Core.ChartTexts.LegendHidden.get -> string!
+RioCharts.Core.ChartTexts.LegendHidden.init -> void
+RioCharts.Core.ChartTexts.LegendNoData.get -> string!
+RioCharts.Core.ChartTexts.LegendNoData.init -> void

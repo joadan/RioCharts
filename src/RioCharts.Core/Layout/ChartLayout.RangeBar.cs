@@ -272,7 +272,7 @@ internal static partial class ChartLayout
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, LegendPosition.Top, 0, plot, y0 - legendRows.Count * (lineHeight + 4) - 8, 0, lineHeight, styles,
-                texts.Legend));
+                texts));
         }
 
         // ---------- Bars ----------
