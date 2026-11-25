@@ -22,11 +22,11 @@
 - **Not tied to Blazor**: the name still fits as Canvas, Skia and AI packages are added.
 
 ## Stance
-- Open source (MIT), but built for our own teams. It is not promoted externally.
-- Scope comes from internal needs: build the 20% of features that cover 90% of real use, not ApexCharts parity.
+- Open source (MIT).
+- Scope comes from real needs: build the 20% of features that cover 90% of real use, not ApexCharts parity.
 - The repo is **public from day one**. Before creating it, confirm ownership and copyright under the company open-source policy.
 - Stay pre-1.0 and change APIs freely. Publish packages as prereleases (e.g. `0.x.y-preview`), and treat our internal dashboards as the main test bed.
-- The README states the status clearly from the first commit: early preview, APIs will change, built for our own needs, issues welcome, no roadmap promises.
+- The README states the status clearly from the first commit: early preview, APIs will change, issues welcome, no roadmap promises.
 - Keep a CHANGELOG from the start and call out breaking changes there.
 - No public plugin API or third-party series registration until there is a real need. Keep the internal seams clean, though.
 
