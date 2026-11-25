@@ -48,6 +48,7 @@
     <tr><td>Chart group (synced charts)</td><td><code>Group="name"</code>: shared crosshair and zoom, and the plots line up.</td></tr>
     <tr><td>Zoom and the toolbar</td><td><code>Zoomable="true"</code> (drag, pinch, Ctrl+wheel, keyboard), <code>Exportable="true"</code> for PNG, SVG and CSV downloads.</td></tr>
     <tr><td>Colors and theme mode</td><td>CSS variables (<code>--rio-series-1</code> ... , <code>--rio-text</code>, ...); light and dark follow the page. See <a href="theming">Theming</a>.</td></tr>
+    <tr><td>Animations</td><td>None: RioCharts does not animate charts. Bars don't grow, lines don't draw on, and updates are drawn in place. The only motion is a short fade when the series first appear (<code>Animate="false"</code> turns it off). See <a href="theming#motion">Motion</a>.</td></tr>
     <tr><td>Data point selection event</td><td><code>OnPointClick</code>, or <code>Selection="ChartSelectionMode.Points"</code> with <code>@@bind-SelectedItems</code> (and <code>ChartSelectionMode.Range</code>).</td></tr>
     <tr><td>Legend click event</td><td><code>OnLegendClick</code>, and <code>OnLegendClicking</code> to cancel.</td></tr>
     <tr><td>Zoomed event</td><td><code>@@bind-VisibleRange</code> or <code>OnZoomChanging</code>.</td></tr>
