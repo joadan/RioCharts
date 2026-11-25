@@ -612,16 +612,25 @@ public static class ChartKinds
             series.Remove(property);
         }
 
-        // How rows combine stays as the user chose it (an average stays an average), except a count, which only
-        // stands for a value that was not picked.
-        var aggregate = series["aggregate"]?.ToString() is { Length: > 0 } a && a != "count" ? a : "sum";
+        // How rows combine stays as the user chose it for each value (revenue averaged stays averaged), from any
+        // series of the chart; a value new to the chart starts as a sum. A count only stands for no value picked.
+        var combines = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var s in (chart["series"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        {
+            if (s["y"]?.ToString() is { } y && s["aggregate"]?.ToString() is { } a && a != "count")
+            {
+                combines.TryAdd(y, a);
+            }
+        }
+
+        string Combine(string value) => combines.GetValueOrDefault(value, "sum");
         series.Remove("aggregate");
         foreach (var (slot, field) in suggestion.Placed)
         {
             series[slot.Property] = slot.IsList ? new JsonArray(field.Name) : field.Name;
             if (slot.Part == SlotPart.Aggregate)
             {
-                series["aggregate"] = aggregate;
+                SetCombine(series, Combine(field.Name));
             }
         }
 
@@ -641,7 +650,21 @@ public static class ChartKinds
             copy.Remove("id");
             copy.Remove("name");
             copy["y"] = value.Name;
+            SetCombine(copy, Combine(value.Name));
             list.Add(copy);
+        }
+    }
+
+    // "" is no combining: the series has no aggregate.
+    private static void SetCombine(JsonObject series, string aggregate)
+    {
+        if (aggregate.Length == 0)
+        {
+            series.Remove("aggregate");
+        }
+        else
+        {
+            series["aggregate"] = aggregate;
         }
     }
 
@@ -830,9 +853,15 @@ public static class ChartKinds
     /// <summary>The word a choice is listed under, for a value written with a synonym.</summary>
     public static string Canonical(string value) => Synonyms.GetValueOrDefault(value, value);
 
+    /// <summary>How a picked value's rows combine, in the short list under the fields; no combining only for a value already set so.</summary>
+    public static readonly (string Value, string Label)[] Combines =
+    [
+        ("sum", "Sum"), ("average", "Average"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("", "No combining (one point per row)"),
+    ];
+
     public static readonly (string Value, string Label)[] Aggregates =
     [
-        ("", "Value of"), ("sum", "Sum of"), ("average", "Average of"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("count", "Count rows"),
+        ("", "Each row of"), ("sum", "Sum of"), ("average", "Average of"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("count", "Count rows"),
     ];
 
     public static readonly (string Value, string Label)[] TimeBuckets =

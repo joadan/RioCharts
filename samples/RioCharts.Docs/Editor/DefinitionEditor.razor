@@ -73,25 +73,35 @@
                     </button>
                 }
             </div>
-            @if (!_noChart && series is not null && kind?.Slots.Any(s => s.Part == SlotPart.Aggregate) == true)
+            @if (!_noChart && kind?.Slots.Any(s => s.Part == SlotPart.Aggregate) == true && seriesList is not null)
             {
-                @* How rows with the same category or period become one value: the choice that changes the numbers most. *@
-                <div class="ce-row ce-aggregate">
-                    <label class="ce-label" for="ce-aggregate">Combine rows</label>
-                    <div class="ce-inputs">
-                        <select id="ce-aggregate" value="@(series["aggregate"]?.ToString() ?? "")" @onchange="e => SetAggregate(e.Value?.ToString())">
-                            @foreach (var (value, label) in ChartKinds.Aggregates)
+                @* How each value's rows with the same category or period become one number: sessions summed, response
+                   time averaged. One row per value (series); with no number picked, the chart counts rows. *@
+                <div class="ce-combine" role="group" aria-label="How rows are combined">
+                    <p class="ce-hint">Combine rows:</p>
+                    @foreach (var s in seriesList.OfType<JsonObject>())
+                    {
+                        var aggregate = s["aggregate"]?.ToString() ?? "";
+                        if (s["y"]?.ToString() is not { } value)
+                        {
+                            if (aggregate == "count")
                             {
-                                var text = value switch
-                                {
-                                    "" => "Each value as it is",
-                                    "count" => "Count the rows",
-                                    _ => $"{label} {(seriesList is { Count: > 1 } ? "each value" : series["y"]?.ToString() ?? "the value")}",
-                                };
-                                <option value="@value" selected="@(value == (series["aggregate"]?.ToString() ?? ""))">@text</option>
+                                <p class="ce-hint">Counts the rows@(s["x"] is null ? "" : $" per {s["x"]}").</p>
                             }
-                        </select>
-                    </div>
+                            continue;
+                        }
+
+                        var id = $"ce-combine-{value}";
+                        <div class="ce-combine-row">
+                            <label for="@id"><span class="ce-field-type" aria-hidden="true">#</span>@value</label>
+                            <select id="@id" value="@aggregate" @onchange="e => SetAggregate(e.Value?.ToString(), s)">
+                                @foreach (var (option, label) in ChartKinds.Combines.Where(c => c.Value != "" || aggregate == ""))
+                                {
+                                    <option value="@option" selected="@(option == aggregate)">@label</option>
+                                }
+                            </select>
+                        </div>
+                    }
                 </div>
             }
 
@@ -435,19 +445,16 @@
         return ChartShown.InvokeAsync(shown);
     }
 
-    // For every series: the fields picked make the chart as a whole (sessions and revenue are both summed).
-    private Task SetAggregate(string? value)
+    // Per value (series): sessions summed, response time averaged.
+    private Task SetAggregate(string? value, JsonObject series)
     {
-        foreach (var series in DefinitionProperties.List(Definition!, "series")?.OfType<JsonObject>() ?? [])
+        if (string.IsNullOrEmpty(value))
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                series.Remove("aggregate");
-            }
-            else
-            {
-                series["aggregate"] = value;
-            }
+            series.Remove("aggregate");
+        }
+        else
+        {
+            series["aggregate"] = value;
         }
 
         return Changed.InvokeAsync();
