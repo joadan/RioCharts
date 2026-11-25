@@ -84,10 +84,10 @@ internal static class ChartCsv
         var dateOnly = kind == XKind.Time && keys.All(k => TimeValue.ToDateTime(SortOf(k).Wall).TimeOfDay == TimeSpan.Zero);
         var text = new StringBuilder();
         var delimiter = options.Delimiter;
-        text.Append(Escape(options.XHeader, delimiter));
+        text.Append(Escape(Text(options.XHeader), delimiter));
         foreach (var column in columns)
         {
-            text.Append(delimiter).Append(Escape(column.Name, delimiter));
+            text.Append(delimiter).Append(Escape(Text(column.Name), delimiter));
         }
 
         text.Append(options.NewLine);
@@ -125,7 +125,7 @@ internal static class ChartCsv
     {
         if (key is string category)
         {
-            return category;
+            return Text(category);
         }
 
         // ISO 8601, as given: with the input's UTC offset when it had one.
@@ -147,6 +147,16 @@ internal static class ChartCsv
 
     /// <summary>A time row's key when the input had a UTC offset: wall-clock milliseconds and the offset.</summary>
     private readonly record struct TimeKey(double Wall, double Offset);
+
+    /// <summary>
+    /// A text cell (a header or category) that a spreadsheet would read as a formula ("=", "+", "-" or "@" first) gets
+    /// a leading apostrophe, so opening the file never runs it (CSV injection). Numbers ("-5") are left as they are.
+    /// </summary>
+    private static string Text(string value) =>
+        value.Length > 0 && value[0] is '=' or '+' or '-' or '@' or '\t' or '\r'
+            && !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out _)
+            ? "'" + value
+            : value;
 
     /// <summary>Quotes a cell that holds the delimiter, a quote or a line break (RFC 4180).</summary>
     private static string Escape(string value, char delimiter) =>

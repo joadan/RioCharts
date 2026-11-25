@@ -55,15 +55,20 @@ public readonly record struct BoxSummary(double Min, double Low, double Q1, doub
     /// </summary>
     public static BoxSummary FromFiveNumbers(double low, double q1, double median, double q3, double high, IEnumerable<double>? outliers = null, int count = 0)
     {
+        // The given numbers are sorted into the places that have one; a missing one (NaN) keeps its place.
         double[] five = [low, q1, median, q3, high];
-        if (five.All(double.IsFinite))
+        var given = five.Where(double.IsFinite).Order().ToArray();
+        for (int i = 0, g = 0; i < five.Length; i++)
         {
-            Array.Sort(five);
+            if (double.IsFinite(five[i]))
+            {
+                five[i] = given[g++];
+            }
         }
 
         var extra = outliers?.Where(double.IsFinite).Order().ToArray() ?? [];
-        var min = extra.Length > 0 && double.IsFinite(five[0]) ? Math.Min(five[0], extra[0]) : five[0];
-        var max = extra.Length > 0 && double.IsFinite(five[4]) ? Math.Max(five[4], extra[^1]) : five[4];
+        var all = given.Concat(extra).ToArray();
+        var (min, max) = all.Length > 0 ? (all.Min(), all.Max()) : (double.NaN, double.NaN);
         return new BoxSummary(min, five[0], five[1], five[2], five[3], five[4], max, count, extra);
     }
 

@@ -78,6 +78,19 @@ public class Milestone5Tests
     }
 
     [Fact]
+    public void Theme_colors_are_escaped_in_css_variables()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Type = SeriesType.Bar }] };
+        var data = new Dictionary<string, SeriesData> { ["a"] = SeriesData.FromCategories(["A"], [1.0]) };
+        var options = Options with { Theme = ExportTheme.Light.With(ThemeTokens.Series(0), "red\" onload=\"x"), CssVariables = true };
+
+        var svg = ChartExport.ToSvg(spec, data, options);
+
+        Assert.Contains("var(--rio-series-1, red&quot; onload=&quot;x)", svg);
+        Assert.DoesNotContain("onload=\"", svg);
+    }
+
+    [Fact]
     public void Svg_is_a_standalone_document_with_escaped_text()
     {
         var (spec, data) = TemperatureChart();
