@@ -4,26 +4,46 @@
 
 <h1>Getting started</h1>
 <p class="lead">
-    Add the RioCharts NuGet package, two usings and a chart to your Blazor app. Zero configuration gives a finished chart.
+    RioCharts draws the same chart in a Blazor app, as PNG or SVG on the server, from a JSON definition, or from an AI agent. Pick where
+    you start; the chart model is the same everywhere.
 </p>
 
-<h2>Install</h2>
-<p>RioCharts is on <a href="https://www.nuget.org/packages?q=RioCharts" target="_blank" rel="noopener">NuGet</a>. For Blazor (Server, WebAssembly, Auto or <a href="getting-started#render-modes">MAUI Blazor Hybrid</a>), add one package:</p>
-<CodeBlock Language="shell" Code="dotnet add package RioCharts.Blazor --prerelease" />
-<p>Then in <code>_Imports.razor</code>:</p>
-<CodeBlock Code="@ImportsCode" />
-<p>Styles come with your app's <code>{App}.styles.css</code> bundle automatically; there is nothing else to register.</p>
-<h3 id="coding-agents">Using a coding agent</h3>
-<p>
-    Models do not know RioCharts yet. Paste this into your repository's <code>AGENTS.md</code> (or <code>CLAUDE.md</code>,
-    <code>.github/copilot-instructions.md</code>) so the agent reads the guide before it writes chart code.
-    <a href="llms-full.txt" target="_blank"><code>llms-full.txt</code></a> has setup, rules, examples and every parameter in one file;
-    see also <a href="ai#coding-agents">coding agents and MCP</a>.
-</p>
-<CodeBlock Language="markdown" Code="@AgentsCode" />
+<h2 id="paths">Choose your starting point</h2>
 
-<h3>All packages</h3>
+<h3>In a Blazor app</h3>
 <p>
+    Interactive charts with tooltips, zoom and keyboard access, in Server, WebAssembly, Auto, static rendering or MAUI Blazor Hybrid.
+    Add <code>RioCharts.Blazor</code>, <code>@@using RioCharts.Blazor</code> and <code>@@using RioCharts.Core</code>, and a chart; the
+    <a href="getting-started#blazor">Blazor section</a> below goes on from there.
+</p>
+<CodeBlock Code="@BlazorPathCode" />
+
+<h3>Images on the server</h3>
+<p>
+    PNG and SVG from a background job, an API endpoint or a report, with no browser. Add <code>RioCharts.Skia</code>, describe the chart
+    with a <code>ChartDefinition</code> and pass the data as columns. See <a href="server-export">Server-side export</a>.
+</p>
+<CodeBlock Language="csharp" Code="@ServerPathCode" />
+
+<h3>From JSON</h3>
+<p>
+    Save charts as JSON, let users edit them, or store them with a dashboard. A definition names a dataset and its fields; it renders in
+    Blazor with <code>&lt;RioChart Definition Datasets&gt;</code> and on the server with RioCharts.Skia. Try the
+    <a href="definitions">playground</a>.
+</p>
+<CodeBlock Language="csharp" Code="@JsonPathCode" />
+
+<h3>From AI agents</h3>
+<p>
+    Let a model chart your data: <code>RioCharts.AI</code> gives your own agent <code>create_chart</code> and <code>render_chart</code>
+    tools (Microsoft.Extensions.AI or MCP), and <code>riocharts-mcp</code> lets local agents such as Claude Code or Copilot chart CSV and
+    JSON files. See <a href="ai">AI agents and MCP</a>.
+</p>
+<CodeBlock Language="csharp" Code="@AiPathCode" />
+
+<h2 id="packages">Packages</h2>
+<p>
+    RioCharts is on <a href="https://www.nuget.org/packages?q=RioCharts" target="_blank" rel="noopener">NuGet</a>.
     Take the parts you need; each brings in what it depends on. The packages are release candidates until 1.0, so add <code>--prerelease</code>
     (or tick <em>Include prerelease</em> in Visual Studio). All target .NET 10 (LTS) and .NET 11; <code>riocharts-mcp</code> runs on either.
 </p>
@@ -42,6 +62,21 @@
     <code>riocharts-mcp</code> is a .NET tool rather than a library; see <a href="ai#local-agents">AI agents and MCP</a>.
     Update it with <code>dotnet tool update -g RioCharts.Mcp --prerelease</code>.
 </p>
+
+<h2 id="blazor">Blazor apps</h2>
+<p>For Blazor (Server, WebAssembly, Auto or <a href="getting-started#render-modes">MAUI Blazor Hybrid</a>), add one package:</p>
+<CodeBlock Language="shell" Code="dotnet add package RioCharts.Blazor --prerelease" />
+<p>Then in <code>_Imports.razor</code>:</p>
+<CodeBlock Code="@ImportsCode" />
+<p>Styles come with your app's <code>{App}.styles.css</code> bundle automatically; there is nothing else to register. Zero configuration gives a finished chart.</p>
+<h3 id="coding-agents">Using a coding agent</h3>
+<p>
+    Models do not know RioCharts yet. Paste this into your repository's <code>AGENTS.md</code> (or <code>CLAUDE.md</code>,
+    <code>.github/copilot-instructions.md</code>) so the agent reads the guide before it writes chart code.
+    <a href="llms-full.txt" target="_blank"><code>llms-full.txt</code></a> has setup, rules, examples and every parameter in one file;
+    see also <a href="ai#coding-agents">coding agents and MCP</a>.
+</p>
+<CodeBlock Language="markdown" Code="@AgentsCode" />
 
 <Example Title="Your first chart" Code="@FirstCode">
     <Description>
@@ -106,7 +141,7 @@
     </ChildContent>
 </Example>
 
-<h2>How updates work</h2>
+<h2>How Blazor charts update</h2>
 <ul>
     <li>Selectors run once per data change, never per render.</li>
     <li>A series reprocesses its data when <code>Items</code> or <code>Data</code> is a new reference, or <code>DataVersion</code> changes. Changing a list in place does not update the chart; assign a new list or bump <code>DataVersion</code>.</li>
@@ -114,7 +149,7 @@
     <li>The chart fills its container's width and is 300 px high by default (<code>Height</code>).</li>
 </ul>
 
-<h2 id="render-modes">Render modes, trimming and native AOT</h2>
+<h2 id="render-modes">Blazor render modes</h2>
 <ul>
     <li>
         <strong>Interactive pages</strong> (Server, WebAssembly or Auto) get everything: tooltips, zoom, keyboard navigation and downloads.
@@ -129,13 +164,14 @@
         chart runs in the app's WebView and is always interactive. Tooltips, zoom, clicks and the PNG download work on Windows;
         Android and iOS have not been tested yet.
     </li>
-    <li>
-        <strong>Trimming and native AOT:</strong> the libraries are marked AOT-compatible and publish without trimming warnings. JSON definitions use
-        source-generated serialization, so Blazor WebAssembly, trimmed servers and native AOT apps (also with Skia export and the AI tool) work
-        as they do in development. Read definitions with <code>ChartDefinitionJson.Parse</code>; it fills in defaults that the generated serializer
-        cannot.
-    </li>
 </ul>
+
+<h2 id="aot">Trimming and native AOT</h2>
+<p>
+    Every package is marked AOT-compatible and publishes without trimming warnings. JSON definitions use source-generated serialization,
+    so Blazor WebAssembly, trimmed servers and native AOT apps (also with Skia export and the AI tools) work as they do in development.
+    Read definitions with <code>ChartDefinitionJson.Parse</code>; it fills in defaults that the generated serializer cannot.
+</p>
 
 @code {
     private sealed record Package(string Id, string Text);
@@ -177,6 +213,52 @@
         var (times, values) = Big(20_000);
         return SeriesData.From(times, values);
     }
+
+    private const string BlazorPathCode = """
+        <RioChart Items="orders">
+            <LineSeries XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+        """;
+
+    private const string ServerPathCode = """
+        // dotnet add package RioCharts.Skia --prerelease
+        var chart = new ChartDefinition
+        {
+            Title = "Orders per day",
+            Series = [new SeriesOptions { Id = "orders", Name = "Orders" }],   // a line, unless Type says otherwise
+        };
+        var data = new Dictionary<string, SeriesData> { ["orders"] = SeriesData.From(days, orders) };
+
+        byte[] png = ChartExport.ToPng(chart, data, new ExportOptions { Width = 640, Height = 320 });
+        string svg = ChartExport.ToSvg(chart, data);
+        """;
+
+    private const string JsonPathCode = """"
+        // RioCharts.Core reads and binds definitions; using RioCharts.Core.Definitions
+        var json = """{"dataset":"sales","series":[{"type":"bar","x":"month","y":"revenue"}]}""";
+        var datasets = new Dictionary<string, ChartDataset>
+        {
+            ["sales"] = ChartDataset.FromCsv("sales", File.ReadAllText("sales.csv")),
+        };
+
+        var definition = ChartDefinitionJson.Parse(json).Definition!;
+
+        // In Blazor:  <RioChart Definition="definition" Datasets="datasets" />
+        // On the server, with RioCharts.Skia:
+        var bound = ChartDefinitionBinder.Bind(definition, datasets);
+        byte[] png = ChartExport.ToPng(bound.Definition, bound.Data);
+        """";
+
+    private const string AiPathCode = """
+        // Your own agent: dotnet add package RioCharts.AI --prerelease
+        var tool = new ChartTool(new InMemoryDataSource([shop]));
+        var response = await chatClient.GetResponseAsync("Chart orders per channel this week",
+            new ChatOptions { Tools = tool.AsAIFunctions() });
+
+        // Local agents (Claude Code, Copilot, ...): a .NET tool that charts CSV and JSON files
+        // dotnet tool install -g RioCharts.Mcp --prerelease
+        // .mcp.json: { "mcpServers": { "riocharts": { "command": "riocharts-mcp", "args": ["--data", "data"] } } }
+        """;
 
     // "@" is '@': a line starting with @using inside @code would be read as a Razor directive.
     private const string ImportsCode = "@using RioCharts.Blazor\n@using RioCharts.Core";
