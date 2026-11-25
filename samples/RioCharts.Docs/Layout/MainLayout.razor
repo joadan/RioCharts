@@ -5,12 +5,9 @@
 
 <div class="site @(_dark ? "rio-theme-dark dark" : "rio-theme-light") @(IsHome ? "is-home" : "")">
     <header class="site-header">
-        @if (!IsHome)
-        {
-            <button class="icon-button menu" aria-label="Menu" aria-expanded="@_menuOpen" @onclick="() => _menuOpen = !_menuOpen">
-                <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
-            </button>
-        }
+        <button class="icon-button menu" aria-label="Menu" aria-expanded="@_menuOpen" @onclick="() => _menuOpen = !_menuOpen">
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
         <a class="brand" href="">
             <RioLogo Size="30" />
             <span>Rio<b>Charts</b></span>
@@ -43,6 +40,8 @@
 
     @if (IsHome)
     {
+        @* Small screens hide the header links, so the home page gets the docs menu too. *@
+        @DocsMenu
         <main class="home">
             @Body
             <SiteFooter />
@@ -51,17 +50,7 @@
     else
     {
         <div class="site-body">
-            <div class="scrim @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false"></div>
-            <nav class="sidebar @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false">
-                @foreach (var group in DocsNav.Groups)
-                {
-                    <div class="nav-group">@group.Name</div>
-                    @foreach (var item in group.Pages)
-                    {
-                        <NavLink href="@item.Href" Match="@(item.Href.Length == 0 ? NavLinkMatch.All : NavLinkMatch.Prefix)">@item.Title</NavLink>
-                    }
-                }
-            </nav>
+            @DocsMenu
 
             <main class="content">
                 <article class="doc">
@@ -95,6 +84,20 @@
 </div>
 
 @code {
+    private RenderFragment DocsMenu => @<text>
+        <div class="scrim @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false"></div>
+        <nav class="sidebar @(_menuOpen ? "open" : "")" @onclick="() => _menuOpen = false">
+            @foreach (var group in DocsNav.Groups)
+            {
+                <div class="nav-group">@group.Name</div>
+                @foreach (var item in group.Pages)
+                {
+                    <NavLink href="@item.Href" Match="@(item.Href.Length == 0 ? NavLinkMatch.All : NavLinkMatch.Prefix)">@item.Title</NavLink>
+                }
+            }
+        </nav>
+    </text>;
+
     // The badge shows the package to install; the site itself may run a newer build from master.
     private static string BadgeTitle =>
         LibraryVersion.Unreleased

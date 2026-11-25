@@ -5,6 +5,8 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+- Docs site: the home page has the menu button on small screens too. Before, phones saw no way to the docs from
+  the home page, since the header links are hidden there.
 - `ChartDefinitionJson.Serialize` writes text as it is (`"#,0 €"`, `"°C"`) instead of escaping every non-ASCII
   character as a `\u…` sequence. Characters
   that matter in HTML (`<`, `>`, `&`, quotes) are still escaped. Saved definitions read the same either way.

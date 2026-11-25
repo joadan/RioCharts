@@ -401,6 +401,13 @@ html.app-started .boot-progress { opacity: 0; }
     display: none;
 }
 
+/* The home page has no sidebar; it shows the docs menu only on small screens (below). */
+@media (min-width: 901px) {
+    .is-home .sidebar {
+        display: none;
+    }
+}
+
 .content {
     flex: 1;
     min-width: 0;
