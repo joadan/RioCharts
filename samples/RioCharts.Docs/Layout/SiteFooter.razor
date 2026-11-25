@@ -2,7 +2,13 @@
     <div class="footer-brand">
         <RioLogo Size="18" />
         <span>RioCharts</span>
-        <span class="footer-meta">MIT@(LibraryVersion.Version.Length > 0 ? $" · {LibraryVersion.Version}" : "")</span>
+        <span class="footer-meta">
+            <text>MIT</text>
+            @if (LibraryVersion.Version.Length > 0)
+            {
+                <text>@(" · ")<a href="about#this-site" title="The RioCharts build this site runs; see About for the latest package">site build @LibraryVersion.Version</a></text>
+            }
+        </span>
     </div>
     <nav class="footer-links" aria-label="Footer">
         <a href="about">About</a>
