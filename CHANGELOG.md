@@ -9,7 +9,8 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
   them appear as cards, drawn small with the data, with the rest listed under Also. A text field alone counts the rows
   (orders per channel). The charts by goal moved under All charts. Each tap on a field switches to the best fitting
   chart at once; when the fields make no chart, the chart is hidden until they do. "Combine rows" (sum, average,
-  count...) sits next to the fields and is kept when the chart changes.
+  count...) sits next to the fields and is kept when the chart changes. Several numbers make one series each on a
+  line, area, columns or bars (sessions and revenue by hour).
 - Docs site: the tables on Large data and Server export scroll on their own on a phone, instead of making the whole
   page scroll sideways.
 - Docs site: in the editor, picking what to show (Compare, Parts of a whole...) switches the chart at once, to the

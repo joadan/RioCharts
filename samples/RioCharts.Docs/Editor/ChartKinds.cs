@@ -13,7 +13,7 @@ public sealed record ChartGoal(string Id, string Label, string Hint, string Icon
 
 /// <summary>A data slot of a chart: which definition property it sets, in words a user knows.</summary>
 public sealed record ChartSlot(string Property, string Label, string Hint, FieldType[] Accepts, SlotPart Part = SlotPart.None, bool Required = true,
-    string? NameHint = null, string? Needs = null, Func<DataField, bool>? Check = null)
+    string? NameHint = null, string? Needs = null, Func<DataField, bool>? Check = null, bool Pickable = true)
 {
     /// <summary>
     /// Whether a field may fill this slot on its own: the right type and, for slots like latitude, a fitting name or,
@@ -61,14 +61,23 @@ public sealed record ChartKind(
 /// A chart the picked fields can make: each field in its slot, and <paramref name="Counts"/> when the value slot
 /// counts the rows because no number was picked.
 /// </summary>
-public sealed record ChartSuggestion(ChartKind Kind, IReadOnlyList<(ChartSlot Slot, DataField Field)> Placed, bool Counts)
+public sealed record ChartSuggestion(ChartKind Kind, IReadOnlyList<(ChartSlot Slot, DataField Field)> Placed, bool Counts,
+    IReadOnlyList<DataField> More)
 {
+    /// <summary>Every field the chart shows: the placed ones and the further values, one series each.</summary>
+    public IEnumerable<string> Fields => Placed.Select(p => p.Field.Name).Concat(More.Select(f => f.Name));
+
     /// <summary>What it shows in a few words: "revenue by month", "count by channel".</summary>
     public string Caption
     {
         get
         {
             var value = Placed.FirstOrDefault(p => p.Slot.Property is "y" or "size").Field?.Name ?? (Counts ? "count" : null);
+            if (value is not null && More.Count > 0)
+            {
+                value = string.Join(", ", [value, .. More.Take(More.Count - 1).Select(f => f.Name)]) + " and " + More[^1].Name;
+            }
+
             var along = Placed.Where(p => p.Slot.Property is not ("y" or "size")).Select(p => p.Field.Name).ToList();
             return (value, along.Count) switch
             {
@@ -187,7 +196,8 @@ public static class ChartKinds
         new("waterfall", "compare", "Waterfall", "waterfall",
             [new("x", "Steps", "One bar per row, in the order of the rows.", Category),
              new("y", "Change", "How much each step adds (or takes away).", Number),
-             new("total", "Total rows", "A field that marks the rows showing the running total (true, yes or 1).", Category, Required: false)],
+             new("total", "Total rows", "A field that marks the rows showing the running total (true, yes or 1).", Category, Required: false,
+                 Pickable: false)],
             ["titles", "axis", "lines"],
             (c, s, d) => s.Type == SeriesType.Waterfall),
         new("radar", "compare", "Radar", "radar",
@@ -283,7 +293,8 @@ public static class ChartKinds
         new("bullet", "single", "Against a target", "bullet",
             [new("x", "For each", "One bar per value, each against its own target.", Category, Required: false),
              Value("Value", "The bar's length."),
-             new("targetField", "Target", "A field with each row's target; or set one target under Scale and target.", Number, Required: false)],
+             new("targetField", "Target", "A field with each row's target; or set one target under Scale and target.", Number, Required: false,
+                 Pickable: false)],
             ["titles", "scale"],
             (c, s, d) => s.Type == SeriesType.Bullet),
     ];
@@ -478,22 +489,22 @@ public static class ChartKinds
     private static readonly string[] SlotProperties = [.. All.SelectMany(k => k.Slots).Select(s => s.Property).Distinct()];
 
     /// <summary>
-    /// The fields a series shows, in slot order (x, y, groupBy...), from the dataset: the fields a user picked, as
-    /// far as the editor can tell.
+    /// The fields a chart shows, series by series in slot order (x, y, groupBy...), from the dataset: the fields a
+    /// user picked, as far as the editor can tell.
     /// </summary>
-    public static IReadOnlyList<DataField> FieldsOf(JsonObject? series, ChartDataset? dataset)
+    public static IReadOnlyList<DataField> FieldsOf(JsonObject? chart, ChartDataset? dataset)
     {
-        if (series is null || dataset is null)
+        if (chart?["series"] is not JsonArray list || dataset is null)
         {
             return [];
         }
 
-        var names = SlotProperties.SelectMany(p => series[p] switch
+        var names = list.OfType<JsonObject>().SelectMany(series => SlotProperties.SelectMany(p => series[p] switch
         {
-            JsonArray list => list.Select(n => n?.ToString()),
+            JsonArray fields => fields.Select(n => n?.ToString()),
             JsonValue value => [value.ToString()],
             _ => [],
-        });
+        }));
         return [.. names.OfType<string>().Distinct(StringComparer.Ordinal).Select(dataset.Field).OfType<DataField>()];
     }
 
@@ -515,7 +526,19 @@ public static class ChartKinds
         {
             if (Place(All[i], picked) is { } best)
             {
-                found.Add((new ChartSuggestion(All[i], best.Placed, best.Counts), best.Cost, i));
+                found.Add((new ChartSuggestion(All[i], best.Placed, best.Counts, []), best.Cost, i));
+            }
+            else if (MoreValues.Contains(All[i].Id) && picked.Count(f => f.Type == FieldType.Number) > 1)
+            {
+                // Several numbers on a line or bars: the first as this series' value, each further one a series
+                // of its own (sessions and revenue by hour), unless a field already splits the series.
+                var numbers = picked.Where(f => f.Type == FieldType.Number).ToList();
+                var more = numbers.Skip(1).ToList();
+                if (Place(All[i], [.. picked.Except(more)]) is { } first && first.Placed.All(p => p.Slot.Property != "groupBy")
+                    && first.Placed.Any(p => p.Slot.Property == "y" && p.Field == numbers[0]))
+                {
+                    found.Add((new ChartSuggestion(All[i], first.Placed, false, more), first.Cost, i));
+                }
             }
         }
 
@@ -524,6 +547,8 @@ public static class ChartKinds
 
     // Charts for a particular story (a funnel, a running total, a radar): after the everyday ones that fit as well,
     // so channel and revenue suggest bars and a donut before a waterfall.
+    private static readonly HashSet<string> MoreValues = ["line", "area", "columns-time", "bars", "horizontal-bars"];
+
     private static readonly HashSet<string> Specialist = ["waterfall", "radar", "funnel", "dumbbell", "percent-bars", "bullet", "boxplot", "treemap"];
 
     // The cheapest way to put every picked field in its own slot of the kind; null when there is none.
@@ -566,7 +591,8 @@ public static class ChartKinds
             }
 
             var field = picked[i];
-            foreach (var slot in kind.Slots.Where(s => s.Fits(field) && placed.All(p => p.Slot != s)))
+            // Marker and target slots take a field only when the user sets them below: a picked number is a value.
+            foreach (var slot in kind.Slots.Where(s => s.Pickable && s.Fits(field) && placed.All(p => p.Slot != s)))
             {
                 placed.Add((slot, field));
                 Next(i + 1, cost + Array.IndexOf(slot.Accepts, field.Type));
@@ -575,7 +601,10 @@ public static class ChartKinds
         }
     }
 
-    /// <summary>Makes a series the suggested chart with its fields in their slots; the series' other options stay.</summary>
+    /// <summary>
+    /// Makes the chart the suggestion: this series becomes the chart's first and only one with its fields in their
+    /// slots (its other options stay), followed by a copy for each further value.
+    /// </summary>
     public static void Use(ChartSuggestion suggestion, ChartKind? previous, JsonObject chart, JsonObject series, ChartDataset? dataset)
     {
         foreach (var property in SlotProperties)
@@ -602,6 +631,18 @@ public static class ChartKinds
         }
 
         Apply(suggestion.Kind, previous, chart, series, dataset, fill: false);
+
+        var list = (JsonArray)(chart["series"] ??= new JsonArray());
+        list.Clear();
+        list.Add(series);
+        foreach (var value in suggestion.More)
+        {
+            var copy = (JsonObject)series.DeepClone();
+            copy.Remove("id");
+            copy.Remove("name");
+            copy["y"] = value.Name;
+            list.Add(copy);
+        }
     }
 
     /// <summary>

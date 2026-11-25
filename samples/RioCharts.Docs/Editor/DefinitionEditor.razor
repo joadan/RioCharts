@@ -61,7 +61,7 @@
 
         @if (dataset is not null)
         {
-            var picked = Picked(series, dataset);
+            var picked = Picked(dataset);
             <p class="ce-hint ce-fields-hint">Pick the fields to show:</p>
             <div class="ce-fields" role="group" aria-label="Fields to show">
                 @foreach (var field in dataset.Fields)
@@ -79,14 +79,14 @@
                 <div class="ce-row ce-aggregate">
                     <label class="ce-label" for="ce-aggregate">Combine rows</label>
                     <div class="ce-inputs">
-                        <select id="ce-aggregate" value="@(series["aggregate"]?.ToString() ?? "")" @onchange="e => SetAggregate(e.Value?.ToString(), series)">
+                        <select id="ce-aggregate" value="@(series["aggregate"]?.ToString() ?? "")" @onchange="e => SetAggregate(e.Value?.ToString())">
                             @foreach (var (value, label) in ChartKinds.Aggregates)
                             {
                                 var text = value switch
                                 {
                                     "" => "Each value as it is",
                                     "count" => "Count the rows",
-                                    _ => $"{label} {series["y"]?.ToString() ?? "the value"}",
+                                    _ => $"{label} {(seriesList is { Count: > 1 } ? "each value" : series["y"]?.ToString() ?? "the value")}",
                                 };
                                 <option value="@value" selected="@(value == (series["aggregate"]?.ToString() ?? ""))">@text</option>
                             }
@@ -107,11 +107,11 @@
             }
             else
             {
-                var shown = FieldsOf(series, dataset);
+                var shown = Shown(dataset);
                 <div class="ce-suggestions">
                     @foreach (var (suggestion, preview) in suggestions.Take(4))
                     {
-                        var current = suggestion.Kind == kind && shown.SetEquals(suggestion.Placed.Select(p => p.Field.Name));
+                        var current = suggestion.Kind == kind && shown.SetEquals(suggestion.Fields);
                         <div class="ce-suggestion @(current ? "selected" : null)" @key="@($"{suggestion.Kind.Id}/{suggestion.Caption}")">
                             <div class="ce-suggestion-chart" aria-hidden="true">
                                 @if (preview is not null)
@@ -132,7 +132,7 @@
                         <span class="ce-hint">Also:</span>
                         @foreach (var (suggestion, _) in suggestions.Skip(4))
                         {
-                            var current = suggestion.Kind == kind && shown.SetEquals(suggestion.Placed.Select(p => p.Field.Name));
+                            var current = suggestion.Kind == kind && shown.SetEquals(suggestion.Fields);
                             <button type="button" class="ce-kind @(current ? "selected" : null)" title="@suggestion.Caption"
                                     @onclick="() => UseSuggestion(suggestion, kind, series, dataset)">@suggestion.Kind.Label</button>
                         }
@@ -394,19 +394,18 @@
     // The fields picked; null while they are the ones the chart shows (they follow the field pickers below).
     private List<string>? _picked;
 
-    private IReadOnlyList<DataField> Picked(JsonObject? series, ChartDataset dataset) => _picked is null
-        ? ChartKinds.FieldsOf(series, dataset)
+    private IReadOnlyList<DataField> Picked(ChartDataset dataset) => _picked is null
+        ? ChartKinds.FieldsOf(Definition, dataset)
         : [.. _picked.Select(dataset.Field).OfType<DataField>()];
 
-    private static HashSet<string> FieldsOf(JsonObject? series, ChartDataset dataset) =>
-        [.. ChartKinds.FieldsOf(series, dataset).Select(f => f.Name)];
+    private HashSet<string> Shown(ChartDataset dataset) => [.. ChartKinds.FieldsOf(Definition, dataset).Select(f => f.Name)];
 
     // A pick changes the chart at once, to the best fit for the fields picked. When no chart fits (nothing
     // picked, or a mix none shows), the chart hides until the fields fit one, so it never shows fields the chips
     // say are not picked.
     private Task TogglePick(DataField field, ChartKind? current, JsonObject? series, ChartDataset dataset)
     {
-        _picked ??= [.. ChartKinds.FieldsOf(series, dataset).Select(f => f.Name)];
+        _picked ??= [.. ChartKinds.FieldsOf(Definition, dataset).Select(f => f.Name)];
         if (!_picked.Remove(field.Name))
         {
             _picked.Add(field.Name);
@@ -436,15 +435,19 @@
         return ChartShown.InvokeAsync(shown);
     }
 
-    private Task SetAggregate(string? value, JsonObject series)
+    // For every series: the fields picked make the chart as a whole (sessions and revenue are both summed).
+    private Task SetAggregate(string? value)
     {
-        if (string.IsNullOrEmpty(value))
+        foreach (var series in DefinitionProperties.List(Definition!, "series")?.OfType<JsonObject>() ?? [])
         {
-            series.Remove("aggregate");
-        }
-        else
-        {
-            series["aggregate"] = value;
+            if (string.IsNullOrEmpty(value))
+            {
+                series.Remove("aggregate");
+            }
+            else
+            {
+                series["aggregate"] = value;
+            }
         }
 
         return Changed.InvokeAsync();
@@ -494,6 +497,7 @@
         series ??= NewSeries();
         Remember(series, current, suggestion.Kind);
         ChartKinds.Use(suggestion, current, Definition!, series, dataset);
+        _series = 0;
         _goal = suggestion.Kind.Goal;
         _picked = null;
         await Changed.InvokeAsync();
