@@ -2364,14 +2364,24 @@ table.hover-table td.num {
     gap: 6px;
 }
 
-.site .doc button.ce-field {
+/* A field chip: a toggle button and, on a picked number, its aggregate as a small menu ("# sessions | Sum"). */
+.ce-field {
+    display: inline-flex;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid var(--doc-border-strong);
+    border-radius: 8px;
+    background: var(--doc-surface);
+}
+
+.site .doc .ce-field > button.ce-field-pick {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 4px 10px 4px 6px;
-    border: 1px solid var(--doc-border-strong);
-    border-radius: 8px;
-    background: var(--doc-surface);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     box-shadow: none;
     color: var(--doc-text);
     font-size: 13px;
@@ -2389,9 +2399,12 @@ table.hover-table td.num {
     text-align: center;
 }
 
-.site .doc button.ce-field.picked {
+.ce-field.picked {
     border-color: var(--doc-accent);
     background: var(--doc-accent-soft);
+}
+
+.site .doc .ce-field.picked > button.ce-field-pick {
     color: var(--doc-accent);
     font-weight: 500;
 }
@@ -2401,32 +2414,23 @@ table.hover-table td.num {
     color: var(--doc-surface);
 }
 
-/* How each picked number's rows combine: one short row per value. */
-.ce-combine {
-    display: grid;
-    gap: 6px;
-    margin-top: 10px;
+.site .doc .ce-field > select {
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0 22px 0 8px;
+    border: 0;
+    border-left: 1px solid var(--doc-accent);
+    border-radius: 0;
+    background-color: var(--doc-surface);
+    background-position: right 6px center;
+    color: var(--doc-accent);
+    font-size: 12px;
+    font-weight: 600;
 }
 
-.ce-combine-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 8px;
-}
-
-.ce-combine-row label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    overflow: hidden;
-    font-size: 14px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.ce-combine .ce-hint {
-    margin: 0 !important;
+.ce-counts {
+    margin-top: 8px !important;
 }
 
 .ce-suggestions {

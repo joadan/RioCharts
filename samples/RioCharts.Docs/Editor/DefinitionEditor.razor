@@ -63,46 +63,36 @@
         {
             var picked = Picked(dataset);
             <p class="ce-hint ce-fields-hint">Pick the fields to show:</p>
+            // Each value's series, to show how its rows aggregate on its chip: sessions summed, response time averaged.
+            var valueSeries = !_noChart && kind?.Slots.Any(s => s.Part == SlotPart.Aggregate) == true
+                ? seriesList?.OfType<JsonObject>().Where(s => s["y"] is not null).GroupBy(s => s["y"]!.ToString()).ToDictionary(g => g.Key, g => g.First())
+                : null;
             <div class="ce-fields" role="group" aria-label="Fields to show">
                 @foreach (var field in dataset.Fields)
                 {
                     var on = picked.Contains(field);
-                    <button type="button" class="ce-field @(on ? "picked" : null)" aria-pressed="@(on ? "true" : "false")"
-                            @onclick="() => TogglePick(field, kind, series, dataset)">
-                        <span class="ce-field-type" aria-hidden="true">@TypeMark(field.Type)</span>@field.Name
-                    </button>
-                }
-            </div>
-            @if (!_noChart && kind?.Slots.Any(s => s.Part == SlotPart.Aggregate) == true && seriesList is not null)
-            {
-                @* How each value's rows with the same category or period become one number: sessions summed, response
-                   time averaged. One row per value (series); with no number picked, the chart counts rows. *@
-                <div class="ce-combine" role="group" aria-label="How rows are combined">
-                    <p class="ce-hint">Combine rows:</p>
-                    @foreach (var s in seriesList.OfType<JsonObject>())
-                    {
-                        var aggregate = s["aggregate"]?.ToString() ?? "";
-                        if (s["y"]?.ToString() is not { } value)
+                    var owner = on && valueSeries is not null && valueSeries.TryGetValue(field.Name, out var vs) ? vs : null;
+                    <span class="ce-field @(on ? "picked" : null) @(owner is null ? null : "with-aggregate")">
+                        <button type="button" class="ce-field-pick" aria-pressed="@(on ? "true" : "false")" @onclick="() => TogglePick(field, kind, series, dataset)">
+                            <span class="ce-field-type" aria-hidden="true">@TypeMark(field.Type)</span>@field.Name
+                        </button>
+                        @if (owner is not null)
                         {
-                            if (aggregate == "count")
-                            {
-                                <p class="ce-hint">Counts the rows@(s["x"] is null ? "" : $" per {s["x"]}").</p>
-                            }
-                            continue;
-                        }
-
-                        var id = $"ce-combine-{value}";
-                        <div class="ce-combine-row">
-                            <label for="@id"><span class="ce-field-type" aria-hidden="true">#</span>@value</label>
-                            <select id="@id" value="@aggregate" @onchange="e => SetAggregate(e.Value?.ToString(), s)">
+                            // The aggregate on the chip of the value it is for; no aggregate only listed when already set so.
+                            var aggregate = owner["aggregate"]?.ToString() ?? "";
+                            <select aria-label="@($"Aggregate of {field.Name}")" value="@aggregate" @onchange="e => SetAggregate(e.Value?.ToString(), owner)">
                                 @foreach (var (option, label) in ChartKinds.Combines.Where(c => c.Value != "" || aggregate == ""))
                                 {
                                     <option value="@option" selected="@(option == aggregate)">@label</option>
                                 }
                             </select>
-                        </div>
-                    }
-                </div>
+                        }
+                    </span>
+                }
+            </div>
+            @if (!_noChart && seriesList?.OfType<JsonObject>().FirstOrDefault(s => s["y"] is null && s["aggregate"]?.ToString() == "count") is { } counted)
+            {
+                <p class="ce-hint ce-counts">Counts the rows@(counted["x"] is null ? "" : $" per {counted["x"]}").</p>
             }
 
             <h4 class="ce-step"><span>2</span> Pick a chart</h4>

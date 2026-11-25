@@ -856,7 +856,7 @@ public static class ChartKinds
     /// <summary>How a picked value's rows combine, in the short list under the fields; no combining only for a value already set so.</summary>
     public static readonly (string Value, string Label)[] Combines =
     [
-        ("sum", "Sum"), ("average", "Average"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("", "No combining (one point per row)"),
+        ("sum", "Sum"), ("average", "Average"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("", "Each row"),
     ];
 
     public static readonly (string Value, string Label)[] Aggregates =
