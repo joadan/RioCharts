@@ -1482,8 +1482,11 @@ Design.md "Visual design": an entry fade only, no update animations. How it is d
 
 ## Playground editor
 
-The playground (docs site, `/definitions`) and the dashboards page have a chart editor next to the
-JSON. The first version listed every option from the schema by its JSON name, the same for every
+The chart editor lives on the dashboards page (docs site, `/dashboards`, "Try the editor" in the
+header), marked as under development. The Chart definitions page (`/definitions`) is a text
+reference: one idea per section, each definition next to the chart it draws, and a slim "Try it"
+with only the JSON, the chart and the messages. The editor was first on the definitions page, next
+to the JSON. The first version listed every option from the schema by its JSON name, the same for every
 chart type, with descriptions on hover; feedback was that it was hard to navigate and understand.
 It now works like a chart builder:
 
@@ -1505,9 +1508,9 @@ It now works like a chart builder:
 **All options** at the end is the first version, for developers: every option by its JSON name,
 with a search and the descriptions always shown.
 
-**Your data** reads a CSV or JSON file (or pasted text) into a dataset with `ChartDataset.FromCsv` /
-`FromJson`, in the browser, and starts a chart from it (a line along time or bars per category, split
-by a small text field along time). Opening it stops Clarity for the rest of the visit
+**Use your own data** (dashboards page) reads a CSV or JSON file (or pasted text) into a dataset with `ChartDataset.FromCsv` /
+`FromJson`, in the browser, and adds a tile from it, open in the editor (a line along time or bars per
+category, split by a small text field along time). Opening it stops Clarity for the rest of the visit
 (`rioDocs.stopClarity`), so no recording shows a chart of the visitor's data.
 
 It lives in `samples/RioCharts.Docs/Editor/` and is built as a future editor component, not part of

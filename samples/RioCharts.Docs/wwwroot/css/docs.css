@@ -1640,38 +1640,53 @@ h1:focus {
     padding: 4px 4px 0;
 }
 
-/* Options panel on the left, the chart, messages and JSON on the right; stacked on small screens. */
-.playground-grid {
+/* Try it: the JSON on the left, the chart and messages on the right; stacked on small screens. */
+.try-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 18px;
     align-items: start;
 }
 
-/* The chart, messages and JSON stay in view while the options scroll by. */
-.playground-output {
-    position: sticky;
-    top: 76px;
+.try-output {
     display: grid;
     gap: 12px;
     min-width: 0;
 }
 
-.playground-options {
-    padding: 14px;
+.playground > .example-code {
+    margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+    .try-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Dashboards page: the editor preview, your own data and the page's data. */
+.under-development {
+    margin-top: 4px;
+}
+
+.your-data, .dashboard-data {
+    margin-bottom: 12px;
     border: 1px solid var(--doc-border);
     border-radius: 12px;
     background: var(--doc-surface);
 }
 
-@media (max-width: 900px) {
-    .playground-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
+.your-data > summary, .dashboard-data > summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 500;
+}
 
-    .playground-output {
-        position: static;
-    }
+.dashboard-data > .spec-data {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--doc-border);
+    border-radius: 0 0 12px 12px;
 }
 
 .spec-upload {

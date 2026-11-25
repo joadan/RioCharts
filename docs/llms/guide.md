@@ -114,6 +114,6 @@ Every public component and its parameters, from the XML docs. Types in `RioChart
 
 - Getting started: https://riocharts.com/getting-started
 - All chart types with live examples: https://riocharts.com/lines-and-areas
-- Chart definitions (JSON) and the playground: https://riocharts.com/definitions
+- Chart definitions (JSON), explained with examples you can try: https://riocharts.com/definitions
 - AI agents and MCP (`riocharts-mcp` renders charts to PNG and turns definitions into Razor): https://riocharts.com/ai
 - Source: https://github.com/joadan/RioCharts

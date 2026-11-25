@@ -18,16 +18,26 @@
 </p>
 
 <section class="example" id="try-it">
-    <h2><a href="dashboards#try-it" class="anchor">Try it<span class="anchor-mark" aria-hidden="true">#</span></a></h2>
+    <h2><a href="dashboards#try-it" class="anchor">Try the editor<span class="anchor-mark" aria-hidden="true">#</span></a></h2>
+    <div class="callout under-development">
+        <strong>Under development.</strong> The chart editor is a preview of an editor component planned after 1.0; it is not in the
+        packages yet, and what it looks like and how it works will change. Tell us what works and what does not in an
+        <a href="https://github.com/joadan/RioCharts/issues">issue on GitHub</a>.
+    </div>
     <div class="example-text">
         <p>
-            Four tiles from saved definitions. <strong>Edit</strong> opens the same options panel as the <a href="definitions">playground</a>,
-            <strong>Add chart</strong> starts a new one, and <strong>What is saved</strong> shows what your app would store: one JSON
-            definition per tile, nothing else.
+            Four tiles from saved definitions. <strong>Edit</strong> opens the editor: pick what to show and a chart, fill in the data it
+            needs, then fine-tune. <strong>Add chart</strong> starts a new tile, <strong>Use your own data</strong> starts one from a file of
+            yours, and <strong>What is saved</strong> shows what your app would store: one JSON definition per tile, nothing else.
         </p>
     </div>
 
     <div class="example-card dashboard-demo">
+        <YourData Taken="DefinitionDatasets.ByName.Keys" OnData="UseData" />
+        <details class="dashboard-data">
+            <summary>The data on this page</summary>
+            <DatasetPreview Datasets="AllDatasets.Values.ToList()" Used="@_lastData" Describe="DescribeData" />
+        </details>
         <div class="dashboard-grid">
             @foreach (var tile in _tiles)
             {
@@ -42,14 +52,14 @@
                         @if (editing)
                         {
                             <div class="dashboard-tile-editor">
-                                <DefinitionEditor Definition="tile.Json" Datasets="DefinitionDatasets.ByName" Changed="() => Update(tile)" />
+                                <DefinitionEditor Definition="tile.Json" Datasets="AllDatasets" Changed="() => Update(tile)" />
                             </div>
                         }
                         <div class="dashboard-tile-chart">
                             @if (tile.Shown is not null)
                             {
                                 @* The tile's header shows the title, so the chart leaves it out. *@
-                                <RioChart TItem="object" Definition="tile.Shown" Datasets="DefinitionDatasets.ByName" Height="@(editing ? 320 : 220)" />
+                                <RioChart TItem="object" Definition="tile.Shown" Datasets="AllDatasets" Height="@(editing ? 320 : 220)" />
                             }
                             else
                             {
@@ -110,8 +120,7 @@
 <ul>
     <li>
         <strong>A form.</strong> <code>ChartDefinitionJson.Schema()</code> is the JSON schema of a definition, with a description of every option, its
-        type and the allowed words. Build your own form from it in your design system, as the options panel on this page and in the
-        <a href="definitions">playground</a> does (its source is in
+        type and the allowed words. Build your own form from it in your design system; the editor on this page is one (its source is in
         <a href="https://github.com/joadan/RioCharts/tree/master/samples/RioCharts.Docs/Editor">samples/RioCharts.Docs/Editor</a>; copy it
         as a start). A ready-made editor component is planned after 1.0.
     </li>
@@ -203,6 +212,32 @@
         json["title"] = "New chart";
         var tile = Parse(json);
         _tiles.Add(tile);
+        _editing = tile;
+    }
+
+    // ----- Your own data: read in the browser, kept only on this page -----
+
+    private readonly Dictionary<string, ChartDataset> _uploaded = new(StringComparer.OrdinalIgnoreCase);
+    private string? _lastData;
+
+    private IReadOnlyDictionary<string, ChartDataset> AllDatasets =>
+        _uploaded.Count == 0
+            ? DefinitionDatasets.ByName
+            : DefinitionDatasets.ByName.Values.Concat(_uploaded.Values).ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+
+    private RenderFragment DescribeData(ChartDataset ds) => _uploaded.ContainsKey(ds.Name)
+        ? @<text>Your data, read in your browser. It stays on this page and is gone when you leave it.</text>
+        : @<text>@ds.Description. Passed in from C# with <code>Datasets="datasets"</code>.</text>;
+
+    /// <summary>A file of the visitor's own: a new tile from its first fields, open in the editor.</summary>
+    private void UseData((ChartDataset Dataset, string? Title) data)
+    {
+        _uploaded[data.Dataset.Name] = data.Dataset;
+        _lastData = data.Dataset.Name;
+        var json = DefinitionProperties.Starter(data.Dataset);
+        json["title"] = data.Title ?? "Your data";
+        var tile = Parse(json);
+        _tiles.Insert(0, tile);
         _editing = tile;
     }
 

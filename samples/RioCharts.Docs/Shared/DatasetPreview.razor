@@ -1,0 +1,95 @@
+@* Datasets a definition can read: a tab per dataset, what it is, and a few rows spread over it. *@
+@using RioCharts.Core.Definitions
+
+@{ var shown = Shown(); }
+@if (shown is not null)
+{
+    <div class="spec-data">
+        <div class="spec-data-tabs" role="tablist" aria-label="Datasets">
+            <span class="spec-data-label">Data</span>
+            @foreach (var ds in Datasets)
+            {
+                var active = ds.Name == shown.Name;
+                <button role="tab" aria-selected="@(active ? "true" : "false")" class="@(active ? "active" : null)" @onclick="() => _picked = ds.Name">
+                    <code>@ds.Name</code>@if (string.Equals(ds.Name, Used, StringComparison.OrdinalIgnoreCase)) {<span class="spec-data-used">used by the definition</span>}
+                </button>
+            }
+        </div>
+        <p class="spec-data-about">
+            @About(shown)
+            <span class="spec-data-count">@shown.RowCount rows, @shown.Fields.Count fields</span>
+        </p>
+        <div class="spec-data-table">
+            <table>
+                <thead>
+                    <tr>
+                        @foreach (var field in shown.Fields)
+                        {
+                            <th><code>@field.Name</code> <span class="spec-data-type">@field.Type.ToString().ToLowerInvariant()</span></th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in SampleRows(shown))
+                    {
+                        <tr>
+                            @foreach (var field in shown.Fields)
+                            {
+                                <td>@Cell(field.Values[row])</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (shown.RowCount > SampleRows(shown).Count)
+        {
+            <p class="spec-data-more">@SampleRows(shown).Count of @shown.RowCount rows, spread over the dataset.</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartDataset> Datasets { get; set; } = [];
+
+    /// <summary>The dataset the definition reads: shown first and marked.</summary>
+    [Parameter] public string? Used { get; set; }
+
+    /// <summary>What a dataset is, under the tabs; default: its description and how it is passed in.</summary>
+    [Parameter] public Func<ChartDataset, RenderFragment>? Describe { get; set; }
+
+    private string? _picked;
+    private string? _lastUsed;
+
+    // A new definition shows the dataset it reads again.
+    protected override void OnParametersSet()
+    {
+        if (_lastUsed != Used)
+        {
+            _lastUsed = Used;
+            _picked = null;
+        }
+    }
+
+    private ChartDataset? Shown() =>
+        Datasets.FirstOrDefault(d => string.Equals(d.Name, _picked, StringComparison.OrdinalIgnoreCase))
+        ?? Datasets.FirstOrDefault(d => string.Equals(d.Name, Used, StringComparison.OrdinalIgnoreCase))
+        ?? Datasets.FirstOrDefault();
+
+    private RenderFragment About(ChartDataset ds) => Describe?.Invoke(ds) ?? (ds.Name == "inline"
+        ? @<text>Rows written in the definition itself (<code>"data": [ ... ]</code>), for a few values an agent already has.</text>
+        : @<text>@ds.Description. Passed in from C# with <code>Datasets="datasets"</code>.</text>);
+
+    /// <summary>Up to five rows spread over the dataset (the page's datasets are sorted by channel or month).</summary>
+    private static List<int> SampleRows(ChartDataset ds) =>
+        ds.RowCount <= 5 ? [.. Enumerable.Range(0, ds.RowCount)] : [.. Enumerable.Range(0, 5).Select(i => i * ds.RowCount / 5)];
+
+    private static string Cell(object? value) => value switch
+    {
+        null => "",
+        DateTime t => t.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture),
+        DateTimeOffset t => t.ToString("yyyy-MM-dd HH:mm zzz", System.Globalization.CultureInfo.InvariantCulture),
+        double d => d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+        _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "",
+    };
+}

@@ -131,7 +131,7 @@ All target .NET 10 (LTS) and .NET 11, and are release candidates until 1.0: add 
 ## Learn more
 
 - [Docs and live examples](https://riocharts.com/): every chart type and feature, running in your browser
-- [Chart definitions](https://riocharts.com/definitions): the chart model as JSON, with a playground
+- [Chart definitions](https://riocharts.com/definitions): the chart model as JSON, explained with examples you can try
 - [Dashboards users configure](https://riocharts.com/dashboards): save a definition per user and tile, with your own data
 - [CHANGELOG.md](CHANGELOG.md): what changed, and breaking changes
 - [CONTRIBUTING.md](CONTRIBUTING.md): building, testing and the project layout

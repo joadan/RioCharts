@@ -1,181 +1,95 @@
 @page "/definitions"
 @page "/specs"
 @using RioCharts.Core.Definitions
-@using RioCharts.Docs.Editor
-@using System.Text.Json
-@using System.Text.Json.Nodes
-@inject IJSRuntime JS
 
 <PageTitle>Chart definitions · RioCharts for Blazor and .NET</PageTitle>
 
 <h1>Chart definitions</h1>
 <p class="lead">
-    Describe a chart as JSON: a small object that names a dataset and its fields, easy for AI agents to write and easy to save. The same
-    definition renders with <code>&lt;RioChart Definition="definition" Datasets="datasets" /&gt;</code>, on the server, or through the
-    <a href="ai">create_chart tool</a>. Below, set the options in the panel or edit the JSON, with our data or your own; it is parsed,
-    validated and drawn in your browser.
+    A chart definition describes a chart as a small JSON object: which data to read, which fields go where, and how it should look. AI agents
+    write it, apps save it, and the same definition draws with <code>&lt;RioChart Definition="..." /&gt;</code>, on the server, or through
+    the <a href="ai">create_chart tool</a>.
 </p>
 <p>
-    The definition holds no data itself: it refers to a <strong>dataset</strong> by name and to its <strong>fields</strong> (columns) by name.
-    Your app passes the datasets in (see <a href="definitions#datasets">where the data comes from</a>), or a small definition carries its own rows in
-    <code>"data"</code>. The panel above the editor shows the datasets this page has, and <strong>Your data</strong> adds a CSV or JSON file
-    of your own: it is read in your browser and never leaves it.
+    This page explains the format, one idea at a time, with each definition next to the chart it draws. At the end you can
+    <a href="definitions#try-it">try it</a> yourself. To let people build charts without writing JSON, see the
+    <a href="dashboards">chart editor</a>.
 </p>
+
+<h2 id="first">A first definition</h2>
 <p>
-    Building a product where users set up their own charts? See <a href="dashboards">dashboards your users configure</a>.
+    A definition names a <strong>dataset</strong> and, for each series, the <strong>fields</strong> (columns) that go along the x axis and
+    up the y axis. Everything else has a default. This one sums the revenue per month and draws it as a line.
+</p>
+<DefinitionExample Title="Revenue per month" Json="@Minimal" />
+
+<h2 id="data">Data: datasets and fields</h2>
+<p>
+    The definition holds no data itself. Your app passes in named datasets, tables with one value per row for each field, and the definition
+    refers to them by name. Field types (time, number, text) are read from the values. Because only names travel, a definition is small,
+    safe to save, and never contains anyone's data. These are the datasets the examples on this page read:
+</p>
+<DatasetPreview Datasets="PageDatasets" Used="shop" />
+<p>
+    A small definition can also carry its own rows in <code>"data"</code> (at most @ChartDefinitionJson.MaxInlineRows), for a few values an
+    agent already has. How your app builds datasets is under <a href="definitions#datasets">where the data comes from</a>.
 </p>
 
-<section class="example">
-<div class="example-card playground">
-    <div class="examples-buttons">
-        @foreach (var (name, json) in Examples)
-        {
-            <button class="small" @onclick="() => Load(json)">@name</button>
-        }
-    </div>
-
-    @{ var shown = ShownDataset(); }
-    <div class="spec-data">
-        <div class="spec-data-tabs" role="tablist" aria-label="Datasets">
-            <span class="spec-data-label">Data</span>
-            @foreach (var ds in Datasets())
-            {
-                var active = ds.Name == shown.Name;
-                <button role="tab" aria-selected="@(active ? "true" : "false")" class="@(active ? "active" : null)" @onclick="() => _picked = ds.Name">
-                    <code>@ds.Name</code>@if (ds.Name == UsedDataset()) {<span class="spec-data-used">used by the definition</span>}
-                </button>
-            }
-            <button role="tab" aria-selected="@(_uploading ? "true" : "false")" class="@(_uploading ? "active" : null)" @onclick="ToggleUpload">
-                Your data
-            </button>
-        </div>
-        @if (_uploading)
-        {
-            <div class="spec-upload">
-                <p class="spec-data-about">
-                    A CSV file with a header row, or a JSON array of objects. It is read here, in your browser, and never sent anywhere
-                    (usage statistics stop while you are here, see <a href="privacy">Privacy</a>); the playground then starts a chart from
-                    its first fields.
-                </p>
-                <InputFile accept=".csv,.json,.txt,text/csv,application/json" OnChange="Upload" />
-                <details>
-                    <summary>Or paste CSV or JSON</summary>
-                    <textarea class="spec-paste" spellcheck="false" aria-label="Data to paste (CSV or JSON)" @bind="_pasted"></textarea>
-                    <button class="small" @onclick="Paste">Use this data</button>
-                </details>
-                @if (_uploadError is not null)
-                {
-                    <p class="spec-messages errors">@_uploadError</p>
-                }
-            </div>
-        }
-        <p class="spec-data-about">
-            @if (shown.Name == "inline")
-            {
-                <text>Rows written in the definition itself (<code>"data": [ ... ]</code>), for a few values an agent already has.</text>
-            }
-            else if (_uploaded.ContainsKey(shown.Name))
-            {
-                <text>Your data, read in your browser. It stays on this page and is gone when you leave it.</text>
-            }
-            else
-            {
-                <text>@shown.Description. Passed in from C# with <code>Datasets="datasets"</code>.</text>
-            }
-            <span class="spec-data-count">@shown.RowCount rows, @shown.Fields.Count fields</span>
-        </p>
-        <div class="spec-data-table">
-            <table>
-                <thead>
-                    <tr>
-                        @foreach (var field in shown.Fields)
-                        {
-                            <th><code>@field.Name</code> <span class="spec-data-type">@field.Type.ToString().ToLowerInvariant()</span></th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in SampleRows(shown))
-                    {
-                        <tr>
-                            @foreach (var field in shown.Fields)
-                            {
-                                <td>@Cell(field.Values[row])</td>
-                            }
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        @if (shown.RowCount > SampleRows(shown).Count)
-        {
-            <p class="spec-data-more">@SampleRows(shown).Count of @shown.RowCount rows, spread over the dataset.</p>
-        }
-    </div>
-
-    <div class="playground-grid">
-        <div class="playground-options">
-            <DefinitionEditor @ref="_editor" Definition="_definition" Datasets="AllDatasets" Changed="FromEditor" />
-        </div>
-        <div class="playground-output">
-            <div class="example-live">
-                @if (_spec is not null)
-                {
-                    <RioChart TItem="object" Definition="_spec" Datasets="AllDatasets" Height="320" Zoomable="true" />
-                }
-            </div>
-
-            @if (_errors.Count > 0)
-            {
-                <ul class="spec-messages errors">
-                    @foreach (var error in _errors)
-                    {
-                        <li>@error</li>
-                    }
-                </ul>
-            }
-
-            @if (_warnings.Count > 0)
-            {
-                <ul class="spec-messages">
-                    @foreach (var warning in _warnings)
-                    {
-                        <li>@warning</li>
-                    }
-                </ul>
-            }
-
-            @* A transparent textarea over a highlighted copy of its text. Both wrap the same way and the
-               highlighted copy sets the height, so they stay aligned without scroll syncing. *@
-            <div class="spec-editor">
-                <pre aria-hidden="true"><code>@((MarkupString)_highlighted)</code></pre>
-                <textarea spellcheck="false" aria-label="Chart definition (JSON)" @bind="_json" @bind:event="oninput" @bind:after="FromText"></textarea>
-            </div>
-        </div>
-    </div>
-</div>
-</section>
-
-<h2>What a definition can say</h2>
+<h2 id="types">Chart types</h2>
+<p>
+    <code>type</code> picks the chart. Most read <code>x</code> and <code>y</code>; some read more fields, such as a range bar's
+    <code>start</code> and <code>end</code>. With <code>auto</code>, the chart picks a type from the data: time along x gives a line,
+    categories give bars, and shares that add up to 100 give a donut. Common names from other libraries are accepted too:
+    <code>column</code>, <code>doughnut</code>, <code>spline</code>, <code>stackedBar</code>.
+</p>
+<DefinitionExample Title="Shares from inline rows" Json="@Shares">
+    <Description><p>Inline rows and <code>auto</code>: four shares that add up to 100 become a donut.</p></Description>
+</DefinitionExample>
 <table class="docs">
-    <tr><th>Series option</th><th>Meaning</th></tr>
-    <tr><td><code>type</code></td><td>line, area, bar, scatter, bubble (scatter with a <code>size</code> field), heatmap, rangeArea, boxPlot, candlestick, waterfall, histogram, dumbbell (two values per category: <code>from</code> and <code>y</code>), rangeBar (a timeline: <code>row</code>, <code>start</code> and <code>end</code> fields), pie, radialBar, gauge (one value: <code>y</code> with <code>min</code>, <code>max</code> and <code>target</code>), bullet (a value against a target per row: <code>x</code>, <code>y</code> and <code>targetField</code>), funnel (stages in row order: <code>x</code> and <code>y</code>), radar, treemap, or <code>auto</code> (time → line, categories → bar, shares of 100 % → donut). Synonyms such as column, doughnut, spline and spider are accepted.</td></tr>
-    <tr><td><code>error</code>, <code>errorField</code>, <code>errorLow</code>, <code>errorHigh</code></td><td>Error bars on bar, line and scatter series: one plus-or-minus amount for every point, a field with each row's amount, or fields with each error bar's low and high ends.</td></tr>
-    <tr><td><code>dataset</code></td><td>Which dataset to read, on the chart or per series; leave it out when the definition has inline <code>data</code> rows.</td></tr>
-    <tr><td><code>x</code>, <code>y</code></td><td>Field names in that dataset: x is the time, category or number along the axis, y the value.</td></tr>
-    <tr><td><code>low</code>, <code>high</code>, <code>q1</code>, <code>q3</code>, <code>open</code>, <code>total</code>, <code>binWidth</code>, <code>binCount</code>, <code>path</code></td><td>Extra fields some types read: a histogram's bin width or about how many bins; a range area's low values; a box plot's precomputed quartiles and whiskers; a candlestick's open, high and low; a waterfall's total rows; a treemap's group fields (<code>"path": ["region", "country"]</code>).</td></tr>
-    <tr><td><code>colorBands</code></td><td>Colors by value: <code>[{ "above": 120, "color": "--rio-negative" }]</code>; a line changes color where it crosses into a band, bars and points take their band's color.</td></tr>
-    <tr><td><code>colorField</code></td><td>A field with each row's own color (CSS color or theme token such as <code>"--rio-negative"</code>); empty keeps the series color.</td></tr>
-    <tr><td><code>filter</code></td><td><code>[{ "field": "channel", "op": "eq", "value": "App" }]</code>, ops eq, ne, gt, gte, lt, lte, contains.</td></tr>
-    <tr><td><code>timeBucket</code>, <code>aggregate</code></td><td>hour, day, week, month, quarter, year; sum, average, min, max, count, last.</td></tr>
-    <tr><td><code>groupBy</code></td><td>One series per value of a field.</td></tr>
-    <tr><td><code>sort</code>, <code>limit</code></td><td>Rank by y and keep the top N.</td></tr>
+    <tr><th>Type</th><th>What it reads</th></tr>
+    <tr><td><code>line</code>, <code>area</code>, <code>bar</code></td><td><code>x</code> (time, number or category) and <code>y</code>. A <code>stack</code> name stacks series; <code>"horizontal": true</code> on the chart lays bars sideways.</td></tr>
+    <tr><td><code>pie</code>, <code>funnel</code>, <code>radialBar</code></td><td><code>x</code> names the slice or stage, <code>y</code> its size. <code>innerRadius</code> makes a donut.</td></tr>
+    <tr><td><code>scatter</code></td><td>Two numbers, <code>x</code> and <code>y</code>; a <code>size</code> field makes bubbles.</td></tr>
+    <tr><td><code>heatmap</code>, <code>calendar</code></td><td>A heatmap: <code>x</code> columns, <code>groupBy</code> rows, <code>y</code> the color. A calendar: a time <code>x</code>, one square per day.</td></tr>
+    <tr><td><code>histogram</code>, <code>boxPlot</code></td><td>How values spread: a histogram counts a number field in bins; a box plot shows each group's quartiles.</td></tr>
+    <tr><td><code>rangeBar</code>, <code>dumbbell</code>, <code>rangeArea</code></td><td>From–to values: a timeline's <code>row</code>, <code>start</code> and <code>end</code>; a dumbbell's <code>from</code> and <code>y</code>; a band's <code>low</code> and <code>y</code>.</td></tr>
+    <tr><td><code>waterfall</code>, <code>candlestick</code></td><td>Steps that add up (with <code>total</code> rows), and prices with <code>open</code>, <code>high</code>, <code>low</code> and <code>y</code> as the close.</td></tr>
+    <tr><td><code>gauge</code>, <code>bullet</code></td><td>One value against a scale (<code>min</code>, <code>max</code>, <code>target</code>), or a value per row against its <code>targetField</code>.</td></tr>
+    <tr><td><code>treemap</code>, <code>radar</code>, <code>map</code>, <code>mapBubble</code></td><td>Nested groups (<code>path</code>), spokes, countries, and places by <code>latitude</code> and <code>longitude</code>.</td></tr>
 </table>
+
+<h2 id="shaping">Shaping the data</h2>
 <p>
-    Everything else (axes, annotations, legend, time zone...) is the same model as the components. Errors name the path and list what is valid,
-    e.g. <code>series[0].y: field 'visits' not found in 'shop'; available: timestamp (time), channel (text), ...</code>, so an agent can fix the definition and try again.
-    <code>ChartDefinitionJson.Schema()</code> returns the JSON schema with a description of every option.
+    A series can reshape its rows before it draws, so the data can stay as it is stored:
 </p>
+<ul>
+    <li><code>filter</code> keeps the rows that match all conditions: <code>[{ "field": "channel", "op": "eq", "value": "App" }]</code>, with eq, ne, gt, gte, lt, lte and contains.</li>
+    <li><code>timeBucket</code> groups a time x per minute, hour, day, week, month, quarter or year (or <code>auto</code>), and <code>aggregate</code> combines the rows in each group or category: sum, average, min, max, count or last.</li>
+    <li><code>groupBy</code> makes one series per value of a field: one line per sales channel.</li>
+    <li><code>sort</code> ranks the categories by value, and <code>limit</code> keeps the first N: a top 10.</li>
+</ul>
+<DefinitionExample Title="Revenue per day and channel" Json="@PerDay">
+    <Description><p>Hourly rows grouped per day, summed, one series per channel, stacked.</p></Description>
+</DefinitionExample>
+<DefinitionExample Title="Top three categories" Json="@TopThree">
+    <Description><p>Monthly rows summed per category, sorted, the top three kept, laid sideways.</p></Description>
+</DefinitionExample>
+
+<h2 id="layout">Axes, legend and annotations</h2>
+<p>
+    The rest is the same model as the Blazor components: axis titles, formats and ranges (<code>x</code>, <code>y</code> and more vertical
+    axes in <code>yAxes</code>), the <code>legend</code>, the <code>tooltip</code>, reference lines and bands in <code>annotations</code>, and the
+    chart's <code>timeZone</code>. A series picks its axis with <code>yAxisId</code>.
+</p>
+<DefinitionExample Title="Two axes and a goal line" Json="@TwoAxes" />
+
+<h2 id="errors">Errors that say what to do</h2>
+<p>
+    A definition is checked when it is read and again when it meets the data. Each error names the path to the problem and what is valid, so
+    a person or an agent can fix it and try again. Small slips are read anyway, with a warning: <code>"timeBucket": "daily"</code> means day,
+    <code>"type": "column"</code> means bar. Here the field names are wrong:
+</p>
+<DefinitionExample Title="A definition with errors" Json="@WithErrors" Height="120" />
 
 <h2 id="versions">Saved definitions keep working</h2>
 <p>
@@ -187,28 +101,134 @@
 
 <h2 id="datasets">Where the data comes from</h2>
 <p>
-    A dataset is a named table: one value per row for each field. Field types (time, number, text) are read from the values, and an
-    optional description tells an agent what the data means. Build them from your own rows, from CSV, or let an
-    <code>IChartDataSource</code> load them when a definition asks (e.g. <code>FolderDataSource</code> for a folder of CSV and JSON files).
+    Build datasets from your own rows, from CSV, or let an <code>IChartDataSource</code> load them when a definition asks
+    (e.g. <code>FolderDataSource</code> for a folder of CSV and JSON files). An optional description tells an agent what the data means.
+    <code>ChartDefinitionJson.Schema()</code> returns the JSON schema of a definition with a description of every option.
 </p>
 <CodeBlock Language="csharp" Code="@DatasetsCode" />
 <CodeBlock Language="razor" Code="@ChartCode" />
 
-<h3>The definition as read</h3>
-@if (_normalized is not null)
-{
-    <CodeBlock Language="json" Code="@_normalized" />
-}
+<section class="example" id="try-it">
+    <h2><a href="definitions#try-it" class="anchor">Try it<span class="anchor-mark" aria-hidden="true">#</span></a></h2>
+    <div class="example-text">
+        <p>
+            Edit the definition; it is read, checked and drawn in your browser. Start from an example, and use the datasets above.
+        </p>
+    </div>
+    <div class="example-card playground">
+        <div class="examples-buttons">
+            @foreach (var (name, json) in TryExamples)
+            {
+                <button class="small" @onclick="() => Load(json)">@name</button>
+            }
+        </div>
+
+        <div class="try-grid">
+            @* A transparent textarea over a highlighted copy of its text. Both wrap the same way and the
+               highlighted copy sets the height, so they stay aligned without scroll syncing. *@
+            <div class="spec-editor">
+                <pre aria-hidden="true"><code>@((MarkupString)_highlighted)</code></pre>
+                <textarea spellcheck="false" aria-label="Chart definition (JSON)" @bind="_json" @bind:event="oninput" @bind:after="Render"></textarea>
+            </div>
+            <div class="try-output">
+                <div class="example-live">
+                    @if (_spec is not null)
+                    {
+                        <RioChart TItem="object" Definition="_spec" Datasets="DefinitionDatasets.ByName" Height="300" Zoomable="true" />
+                    }
+                </div>
+                @if (_errors.Count > 0)
+                {
+                    <ul class="spec-messages errors">
+                        @foreach (var error in _errors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                }
+                @if (_warnings.Count > 0)
+                {
+                    <ul class="spec-messages">
+                        @foreach (var warning in _warnings)
+                        {
+                            <li>@warning</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+        @if (_normalized is not null)
+        {
+            <details class="example-code">
+                <summary>
+                    <svg class="chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    The definition as read
+                </summary>
+                <CodeBlock Language="json" Code="@_normalized" />
+            </details>
+        }
+    </div>
+</section>
 
 @code {
-    private static readonly (string Name, string Json)[] Examples =
+    private static readonly IReadOnlyList<ChartDataset> PageDatasets = [.. DefinitionDatasets.ByName.Values];
+
+    private const string Minimal = """
+        {
+          "dataset": "sales",
+          "series": [{ "type": "line", "x": "month", "y": "revenue", "aggregate": "sum" }]
+        }
+        """;
+
+    private const string Shares = """
+        {
+          "data": [ { "source": "Search", "share": 48 }, { "source": "Social", "share": 27 },
+                    { "source": "Email", "share": 15 }, { "source": "Direct", "share": 10 } ],
+          "series": [{ "type": "auto", "x": "source", "y": "share" }]
+        }
+        """;
+
+    private const string PerDay = """
+        {
+          "dataset": "shop",
+          "y": { "title": "€" },
+          "series": [{ "type": "bar", "x": "timestamp", "y": "revenue", "timeBucket": "day", "aggregate": "sum",
+                       "groupBy": "channel", "stack": "channels", "format": "#,0 €" }]
+        }
+        """;
+
+    private const string TopThree = """
+        {
+          "dataset": "sales",
+          "horizontal": true,
+          "series": [{ "type": "bar", "x": "category", "y": "revenue", "aggregate": "sum",
+                       "sort": "descending", "limit": 3, "format": "0 k€" }]
+        }
+        """;
+
+    private const string TwoAxes = """
+        {
+          "dataset": "shop",
+          "y": { "title": "Sessions" },
+          "yAxes": [{ "id": "eur", "title": "€" }],
+          "series": [
+            { "type": "bar", "x": "timestamp", "y": "revenue", "timeBucket": "day", "aggregate": "sum", "yAxisId": "eur", "name": "Revenue" },
+            { "type": "line", "x": "timestamp", "y": "sessions", "timeBucket": "day", "aggregate": "sum", "name": "Sessions" }
+          ],
+          "annotations": [{ "value": 7000, "label": "Goal: 7,000 sessions" }]
+        }
+        """;
+
+    private const string WithErrors = """
+        {
+          "dataset": "shop",
+          "series": [{ "type": "line", "x": "time", "y": "visits" }]
+        }
+        """;
+
+    private static readonly (string Name, string Json)[] TryExamples =
     [
-        ("Minimal", """
-            {
-              "dataset": "sales",
-              "series": [{ "type": "line", "x": "month", "y": "revenue", "aggregate": "sum" }]
-            }
-            """),
+        ("Minimal", Minimal),
         ("One line per channel", """
             {
               "dataset": "shop",
@@ -218,46 +238,11 @@
               "annotations": [{ "value": 20, "label": "Goal: 20 an hour" }]
             }
             """),
-        ("Revenue per day", """
-            {
-              "dataset": "shop",
-              "title": "Revenue per day",
-              "y": { "title": "€" },
-              "series": [{ "type": "column", "x": "timestamp", "y": "revenue", "timeBucket": "daily", "format": "#,0 €",
-                           "aggregate": "sum", "groupBy": "channel", "stack": "channels" }]
-            }
-            """),
-        ("Top categories (auto)", """
-            {
-              "dataset": "sales",
-              "title": "Revenue per category, 2026 (k€)",
-              "series": [{ "type": "auto", "x": "category", "y": "revenue", "aggregate": "sum", "sort": "desc" }]
-            }
-            """),
-        ("Shares (auto donut)", """
-            {
-              "data": [ { "source": "Search", "share": 48 }, { "source": "Social", "share": 27 },
-                        { "source": "Email", "share": 15 }, { "source": "Direct", "share": 10 } ],
-              "series": [{ "type": "auto", "x": "source", "y": "share" }]
-            }
-            """),
-        ("Two axes", """
-            {
-              "dataset": "shop",
-              "y": { "title": "Sessions" },
-              "yAxes": [{ "id": "eur", "title": "€" }],
-              "series": [
-                { "type": "bar", "x": "timestamp", "y": "revenue", "timeBucket": "day", "aggregate": "sum", "yAxisId": "eur", "name": "Revenue" },
-                { "type": "line", "x": "timestamp", "y": "sessions", "timeBucket": "day", "aggregate": "sum", "name": "Sessions" }
-              ]
-            }
-            """),
-        ("With errors", """
-            {
-              "dataset": "shop",
-              "series": [{ "type": "line", "x": "time", "y": "visits" }]
-            }
-            """),
+        ("Revenue per day", PerDay),
+        ("Top three", TopThree),
+        ("Shares (auto donut)", Shares),
+        ("Two axes", TwoAxes),
+        ("With errors", WithErrors),
     ];
 
     private const string DatasetsCode = """
@@ -282,47 +267,6 @@
         <RioChart Definition="definition" Datasets="datasets" />
         """;
 
-    private string? _picked;
-
-    /// <summary>The playground's datasets, plus the definition's inline rows when it has some.</summary>
-    private IEnumerable<ChartDataset> Datasets()
-    {
-        foreach (var ds in AllDatasets.Values)
-        {
-            yield return ds;
-        }
-
-        if (_spec?.Data is { Count: > 0 } rows)
-        {
-            yield return ChartDataset.FromRows("inline", rows);
-        }
-    }
-
-    /// <summary>The dataset the definition reads (its own, its first series', or its inline rows).</summary>
-    private string? UsedDataset() =>
-        _spec?.Data is { Count: > 0 } ? "inline" : _spec?.Dataset ?? _spec?.Series.Select(s => s.Dataset).FirstOrDefault(d => d is not null);
-
-    private ChartDataset ShownDataset()
-    {
-        var all = Datasets().ToList();
-        return all.FirstOrDefault(d => string.Equals(d.Name, _picked, StringComparison.OrdinalIgnoreCase))
-            ?? all.FirstOrDefault(d => string.Equals(d.Name, UsedDataset(), StringComparison.OrdinalIgnoreCase))
-            ?? all[0];
-    }
-
-    /// <summary>Up to five rows spread over the dataset (the playground's are sorted by channel or month).</summary>
-    private static List<int> SampleRows(ChartDataset ds) =>
-        ds.RowCount <= 5 ? [.. Enumerable.Range(0, ds.RowCount)] : [.. Enumerable.Range(0, 5).Select(i => i * ds.RowCount / 5)];
-
-    private static string Cell(object? value) => value switch
-    {
-        null => "",
-        DateTime t => t.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture),
-        DateTimeOffset t => t.ToString("yyyy-MM-dd HH:mm zzz", System.Globalization.CultureInfo.InvariantCulture),
-        double d => d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
-        _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "",
-    };
-
     private string _json = "";
     private string _highlighted = "";
     private ChartDefinition? _spec;
@@ -330,147 +274,12 @@
     private List<string> _errors = [];
     private List<string> _warnings = [];
 
-    protected override void OnInitialized() => Load(Examples[1].Json);
+    protected override void OnInitialized() => Load(TryExamples[1].Json);
 
     private void Load(string json)
     {
-        _picked = null; // show the dataset the new example uses
         _json = json;
-        _editor?.Reset();
-        FromText();
-    }
-
-    private DefinitionEditor? _editor;
-
-    /// <summary>The definition as JSON for the property panel; null while the text is not valid JSON.</summary>
-    private JsonObject? _definition;
-
-    /// <summary>The JSON text was edited: the panel shows what it now says.</summary>
-    private void FromText()
-    {
-        _definition = DefinitionProperties.Read(_json);
         Render();
-    }
-
-    /// <summary>An option was set in the panel: the JSON text is written from it.</summary>
-    private void FromEditor()
-    {
-        DefinitionProperties.Prune(_definition!);
-        _json = DefinitionProperties.Write(_definition!);
-        Render();
-    }
-
-    // ----- Your own data: read in the browser, kept only on this page -----
-
-    private const long MaxUploadBytes = 10 * 1024 * 1024;
-    private readonly Dictionary<string, ChartDataset> _uploaded = new(StringComparer.OrdinalIgnoreCase);
-    private bool _uploading;
-    private string? _pasted;
-    private string? _uploadError;
-
-    private IReadOnlyDictionary<string, ChartDataset> AllDatasets =>
-        _uploaded.Count == 0
-            ? DefinitionDatasets.ByName
-            : DefinitionDatasets.ByName.Values.Concat(_uploaded.Values).ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
-
-    private async Task ToggleUpload()
-    {
-        _uploading = !_uploading;
-        if (_uploading)
-        {
-            await JS.InvokeVoidAsync("rioDocs.stopClarity");
-        }
-    }
-
-    private async Task Upload(InputFileChangeEventArgs e)
-    {
-        _uploadError = null;
-        if (e.File.Size > MaxUploadBytes)
-        {
-            _uploadError = $"{e.File.Name} is {e.File.Size / 1024 / 1024} MB; the playground takes files up to 10 MB.";
-            return;
-        }
-
-        using var reader = new StreamReader(e.File.OpenReadStream(MaxUploadBytes));
-        var title = Path.GetFileNameWithoutExtension(e.File.Name);
-        UseData(title, await reader.ReadToEndAsync(), e.File.Name, title);
-    }
-
-    private void Paste()
-    {
-        _uploadError = null;
-        if (string.IsNullOrWhiteSpace(_pasted))
-        {
-            _uploadError = "Paste CSV with a header row, or a JSON array of objects, first.";
-            return;
-        }
-
-        UseData("pasted", _pasted, "Pasted data", title: null);
-    }
-
-    /// <summary>Reads CSV or JSON into a dataset and starts a chart from it.</summary>
-    private void UseData(string fileName, string text, string description, string? title)
-    {
-        var name = DatasetName(fileName);
-        ChartDataset dataset;
-        try
-        {
-            var trimmed = text.TrimStart();
-            if (trimmed.StartsWith('[') || trimmed.StartsWith('{'))
-            {
-                using var doc = JsonDocument.Parse(text, new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
-                // A JSON object with an array in it (e.g. { "rows": [...] }) reads the first array.
-                var rows = doc.RootElement.ValueKind == JsonValueKind.Object
-                    ? doc.RootElement.EnumerateObject().Select(p => p.Value).FirstOrDefault(v => v.ValueKind == JsonValueKind.Array)
-                    : doc.RootElement;
-                if (rows.ValueKind != JsonValueKind.Array)
-                {
-                    _uploadError = "The JSON has no array of rows; use [ { \"field\": value, ... }, ... ].";
-                    return;
-                }
-
-                dataset = ChartDataset.FromJson(name, rows, description);
-            }
-            else
-            {
-                dataset = ChartDataset.FromCsv(name, text, description);
-            }
-        }
-        catch (Exception ex) when (ex is JsonException or FormatException or ArgumentException or InvalidOperationException)
-        {
-            _uploadError = $"Could not read the data: {ex.Message}";
-            return;
-        }
-
-        if (dataset.RowCount == 0 || dataset.Fields.Count == 0)
-        {
-            _uploadError = "No rows found. A CSV file needs a header row and at least one row of values.";
-            return;
-        }
-
-        _uploaded[name] = dataset;
-        _uploading = false;
-        _pasted = null;
-        _picked = name;
-        _definition = DefinitionProperties.Starter(dataset);
-        if (title is not null)
-        {
-            _definition["title"] = title;
-        }
-        _editor?.Reset();
-        FromEditor();
-    }
-
-    /// <summary>A dataset name from a file name: lower case letters, digits and dashes, never one of the page's own.</summary>
-    private static string DatasetName(string fileName)
-    {
-        var name = new string([.. fileName.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-')]).Trim('-');
-        if (name.Length == 0)
-        {
-            name = "data";
-        }
-
-        return DefinitionDatasets.ByName.ContainsKey(name) ? "my-" + name : name;
     }
 
     private void Render()
@@ -484,7 +293,7 @@
         _normalized = _spec is null ? null : ChartDefinitionJson.Serialize(_spec);
         if (_spec is not null)
         {
-            var bound = ChartDefinitionBinder.Bind(_spec, AllDatasets);
+            var bound = ChartDefinitionBinder.Bind(_spec, DefinitionDatasets.ByName);
             _errors.AddRange(bound.Errors.Select(e => e.ToString()));
             _warnings.AddRange(bound.Warnings);
         }
