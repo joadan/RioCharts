@@ -86,6 +86,11 @@ internal static partial class ChartLayout
         }
 
         bool Hidden(string group) => options.HiddenSeries?.Contains(group) == true;
+        foreach (var hidden in groups.Where(g => Hidden(g.Name)))
+        {
+            Sum(hidden); // their legend tooltips still give their totals
+        }
+
         root.Children.RemoveAll(c => Hidden(c.Name));
         if (series.Spec.GroupSmallSlices is > 0 and var threshold)
         {

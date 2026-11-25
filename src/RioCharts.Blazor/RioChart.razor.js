@@ -1041,8 +1041,9 @@ function findSlice(m, pos) {
             continue;
         }
 
-        const angle = ((Math.atan2(dx, -dy) - s.a0) % TAU + TAU) % TAU;
-        if (angle <= s.end - s.a0 + 1e-6 || s.end - s.a0 >= TAU - 1e-6) {
+        const h0 = s.h0 ?? s.a0; // hovering may start before the highlighted part (a counter-clockwise radial bar)
+        const angle = ((Math.atan2(dx, -dy) - h0) % TAU + TAU) % TAU;
+        if (angle <= s.end - h0 + 1e-6 || s.end - h0 >= TAU - 1e-6) {
             return s;
         }
     }

@@ -64,7 +64,9 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   data point. Hover events are not raised to .NET (except with a tooltip template).
 - **Stacking.** Series stack when they share `Stack`, axis and kind (bars, or lines/areas),
   matched by exact x value (or category). Positive values stack up and negative values down.
-  Hidden series leave the stack. Stacked bars are square with a 1 px gap; stacked areas fill
+  Hidden series leave the stack. A gap (missing value) in a stacked line or area is a gap in every line or
+  area above it at that x too: their base is not known there, so they are not drawn on a guessed one. In stacked
+  bars a missing value is an empty segment and the bars above stay. Stacked bars are square with a 1 px gap; stacked areas fill
   between their base and top. Percent stacking: see "100 % stacking".
 - **Multiple Y axes.** `ChartDefinition.YAxes` adds axes (right side by default, outward when there are
   several). The first axis with visible series owns the grid and the zero line; the others choose

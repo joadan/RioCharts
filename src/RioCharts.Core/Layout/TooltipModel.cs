@@ -95,6 +95,12 @@ internal sealed record TooltipSlice(string SeriesId, int Index, string Header, s
 {
     /// <summary>For the grouped "Other" slice: the categories it holds, in data order; empty otherwise.</summary>
     public IReadOnlyList<TooltipPart> Parts { get; init; } = [];
+
+    /// <summary>
+    /// Where hovering starts, when not at <see cref="A0"/>: a radial bar running counter-clockwise is hovered over its
+    /// whole track (from the track's far end), while its highlight covers only the filled part (A0 to A1).
+    /// </summary>
+    public float? HitStart { get; init; }
 }
 
 /// <summary>One category inside a grouped "Other" slice.</summary>
