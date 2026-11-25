@@ -13,7 +13,7 @@
                     <option value="">(default)</option>
                     @foreach (var choice in Property.Choices)
                     {
-                        <option value="@choice">@choice</option>
+                        <option value="@choice" selected="@(choice == value)">@choice</option>
                     }
                     @* A synonym (spline, column...) or a word from a newer version: kept, and shown as it is. *@
                     @if (value is not null && !Property.Choices.Contains(value))
@@ -36,7 +36,7 @@
                     <option value="">(none)</option>
                     @foreach (var field in Dataset.Fields)
                     {
-                        <option value="@field.Name">@field.Name · @field.Type.ToString().ToLowerInvariant()</option>
+                        <option value="@field.Name" selected="@(field.Name == value)">@field.Name · @field.Type.ToString().ToLowerInvariant()</option>
                     }
                     @if (value is not null && Dataset.Field(value) is null)
                     {

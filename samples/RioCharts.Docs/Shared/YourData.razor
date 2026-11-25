@@ -1,0 +1,150 @@
+@* Your own data: a CSV or JSON file, or pasted text, read into a dataset in the browser. Opening it stops
+   Clarity for the rest of the visit, so no recording shows a chart of the visitor's data. *@
+@using System.Text.Json
+@using RioCharts.Core.Definitions
+@inject IJSRuntime JS
+
+<details class="your-data">
+    @* A click, not the toggle event: clicks bubble to Blazor's handler everywhere. *@
+    <summary @onclick="Opened">Use your own data</summary>
+    <div class="spec-upload">
+        <p class="spec-data-about">
+            A CSV file with a header row, or a JSON array of objects. It is read here, in your browser, and never sent anywhere; usage
+            statistics stop once you open this (see <a href="privacy">Privacy</a>). It is gone when you leave the page.
+        </p>
+        @* The real file input lies on top of the drop zone, transparent: clicking, the keyboard and dropping a file all
+           reach it, and the zone shows what it is for and which file was read. *@
+        <div class="file-drop @(_fileName is null ? null : "has-file")">
+            <InputFile class="file-drop-input" accept=".csv,.json,.txt,text/csv,application/json" OnChange="Upload" aria-label="Choose a CSV or JSON file" />
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4 4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span class="file-drop-text">
+                @if (_fileName is null)
+                {
+                    <strong>Choose a file</strong> <span>or drop it here</span>
+                }
+                else
+                {
+                    <strong>@_fileName</strong> <span>read; choose or drop another to add it too</span>
+                }
+            </span>
+            <span class="file-drop-hint">CSV or JSON, up to 10 MB</span>
+        </div>
+        <details>
+            <summary>Or paste CSV or JSON</summary>
+            <textarea class="spec-paste" spellcheck="false" aria-label="Data to paste (CSV or JSON)" @bind="_pasted"></textarea>
+            <button class="small" @onclick="Paste">Use this data</button>
+        </details>
+        @if (_error is not null)
+        {
+            <p class="spec-messages errors">@_error</p>
+        }
+    </div>
+</details>
+
+@code {
+    /// <summary>Names the page's own datasets use; a file with one of these names gets "my-" in front.</summary>
+    [Parameter] public IEnumerable<string> Taken { get; set; } = [];
+
+    /// <summary>A dataset was read: its name, the dataset and a title from the file name (null for pasted data).</summary>
+    [Parameter] public EventCallback<(ChartDataset Dataset, string? Title)> OnData { get; set; }
+
+    private const long MaxBytes = 10 * 1024 * 1024;
+    private string? _pasted;
+    private string? _error;
+    private bool _stopped;
+    private string? _fileName;
+
+    private async Task Opened()
+    {
+        if (!_stopped)
+        {
+            _stopped = true;
+            await JS.InvokeVoidAsync("rioDocs.stopClarity");
+        }
+    }
+
+    private async Task Upload(InputFileChangeEventArgs e)
+    {
+        _error = null;
+        if (e.File.Size > MaxBytes)
+        {
+            _error = $"{e.File.Name} is {e.File.Size / 1024 / 1024} MB; this page takes files up to 10 MB.";
+            return;
+        }
+
+        using var reader = new StreamReader(e.File.OpenReadStream(MaxBytes));
+        var title = Path.GetFileNameWithoutExtension(e.File.Name);
+        await Use(title, await reader.ReadToEndAsync(), e.File.Name, title);
+        if (_error is null)
+        {
+            _fileName = e.File.Name;
+        }
+    }
+
+    private Task Paste()
+    {
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_pasted))
+        {
+            _error = "Paste CSV with a header row, or a JSON array of objects, first.";
+            return Task.CompletedTask;
+        }
+
+        return Use("pasted", _pasted, "Pasted data", title: null);
+    }
+
+    private async Task Use(string fileName, string text, string description, string? title)
+    {
+        var name = DatasetName(fileName);
+        ChartDataset dataset;
+        try
+        {
+            var trimmed = text.TrimStart();
+            if (trimmed.StartsWith('[') || trimmed.StartsWith('{'))
+            {
+                using var doc = JsonDocument.Parse(text, new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
+                // A JSON object with an array in it (e.g. { "rows": [...] }) reads the first array.
+                var rows = doc.RootElement.ValueKind == JsonValueKind.Object
+                    ? doc.RootElement.EnumerateObject().Select(p => p.Value).FirstOrDefault(v => v.ValueKind == JsonValueKind.Array)
+                    : doc.RootElement;
+                if (rows.ValueKind != JsonValueKind.Array)
+                {
+                    _error = "The JSON has no array of rows; use [ { \"field\": value, ... }, ... ].";
+                    return;
+                }
+
+                dataset = ChartDataset.FromJson(name, rows, description);
+            }
+            else
+            {
+                dataset = ChartDataset.FromCsv(name, text, description);
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or FormatException or ArgumentException or InvalidOperationException)
+        {
+            _error = $"Could not read the data: {ex.Message}";
+            return;
+        }
+
+        if (dataset.RowCount == 0 || dataset.Fields.Count == 0)
+        {
+            _error = "No rows found. A CSV file needs a header row and at least one row of values.";
+            return;
+        }
+
+        _pasted = null;
+        await OnData.InvokeAsync((dataset, title));
+    }
+
+    /// <summary>A dataset name from a file name: lower case letters, digits and dashes, never one of the page's own.</summary>
+    private string DatasetName(string fileName)
+    {
+        var name = new string([.. fileName.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-')]).Trim('-');
+        if (name.Length == 0)
+        {
+            name = "data";
+        }
+
+        return Taken.Contains(name, StringComparer.OrdinalIgnoreCase) ? "my-" + name : name;
+    }
+}

@@ -1,0 +1,89 @@
+@* One fine-tune option: a label, a control and its hint, always visible. *@
+@using System.Text.Json.Nodes
+
+@{
+    var target = ChartKinds.Target(Chart, Series, Option.Scope, create: false);
+    var value = target?[Option.Property] is { } node ? ChartKinds.Canonical(Text(node)) : null;
+}
+<div class="ce-row">
+    <label class="ce-label" for="@_id">@Option.Label</label>
+    <div class="ce-inputs">
+        @switch (Option.Control)
+        {
+            case OptionControl.Toggle:
+                <label class="ce-toggle">
+                    <input id="@_id" type="checkbox" checked="@(value == "true")" @onchange="Toggle" />
+                    <span>@(value == "true" ? "On" : "Off")</span>
+                </label>
+                break;
+
+            case OptionControl.Choice:
+                <select id="@_id" value="@(value ?? "")" @onchange="e => Set(e.Value?.ToString())">
+                    @foreach (var (choice, label) in Option.Choices ?? [])
+                    {
+                        <option value="@choice" selected="@(choice == (value ?? ""))">@label</option>
+                    }
+                    @if (value is not null && Option.Choices?.All(c => c.Value != value) == true)
+                    {
+                        <option value="@value" selected>@value</option>
+                    }
+                </select>
+                break;
+
+            case OptionControl.Number:
+                <input id="@_id" type="text" inputmode="decimal" value="@value" placeholder="Automatic" @onchange="e => Set(e.Value?.ToString())" />
+                break;
+
+            default:
+                <input id="@_id" type="text" value="@value" @oninput="e => Set(e.Value?.ToString())" />
+                break;
+        }
+    </div>
+    @if (Option.Hint.Length > 0)
+    {
+        <p class="ce-hint">@Option.Hint</p>
+    }
+</div>
+
+@code {
+    private static int _next;
+    private readonly string _id = $"ce-o{Interlocked.Increment(ref _next)}";
+
+    [Parameter, EditorRequired] public JsonObject Chart { get; set; } = default!;
+
+    [Parameter] public JsonObject? Series { get; set; }
+
+    [Parameter, EditorRequired] public EditorOption Option { get; set; } = default!;
+
+    [Parameter] public EventCallback Changed { get; set; }
+
+    internal static string Text(JsonNode node) => node is JsonValue v && v.TryGetValue<string>(out var s) ? s : node.ToJsonString();
+
+    private Task Toggle(ChangeEventArgs e) => Set(e.Value is true ? "true" : null);
+
+    private Task Set(string? text)
+    {
+        var target = ChartKinds.Target(Chart, Series, Option.Scope, create: !string.IsNullOrWhiteSpace(text));
+        if (target is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var property = new DefinitionProperty(Option.Property, null,
+            Option.Control switch
+            {
+                OptionControl.Toggle => PropertyKind.Boolean,
+                OptionControl.Number => PropertyKind.Number,
+                _ => PropertyKind.Text,
+            }, [], []);
+
+        // "true"/"false" choices (data labels: automatic, show, hide) are booleans in the JSON.
+        if (Option.Control == OptionControl.Choice && text is "true" or "false")
+        {
+            property = property with { Kind = PropertyKind.Boolean };
+        }
+
+        DefinitionProperties.SetText(target, property, text);
+        return Changed.InvokeAsync();
+    }
+}

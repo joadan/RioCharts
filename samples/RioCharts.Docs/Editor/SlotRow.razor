@@ -1,0 +1,199 @@
+@* A data slot: its label, the field (with how rows are combined, or how time is grouped) and its hint. *@
+@using System.Text.Json.Nodes
+@using RioCharts.Core.Definitions
+
+@{
+    var field = Series[Slot.Property] is JsonValue v && v.TryGetValue<string>(out var f) ? f : null;
+    var aggregate = Series["aggregate"]?.ToString();
+    var counting = Slot.Part == SlotPart.Aggregate && aggregate == "count";
+    var isTime = field is not null && Dataset?.Field(field)?.Type == FieldType.Time;
+}
+<div class="ce-row">
+    <label class="ce-label" for="@_id">@Slot.Label</label>
+    <div class="ce-inputs">
+        @if (Slot.Part == SlotPart.Aggregate)
+        {
+            <select class="ce-part" aria-label="@($"{Slot.Label}: how rows are combined")" value="@(aggregate ?? "")" @onchange="SetAggregate">
+                @foreach (var (value, label) in ChartKinds.Aggregates)
+                {
+                    <option value="@value" selected="@(value == (aggregate ?? ""))">@label</option>
+                }
+            </select>
+        }
+
+        @if (Slot.IsList)
+        {
+            var levels = Series[Slot.Property] as JsonArray ?? [];
+            <div class="ce-levels">
+                @for (var i = 0; i < levels.Count; i++)
+                {
+                    var n = i;
+                    <select aria-label="@($"Level {n + 1}")" value="@(levels[n]?.ToString())" @onchange="e => SetLevel(n, e.Value?.ToString())">
+                        <option value="">Remove</option>
+                        @foreach (var candidate in Candidates(levels[n]?.ToString()))
+                        {
+                            <option value="@candidate.Name" selected="@(candidate.Name == levels[n]?.ToString())">@candidate.Name</option>
+                        }
+                    </select>
+                }
+                <select id="@_id" value="" @onchange="e => SetLevel(levels.Count, e.Value?.ToString())">
+                    <option value="">@(levels.Count == 0 ? "Choose a field" : "Add a level")</option>
+                    @foreach (var candidate in Candidates(null))
+                    {
+                        <option value="@candidate.Name">@candidate.Name</option>
+                    }
+                </select>
+            </div>
+        }
+        else if (!counting)
+        {
+            @if (Dataset is null)
+            {
+                <input id="@_id" type="text" value="@field" placeholder="Field name" @onchange="e => SetField(e.Value?.ToString())" />
+            }
+            else
+            {
+                <select id="@_id" value="@(field ?? "")" @onchange="e => SetField(e.Value?.ToString())">
+                    <option value="" selected="@(field is null)">@(Slot.Required ? "Choose a field" : "Nothing")</option>
+                    @foreach (var candidate in Candidates(field))
+                    {
+                        <option value="@candidate.Name" selected="@(candidate.Name == field)">@candidate.Name</option>
+                    }
+                </select>
+            }
+        }
+
+        @if (Slot.Part == SlotPart.TimeBucket && isTime)
+        {
+            <select class="ce-part" aria-label="@($"{Slot.Label}: grouping")" value="@(Series["timeBucket"]?.ToString() ?? "")" @onchange="SetBucket">
+                @foreach (var (value, label) in ChartKinds.TimeBuckets)
+                {
+                    <option value="@value" selected="@(value == (Series["timeBucket"]?.ToString() ?? ""))">@label</option>
+                }
+            </select>
+        }
+    </div>
+    <p class="ce-hint">@Slot.Hint</p>
+    @if (field is not null && Dataset is not null && Dataset.Field(field) is { } current && !Slot.Accepts.Contains(current.Type))
+    {
+        <p class="ce-hint ce-warn">@field is @current.Type.ToString().ToLowerInvariant(); this needs @string.Join(" or ", Slot.Accepts.Select(a => a.ToString().ToLowerInvariant())).</p>
+    }
+</div>
+
+@code {
+    private static int _next;
+    private readonly string _id = $"ce-s{Interlocked.Increment(ref _next)}";
+
+    [Parameter, EditorRequired] public ChartSlot Slot { get; set; } = default!;
+
+    [Parameter, EditorRequired] public JsonObject Series { get; set; } = default!;
+
+    [Parameter] public ChartDataset? Dataset { get; set; }
+
+    [Parameter] public EventCallback Changed { get; set; }
+
+    /// <summary>The fields that fit the slot, plus the current one when it does not (so the select can show it).</summary>
+    private IEnumerable<DataField> Candidates(string? current)
+    {
+        if (Dataset is null)
+        {
+            yield break;
+        }
+
+        foreach (var f in ChartKinds.FieldsFor(Slot, Dataset))
+        {
+            yield return f;
+        }
+
+        if (current is not null && Dataset.Field(current) is { } c && !Slot.Accepts.Contains(c.Type))
+        {
+            yield return c;
+        }
+    }
+
+    private Task SetField(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            Series.Remove(Slot.Property);
+        }
+        else
+        {
+            Series[Slot.Property] = name;
+            // A time field along x is grouped automatically at first; every row is one option.
+            if (Slot.Part == SlotPart.TimeBucket && Dataset?.Field(name)?.Type == FieldType.Time && Series["timeBucket"] is null)
+            {
+                Series["timeBucket"] = "auto";
+            }
+            else if (Slot.Part == SlotPart.TimeBucket && Dataset?.Field(name)?.Type != FieldType.Time)
+            {
+                Series.Remove("timeBucket");
+            }
+        }
+
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetAggregate(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (string.IsNullOrEmpty(value))
+        {
+            Series.Remove("aggregate");
+        }
+        else
+        {
+            Series["aggregate"] = value;
+        }
+
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetBucket(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (string.IsNullOrEmpty(value))
+        {
+            Series.Remove("timeBucket");
+        }
+        else
+        {
+            Series["timeBucket"] = value;
+        }
+
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetLevel(int index, string? name)
+    {
+        var levels = Series[Slot.Property] as JsonArray;
+        if (levels is null)
+        {
+            levels = [];
+            Series[Slot.Property] = levels;
+        }
+
+        if (string.IsNullOrEmpty(name))
+        {
+            if (index < levels.Count)
+            {
+                levels.RemoveAt(index);
+            }
+        }
+        else if (index < levels.Count)
+        {
+            levels[index] = name;
+        }
+        else
+        {
+            levels.Add(name);
+        }
+
+        if (levels.Count == 0)
+        {
+            Series.Remove(Slot.Property);
+        }
+
+        return Changed.InvokeAsync();
+    }
+}

@@ -1,74 +1,161 @@
-@* A property editor for a chart definition: pick the dataset, edit each series (type and fields first),
-   then the chart's own options. It edits the JSON object it is given and raises Changed after every edit.
-   Built in the docs site with a future editor component in mind; not part of 1.0. *@
+@* A chart editor for people, not for the JSON: pick what to show, fill in the data the chart needs, then
+   fine-tune in a few folded sections that say what is set. "All options" at the end lists every option of
+   the definition by its JSON name, for developers. It edits the JSON object it is given and raises Changed
+   after every edit. Built in the docs site with a future editor component in mind; not part of 1.0. *@
 @using System.Text.Json.Nodes
 @using RioCharts.Core.Definitions
 
-<div class="pe">
-    <input class="pe-search" type="search" placeholder="Search options, e.g. legend, format, stack" aria-label="Search options"
-           value="@_search" @oninput="e => _search = e.Value?.ToString()" />
-
+<div class="ce">
     @if (Definition is null)
     {
-        <p class="pe-description">The JSON has an error; fix it to edit the options here.</p>
+        <p class="ce-note">The JSON has an error. Fix it, and the options show here again.</p>
     }
     else
     {
         var seriesList = DefinitionProperties.List(Definition, "series");
-        var hasInline = Definition["data"] is JsonArray { Count: > 0 };
-        var selected = seriesList is { Count: > 0 } ? seriesList[Math.Min(_series, seriesList.Count - 1)] as JsonObject : null;
+        var index = seriesList is { Count: > 0 } ? Math.Min(_series, seriesList.Count - 1) : 0;
+        var series = seriesList is { Count: > 0 } ? seriesList[index] as JsonObject : null;
+        var dataset = DefinitionProperties.DatasetOf(Definition, series, Datasets);
+        var kind = ChartKinds.Find(_parsed, index, dataset, _goal);
+        var goal = _goal ?? kind?.Goal;
 
-        @if (Matches("dataset"))
+        @if (seriesList is { Count: > 1 })
         {
-            <div class="pe-row @(Definition["dataset"] is null ? null : "pe-set")">
-                <label class="pe-label" for="pe-dataset">dataset</label>
-                <div class="pe-input">
-                    <select id="pe-dataset" value="@(Definition["dataset"]?.ToString() ?? "")" @onchange="SetDataset">
-                        @if (hasInline || Definition["dataset"] is null)
-                        {
-                            <option value="">@(hasInline ? "inline rows (in the JSON)" : "(none)")</option>
-                        }
-                        @foreach (var name in Datasets.Keys)
-                        {
-                            <option value="@name">@name</option>
-                        }
-                    </select>
-                </div>
-                <p class="pe-description">@DefinitionProperties.Root.Child("dataset")?.Description</p>
+            <div class="ce-tabs" role="tablist" aria-label="Series">
+                @for (var i = 0; i < seriesList.Count; i++)
+                {
+                    var n = i;
+                    var s = seriesList[n] as JsonObject;
+                    var active = n == index;
+                    <button type="button" role="tab" aria-selected="@(active ? "true" : "false")" class="@(active ? "active" : null)" @onclick="() => SelectSeries(n)">
+                        @(s?["name"]?.ToString() ?? s?["y"]?.ToString() ?? $"Series {n + 1}")
+                    </button>
+                }
             </div>
         }
 
-        <h4 class="pe-heading">Series</h4>
-        <div class="pe-tabs" role="tablist" aria-label="Series">
-            @if (seriesList is not null)
+        <h4 class="ce-step"><span>1</span> What do you want to show?</h4>
+        <div class="ce-goals">
+            @foreach (var g in ChartKinds.Goals)
             {
-                @for (var i = 0; i < seriesList.Count; i++)
-                {
-                    var index = i;
-                    var s = seriesList[index] as JsonObject;
-                    var active = ReferenceEquals(s, selected);
-                    <button type="button" role="tab" aria-selected="@(active ? "true" : "false")" class="@(active ? "active" : null)"
-                            @onclick="() => _series = index">
-                        @(s?["name"]?.ToString() ?? s?["y"]?.ToString() ?? $"Series {index + 1}") <span class="pe-count">@(s?["type"]?.ToString() ?? "line")</span>
-                    </button>
-                }
+                var selected = g.Id == goal;
+                <button type="button" class="ce-goal @(selected ? "selected" : null)" aria-pressed="@(selected ? "true" : "false")" title="@g.Hint"
+                        @onclick="() => PickGoal(g, kind, series, dataset)">
+                    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="@g.Icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    <span>@g.Label</span>
+                </button>
             }
-            <button type="button" class="pe-add" @onclick="AddSeries">Add series</button>
         </div>
-
-        @if (selected is not null)
+        @if (goal is not null)
         {
-            <PropertyGroup Target="selected" Properties="SeriesProperty.Properties" Dataset="DatasetFor(selected)" Search="@_search"
-                           Pinned="SeriesPinned" MoreLabel="More series options" Changed="Changed" />
-            @if (seriesList!.Count > 1)
-            {
-                <button type="button" class="pe-link" @onclick="() => RemoveSeries(selected)">Remove this series</button>
-            }
+            <p class="ce-hint ce-goal-hint">@ChartKinds.Goal(goal).Hint@(kind is not null && kind.Goal != goal ? $". Pick one to switch from {kind.Label}." : "")</p>
+            <div class="ce-kinds" role="radiogroup" aria-label="Chart">
+                @foreach (var k in ChartKinds.Of(goal))
+                {
+                    var selected = k == kind;
+                    <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")" class="ce-kind @(selected ? "selected" : null)"
+                            @onclick="() => PickKind(k, kind, series, dataset)">@k.Label</button>
+                }
+            </div>
         }
 
-        <h4 class="pe-heading">Chart</h4>
-        <PropertyGroup Target="Definition" Properties="ChartProperties" Dataset="DatasetFor(null)" Search="@_search"
-                       Pinned="ChartPinned" MoreLabel="More chart options" Changed="Changed" />
+        @if (series is null)
+        {
+            <p class="ce-note">This definition has no series yet. Pick a chart above to start one.</p>
+        }
+        else if (kind is null && _parsed?.Series.ElementAtOrDefault(index)?.Type == SeriesType.Auto)
+        {
+            <p class="ce-note">The chart type is automatic: picked from the data when it is drawn. Pick a chart above to choose one and see its options.</p>
+        }
+        else if (kind is null)
+        {
+            <p class="ce-note">
+                This chart (<code>@(series["type"]?.ToString() ?? "line")</code>) has no simple form here yet. Pick a chart above to switch, or edit
+                it under All options.
+            </p>
+        }
+        else
+        {
+            <h4 class="ce-step"><span>2</span> Your data</h4>
+            <div class="ce-row">
+                <label class="ce-label" for="ce-dataset">Data</label>
+                <div class="ce-inputs">
+                    <select id="ce-dataset" value="@(Definition["dataset"]?.ToString() ?? "")" @onchange="e => SetDataset(e.Value?.ToString(), kind, series)">
+                        @if (Definition["data"] is JsonArray { Count: > 0 })
+                        {
+                            <option value="">Rows in the definition</option>
+                        }
+                        else if (Definition["dataset"] is null)
+                        {
+                            <option value="">Choose</option>
+                        }
+                        @foreach (var name in Datasets.Keys)
+                        {
+                            <option value="@name" selected="@(string.Equals(name, Definition["dataset"]?.ToString(), StringComparison.OrdinalIgnoreCase))">@name</option>
+                        }
+                    </select>
+                </div>
+                @if (dataset?.Description is { Length: > 0 } about)
+                {
+                    <p class="ce-hint">@about</p>
+                }
+            </div>
+
+            @foreach (var slot in kind.Slots)
+            {
+                @* Keyed by chart, slot, dataset and series: a select reused for another slot can keep showing its old field. *@
+                <SlotRow @key="@($"{index}/{kind.Id}/{slot.Property}/{dataset?.Name}")" Slot="slot" Series="series" Dataset="dataset" Changed="Changed" />
+            }
+
+            @if (kind.Slots.Any(s => s.Property == "y"))
+            {
+                <button type="button" class="ce-link" @onclick="AddSeries">Add another value as a second series</button>
+            }
+            @if (seriesList!.Count > 1)
+            {
+                <button type="button" class="ce-link" @onclick="() => RemoveSeries(series)">Remove this series</button>
+            }
+
+            <h4 class="ce-step"><span>3</span> Fine-tune</h4>
+            <div class="ce-sections">
+                @foreach (var id in kind.Sections)
+                {
+                    @if (id == "lines")
+                    {
+                        <ReferenceLines Chart="Definition" Changed="Changed" />
+                    }
+                    else
+                    {
+                        var section = ChartKinds.Section(id);
+                        <details class="ce-section">
+                            <summary><span class="ce-section-label">@section.Label</span><span class="ce-summary">@Summary(section, series)</span></summary>
+                            <div class="ce-section-body">
+                                @foreach (var option in section.Options)
+                                {
+                                    <OptionRow @key="@($"{index}/{section.Id}/{option.Scope}/{option.Property}")" Chart="Definition" Series="series" Option="option" Changed="Changed" />
+                                }
+                            </div>
+                        </details>
+                    }
+                }
+            </div>
+        }
+
+        <details class="ce-section ce-all" open="@(kind is null)">
+            <summary><span class="ce-section-label">All options</span><span class="ce-summary">Every option by its JSON name, for developers</span></summary>
+            <div class="ce-section-body pe">
+                <input class="pe-search" type="search" placeholder="Search, e.g. legend, format, stack" aria-label="Search all options"
+                       value="@_search" @oninput="e => _search = e.Value?.ToString()" />
+                @if (series is not null)
+                {
+                    <h5 class="pe-heading">This series</h5>
+                    <PropertyGroup Target="series" Properties="SeriesProperty.Properties" Dataset="dataset" Search="@_search" MoreLabel="Series options" Changed="Changed" />
+                }
+                <h5 class="pe-heading">The chart</h5>
+                <PropertyGroup Target="Definition" Properties="ChartProperties" Dataset="DefinitionProperties.DatasetOf(Definition, null, Datasets)" Search="@_search"
+                               MoreLabel="Chart options" Changed="Changed" />
+            </div>
+        </details>
     }
 </div>
 
@@ -76,7 +163,7 @@
     /// <summary>The definition as JSON; null while the text is not valid JSON.</summary>
     [Parameter] public JsonObject? Definition { get; set; }
 
-    /// <summary>The datasets the dataset picker offers and the field pickers read.</summary>
+    /// <summary>The datasets the editor offers and the field pickers read.</summary>
     [Parameter, EditorRequired] public IReadOnlyDictionary<string, ChartDataset> Datasets { get; set; } = default!;
 
     /// <summary>Raised after every edit of <see cref="Definition"/>.</summary>
@@ -84,31 +171,95 @@
 
     private static readonly DefinitionProperty SeriesProperty = DefinitionProperties.Root.Child("series")!;
 
-    // Handled above (dataset, series) or left to the JSON (inline rows, format version).
     private static readonly IReadOnlyList<DefinitionProperty> ChartProperties =
-        [.. DefinitionProperties.Root.Properties.Where(p => p.Name is not ("dataset" or "series" or "data" or "version"))];
+        [.. DefinitionProperties.Root.Properties.Where(p => p.Name is not ("series" or "data" or "version"))];
 
-    private static readonly IReadOnlyList<string> SeriesPinned = ["type", "x", "y", "aggregate", "timeBucket", "groupBy", "name", "stack"];
-    private static readonly IReadOnlyList<string> ChartPinned = ["title", "horizontal"];
-
+    private ChartDefinition? _parsed;
+    private string? _goal;
     private string? _search;
     private int _series;
 
-    private bool Matches(string name) => DefinitionProperties.Root.Child(name)?.Matches(_search) ?? false;
-
-    private ChartDataset? DatasetFor(JsonObject? series) => DefinitionProperties.DatasetOf(Definition!, series, Datasets);
-
-    private Task SetDataset(ChangeEventArgs e)
+    // The definition as read (synonyms such as column or donut resolved), to tell which chart it is.
+    protected override void OnParametersSet()
     {
-        var name = e.Value?.ToString();
-        if (string.IsNullOrEmpty(name))
+        _parsed = Definition is null ? null : ChartDefinitionJson.Parse(Definition.ToJsonString()).Definition;
+        if (!ReferenceEquals(_visitedFor, Definition))
         {
-            Definition!.Remove("dataset");
+            _visited.Clear();
+            _visitedFor = Definition;
+        }
+    }
+
+    private void SelectSeries(int index)
+    {
+        _series = index;
+        _goal = null;
+    }
+
+    // A goal only shows its charts; the chart changes when the user picks one. (It used to switch to the goal's
+    // first chart at once, so looking at another goal and coming back had already rewritten the series.)
+    private void PickGoal(ChartGoal goal, ChartKind? current, JsonObject? series, ChartDataset? dataset) => _goal = goal.Id;
+
+    // Each series as it was under each chart it has been, so going back to a chart brings its fields back
+    // instead of filling them in again. Kept until the definition is replaced (an example, the JSON edited).
+    private readonly Dictionary<JsonObject, Dictionary<string, JsonObject>> _visited = new(ReferenceEqualityComparer.Instance);
+    private JsonObject? _visitedFor;
+
+    private Task PickKind(ChartKind kind, ChartKind? current, JsonObject? series, ChartDataset? dataset)
+    {
+        _goal = kind.Goal;
+        if (kind == current)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (series is null)
+        {
+            series = [];
+            DefinitionProperties.List(Definition!, "series", create: true)!.Add(series);
+        }
+
+        if (!_visited.TryGetValue(series, out var states))
+        {
+            _visited[series] = states = [];
+        }
+
+        if (current is not null)
+        {
+            states[current.Id] = (JsonObject)series.DeepClone();
+        }
+
+        if (states.TryGetValue(kind.Id, out var earlier))
+        {
+            ChartKinds.Restore(kind, Definition!, series, earlier);
         }
         else
         {
-            Definition!["dataset"] = name;
-            Definition.Remove("data"); // a dataset replaces the inline rows
+            ChartKinds.Apply(kind, current, Definition!, series, dataset);
+        }
+
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetDataset(string? name, ChartKind kind, JsonObject series)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return Task.CompletedTask;
+        }
+
+        Definition!["dataset"] = name;
+        Definition.Remove("data");
+        series.Remove("dataset");
+        // The fields of another dataset rarely have the same names: start the slots again from its fields.
+        if (Datasets.TryGetValue(name, out var dataset))
+        {
+            foreach (var slot in kind.Slots.Where(s => series[s.Property]?.ToString() is { } f && dataset.Field(f) is null))
+            {
+                series.Remove(slot.Property);
+            }
+
+            ChartKinds.Apply(kind, kind, Definition, series, dataset);
         }
 
         return Changed.InvokeAsync();
@@ -117,10 +268,10 @@
     private Task AddSeries()
     {
         var list = DefinitionProperties.List(Definition!, "series", create: true)!;
-        // A copy of the last series is the likeliest start (same x, type and buckets); otherwise a line.
         var copy = list.Count > 0 && list[^1] is JsonObject last ? (JsonObject)last.DeepClone() : new JsonObject { ["type"] = "line" };
         copy.Remove("id");
         copy.Remove("name");
+        copy.Remove("y");
         list.Add(copy);
         _series = list.Count - 1;
         return Changed.InvokeAsync();
@@ -133,6 +284,43 @@
         return Changed.InvokeAsync();
     }
 
+    /// <summary>What a folded section has set, in its own words: "Largest first, top 10", or "Automatic".</summary>
+    private string Summary(EditorSection section, JsonObject series)
+    {
+        var parts = new List<string>();
+        foreach (var option in section.Options)
+        {
+            if (ChartKinds.Target(Definition!, series, option.Scope, create: false)?[option.Property] is not { } node)
+            {
+                continue;
+            }
+
+            var text = ChartKinds.Canonical(OptionRow.Text(node));
+            var label = option.Choices?.FirstOrDefault(c => c.Value == text).Label;
+            parts.Add(option.Control switch
+            {
+                OptionControl.Toggle => text == "true" ? option.Label : "",
+                OptionControl.Choice => label ?? text,
+                OptionControl.Text when option.Property == "title" && option.Scope == OptionScope.Chart => $"\"{text}\"",
+                _ => $"{option.Label.ToLowerInvariant()} {text}",
+            });
+        }
+
+        parts.RemoveAll(p => p.Length == 0);
+        if (parts.Count == 0)
+        {
+            return "Automatic";
+        }
+
+        var summary = string.Join(", ", parts);
+        return summary.Length > 60 ? summary[..57] + "…" : summary;
+    }
+
     /// <summary>Shows the first series again, e.g. after a new definition was loaded.</summary>
-    public void Reset() => _series = 0;
+    public void Reset()
+    {
+        _series = 0;
+        _goal = null;
+        _visited.Clear();
+    }
 }

@@ -1,0 +1,49 @@
+@* A definition and the chart it draws: for the reference sections of the Chart definitions page. *@
+@using RioCharts.Core.Definitions
+
+<Example Title="@Title" Code="@Json.Trim()" Language="json" CodeOpen="true">
+    <Description>@Description</Description>
+    <ChildContent>
+        @if (_definition is not null)
+        {
+            <RioChart TItem="object" Definition="_definition" Datasets="DefinitionDatasets.ByName" Height="@Height" />
+        }
+        else
+        {
+            <ul class="spec-messages errors">
+                @foreach (var error in _errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        }
+    </ChildContent>
+</Example>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    [Parameter, EditorRequired] public string Json { get; set; } = "";
+
+    [Parameter] public RenderFragment? Description { get; set; }
+
+    [Parameter] public double Height { get; set; } = 260;
+
+    private ChartDefinition? _definition;
+    private List<string> _errors = [];
+    private string? _parsedJson;
+
+    // Parsed once per JSON, never per render.
+    protected override void OnParametersSet()
+    {
+        if (_parsedJson == Json)
+        {
+            return;
+        }
+
+        _parsedJson = Json;
+        var parsed = ChartDefinitionJson.Parse(Json);
+        _definition = parsed.Definition;
+        _errors = [.. parsed.Errors.Select(e => e.ToString())];
+    }
+}
