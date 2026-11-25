@@ -57,7 +57,7 @@ click events, live data, large data (LTTB and a canvas layer), time zones, light
 through CSS variables, PNG/SVG/CSV download, keyboard navigation, screen reader descriptions and
 built-in texts in eight languages.
 
-Coming from Blazor-ApexCharts? The concepts map closely: see
+Coming from Blazor-ApexCharts? Both libraries have the same creator, and the concepts map closely: see
 [the mapping](https://riocharts.com/from-apexcharts). Blazor-ApexCharts is production ready and
 battle-proven; RioCharts is a release candidate for 1.0. It is an alternative
 approach, not an attempt to match Blazor-ApexCharts feature for feature.
@@ -107,7 +107,7 @@ configuration and example prompts.
 ```markdown
 ## Charts
 
-Charts use RioCharts.Blazor (preview, .NET 10 and 11). Before writing chart code, read
+Charts use RioCharts.Blazor (1.0 release candidate, .NET 10 and 11). Before writing chart code, read
 https://riocharts.com/llms-full.txt, or call get_usage if the riocharts MCP server is set up.
 
 - Setup: the RioCharts.Blazor package, and `@using RioCharts.Blazor` and `@using RioCharts.Core` in `_Imports.razor`. Nothing to register.
