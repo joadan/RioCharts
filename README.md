@@ -16,8 +16,8 @@ tiny JS module only measures text and follows the pointer.
 <sub>Drawn by RioCharts.Skia itself (<a href="tools/ReadmeImage.cs">tools/ReadmeImage.cs</a>).
 **[See them live, with tooltips and zoom →](https://riocharts.com/)**</sub>
 
-> **Status: preview of 1.0.** Until 1.0, APIs can still change; the [changelog](CHANGELOG.md) lists every
-> break. From 1.0, updates within 1.x never break code that uses the public API or saved chart definitions
+> **Status: 1.0 release candidate.** The 1.0 API is frozen: until 1.0 ships only fixes and non-breaking
+> additions go in; the [changelog](CHANGELOG.md) lists every change. From 1.0, updates within 1.x never break code that uses the public API or saved chart definitions
 > ([versions and support](https://riocharts.com/versions)). It is built for our own teams' needs; issues are
 > welcome, but there is no roadmap promise.
 > Human-led, AI-built: the design is ours ([Design.md](Design.md)); most code is written by AI
@@ -59,7 +59,7 @@ built-in texts in eight languages.
 
 Coming from Blazor-ApexCharts? The concepts map closely: see
 [the mapping](https://riocharts.com/from-apexcharts). Blazor-ApexCharts is production ready and
-battle-proven; RioCharts is a preview until 1.0, so expect changes until then. It is an alternative
+battle-proven; RioCharts is a release candidate for 1.0. It is an alternative
 approach, not an attempt to match Blazor-ApexCharts feature for feature.
 
 ## Images on the server
@@ -118,7 +118,7 @@ https://riocharts.com/llms-full.txt, or call get_usage if the riocharts MCP serv
 
 ## Packages
 
-All target .NET 10 (LTS) and .NET 11, and are previews: add `--prerelease`.
+All target .NET 10 (LTS) and .NET 11, and are release candidates until 1.0: add `--prerelease`.
 
 | Package | For |
 | --- | --- |

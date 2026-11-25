@@ -1,6 +1,6 @@
 # RioCharts
 
-> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, funnel, radar, heatmap, calendar heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap and world map, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are previews (APIs change before 1.0) and target .NET 10 (LTS) and .NET 11.
+> Charts for .NET: line, area, bar, scatter, bubble, pie, donut, radial bar, gauge, bullet, funnel, radar, heatmap, calendar heatmap, box plot, histogram, dumbbell, range bar (timeline), candlestick, waterfall, treemap and world map, interactive in Blazor, as PNG and SVG on the server, and from AI agents. This guide covers the Blazor component, the usual way into an app. The chart is laid out in .NET and rendered as SVG; a small JS module only measures text and handles the pointer. Packages are 1.0 release candidates (the API is frozen until 1.0) and target .NET 10 (LTS) and .NET 11.
 
 This is the complete guide for coding agents: setup, rules, examples that compile, and every component parameter. Docs with live examples: https://riocharts.com/
 

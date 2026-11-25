@@ -1,9 +1,13 @@
 # Changelog
 
-All notable changes are listed here. The project is pre-1.0: APIs change freely, and breaking
-changes are called out under **Breaking**.
+All notable changes are listed here. The project is a 1.0 release candidate: the API is
+frozen until 1.0, and breaking changes from earlier previews are called out under **Breaking**.
 
 ## Unreleased
+
+## 1.0.2-rc (2026-11-25)
+
+Release candidate for 1.0. Everything below is in it.
 
 ### Upgrading from 0.7.6-preview
 
