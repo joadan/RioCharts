@@ -9,7 +9,7 @@ public static class DocsNav
 
     public static readonly Group[] Groups =
     [
-        new("Start", [new("", "Overview"), new("getting-started", "Getting started"), new("from-apexcharts", "Coming from ApexCharts"), new("versions", "Versions and support")]),
+        new("Start", [new("", "Overview"), new("getting-started", "Getting started"), new("from-apexcharts", "Coming from ApexCharts"), new("versions", "Versions and support"), new("about", "About")]),
         // Most used first, then by family: comparing and changes, part of a whole, distributions, grids,
         // time spans and finance, single values, geography. The Gallery tiles and its table follow this order.
         new("Charts",
