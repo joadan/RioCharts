@@ -5,6 +5,11 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+## 1.0.42-rc (2026-11-25)
+
+Second release candidate for 1.0: fixes from a review of the whole library. No breaking changes; the only new API is
+two chart texts, `ChartTexts.LegendHidden` and `ChartTexts.LegendNoData`.
+
 ### Fixed
 
 - `SeriesBuffer` with a `TimeWindow` kept every point after one arrived out of order (a late sample): it now keeps
