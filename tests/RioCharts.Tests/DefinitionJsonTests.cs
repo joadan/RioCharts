@@ -71,4 +71,23 @@ public class SpecJsonTests
         Assert.Contains("\"type\": \"point\"", json, StringComparison.Ordinal);
         Assert.Equal(20.5, ChartDefinitionJson.Parse(json).Definition!.Data![0]["v"] switch { System.Text.Json.JsonElement e => e.GetDouble(), var o => Convert.ToDouble(o) });
     }
+
+    [Fact]
+    public void Serialize_keeps_text_readable_and_escapes_html()
+    {
+        var spec = new ChartDefinition
+        {
+            Title = "Café sales <b>",
+            Y = new AxisOptions { Title = "Temperatur °C", Format = "#,0 €" },
+            Series = [new SeriesOptions { Id = "s", X = "t", Y = "v", Name = "Smörgåsbord 東京" }],
+        };
+
+        var json = ChartDefinitionJson.Serialize(spec);
+
+        Assert.Contains("\"Temperatur °C\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"#,0 €\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"Smörgåsbord 東京\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"Café sales \\u003Cb\\u003E\"", json, StringComparison.Ordinal);
+        Assert.Equal(spec.Title, ChartDefinitionJson.Parse(json).Definition!.Title);
+    }
 }
