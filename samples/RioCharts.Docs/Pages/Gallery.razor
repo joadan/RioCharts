@@ -65,6 +65,24 @@
         </RioChart>
         <span class="tile-label">Bars and a line <span aria-hidden="true">→</span></span>
     </a>
+    <a class="tile" href="pies#pie">
+        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend">
+            <PieSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" />
+        </RioChart>
+        <span class="tile-label">Pie <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="tile" href="pies#donut">
+        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend">
+            <DonutSeries XValue="s => s.Name" YValue="s => s.Value" />
+        </RioChart>
+        <span class="tile-label">Donut <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="tile" href="pies#radial-bars">
+        <RioChart TItem="Share" Items="Goals" Height="170" Legend="NoLegend">
+            <RadialBarSeries XValue="s => s.Name" YValue="s => s.Value" Max="100" />
+        </RioChart>
+        <span class="tile-label">Radial bars <span aria-hidden="true">→</span></span>
+    </a>
     <a class="tile" href="scatter">
         <RioChart TItem="Delivery" Items="Deliveries" Height="170" Legend="NoLegend">
             <ScatterSeries Name="Delivery" XValue="d => d.Km" YValue="d => d.Hours" MarkerSize="3" />
@@ -80,52 +98,11 @@
         </RioChart>
         <span class="tile-label">Bubble <span aria-hidden="true">→</span></span>
     </a>
-    <a class="tile" href="heatmap">
-        <RioChart TItem="HourCount" Height="170" Legend="NoLegend">
-            @foreach (var (day, hours) in WeekTraffic)
-            {
-                <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" />
-            }
-        </RioChart>
-        <span class="tile-label">Heatmap <span aria-hidden="true">→</span></span>
-    </a>
-    <a class="tile" href="calendar">
-        <RioChart TItem="Reading" Items="AutumnOrders" Height="170" Legend="NoLegend">
-            <CalendarSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
-        </RioChart>
-        <span class="tile-label">Calendar heatmap <span aria-hidden="true">→</span></span>
-    </a>
-    <a class="tile" href="box-plots">
-        <RioChart TItem="Percentiles" Items="ResponseTimes" Height="170" Legend="NoLegend">
-            <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint" LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
-                           Q3Value="p => p.P75" HighValue="p => p.P95" />
-        </RioChart>
-        <span class="tile-label">Box plot <span aria-hidden="true">→</span></span>
-    </a>
-    <a class="tile" href="histogram">
-        <RioChart TItem="Delivery" Items="Deliveries" Height="170" Legend="NoLegend">
-            <HistogramSeries Name="Deliveries" XValue="d => d.Hours" />
-        </RioChart>
-        <span class="tile-label">Histogram <span aria-hidden="true">→</span></span>
-    </a>
     <a class="tile" href="dumbbells">
         <RioChart TItem="BikeShare" Items="BikeShares" Horizontal="true" Height="170" Legend="NoLegend">
             <DumbbellSeries Name="2016 → 2026" XValue="c => c.City" FromValue="c => c.Then" YValue="c => c.Now" Format="0'%'" />
         </RioChart>
         <span class="tile-label">Dumbbell <span aria-hidden="true">→</span></span>
-    </a>
-    <a class="tile" href="range-bars">
-        <RioChart TItem="Stage" Items="Schedule" Height="170" Legend="NoLegend">
-            <RangeBarSeries Name="Schedule" RowValue="s => s.Name" StartValue="s => s.Start" EndValue="s => s.End" />
-        </RioChart>
-        <span class="tile-label">Range bar / timeline <span aria-hidden="true">→</span></span>
-    </a>
-    <a class="tile" href="candlesticks">
-        <RioChart TItem="PriceDay" Items="Prices" Height="170" Legend="NoLegend">
-            <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
-                               LowValue="p => p.Lowest" CloseValue="p => p.Last" DirectionColors="true" />
-        </RioChart>
-        <span class="tile-label">Candlestick <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="waterfall">
         <RioChart TItem="Step" Items="Result" Height="170" Legend="NoLegend">
@@ -146,29 +123,52 @@
         </RioChart>
         <span class="tile-label">Treemap <span aria-hidden="true">→</span></span>
     </a>
-    <a class="tile" href="maps">
-        <RioChart TItem="MapValue" Items="MapValues" Height="170" Legend="NoLegend">
-            <MapSeries Name="Sessions" XValue="c => c.Country" YValue="c => c.Value" />
+    <a class="tile" href="funnels">
+        <RioChart TItem="(string Stage, double Users)" Items="FunnelStages" Height="170">
+            <FunnelSeries Name="Users" XValue="s => s.Stage" YValue="s => s.Users" Format="#,0" />
         </RioChart>
-        <span class="tile-label">World map <span aria-hidden="true">→</span></span>
+        <span class="tile-label">Funnel <span aria-hidden="true">→</span></span>
     </a>
-    <a class="tile" href="pies#pie">
-        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend">
-            <PieSeries Name="Revenue" XValue="s => s.Name" YValue="s => s.Value" GroupSmallSlices="0.03" />
+    <a class="tile" href="histogram">
+        <RioChart TItem="Delivery" Items="Deliveries" Height="170" Legend="NoLegend">
+            <HistogramSeries Name="Deliveries" XValue="d => d.Hours" />
         </RioChart>
-        <span class="tile-label">Pie <span aria-hidden="true">→</span></span>
+        <span class="tile-label">Histogram <span aria-hidden="true">→</span></span>
     </a>
-    <a class="tile" href="pies#donut">
-        <RioChart TItem="Share" Items="CategoryRevenue" Height="170" Legend="NoLegend">
-            <DonutSeries XValue="s => s.Name" YValue="s => s.Value" />
+    <a class="tile" href="box-plots">
+        <RioChart TItem="Percentiles" Items="ResponseTimes" Height="170" Legend="NoLegend">
+            <BoxPlotSeries Name="Response time" XValue="p => p.Endpoint" LowValue="p => p.P5" Q1Value="p => p.P25" MedianValue="p => p.P50"
+                           Q3Value="p => p.P75" HighValue="p => p.P95" />
         </RioChart>
-        <span class="tile-label">Donut <span aria-hidden="true">→</span></span>
+        <span class="tile-label">Box plot <span aria-hidden="true">→</span></span>
     </a>
-    <a class="tile" href="pies#radial-bars">
-        <RioChart TItem="Share" Items="Goals" Height="170" Legend="NoLegend">
-            <RadialBarSeries XValue="s => s.Name" YValue="s => s.Value" Max="100" />
+    <a class="tile" href="heatmap">
+        <RioChart TItem="HourCount" Height="170" Legend="NoLegend">
+            @foreach (var (day, hours) in WeekTraffic)
+            {
+                <HeatmapSeries Items="hours" Name="@day" XValue="h => h.Hour" YValue="h => h.Sessions" />
+            }
         </RioChart>
-        <span class="tile-label">Radial bars <span aria-hidden="true">→</span></span>
+        <span class="tile-label">Heatmap <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="tile" href="calendar">
+        <RioChart TItem="Reading" Items="AutumnOrders" Height="170" Legend="NoLegend">
+            <CalendarSeries Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
+        </RioChart>
+        <span class="tile-label">Calendar heatmap <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="tile" href="range-bars">
+        <RioChart TItem="Stage" Items="Schedule" Height="170" Legend="NoLegend">
+            <RangeBarSeries Name="Schedule" RowValue="s => s.Name" StartValue="s => s.Start" EndValue="s => s.End" />
+        </RioChart>
+        <span class="tile-label">Range bar / timeline <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="tile" href="candlesticks">
+        <RioChart TItem="PriceDay" Items="Prices" Height="170" Legend="NoLegend">
+            <CandlestickSeries Name="Price" XValue="p => p.Date" OpenValue="p => p.First" HighValue="p => p.Highest"
+                               LowValue="p => p.Lowest" CloseValue="p => p.Last" DirectionColors="true" />
+        </RioChart>
+        <span class="tile-label">Candlestick <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="gauges">
         <RioChart TItem="object" Height="170">
@@ -183,11 +183,11 @@
         </RioChart>
         <span class="tile-label">Bullet <span aria-hidden="true">→</span></span>
     </a>
-    <a class="tile" href="funnels">
-        <RioChart TItem="(string Stage, double Users)" Items="FunnelStages" Height="170">
-            <FunnelSeries Name="Users" XValue="s => s.Stage" YValue="s => s.Users" Format="#,0" />
+    <a class="tile" href="maps">
+        <RioChart TItem="MapValue" Items="MapValues" Height="170" Legend="NoLegend">
+            <MapSeries Name="Sessions" XValue="c => c.Country" YValue="c => c.Value" />
         </RioChart>
-        <span class="tile-label">Funnel <span aria-hidden="true">→</span></span>
+        <span class="tile-label">World map <span aria-hidden="true">→</span></span>
     </a>
     <a class="tile" href="compact">
         <div class="gallery-sparks">
@@ -215,25 +215,25 @@
 <table class="docs">
     <tr><th>Type</th><th>Legend</th><th>Data labels</th><th>Highlight</th><th><a href="zoom">Zoom</a></th><th><a href="live-data">Live data</a></th><th><a href="large-data#canvas">Canvas</a></th></tr>
     <tr><td>Line, area</td><td>Series</td><td>Option</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td>Bar</td><td>Series</td><td>Option</td><td>✓</td><td>Time or number x</td><td>✓</td><td>✓</td></tr>
-    <tr><td>Scatter</td><td>Series</td><td>Option</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td>Bubble</td><td>Series, sizes</td><td>Option</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
-    <tr><td>Heatmap</td><td>Color scale</td><td>Option</td><td>–</td><td>–</td><td>✓</td><td>✓</td></tr>
-    <tr><td>Calendar heatmap</td><td>Color scale</td><td>Option</td><td>–</td><td>–</td><td>✓</td><td>✓</td></tr>
     <tr><td>Range area</td><td>Series</td><td>–</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
-    <tr><td>Box plot</td><td>Series</td><td>–</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
-    <tr><td>Candlestick</td><td>Series</td><td>–</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
-    <tr><td>Histogram</td><td>Series</td><td>Option</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td>Waterfall</td><td>Series</td><td>Option</td><td>✓</td><td>–</td><td>✓</td><td>✓</td></tr>
-    <tr><td>Dumbbell</td><td>Series</td><td>Option</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
-    <tr><td>Range bar, timeline</td><td>Series</td><td>Option</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
-    <tr><td>Radar</td><td>Series</td><td>–</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
+    <tr><td>Bar</td><td>Series</td><td>Option</td><td>✓</td><td>Time or number x</td><td>✓</td><td>✓</td></tr>
     <tr><td>Pie, donut</td><td>Categories</td><td>On (shares)</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
     <tr><td>Radial bar</td><td>Categories</td><td>On</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
+    <tr><td>Scatter</td><td>Series</td><td>Option</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Bubble</td><td>Series, sizes</td><td>Option</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
+    <tr><td>Dumbbell</td><td>Series</td><td>Option</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
+    <tr><td>Waterfall</td><td>Series</td><td>Option</td><td>✓</td><td>–</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Radar</td><td>Series</td><td>–</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
+    <tr><td>Treemap</td><td>Groups</td><td>On (names)</td><td>✓</td><td>–</td><td>–</td><td>SVG only</td></tr>
+    <tr><td>Funnel</td><td>–</td><td>Option</td><td>–</td><td>–</td><td>–</td><td>✓</td></tr>
+    <tr><td>Histogram</td><td>Series</td><td>Option</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Box plot</td><td>Series</td><td>–</td><td>✓</td><td>–</td><td>–</td><td>✓</td></tr>
+    <tr><td>Heatmap</td><td>Color scale</td><td>Option</td><td>–</td><td>–</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Calendar heatmap</td><td>Color scale</td><td>Option</td><td>–</td><td>–</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Range bar, timeline</td><td>Series</td><td>Option</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
+    <tr><td>Candlestick</td><td>Series</td><td>–</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
     <tr><td>Gauge</td><td>–</td><td>On (the value)</td><td>–</td><td>–</td><td>–</td><td>✓</td></tr>
     <tr><td>Bullet</td><td>–</td><td>Option</td><td>–</td><td>–</td><td>–</td><td>✓</td></tr>
-    <tr><td>Funnel</td><td>–</td><td>Option</td><td>–</td><td>–</td><td>–</td><td>✓</td></tr>
-    <tr><td>Treemap</td><td>Groups</td><td>On (names)</td><td>✓</td><td>–</td><td>–</td><td>SVG only</td></tr>
     <tr><td>World map</td><td>Color scale</td><td>–</td><td>–</td><td>–</td><td>–</td><td>SVG only</td></tr>
     <tr><td>Map bubbles</td><td>Series</td><td>–</td><td>–</td><td>–</td><td>–</td><td>SVG only</td></tr>
 </table>
