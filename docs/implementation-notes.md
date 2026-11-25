@@ -1479,3 +1479,31 @@ Design.md "Visual design": an entry fade only, no update animations. How it is d
   does the same: every animation and transition inside the chart is turned off
   (`!important`, so later rules cannot bring one back). Animation is a component parameter,
   not part of `ChartDefinition`: exports are static anyway.
+
+## Playground editor
+
+The playground (docs site, `/definitions`) has a property panel next to the JSON: pick the dataset,
+edit each series (type and fields first), then the chart's options, with a search over every
+option's name and description. Both sides edit the same definition: a panel change rewrites the JSON
+(indented), a JSON edit updates the panel, and invalid JSON pauses the panel until it is fixed.
+**Your data** reads a CSV or JSON file (or pasted text) into a dataset with `ChartDataset.FromCsv` /
+`FromJson`, in the browser, and starts a chart from it (`type: auto`, the first time or text field
+as x, the first number as y, split by a small text field along time). Opening it stops Clarity for
+the rest of the visit (`rioDocs.stopClarity`), so no recording shows a chart of the visitor's data.
+
+It lives in `samples/RioCharts.Docs/Editor/` and is built as a future editor component, not part of
+1.0: it uses only public Core API, edits the definition as a `JsonObject` (unknown fields and
+synonyms such as `spline` survive), and reads every option from `ChartDefinitionJson.Schema()`, so
+new options show up without changes. The plan after 1.0 is two layers: a headless property model in
+Core for apps that build their own UI, and a ready-made editor component on top of it (its own
+package) as the quick start for dashboard products where users configure charts.
+
+Guesses the panel makes that a Core model should state outright:
+
+- Which string options name a dataset field (`FieldNames` in `DefinitionProperties`); the schema
+  does not mark them.
+- Which options apply to which chart type: descriptions start with "Range area:", "Bubbles:" and
+  so on, but nothing machine-readable says so, so the panel lists every option for every type.
+- Defaults: the schema gives few, so unset options show "(default)" rather than the value.
+- Which options matter most (the pinned ones: type, x, y, aggregate, timeBucket, groupBy, name,
+  stack; title, horizontal).

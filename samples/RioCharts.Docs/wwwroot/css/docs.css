@@ -1637,7 +1637,217 @@ h1:focus {
 }
 
 .playground .example-live {
-    padding: 16px 4px 0;
+    padding: 4px 4px 0;
+}
+
+/* Options panel on the left, the chart, messages and JSON on the right; stacked on small screens. */
+.playground-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.playground-output {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.playground-options {
+    max-height: 760px;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid var(--doc-border);
+    border-radius: 12px;
+    background: var(--doc-surface);
+}
+
+@media (max-width: 900px) {
+    .playground-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .playground-options {
+        max-height: none;
+    }
+}
+
+.spec-upload {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--doc-border);
+}
+
+.spec-upload .spec-data-about {
+    padding: 0;
+}
+
+.spec-upload summary {
+    cursor: pointer;
+    color: var(--doc-muted);
+    font-size: 13px;
+}
+
+.spec-paste {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    margin: 8px 0;
+    padding: 8px 10px;
+    border: 1px solid var(--doc-border-strong);
+    border-radius: 8px;
+    background: var(--doc-bg);
+    color: var(--doc-text);
+    font: 12px/1.5 var(--doc-mono);
+    box-sizing: border-box;
+}
+
+/* ----- Property editor (Editor/) ----- */
+
+.pe {
+    display: grid;
+    gap: 2px;
+    font-size: 13px;
+}
+
+.pe-search, .pe-input input, .pe-input select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid var(--doc-border-strong);
+    border-radius: 8px;
+    background: var(--doc-surface);
+    color: var(--doc-text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.pe-search {
+    margin-bottom: 6px;
+}
+
+.pe-heading {
+    margin: 14px 0 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--doc-muted);
+}
+
+.pe-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 2fr) minmax(0, 3fr);
+    gap: 2px 10px;
+    align-items: center;
+    padding: 5px 6px;
+    border-radius: 8px;
+}
+
+.pe-row:hover {
+    background: var(--doc-accent-soft);
+}
+
+.pe-label {
+    font-family: var(--doc-mono);
+    font-size: 12px;
+    color: var(--doc-muted);
+    overflow-wrap: anywhere;
+}
+
+.pe-set .pe-label {
+    color: var(--doc-accent);
+    font-weight: 600;
+}
+
+.pe-description {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--doc-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+/* Descriptions show for the row in focus or under the pointer, so the panel stays scannable. */
+.pe-row .pe-description {
+    display: none;
+}
+
+.pe-row:hover .pe-description, .pe-row:focus-within .pe-description {
+    display: block;
+}
+
+.pe-section {
+    margin: 4px 0;
+    padding: 0 0 0 10px;
+    border-left: 2px solid var(--doc-border);
+}
+
+.pe-section > summary {
+    padding: 6px 0;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.pe-section > .pe-description {
+    margin-bottom: 6px;
+}
+
+.pe-count {
+    margin-left: 6px;
+    color: var(--doc-muted);
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.pe-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.site .doc .pe-tabs button {
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
+.site .doc .pe-tabs button.active {
+    border-color: var(--doc-accent);
+    color: var(--doc-accent);
+}
+
+.pe-item {
+    margin: 6px 0;
+    padding: 6px;
+    border: 1px solid var(--doc-border);
+    border-radius: 8px;
+}
+
+.pe-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--doc-mono);
+    font-size: 12px;
+    color: var(--doc-muted);
+}
+
+.site .doc button.pe-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--doc-accent);
+    font-size: 12px;
+}
+
+.site .doc button.pe-add {
+    margin: 4px 0;
+    padding: 4px 10px;
+    font-size: 13px;
 }
 
 /* Logo hover: the parrot turns to face the viewer, blinks and turns back. The poses are
