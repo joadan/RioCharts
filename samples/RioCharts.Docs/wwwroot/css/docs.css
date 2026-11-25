@@ -1706,6 +1706,71 @@ h1:focus {
     font-size: 13px;
 }
 
+/* A drop zone for a file; the transparent file input covers it, so clicks, the keyboard and drops reach it. */
+.file-drop {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 2px 12px;
+    padding: 14px 16px;
+    border: 1.5px dashed var(--doc-border-strong);
+    border-radius: 12px;
+    background: var(--doc-bg);
+    color: var(--doc-muted);
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.file-drop svg {
+    grid-row: span 2;
+    color: var(--doc-accent);
+}
+
+.file-drop-text {
+    color: var(--doc-text);
+    font-size: 14px;
+}
+
+.file-drop-text strong {
+    color: var(--doc-accent);
+    font-weight: 600;
+}
+
+.file-drop-text span {
+    color: var(--doc-muted);
+}
+
+.file-drop-hint {
+    font-size: 12px;
+}
+
+.file-drop:hover, .file-drop:focus-within {
+    border-color: var(--doc-accent);
+    background: var(--doc-accent-soft);
+}
+
+.file-drop:focus-within {
+    outline: 2px solid var(--doc-accent);
+    outline-offset: 2px;
+}
+
+.file-drop.has-file {
+    border-style: solid;
+}
+
+.file-drop-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-drop-input::file-selector-button {
+    cursor: pointer;
+}
+
 .spec-paste {
     display: block;
     width: 100%;
