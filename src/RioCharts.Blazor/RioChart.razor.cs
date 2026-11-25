@@ -932,7 +932,7 @@ public partial class RioChart<TItem> : IChartContext
                     s.Type is SeriesType.BoxPlot or SeriesType.Candlestick or SeriesType.Waterfall, s.Radii, s.Shapes))],
                 Slices: [.. model.Slices.Select(s => new SliceModel(s.SeriesId, s.Index, s.Header, s.Label, s.Value, SvgWriter.Color(s.Color),
                     s.Cx, s.Cy, s.R0, s.R1, s.A0, s.A1, s.HitEnd,
-                    s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null))],
+                    s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Label)] : null, s.Parts.Count > 0 ? [.. s.Parts.Select(p => p.Value)] : null, s.HitStart))],
                 Need: Group is not null && _layout.NeededInsets is { } need ? new InsetsModel(need.Left, need.Right) : null,
                 At: Group is not null && _groupInsets is { } at ? new InsetsModel(at.Left, at.Right) : null,
                 Select: select,

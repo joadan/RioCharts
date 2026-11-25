@@ -40,6 +40,19 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
   bucket was asked for.
 - Legend items are announced as hidden or without data in the chart's language (new `ChartTexts.LegendHidden` and
   `LegendNoData`), not always in English.
+- The legend tooltip of a hidden treemap group showed 0; it shows the group's total.
+- In stacked lines and areas, a gap in a lower series made the series above it drop to its own value there; they now
+  have a gap at that x too. Stacked bars are unchanged (a missing value is an empty segment).
+- A pie or radial bar with equal start and end angles drew nothing; it now warns and uses a full circle (pie) or
+  270° (radial bar).
+- "Other" in a pie never takes every slice, and with Other hidden its tooltip shares are of the whole pie (it showed
+  "∞%" or shares of the rest).
+- A radial bar running counter-clockwise (`EndAngle` below `StartAngle`) can be hovered over its whole track, as a
+  clockwise one can.
+- The description of a waterfall gives its running total (range and where it ends), not the changes.
+- Thinning a range area with many points kept the band filled across a missing low value; the gap stays.
+- A scatter trend line on a log axis was drawn as one straight segment; it now follows the fitted line, with a gap
+  where the fit is zero or below on a log y axis.
 
 ## 1.0.2-rc (2026-11-25)
 

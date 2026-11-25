@@ -176,6 +176,115 @@ public class LayoutEdgeCaseTests
         Assert.DoesNotContain("E+", layout.Scene.Description, StringComparison.Ordinal);
     }
 
+    private static int Count(PathNode path, PathCommand command) => path.Path.Commands.Count(c => c == command);
+
+    [Fact]
+    public void A_hidden_treemap_group_keeps_its_total_in_the_legend_tooltip()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "t", Type = SeriesType.Treemap }] };
+        var data = SeriesData.FromCategories(["Europe/Sweden/Stockholm", "Europe/Norway/Oslo", "Asia/Japan/Tokyo"], [10.0, 5, 7]);
+
+        var layout = Layout(spec, data, Options with { HiddenSeries = new HashSet<string> { "Europe" } });
+
+        var europe = Assert.Single(layout.Legend, e => e.SeriesId == "Europe");
+        Assert.StartsWith("Europe\t15", europe.Tooltip, StringComparison.Ordinal);
+        Assert.Contains("Sweden\t10", europe.Tooltip, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_gap_in_a_stacked_series_is_a_gap_in_the_series_above_it()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "a", Stack = "s" }, new SeriesOptions { Id = "b", Stack = "s" }] };
+        var data = new Dictionary<string, SeriesData>
+        {
+            ["a"] = SeriesData.From([0.0, 1, 2], [10.0, double.NaN, 10]),
+            ["b"] = SeriesData.From([0.0, 1, 2], [5.0, 5, 5]),
+        };
+
+        var layout = ChartLayout.Compute(spec, data, Options);
+
+        // b's top would drop from 15 to 5 at x = 1 if a's gap counted as 0; it has no base there, so no point.
+        var b = Assert.Single(layout.Tooltip.Series, s => s.Id == "b");
+        Assert.DoesNotContain(1, b.Index);
+        Assert.Equal(2, b.Index.Length);
+    }
+
+    [Fact]
+    public void A_pie_with_equal_start_and_end_angles_is_a_full_circle()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, StartAngle = 90, EndAngle = 90 }] };
+
+        var layout = Layout(spec, SeriesData.FromCategories(["A", "B"], [1.0, 3]));
+
+        Assert.Contains(layout.Warnings, w => w.Contains("too close", StringComparison.Ordinal));
+        Assert.Equal(2, layout.Tooltip.Slices.Count);
+        Assert.All(layout.Tooltip.Slices, s => Assert.True(s.A1 - s.A0 > 0.5));
+    }
+
+    [Fact]
+    public void Other_never_takes_every_slice_and_its_shares_count_it_when_hidden()
+    {
+        var even = new ChartDefinition { Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.03 }] };
+        var forty = SeriesData.FromCategories([.. Enumerable.Range(1, 40).Select(i => "C" + i)], [.. Enumerable.Repeat(1.0, 40)]);
+        Assert.DoesNotContain(Layout(even, forty).Legend, e => e.SeriesId == ChartLayout.OtherSliceKey);
+
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "p", Type = SeriesType.Pie, GroupSmallSlices = 0.05 }] };
+        var data = SeriesData.FromCategories(["A", "B", "C", "D", "E"], [50.0, 40, 6, 2, 2]);
+        var layout = Layout(spec, data, Options with { HiddenSeries = new HashSet<string> { ChartLayout.OtherSliceKey } });
+
+        var other = Assert.Single(layout.Legend, e => e.SeriesId == ChartLayout.OtherSliceKey);
+        Assert.StartsWith("Other\t4 (4", other.Tooltip, StringComparison.Ordinal); // 4 of 100, not of the 96 drawn
+        Assert.DoesNotContain("∞", other.Tooltip, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_counter_clockwise_radial_bar_is_hovered_over_its_whole_track()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "r", Type = SeriesType.RadialBar, StartAngle = 0, EndAngle = -270 }] };
+
+        var layout = Layout(spec, SeriesData.FromCategories(["A", "B"], [0.0, 50]));
+
+        // The track runs 270° counter-clockwise from the start: hovering covers all of it, the empty bar included.
+        Assert.All(layout.Tooltip.Slices, s => Assert.Equal(1.5 * Math.PI, s.HitEnd - s.HitStart!.Value, 3));
+    }
+
+    [Fact]
+    public void A_waterfall_is_described_by_its_running_total()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "w", Name = "Cash", Type = SeriesType.Waterfall }] };
+
+        var layout = Layout(spec, SeriesData.FromCategories(["Start", "Costs", "Sales"], [100.0, -30, 20]));
+
+        Assert.Contains("90", layout.Scene.Description, StringComparison.Ordinal);
+        Assert.DoesNotContain("-30", layout.Scene.Description, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Thinning_a_range_area_keeps_a_gap_in_its_low_values()
+    {
+        var spec = new ChartDefinition { Series = [new SeriesOptions { Id = "r", Type = SeriesType.RangeArea }] };
+        var x = Enumerable.Range(0, 2000).Select(i => (double)i).ToArray();
+        var low = x.Select(i => i == 1000 ? double.NaN : Math.Sin(i / 50)).ToArray();
+        var data = SeriesData.From(x, [.. x.Select(i => Math.Sin(i / 50) + 2)]).WithLow(low);
+
+        var layout = ChartLayout.Compute(spec, new Dictionary<string, SeriesData> { ["r"] = data }, Options with { DownsampleThreshold = 100 });
+
+        var range = Assert.Single(All<PathNode>(layout.Scene.Series), p => p.Class == "rio-range");
+        Assert.True(Count(range, PathCommand.MoveTo) >= 2, "two pieces: the gap stays");
+    }
+
+    [Fact]
+    public void A_trend_line_on_a_log_axis_follows_the_fit()
+    {
+        var spec = new ChartDefinition { Y = new AxisOptions { Scale = ScaleType.Log }, Series = [new SeriesOptions { Id = "s", Type = SeriesType.Scatter, TrendLine = true }] };
+        var x = Enumerable.Range(1, 40).Select(i => (double)i).ToArray();
+
+        var layout = Layout(spec, SeriesData.From(x, [.. x.Select(v => 10 + v * 25)]));
+
+        var trend = Assert.Single(All<PathNode>(layout.Scene.Series), p => p.Class == "rio-trend");
+        Assert.True(Count(trend, PathCommand.LineTo) > 2, "a curve, not one segment");
+    }
+
     [Fact]
     public void Legend_items_say_hidden_in_the_chart_language()
     {

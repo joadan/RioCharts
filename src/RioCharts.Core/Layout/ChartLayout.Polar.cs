@@ -121,11 +121,13 @@ internal static partial class ChartLayout
             foreach (var (r, pie) in pieRings.Where(p => p.Pie.Grouped.Count > 0))
             {
                 var sum = pie.Grouped.Sum(s => s.Value);
+                var whole = pie.Total + (Hidden(OtherSliceKey) ? sum : 0); // a hidden Other is not in the total
+                string Share(double v) => whole > 0 ? $" ({Percent(v / whole, culture)})" : "";
                 var name = polar.Count > 1 ? $"{texts.Other} ({r.Spec.DisplayName})" : texts.Other;
                 // The total, then each part as "• name": a tab between name and value lets the JS module
                 // lay them out as rows; as plain text (a native title, a screen reader) it reads as a list.
-                lines.Add($"{name}\t{ValueFormatter.Format(sum, culture, r.Spec.Format ?? "")} ({Percent(sum / pie.Total, culture)})");
-                lines.AddRange(pie.Grouped.Select(s => $"{OtherPartPrefix}{s.Label}\t{ValueFormatter.Format(s.Value, culture, r.Spec.Format ?? "")} ({Percent(s.Value / pie.Total, culture)})"));
+                lines.Add($"{name}\t{ValueFormatter.Format(sum, culture, r.Spec.Format ?? "")}{Share(sum)}");
+                lines.AddRange(pie.Grouped.Select(s => $"{OtherPartPrefix}{s.Label}\t{ValueFormatter.Format(s.Value, culture, r.Spec.Format ?? "")}{Share(s.Value)}"));
             }
 
             return string.Join("\n", lines);
@@ -361,7 +363,7 @@ internal static partial class ChartLayout
         if (r.Spec.GroupSmallSlices is > 0 and var threshold && total > 0)
         {
             var tiny = slices.Where(s => s.Value / total < threshold).ToList();
-            if (tiny.Count > 1)
+            if (tiny.Count > 1 && tiny.Count < slices.Count) // never every slice into Other
             {
                 grouped = tiny;
                 slices = slices.Except(tiny).ToList();
@@ -439,6 +441,12 @@ internal static partial class ChartLayout
         var start = Radians(first.StartAngle ?? 0);
         var end = Radians(first.EndAngle ?? (first.StartAngle ?? 0) + 360);
         var sweep = Math.Clamp(end - start, -Math.PI * 2, Math.PI * 2);
+        if (Math.Abs(sweep) < 0.1)
+        {
+            warnings.Add("the pie's start and end angles are too close; using a full circle.");
+            sweep = Math.PI * 2;
+        }
+
         var n = slicesPerRing.Count;
         var innerFraction = Math.Clamp(first.InnerRadius ?? (n > 1 ? 0.4 : 0), 0, 0.95);
         var small = Math.Max(9, font - 1);
@@ -866,6 +874,12 @@ internal static partial class ChartLayout
         var max = spec.Max is > 0 and var m ? m : NiceTicks.NiceDomain(0, Math.Max(bars.Max(b => b.Value), 1e-9), 5).Max;
         var start = Radians(spec.StartAngle ?? 0);
         var sweep = Math.Clamp(Radians((spec.EndAngle ?? 270) - (spec.StartAngle ?? 0)), -Math.PI * 2, Math.PI * 2);
+        if (Math.Abs(sweep) < 0.1)
+        {
+            warnings.Add($"series '{spec.Id}': the start and end angles are too close; the bars run 270° from the start.");
+            sweep = Radians(270);
+        }
+
         var cx = plot.CenterX;
         var cy = plot.CenterY;
         var radius = compact ? Math.Max(2, Math.Min(plot.Width, plot.Height) / 2.0) : Math.Max(10.0, Math.Min(plot.Width, plot.Height) / 2.0 - 4);
@@ -896,7 +910,10 @@ internal static partial class ChartLayout
             var valueText = ValueFormatter.Format(b.Value, culture, spec.Format);
             tooltip.Add(new TooltipSlice(spec.Id, b.Index, spec.Name ?? "", b.Label, valueText, b.Color, cx, cy,
                 (float)(rm - thickness / 2), (float)(rm + thickness / 2), (float)Math.Min(start, a1), (float)Math.Max(start, a1),
-                (float)Math.Max(start, start + sweep)));
+                (float)Math.Max(start, start + sweep))
+            {
+                HitStart = sweep < 0 ? (float)(start + sweep) : null, // counter-clockwise: the track runs from start + sweep to start
+            });
             described.Add((b.Label, b.Value));
 
             if (showLabels)

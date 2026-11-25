@@ -107,6 +107,12 @@ internal sealed class SeriesBuildContext
 
     public required Func<double, double> MapY { get; init; }
 
+    /// <summary>The x or y axis is logarithmic: a straight line in data units is a curve on screen.</summary>
+    public bool LogAxes { get; init; }
+
+    /// <summary>The y axis is logarithmic: zero and below are not on it.</summary>
+    public bool LogY { get; init; }
+
     /// <summary>Pixel y of the zero line, clamped to the plot.</summary>
     public required double ZeroY { get; init; }
 
@@ -341,6 +347,29 @@ internal sealed class LineSeriesType : ISeriesType
     }
 
     /// <summary>
+    /// The values downsampling keeps the shape of: the tops, with a gap wherever the base is missing too (a range area
+    /// with no low value there), so thinning never draws across a gap in either end.
+    /// </summary>
+    private static double[] ShapeOf(SeriesBuildContext c)
+    {
+        if (c.Lower is not { } lower)
+        {
+            return c.Upper;
+        }
+
+        var shape = (double[])c.Upper.Clone();
+        for (var i = 0; i < shape.Length; i++)
+        {
+            if (!double.IsFinite(lower[i]))
+            {
+                shape[i] = double.NaN;
+            }
+        }
+
+        return shape;
+    }
+
+    /// <summary>
     /// Pixel coordinates of the points to draw (downsampled with LTTB when there are many):
     /// the line itself and, for stacked series, the base line.
     /// </summary>
@@ -352,7 +381,7 @@ internal sealed class LineSeriesType : ISeriesType
             ? Layout.ChartLayout.VisibleIndexes(data.X, w.Min, w.Max, 1)
             : (0, data.Count);
         var indices = c.DownsampleThreshold > 0 && end - start > c.DownsampleThreshold
-            ? Lttb.Downsample(data.X, c.Upper, start, end, c.DownsampleThreshold)
+            ? Lttb.Downsample(data.X, ShapeOf(c), start, end, c.DownsampleThreshold)
             : Enumerable.Range(start, end - start).ToArray();
 
         var xs = new double[indices.Length];
@@ -644,10 +673,43 @@ internal sealed class ScatterSeriesType : ISeriesType
         }
 
         var slope = sxy / sxx; // first and last: x ascending
-        double Y(int i) => c.MapY(my + slope * (c.Data.X[i] - mx));
+        double Fit(int i) => my + slope * (c.Data.X[i] - mx);
+        var path = new PathBuilder();
+        if (!c.LogAxes)
+        {
+            path.MoveTo(c.PixelX[first], c.MapY(Fit(first))).LineTo(c.PixelX[last], c.MapY(Fit(last)));
+        }
+        else
+        {
+            // On a log axis the fitted line is a curve: drawn through up to 64 of the points' x values, with a gap
+            // where it is zero or below on a log y axis.
+            var usable = Enumerable.Range(start, end - start).Where(Usable).ToList();
+            var step = Math.Max(1, (usable.Count - 1) / 63.0);
+            var open = false;
+            for (var k = 0.0; ; k = Math.Min(k + step, usable.Count - 1))
+            {
+                var i = usable[(int)Math.Round(k)];
+                var fy = Fit(i);
+                if (c.LogY && !(fy > 0))
+                {
+                    open = false;
+                }
+                else
+                {
+                    _ = open ? path.LineTo(c.PixelX[i], c.MapY(fy)) : path.MoveTo(c.PixelX[i], c.MapY(fy));
+                    open = true;
+                }
+
+                if (k >= usable.Count - 1)
+                {
+                    break;
+                }
+            }
+        }
+
         var style = c.Styles.Add($"series-{c.ColorIndex}-trend",
             new Style { Stroke = c.Color, StrokeWidth = 1.5f, Fill = "none", DashArray = "6 4", Opacity = 0.85f });
-        c.Output.Add(new PathNode(new PathBuilder().MoveTo(c.PixelX[first], Y(first)).LineTo(c.PixelX[last], Y(last)).Build(), style)
+        c.Output.Add(new PathNode(path.Build(), style)
         {
             Class = "rio-trend",
         });

@@ -55,7 +55,7 @@ internal sealed record SeriesModel(
 
 internal sealed record SliceModel(
     string Id, int Index, string Header, string Label, string Value, string Color,
-    float Cx, float Cy, float R0, float R1, float A0, float A1, float End, string[]? Pl = null, string[]? Pv = null);
+    float Cx, float Cy, float R0, float R1, float A0, float A1, float End, string[]? Pl = null, string[]? Pv = null, float? H0 = null);
 
 /// <summary>The canvas layer's draw operations for <c>paint</c>.</summary>
 internal sealed record CanvasModel(float[]? Clip, IReadOnlyList<CanvasOp> Ops);

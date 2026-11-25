@@ -803,6 +803,8 @@ internal static partial class ChartLayout
                 Upper = r.Upper,
                 Lower = r.Lower,
                 MapY = axisScale.Map,
+                LogAxes = xScale?.IsLog == true || axisScale.IsLog,
+                LogY = axisScale.IsLog,
                 ZeroY = Math.Clamp(axisScale.Map(0), plotTop, plotBottom),
                 SlotWidth = slotWidth,
                 SlotIndex = r.Type.UsesSlots ? slotKeys.IndexOf(SlotKey(r)) : 0,
@@ -1253,6 +1255,8 @@ internal static partial class ChartLayout
 
             var positive = new Dictionary<double, double>();
             var negative = new Dictionary<double, double>();
+            var broken = new HashSet<double>(); // x values where a lower line or area has a gap
+            var breaks = !group.Key.UsesSlots; // bars: a missing value is an empty segment, the bars above stay
             foreach (var r in group)
             {
                 var d = r.Data;
@@ -1264,9 +1268,21 @@ internal static partial class ChartLayout
                     var key = kind == XKind.Category
                         ? (int)d.X[i] is var local && local >= 0 && local < d.Categories.Count && categoryIndex.TryGetValue(d.Categories[local], out var g) ? g : double.NaN
                         : d.X[i];
-                    if (!double.IsFinite(v) || !double.IsFinite(key))
+                    if (!double.IsFinite(key))
                     {
                         upper[i] = lower[i] = double.NaN;
+                        continue;
+                    }
+
+                    // A gap leaves the series above it without a base there: they get a gap too.
+                    if (!double.IsFinite(v) || broken.Contains(key))
+                    {
+                        upper[i] = lower[i] = double.NaN;
+                        if (breaks)
+                        {
+                            broken.Add(key);
+                        }
+
                         continue;
                     }
 
@@ -1316,6 +1332,8 @@ internal static partial class ChartLayout
 
         var positive = new double[x.Length];
         var negative = new double[x.Length];
+        var broken = new bool[x.Length]; // a lower line or area has a gap here
+        var breaks = !group[0].Type.UsesSlots; // bars: a missing value is an empty segment, the bars above stay
         foreach (var r in group)
         {
             var y = r.Data.Y;
@@ -1324,9 +1342,10 @@ internal static partial class ChartLayout
             for (var i = 0; i < y.Length; i++)
             {
                 var v = y[i];
-                if (!double.IsFinite(v))
+                if (!double.IsFinite(v) || broken[i])
                 {
                     upper[i] = lower[i] = double.NaN;
+                    broken[i] = breaks; // the lines and areas above have no base here
                     continue;
                 }
 

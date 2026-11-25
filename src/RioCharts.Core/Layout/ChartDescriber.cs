@@ -58,9 +58,10 @@ internal static class ChartDescriber
         foreach (var (s, d, _) in visible)
         {
             var stats = facts(d);
-            if (s.Type == SeriesType.Histogram && DescribeSeries(spec, s, d, xKind, culture, texts, stats) is { } bins)
+            // A histogram: its values and fullest bin, not the bins' counts. A waterfall: its running total, not the changes.
+            if (s.Type is SeriesType.Histogram or SeriesType.Waterfall && DescribeSeries(spec, s, d, xKind, culture, texts, stats) is { } own)
             {
-                sb.Append(' ').Append(bins).Append('.'); // its values and fullest bin, not the bins' counts
+                sb.Append(' ').Append(own).Append('.');
                 continue;
             }
 
