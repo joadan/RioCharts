@@ -145,6 +145,28 @@ html.dark-boot, html.dark-boot body {
     content: var(--blazor-load-percentage-text, "Loading");
 }
 
+/* Over a prerendered page the boot screen is gone: a thin bar at the top shows that the page is not
+   interactive yet. Not with the boot screen (it has its own bar); fades out once Blazor has started. */
+.boot-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 1000;
+    height: 3px;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.boot-progress span {
+    display: block;
+    width: max(8%, var(--blazor-load-percentage, 0%));
+    height: 100%;
+    background: linear-gradient(90deg, #4269d0, #efb118);
+    transition: width 0.15s;
+}
+
+body:has(.boot) .boot-progress { display: none; }
+html.app-started .boot-progress { opacity: 0; }
+
 /* ----- Shell ----- */
 
 .site {

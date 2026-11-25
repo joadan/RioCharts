@@ -91,6 +91,9 @@
 </head>
 
 <body>
+    <!-- A thin bar while Blazor loads over a prerendered page (outside #app, so prerendering keeps it);
+         hidden while the full boot screen shows, removed by RioCharts.Docs.lib.module.js once Blazor runs. -->
+    <div class="boot-progress" aria-hidden="true"><span></span></div>
     <div id="app">
         <div class="boot">
             <!-- The logo, a copy of Layout/RioLogo.razor (keep them in sync). -->
