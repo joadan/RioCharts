@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
@@ -51,6 +52,9 @@ public static class ChartDefinitionJson
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
             WriteIndented = true,
+            // Saved definitions stay readable: "#,0 €" and "°C" as they are, not €. HTML-sensitive
+            // characters (< > & ' ") are still escaped, so the JSON is safe to put in a page.
+            Encoder = JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All),
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
             AllowTrailingCommas = true,
