@@ -8,6 +8,9 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 - `ChartDefinitionJson.Serialize` writes text as it is (`"#,0 €"`, `"°C"`) instead of escaping every non-ASCII
   character as a `\u…` sequence. Characters
   that matter in HTML (`<`, `>`, `&`, quotes) are still escaped. Saved definitions read the same either way.
+- Docs site: the playground's editor works like a chart builder. Pick what to show (change over time, compare, parts
+  of a whole...) and a chart. Then fill in the data it needs, in its own words (Categories, Bar height: Sum of
+  revenue), and fine-tune in a few folded sections that say what is set. The full option list stays under All options.
 - Docs site: the playground has a property panel next to the JSON. It lists every option with its description,
   searchable, with pickers for the dataset's fields; the panel and the JSON stay in sync. **Your data** charts a CSV or
   JSON file of your own, read in the browser and never sent anywhere (usage statistics stop when you open it). No

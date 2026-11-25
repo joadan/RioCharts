@@ -282,7 +282,7 @@ public static class DefinitionProperties
 
     /// <summary>
     /// A first definition for a dataset: the first time or text field along x and the first number as y,
-    /// with type auto so the chart picks line, bar or donut from the data. Along time, a text field with
+    /// as a line along time or bars per category. Along time, a text field with
     /// a few values splits the data into one series each (e.g. one line per genre).
     /// </summary>
     public static JsonObject Starter(ChartDataset dataset)
@@ -292,7 +292,8 @@ public static class DefinitionProperties
             ?? dataset.Fields.FirstOrDefault();
         var y = dataset.Fields.FirstOrDefault(f => f.Type == FieldType.Number && f != x);
 
-        var series = new JsonObject { ["type"] = "auto" };
+        // Time along x: a line; categories: bars. (Not "auto": the editor shows the chart that was picked.)
+        var series = new JsonObject { ["type"] = x?.Type == FieldType.Time ? "line" : "bar" };
         if (x is not null)
         {
             series["x"] = x.Name;
@@ -304,6 +305,11 @@ public static class DefinitionProperties
         if (split is not null)
         {
             series["groupBy"] = split.Name;
+        }
+
+        if (x?.Type == FieldType.Time)
+        {
+            series["timeBucket"] = "auto";
         }
 
         if (y is not null)

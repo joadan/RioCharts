@@ -1,0 +1,57 @@
+@* Reference lines: "a line at 200, labeled Goal". Bands, points and callouts are under All options. *@
+@using System.Text.Json.Nodes
+
+@{
+    var all = DefinitionProperties.List(Chart, "annotations");
+    var lines = all?.OfType<JsonObject>().Where(IsLine).ToList() ?? [];
+}
+<details class="ce-section">
+    <summary>
+        <span class="ce-section-label">Reference lines</span>
+        <span class="ce-summary">@(lines.Count == 0 ? "None" : string.Join(", ", lines.Select(l => l["label"]?.ToString() ?? $"at {l["value"]}")))</span>
+    </summary>
+    <div class="ce-section-body">
+        <p class="ce-hint">A horizontal line across the chart, such as a goal or a limit.</p>
+        @foreach (var line in lines)
+        {
+            <div class="ce-line">
+                <label>At <input type="text" inputmode="decimal" value="@line["value"]?.ToString()" aria-label="Value of the line" @onchange="e => Set(line, ValueKey, e.Value?.ToString())" /></label>
+                <label>Label <input type="text" value="@line["label"]?.ToString()" aria-label="Label of the line" @oninput="e => Set(line, LabelKey, e.Value?.ToString())" /></label>
+                <button type="button" class="ce-link" @onclick="() => Remove(line)">Remove</button>
+            </div>
+        }
+        <button type="button" class="ce-link" @onclick="Add">Add a line</button>
+    </div>
+</details>
+
+@code {
+    private const string ValueKey = "value";
+    private const string LabelKey = "label";
+
+    [Parameter, EditorRequired] public JsonObject Chart { get; set; } = default!;
+
+    [Parameter] public EventCallback Changed { get; set; }
+
+    // A line on the value axis: no type (line is the default) or "line", and no x axis.
+    private static bool IsLine(JsonObject a) =>
+        (a["type"]?.ToString() ?? "line") == "line" && (a["axis"]?.ToString() ?? "y").Equals("y", StringComparison.OrdinalIgnoreCase);
+
+    private Task Set(JsonObject line, string property, string? text)
+    {
+        var kind = property == "value" ? PropertyKind.Number : PropertyKind.Text;
+        DefinitionProperties.SetText(line, new DefinitionProperty(property, null, kind, [], []), text);
+        return Changed.InvokeAsync();
+    }
+
+    private Task Add()
+    {
+        DefinitionProperties.List(Chart, "annotations", create: true)!.Add(new JsonObject { ["value"] = 0, ["label"] = "Goal" });
+        return Changed.InvokeAsync();
+    }
+
+    private Task Remove(JsonObject line)
+    {
+        DefinitionProperties.List(Chart, "annotations")?.Remove(line);
+        return Changed.InvokeAsync();
+    }
+}

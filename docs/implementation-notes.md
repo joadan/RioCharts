@@ -1482,28 +1482,50 @@ Design.md "Visual design": an entry fade only, no update animations. How it is d
 
 ## Playground editor
 
-The playground (docs site, `/definitions`) has a property panel next to the JSON: pick the dataset,
-edit each series (type and fields first), then the chart's options, with a search over every
-option's name and description. Both sides edit the same definition: a panel change rewrites the JSON
-(indented), a JSON edit updates the panel, and invalid JSON pauses the panel until it is fixed.
+The playground (docs site, `/definitions`) and the dashboards page have a chart editor next to the
+JSON. The first version listed every option from the schema by its JSON name, the same for every
+chart type, with descriptions on hover; feedback was that it was hard to navigate and understand.
+It now works like a chart builder:
+
+1. **What do you want to show?** Seven goals (change over time, compare, parts of a whole,
+   relation, spread and timelines, on a map, one number), then the charts for that goal (Line,
+   Stacked area, Horizontal bars, Donut, Timeline...). A chart is a type plus the options that make
+   the variant (horizontal, a stack, percent stacking, an inner radius).
+2. **Your data:** the dataset, then the slots that chart needs, named for it: a bar chart asks for
+   Categories, Bar height (Sum of revenue) and Split by; a gauge for a Value. Each slot lists only
+   fields of a fitting type and has its hint always visible. Picking a chart fills empty slots with
+   fitting fields, drops fields the new chart cannot use, and drops time grouping and combining
+   where the chart has none, so it draws at once.
+3. **Fine-tune:** a few folded sections chosen per chart (titles and labels, sort and filter,
+   axis, line style, slices, bins, scale and target, legend, reference lines), each with a summary
+   of what is set ("Largest first, show only the first 10").
+
+**All options** at the end is the first version, for developers: every option by its JSON name,
+with a search and the descriptions always shown.
+
 **Your data** reads a CSV or JSON file (or pasted text) into a dataset with `ChartDataset.FromCsv` /
-`FromJson`, in the browser, and starts a chart from it (`type: auto`, the first time or text field
-as x, the first number as y, split by a small text field along time). Opening it stops Clarity for
-the rest of the visit (`rioDocs.stopClarity`), so no recording shows a chart of the visitor's data.
+`FromJson`, in the browser, and starts a chart from it (a line along time or bars per category, split
+by a small text field along time). Opening it stops Clarity for the rest of the visit
+(`rioDocs.stopClarity`), so no recording shows a chart of the visitor's data.
 
 It lives in `samples/RioCharts.Docs/Editor/` and is built as a future editor component, not part of
-1.0: it uses only public Core API, edits the definition as a `JsonObject` (unknown fields and
-synonyms such as `spline` survive), and reads every option from `ChartDefinitionJson.Schema()`, so
-new options show up without changes. The plan after 1.0 is two layers: a headless property model in
-Core for apps that build their own UI, and a ready-made editor component on top of it (its own
-package) as the quick start for dashboard products where users configure charts.
+1.0: it uses only public Core API and edits the definition as a `JsonObject` (unknown fields and
+synonyms survive). `ChartKinds.cs` holds what the schema does not say: the goals, the charts, their
+slots with labels, hints and accepted field types, and the fine-tune options. It is the first draft
+of the headless model planned for Core after 1.0, with a ready-made editor component on top of it
+(its own package) as the quick start for dashboard products where users configure charts.
 
-Guesses the panel makes that a Core model should state outright:
+What the Core model should state that the editor now keeps in its own table:
 
-- Which string options name a dataset field (`FieldNames` in `DefinitionProperties`); the schema
-  does not mark them.
-- Which options apply to which chart type: descriptions start with "Range area:", "Bubbles:" and
-  so on, but nothing machine-readable says so, so the panel lists every option for every type.
-- Defaults: the schema gives few, so unset options show "(default)" rather than the value.
-- Which options matter most (the pinned ones: type, x, y, aggregate, timeBucket, groupBy, name,
-  stack; title, horizontal).
+- Which options name a dataset field, and of which types (`ChartSlot.Accepts`; `FieldNames` in
+  `DefinitionProperties` for All options).
+- Which options apply to which chart, and which ones matter most (the slots and sections per kind).
+- Labels and hints for users, apart from the descriptions written for developers and AI agents.
+- Defaults, so a control can show "Top" instead of "Automatic".
+- Which words are synonyms (`ChartKinds.Canonical` repeats a few the parser knows).
+
+Two Blazor details: a `<select>` reused for another slot can keep showing its old option, so slot
+and option rows are keyed by chart, slot and dataset and every option sets `selected`. And the
+editor tells which chart a series is from the definition as parsed, so synonyms such as `column`
+or `donut` resolve; bars over time count as Columns under "Change over time" and as Bars under
+"Compare", whichever goal the user picked.
