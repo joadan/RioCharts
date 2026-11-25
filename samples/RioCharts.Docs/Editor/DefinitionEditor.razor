@@ -68,11 +68,32 @@
                 {
                     var on = picked.Contains(field);
                     <button type="button" class="ce-field @(on ? "picked" : null)" aria-pressed="@(on ? "true" : "false")"
-                            @onclick="() => TogglePick(field, series, dataset)">
+                            @onclick="() => TogglePick(field, kind, series, dataset)">
                         <span class="ce-field-type" aria-hidden="true">@TypeMark(field.Type)</span>@field.Name
                     </button>
                 }
             </div>
+            @if (!_noChart && series is not null && kind?.Slots.Any(s => s.Part == SlotPart.Aggregate) == true)
+            {
+                @* How rows with the same category or period become one value: the choice that changes the numbers most. *@
+                <div class="ce-row ce-aggregate">
+                    <label class="ce-label" for="ce-aggregate">Combine rows</label>
+                    <div class="ce-inputs">
+                        <select id="ce-aggregate" value="@(series["aggregate"]?.ToString() ?? "")" @onchange="e => SetAggregate(e.Value?.ToString(), series)">
+                            @foreach (var (value, label) in ChartKinds.Aggregates)
+                            {
+                                var text = value switch
+                                {
+                                    "" => "Each value as it is",
+                                    "count" => "Count the rows",
+                                    _ => $"{label} {series["y"]?.ToString() ?? "the value"}",
+                                };
+                                <option value="@value" selected="@(value == (series["aggregate"]?.ToString() ?? ""))">@text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            }
 
             <h4 class="ce-step"><span>2</span> Pick a chart</h4>
             var suggestions = Suggestions(picked, index, dataset);
@@ -249,6 +270,12 @@
     /// <summary>Raised after every edit of <see cref="Definition"/>.</summary>
     [Parameter] public EventCallback Changed { get; set; }
 
+    /// <summary>
+    /// Raised with false when the fields picked make no chart (the chart shown would not match them, so the page
+    /// hides it), and with true when they make one again.
+    /// </summary>
+    [Parameter] public EventCallback<bool> ChartShown { get; set; }
+
     private static readonly DefinitionProperty SeriesProperty = DefinitionProperties.Root.Child("series")!;
 
     private static readonly IReadOnlyList<DefinitionProperty> ChartProperties =
@@ -272,11 +299,12 @@
         }
     }
 
-    private void SelectSeries(int index)
+    private Task SelectSeries(int index)
     {
         _series = index;
         _goal = null;
         _picked = null;
+        return ShowChart(true);
     }
 
     // A goal switches to a chart at once: the one this series last was under that goal, else the goal's first.
@@ -307,12 +335,12 @@
     private readonly Dictionary<JsonObject, Dictionary<string, string>> _lastKind = new(ReferenceEqualityComparer.Instance);
     private JsonObject? _visitedFor;
 
-    private Task PickKind(ChartKind kind, ChartKind? current, JsonObject? series, ChartDataset? dataset)
+    private async Task PickKind(ChartKind kind, ChartKind? current, JsonObject? series, ChartDataset? dataset)
     {
         _goal = kind.Goal;
         if (kind == current)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         series ??= NewSeries();
@@ -327,7 +355,8 @@
         }
 
         _picked = null;
-        return Changed.InvokeAsync();
+        await Changed.InvokeAsync();
+        await ShowChart(true);
     }
 
     private JsonObject NewSeries()
@@ -372,13 +401,53 @@
     private static HashSet<string> FieldsOf(JsonObject? series, ChartDataset dataset) =>
         [.. ChartKinds.FieldsOf(series, dataset).Select(f => f.Name)];
 
-    private void TogglePick(DataField field, JsonObject? series, ChartDataset dataset)
+    // A pick changes the chart at once, to the best fit for the fields picked. When no chart fits (nothing
+    // picked, or a mix none shows), the chart hides until the fields fit one, so it never shows fields the chips
+    // say are not picked.
+    private Task TogglePick(DataField field, ChartKind? current, JsonObject? series, ChartDataset dataset)
     {
         _picked ??= [.. ChartKinds.FieldsOf(series, dataset).Select(f => f.Name)];
         if (!_picked.Remove(field.Name))
         {
             _picked.Add(field.Name);
         }
+
+        // Always the best fit, whatever the chart was: the same fields give the same chart in any order of taps
+        // (a calendar of timestamp does not stay a calendar when revenue is added). Another card is one tap away.
+        if (ChartKinds.Suggest([.. _picked.Select(dataset.Field).OfType<DataField>()]).FirstOrDefault() is { } best)
+        {
+            return UseSuggestion(best, current, series, dataset);
+        }
+
+        return ShowChart(false);
+    }
+
+    // Whether the fields picked make a chart; the page hides it while they do not.
+    private bool _noChart;
+
+    private Task ShowChart(bool shown)
+    {
+        if (_noChart == !shown)
+        {
+            return Task.CompletedTask;
+        }
+
+        _noChart = !shown;
+        return ChartShown.InvokeAsync(shown);
+    }
+
+    private Task SetAggregate(string? value, JsonObject series)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            series.Remove("aggregate");
+        }
+        else
+        {
+            series["aggregate"] = value;
+        }
+
+        return Changed.InvokeAsync();
     }
 
     private static string TypeMark(FieldType type) => type switch
@@ -420,14 +489,15 @@
         return ChartDefinitionJson.Parse(chart.ToJsonString()).Definition;
     }
 
-    private Task UseSuggestion(ChartSuggestion suggestion, ChartKind? current, JsonObject? series, ChartDataset? dataset)
+    private async Task UseSuggestion(ChartSuggestion suggestion, ChartKind? current, JsonObject? series, ChartDataset? dataset)
     {
         series ??= NewSeries();
         Remember(series, current, suggestion.Kind);
         ChartKinds.Use(suggestion, current, Definition!, series, dataset);
         _goal = suggestion.Kind.Goal;
         _picked = null;
-        return Changed.InvokeAsync();
+        await Changed.InvokeAsync();
+        await ShowChart(true);
     }
 
     private Task SetDataset(string? name, ChartKind? kind, JsonObject? series)
@@ -440,6 +510,7 @@
         Definition!["dataset"] = name;
         Definition.Remove("data");
         _picked = null;
+        _ = ShowChart(true);
         if (kind is null || series is null)
         {
             return Changed.InvokeAsync();

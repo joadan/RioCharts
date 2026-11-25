@@ -583,13 +583,16 @@ public static class ChartKinds
             series.Remove(property);
         }
 
+        // How rows combine stays as the user chose it (an average stays an average), except a count, which only
+        // stands for a value that was not picked.
+        var aggregate = series["aggregate"]?.ToString() is { Length: > 0 } a && a != "count" ? a : "sum";
         series.Remove("aggregate");
         foreach (var (slot, field) in suggestion.Placed)
         {
             series[slot.Property] = slot.IsList ? new JsonArray(field.Name) : field.Name;
             if (slot.Part == SlotPart.Aggregate)
             {
-                series["aggregate"] = "sum";
+                series["aggregate"] = aggregate;
             }
         }
 

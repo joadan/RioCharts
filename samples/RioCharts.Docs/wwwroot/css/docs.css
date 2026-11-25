@@ -2226,6 +2226,20 @@ table.hover-table td.num {
     min-width: 0;
 }
 
+/* The fields picked make no chart: a quiet placeholder where the chart was. */
+.dashboard-tile-empty {
+    display: grid;
+    place-items: center;
+    min-height: 160px;
+    margin: 0;
+    padding: 16px;
+    border: 1px dashed var(--doc-border-strong);
+    border-radius: 10px;
+    color: var(--doc-muted);
+    font-size: 14px;
+    text-align: center;
+}
+
 .dashboard-tile.editing .dashboard-tile-chart {
     position: sticky;
     top: 76px;
