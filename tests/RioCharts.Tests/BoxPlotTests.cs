@@ -79,6 +79,17 @@ public class BoxPlotTests
         Assert.Equal((10.0, 30.0, 12), (box.Min, box.Max, box.Count));
     }
 
+    [Fact]
+    public void Five_numbers_with_one_missing_are_still_sorted()
+    {
+        var box = BoxSummary.FromFiveNumbers(double.NaN, 30, 20, 10, 40, outliers: [1]);
+
+        Assert.True(double.IsNaN(box.Low));
+        Assert.Equal((10.0, 20.0, 30.0, 40.0), (box.Q1, box.Median, box.Q3, box.High));
+        Assert.Equal((1.0, 40.0), (box.Min, box.Max));
+        Assert.True(double.IsNaN(BoxSummary.FromFiveNumbers(double.NaN, double.NaN, double.NaN, double.NaN, double.NaN).Min));
+    }
+
     // ---------- Data ----------
 
     [Fact]

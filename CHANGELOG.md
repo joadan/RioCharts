@@ -16,6 +16,12 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
   annotations and ranges were read in the server's time zone when a chart `TimeZone` was set. They are now instants.
 - `ExportCsv` wrote the repeated hour of a daylight saving change (02:30+02:00 and 02:30+01:00) as one row with the
   first offset. Each offset now gets its own row, in time order.
+- `ExportCsv` puts an apostrophe in front of a header or category that starts with `=`, `+`, `-` or `@` (and is not a
+  number), so a spreadsheet opening the file never runs it as a formula.
+- Compact tooltip and data label values that round up to the next unit use it: 999,960,000 is "1B", not "1,000M".
+- SVG export with `CssVariables` escapes the theme colors in `var(…)` fallbacks, like everywhere else.
+- `BoxSummary.FromFiveNumbers` sorts the given numbers when one of them is missing (NaN), and `Min`/`Max` include the
+  outliers in that case too.
 
 ## 1.0.2-rc (2026-11-25)
 

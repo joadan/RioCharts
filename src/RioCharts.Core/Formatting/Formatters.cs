@@ -212,7 +212,8 @@ internal static class ValueFormatter
         {
             foreach (var (divisor, suffix) in new[] { (1e12, "T"), (1e9, "B"), (1e6, "M"), (1e3, "k") })
             {
-                if (abs >= divisor)
+                // A value that rounds up to the next unit takes it: 999,960 is "1M", not "1,000k".
+                if (abs >= divisor * (1 - 5e-5))
                 {
                     return (value / divisor).ToString("#,##0.#", culture) + suffix;
                 }

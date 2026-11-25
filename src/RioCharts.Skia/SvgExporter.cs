@@ -58,7 +58,7 @@ internal static class SvgExporter
             }
 
             var resolved = theme.Resolve(color);
-            return cssVariables && ThemeTokens.IsToken(color) ? $"var({color}, {resolved})" : Escape(resolved);
+            return cssVariables && ThemeTokens.IsToken(color) ? $"var({color}, {Escape(resolved)})" : Escape(resolved);
         }
 
         public void Node(Node node)

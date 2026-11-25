@@ -51,6 +51,17 @@ public class ExportTests
     }
 
     [Fact]
+    public void Csv_text_cells_never_start_a_spreadsheet_formula()
+    {
+        var data = SeriesData.FromCategories(["=HYPERLINK(\"http://example.com\")", "+1 day", "-5", "@sum", "Store 1"], [1.0, 2, 3, 4, 5]);
+
+        var csv = ChartCsv.Write([("=cmd", data)], new CsvOptions { NewLine = "\n" });
+
+        Assert.Equal("x,'=cmd\n\"'=HYPERLINK(\"\"http://example.com\"\")\",1\n'+1 day,2\n-5,3\n'@sum,4\nStore 1,5\n", csv);
+        Assert.Equal("x,a\n-1.5,2\n", ChartCsv.Write([("a", SeriesData.From([-1.5], [2.0]))], new CsvOptions { NewLine = "\n" })); // numbers stay numbers
+    }
+
+    [Fact]
     public void Csv_keeps_the_repeated_autumn_hour_apart()
     {
         // Stockholm leaves summer time on 25 October 2026: 02:30 comes twice, at +02:00 and then +01:00.

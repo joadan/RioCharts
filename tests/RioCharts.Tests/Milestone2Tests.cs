@@ -336,6 +336,9 @@ public class Milestone2Tests
     [InlineData(21.256, "21.26")]
     [InlineData(2_500_000, "2.5M")]
     [InlineData(-0.001, "0")]
+    [InlineData(999_960_000, "1B")] // rounds up to the next unit, not "1,000M"
+    [InlineData(999_940_000, "999.9M")]
+    [InlineData(-999_999_999, "-1B")]
     public void Values_are_formatted_compactly(double value, string expected) =>
         Assert.Equal(expected, RioCharts.Core.Formatting.ValueFormatter.Format(value, CultureInfo.InvariantCulture));
 
