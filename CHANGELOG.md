@@ -5,6 +5,8 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+- Docs site: the tables on Large data and Server export scroll on their own on a phone, instead of making the whole
+  page scroll sideways.
 - Docs site: in the editor, picking what to show (Compare, Parts of a whole...) switches the chart at once, to the
   chart you last used there or else the first one. Going back brings that chart and its fields back as they were.
   Horizontal bars over time group the rows per day, month... like Bars, instead of drawing a bar for every row.
