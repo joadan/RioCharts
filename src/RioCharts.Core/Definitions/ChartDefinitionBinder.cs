@@ -349,9 +349,17 @@ public static class ChartDefinitionBinder
         }
 
         // Auto picks one bucket from all the series' rows, so groups (groupBy) share it.
-        var bucket = s.TimeBucket is { } requested ? TimeBuckets.Resolve(requested, rows.Select(r => x.Values[r]))
-            : s.Type == SeriesType.Calendar && x.Type == FieldType.Time ? TimeBucket.Day : (TimeBucket?)null; // a calendar has a cell per day
-        if (s.TimeBucket == TimeBucket.Auto)
+        // A calendar has a cell per day: it always buckets by day, whatever timeBucket asks for.
+        var calendar = s.Type == SeriesType.Calendar && x.Type == FieldType.Time;
+        if (calendar && s.TimeBucket is { } asked && asked != TimeBucket.Day)
+        {
+            warnings.Add($"{path}.timeBucket: a calendar has a cell per day; '{asked.ToString().ToLowerInvariant()}' is ignored.");
+        }
+
+        var bucket = calendar ? TimeBucket.Day
+            : s.TimeBucket is { } requested ? TimeBuckets.Resolve(requested, rows.Select(r => x.Values[r]))
+            : (TimeBucket?)null;
+        if (s.TimeBucket == TimeBucket.Auto && !calendar)
         {
             warnings.Add($"{path}.timeBucket: auto chose {bucket.ToString()!.ToLowerInvariant()}.");
         }
@@ -780,7 +788,13 @@ public static class ChartDefinitionBinder
 
     private static DataField? Find(ChartDataset dataset, string name, string path, FieldType? required, List<DefinitionError> errors)
     {
-        var field = dataset.Field(name) ?? dataset.Field(name.Replace(" ", "", StringComparison.Ordinal).Replace("_", "", StringComparison.Ordinal));
+        if (string.IsNullOrWhiteSpace(name)) // JSON null reads as null despite the type
+        {
+            errors.Add(new DefinitionError(path, $"set a field name; available: {Describe(dataset.Fields)}."));
+            return null;
+        }
+
+        var field =dataset.Field(name) ?? dataset.Field(name.Replace(" ", "", StringComparison.Ordinal).Replace("_", "", StringComparison.Ordinal));
         if (field is null)
         {
             var close = dataset.Fields.FirstOrDefault(f => Distance(f.Name.ToLowerInvariant(), name.ToLowerInvariant()) <= 2);

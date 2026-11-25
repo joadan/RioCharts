@@ -1,3 +1,4 @@
+using System.Globalization;
 using RioCharts.Core.Scene;
 using RioCharts.Core.Text;
 
@@ -41,7 +42,7 @@ internal static partial class ChartLayout
     }
 
     private static GroupNode BuildLegend(List<(LegendEntry Entry, double Width)> items, List<List<(LegendEntry Entry, double Width)>> rows,
-        LegendPosition position, double rightX, RectF plot, double top, double bottomTop, double lineHeight, StyleTable styles, string label)
+        LegendPosition position, double rightX, RectF plot, double top, double bottomTop, double lineHeight, StyleTable styles, ChartTexts texts)
     {
         var nodes = new List<Node>();
         var rowHeight = lineHeight + 4;
@@ -50,7 +51,7 @@ internal static partial class ChartLayout
             var y = (double)plot.Y;
             foreach (var (entry, w) in items)
             {
-                nodes.Add(LegendItem(entry, rightX, y, w, rowHeight, styles));
+                nodes.Add(LegendItem(entry, rightX, y, w, rowHeight, styles, texts));
                 y += rowHeight;
             }
         }
@@ -62,7 +63,7 @@ internal static partial class ChartLayout
                 double x = PadLeft;
                 foreach (var (entry, w) in row)
                 {
-                    nodes.Add(LegendItem(entry, x, y, w, rowHeight, styles));
+                    nodes.Add(LegendItem(entry, x, y, w, rowHeight, styles, texts));
                     x += w + ItemGap;
                 }
 
@@ -70,7 +71,7 @@ internal static partial class ChartLayout
             }
         }
 
-        return new GroupNode(nodes) { Class = "rio-legend", AriaLabel = label };
+        return new GroupNode(nodes) { Class = "rio-legend", AriaLabel = texts.Legend };
     }
 
     /// <summary>Candlesticks: a falling and a rising candle body, as drawn.</summary>
@@ -121,7 +122,7 @@ internal static partial class ChartLayout
         };
     }
 
-    private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles)
+    private static GroupNode LegendItem(LegendEntry entry, double x, double y, double width, double height, StyleTable styles, ChartTexts texts)
     {
         var cy = y + height / 2;
         var swatchStyle = styles.Add("swatch-" + entry.SeriesId, entry.Type switch
@@ -143,7 +144,8 @@ internal static partial class ChartLayout
             ? WaterfallSwatch(x, cy, styles)
             : new RectNode(new RectF((float)x, (float)(cy - 5), (float)SwatchWidth, 10), swatchStyle) { CornerRadius = 2, Class = "rio-swatch" };
 
-        var state = !entry.Visible ? ", hidden" : entry.IsEmpty ? ", no data" : "";
+        var name = !entry.Visible ? texts.Fill(nameof(ChartTexts.LegendHidden), CultureInfo.InvariantCulture, entry.Label)
+            : entry.IsEmpty ? texts.Fill(nameof(ChartTexts.LegendNoData), CultureInfo.InvariantCulture, entry.Label) : entry.Label;
         return new GroupNode(
         [
             new RectNode(new RectF((float)(x - 3), (float)y, (float)(width + 6), (float)height), new StyleRef("legend-hit")) { CornerRadius = 3, Class = "rio-legend-hit" },
@@ -154,7 +156,7 @@ internal static partial class ChartLayout
             Key = "legend:" + entry.SeriesId,
             Class = "rio-legend-item" + (entry.Visible ? "" : " rio-legend-off") + (entry.IsEmpty ? " rio-legend-empty" : ""),
             Interaction = new NodeInteraction("legend", entry.SeriesId) { Pressed = entry.Visible },
-            AriaLabel = entry.Label + state,
+            AriaLabel = name,
             Title = entry.Tooltip,
         };
     }

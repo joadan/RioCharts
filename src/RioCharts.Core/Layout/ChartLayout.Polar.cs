@@ -192,7 +192,7 @@ internal static partial class ChartLayout
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
-                plotBottom + 8, lineHeight, styles, texts.Legend));
+                plotBottom + 8, lineHeight, styles, texts));
         }
 
         styles.Add("slice-label", new TextStyleDef { FontSize = (float)Math.Max(9, font - 1), Fill = ThemeTokens.Text });

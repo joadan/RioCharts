@@ -39,8 +39,10 @@ internal static class ChartDescriber
 
     /// <summary><see cref="Describe(ChartDefinition, IReadOnlyList{ValueTuple{SeriesOptions, SeriesData, bool}}, XKind, CultureInfo, ChartTexts?)"/> with each series' <see cref="SeriesFacts"/> computed by the caller (once per layout).</summary>
     internal static string Describe(ChartDefinition spec, IReadOnlyList<(SeriesOptions Spec, SeriesData Data, bool Visible)> series, XKind xKind, CultureInfo culture,
-        ChartTexts texts, Func<SeriesData, SeriesFacts> facts)
+        ChartTexts texts, Func<SeriesData, SeriesFacts> facts, TimeConversion? time = null)
     {
+        // X values as on the axis: times in the display zone (the data holds instants then), numbers in the axis format.
+        string X(double x, SeriesData data) => FormatX(x, data, xKind, culture, spec.X.Format, time);
         var sb = new StringBuilder();
         var visible = series.Where(s => s.Visible).ToList();
         sb.Append(string.IsNullOrWhiteSpace(spec.Title)
@@ -76,7 +78,7 @@ internal static class ChartDescriber
             {
                 // Both ends of each dumbbell, in point order: "A 7 to 5, B 3 to 8".
                 var pairs = Enumerable.Range(0, d.Count).Where(i => double.IsFinite(d.Y[i]) && double.IsFinite(first[i])).ToList();
-                sb.Append(": ").Append(string.Join(", ", pairs.Take(8).Select(i => FormatX(d.X[i], d, xKind, culture) + " "
+                sb.Append(": ").Append(string.Join(", ", pairs.Take(8).Select(i => X(d.X[i], d) + " "
                     + texts.Fill(nameof(ChartTexts.ValueRange), culture, format.Format(first[i], culture), format.Format(d.Y[i], culture)))));
                 if (pairs.Count > 8)
                 {
@@ -88,7 +90,7 @@ internal static class ChartDescriber
             }
 
             sb.Append(", ").Append(texts.Fill(nameof(ChartTexts.LowestHighest), culture,
-                format.Format(d.Y[min], culture), FormatX(d.X[min], d, xKind, culture), format.Format(d.Y[max], culture), FormatX(d.X[max], d, xKind, culture)));
+                format.Format(d.Y[min], culture), X(d.X[min], d), format.Format(d.Y[max], culture), X(d.X[max], d)));
 
             if (stats.Trend != Trend.None)
             {
@@ -261,12 +263,29 @@ internal static class ChartDescriber
     private static AxisOptions AxisOf(ChartDefinition spec, SeriesOptions s) =>
         s.YAxisId is { } id ? spec.YAxes.FirstOrDefault(a => a.Id == id) ?? spec.Y : spec.Y;
 
-    private static string FormatX(double x, SeriesData data, XKind kind, CultureInfo culture) => kind switch
+    private static string FormatX(double x, SeriesData data, XKind kind, CultureInfo culture, string? format, TimeConversion? time) => kind switch
     {
-        XKind.Time => TimeValue.ToDateTime(x).ToString("g", culture),
+        XKind.Time => FormatTime(TimeValue.ToDateTime(time?.ToDisplay(x) ?? x), culture, format),
         XKind.Category => (int)x >= 0 && (int)x < data.Categories.Count ? data.Categories[(int)x] : "",
-        _ => x.ToString("G4", culture),
+        _ => Formatting.ValueFormatter.Format(Scales.NiceTicks.Clean(x), culture, format),
     };
+
+    private static string FormatTime(DateTime t, CultureInfo culture, string? format)
+    {
+        if (!string.IsNullOrEmpty(format))
+        {
+            try
+            {
+                return t.ToString(format, culture);
+            }
+            catch (FormatException)
+            {
+                // fall back to the culture's short date and time
+            }
+        }
+
+        return t.ToString("g", culture);
+    }
 
     /// <summary>
     /// Least-squares trend: the fitted change across the x range relative to the y range.

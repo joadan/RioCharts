@@ -86,7 +86,11 @@ internal static partial class ChartLayout
         var plot = new RectF((float)plotLeft, (float)plotTop, (float)Math.Max(2, plotRight - plotLeft), (float)Math.Max(2, plotBottom - plotTop));
 
         var labels = stages.Select(LabelOf).ToList();
-        var showLabels = !compact && chrome.YLabels && labels.Any(l => l.Length > 0);
+        // Each stage needs room for its name; when they do not all fit (many stages, a low chart), the stages share
+        // the height without names, which the tooltips and the description still give.
+        var labelFloor = Math.Max(10, font * 1.3 + 4);
+        var fits = stages.Count * labelFloor <= plot.Height;
+        var showLabels = !compact && fits && chrome.YLabels && labels.Any(l => l.Length > 0);
         const double Leader = 16;
         var shown = labels.Select(l => Shorten(l, plot.Width * 0.3, measure, font)).ToList();
         var nameWidth = showLabels ? shown.Max(l => measure.Measure(l, font)) : 0;
@@ -96,7 +100,7 @@ internal static partial class ChartLayout
         // Heights follow the values: each stage gets a minimum (room for its name), and the rest
         // of the funnel's height is shared in proportion to the stages' values.
         var n = stages.Count;
-        var floor = n == 0 ? 0 : compact ? Math.Min(2, plot.Height / n) : Math.Max(10, font * 1.3 + 4);
+        var floor = n == 0 ? 0 : compact || !fits ? Math.Min(2, plot.Height / n) : labelFloor;
         var total = n == 0 ? 0 : Math.Max(n * floor, Math.Min(plot.Height, n * (compact ? 1e4 : 72)));
         var gap = n == 0 ? 0 : compact ? Math.Min(1, total / n * 0.1) : Math.Clamp(total / n * 0.08, 2, 5);
         var sum = stages.Sum(i => Math.Max(0, r0!.Data.Y[i]));

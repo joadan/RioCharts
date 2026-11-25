@@ -238,6 +238,11 @@ internal static partial class ChartLayout
                     ticks.Add(Math.Abs(t) < step * 1e-9 ? 0 : t);
                 }
 
+                if (ticks.Count == 0)
+                {
+                    ticks.AddRange([min, max]); // fixed limits with no nice step between them (5.1 to 9.3 in a narrow chart)
+                }
+
                 var widest = ticks.Max(t => measure.Measure(Format(t), small));
                 var every = Math.Max(1, (int)Math.Ceiling((widest + 8) / Math.Max(1, plot.Width / Math.Max(1, ticks.Count - 1))));
                 var tickY = y + axisHeight / 2;

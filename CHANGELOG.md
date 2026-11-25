@@ -22,6 +22,24 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 - SVG export with `CssVariables` escapes the theme colors in `var(…)` fallbacks, like everywhere else.
 - `BoxSummary.FromFiveNumbers` sorts the given numbers when one of them is missing (NaN), and `Min`/`Max` include the
   outliers in that case too.
+- A callout whose label is wider than the plot threw; its label is now shortened with "…" to fit.
+- A bullet with a fixed `Min`/`Max` and no nice tick between them (5.1 to 9.3 in a narrow chart) threw; it now labels
+  both ends.
+- A JSON definition with `"field": null` (a filter, a treemap path) threw while binding; it is now a definition error.
+- A y `Min` above every value (or a `Max` below every value) collapsed the axis to nothing; the axis now starts at the
+  fixed end and goes the other way. The same for x. Equal `Min` and `Max` give one step.
+- Horizontal bars and heatmap cells outside a fixed value or x range are cut at the plot instead of drawn over the
+  labels and past the chart.
+- A funnel with more stages than fit (30 in a 300 px chart) ran off the bottom; the stages now share the height, without
+  the name column when the names do not fit (tooltips and the description still name them).
+- A radar with `Y.Min` equal to `Y.Max` (or above it) drew its grid at the corner; it now warns and uses the automatic
+  range.
+- The screen reader description gives times in the chart's `TimeZone` (it gave UTC) and numeric x values in the x
+  axis format (it gave e.g. "1.235E+04").
+- A calendar with a `timeBucket` other than day drew wrong cells; it always buckets by day now and warns when another
+  bucket was asked for.
+- Legend items are announced as hidden or without data in the chart's language (new `ChartTexts.LegendHidden` and
+  `LegendNoData`), not always in English.
 
 ## 1.0.2-rc (2026-11-25)
 

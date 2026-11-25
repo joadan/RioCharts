@@ -196,6 +196,17 @@ internal static partial class ChartLayout
         // A log axis ignores a Min or Max of zero or below (they are not on it).
         axis.ExtentMin = log && !(axis.Spec.Min > 0) ? min : axis.Spec.Min ?? min;
         axis.ExtentMax = log && !(axis.Spec.Max > 0) ? max : axis.Spec.Max ?? max;
+
+        // One end fixed and every value beyond it (Min 0 with only negative values): the axis starts at the fixed end
+        // and goes the other way, instead of collapsing onto it.
+        if (axis.Spec.Max is null && axis.ExtentMax < axis.ExtentMin)
+        {
+            axis.ExtentMax = axis.ExtentMin;
+        }
+        else if (axis.Spec.Min is null && axis.ExtentMin > axis.ExtentMax)
+        {
+            axis.ExtentMin = axis.ExtentMax;
+        }
         axis.LabelMin = double.IsFinite(labelMin) ? labelMin : double.NaN;
         axis.LabelMax = double.IsFinite(labelMax) ? labelMax : double.NaN;
 
@@ -274,7 +285,7 @@ internal static partial class ChartLayout
         {
             // All values equal: pad so the axis does not collapse. All zero: 0 to 1, not -1 to 1.
             var pad = min == 0 ? 1 : Math.Abs(min) * 0.1;
-            if (axis.Spec.Min is null && min != 0)
+            if (axis.Spec.Min is null && (min != 0 || axis.Spec.Max is not null))
             {
                 min -= pad;
             }
@@ -332,7 +343,13 @@ internal static partial class ChartLayout
 
         axis.DomainMin = axis.Spec.Min ?? niceMin;
         axis.DomainMax = axis.Spec.Max ?? niceMax;
-        axis.Ticks = NiceTicks.Ticks(axis.DomainMin, axis.DomainMax, step);
+        if (!(axis.DomainMax > axis.DomainMin))
+        {
+            // Min and Max set to the same value (or the wrong way round): one step above Min, so the axis is usable.
+            axis.DomainMax = axis.DomainMin + step;
+        }
+
+        axis.Ticks =NiceTicks.Ticks(axis.DomainMin, axis.DomainMax, step);
         var format = NumberFormatter.ForTicks(axis.Ticks, step, culture, axis.Format);
         axis.Labels = axis.Ticks.Select(format).ToList();
         axis.LabelWidth = axis.Visible ? axis.Labels.Select(l => measure.Measure(l, font)).DefaultIfEmpty(0).Max() : 0;

@@ -137,7 +137,7 @@ internal static partial class ChartLayout
         if (showLegend)
         {
             statics.Add(BuildLegend(legendItems, legendRows, legendPosition, width - PadRight - legendRight + 16, plot, y0,
-                plotBottom + 8, lineHeight, styles, texts.Legend));
+                plotBottom + 8, lineHeight, styles, texts));
         }
 
         var drawable = radar.Where(r => r.Visible && !r.Empty).ToList();
@@ -188,6 +188,13 @@ internal static partial class ChartLayout
         var target = Math.Clamp((int)(radius / 22), 3, 6);
         var (niceMin, niceMax, step) = NiceTicks.NiceDomain(lo, hi, target);
         var (domainMin, domainMax) = (spec.Y.Min ?? niceMin, spec.Y.Max ?? niceMax);
+        if (!(domainMax > domainMin))
+        {
+            // Y.Min and Max equal or the wrong way round (or one beyond the other's nice end): the nice domain.
+            warnings.Add($"y: max ({domainMax.ToString(CultureInfo.InvariantCulture)}) must be above min ({domainMin.ToString(CultureInfo.InvariantCulture)}); "
+                + $"using {niceMin.ToString(CultureInfo.InvariantCulture)} to {niceMax.ToString(CultureInfo.InvariantCulture)}.");
+            (domainMin, domainMax) = (niceMin, niceMax);
+        }
         var scale = new ContinuousScale(domainMin, domainMax, cy, cy - radius);
         double R(double v) => Math.Clamp((v - domainMin) / (domainMax - domainMin), 0, 1) * radius;
 
