@@ -753,6 +753,65 @@ table.docs tr:last-child td {
     font-variant-numeric: tabular-nums;
 }
 
+/* ----- About ----- */
+
+.about-hero {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.about-hero h1 {
+    margin-top: 0;
+}
+
+.about-logo {
+    flex: none;
+    transform: rotate(-6deg);
+    transition: transform 0.3s ease;
+}
+
+.about-logo:hover {
+    transform: rotate(0deg) scale(1.04);
+}
+
+.about-logo .rio-logo {
+    display: block;
+    border-radius: 26px;
+    box-shadow: 0 10px 28px rgba(239, 177, 24, 0.35);
+}
+
+/* Rio turns to greet the reader once, shortly after the page opens (the hover turn of .rio-logo below). */
+.about-logo .rio-logo-side { animation: rio-logo-side 1.5s step-end 0.6s; }
+.about-logo .rio-logo-quarter { animation: rio-logo-quarter 1.5s step-end 0.6s backwards; }
+.about-logo .rio-logo-front { animation: rio-logo-front 1.5s step-end 0.6s backwards; }
+.about-logo .rio-logo-eyes { animation: rio-logo-blink 1.5s ease-in-out 0.6s; }
+
+@media (max-width: 600px) {
+    .about-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .about-logo .rio-logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .about-logo,
+    .about-logo .rio-logo-side,
+    .about-logo .rio-logo-quarter,
+    .about-logo .rio-logo-front,
+    .about-logo .rio-logo-eyes {
+        animation: none;
+        transition: none;
+    }
+}
+
 .site .footer-meta a {
     color: inherit;
     text-decoration: none;
