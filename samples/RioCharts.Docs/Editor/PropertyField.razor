@@ -1,0 +1,86 @@
+@* One option of a definition: its name, an input that fits its kind, and the description from the schema. *@
+@using System.Text.Json.Nodes
+@using RioCharts.Core.Definitions
+
+@{ var value = DefinitionProperties.GetText(Target, Property); }
+<div class="pe-row @(value is null ? null : "pe-set")">
+    <label class="pe-label" for="@_id">@Property.Name</label>
+    <div class="pe-input">
+        @switch (Property.Kind)
+        {
+            case PropertyKind.Choice:
+                <select id="@_id" value="@(value ?? "")" @onchange="Set">
+                    <option value="">(default)</option>
+                    @foreach (var choice in Property.Choices)
+                    {
+                        <option value="@choice">@choice</option>
+                    }
+                    @* A synonym (spline, column...) or a word from a newer version: kept, and shown as it is. *@
+                    @if (value is not null && !Property.Choices.Contains(value))
+                    {
+                        <option value="@value">@value</option>
+                    }
+                </select>
+                break;
+
+            case PropertyKind.Boolean:
+                <select id="@_id" value="@(value ?? "")" @onchange="Set">
+                    <option value="">(default)</option>
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                </select>
+                break;
+
+            case PropertyKind.Field when Dataset is not null:
+                <select id="@_id" value="@(value ?? "")" @onchange="Set">
+                    <option value="">(none)</option>
+                    @foreach (var field in Dataset.Fields)
+                    {
+                        <option value="@field.Name">@field.Name · @field.Type.ToString().ToLowerInvariant()</option>
+                    }
+                    @if (value is not null && Dataset.Field(value) is null)
+                    {
+                        <option value="@value">@value (not in @Dataset.Name)</option>
+                    }
+                </select>
+                break;
+
+            case PropertyKind.Number or PropertyKind.Integer:
+                <input id="@_id" type="text" inputmode="decimal" value="@value" placeholder="default" @onchange="Set" />
+                break;
+
+            case PropertyKind.TextList:
+                <input id="@_id" type="text" value="@value" placeholder="comma separated" @onchange="Set" />
+                break;
+
+            default:
+                <input id="@_id" type="text" value="@value" placeholder="default" @oninput="Set" />
+                break;
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(Property.Description))
+    {
+        <p class="pe-description">@Property.Description</p>
+    }
+</div>
+
+@code {
+    private static int _next;
+    private readonly string _id = $"pe-{Interlocked.Increment(ref _next)}";
+
+    /// <summary>The JSON object that holds this option (the chart, a series, an axis...).</summary>
+    [Parameter, EditorRequired] public JsonObject Target { get; set; } = default!;
+
+    [Parameter, EditorRequired] public DefinitionProperty Property { get; set; } = default!;
+
+    /// <summary>The dataset that field options pick from; null lets them take any text.</summary>
+    [Parameter] public ChartDataset? Dataset { get; set; }
+
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private Task Set(ChangeEventArgs e)
+    {
+        DefinitionProperties.SetText(Target, Property, e.Value?.ToString());
+        return Changed.InvokeAsync();
+    }
+}

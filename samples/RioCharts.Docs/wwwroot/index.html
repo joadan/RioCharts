@@ -86,6 +86,9 @@
             })(window, document, "clarity", "script", "zibij06ue6");
             tagPage();
         };
+        // The playground's "Your data": a recording would show charts drawn from the visitor's own data,
+        // so Clarity stops for the rest of the visit before any is read.
+        window.rioDocs.stopClarity = function () { if (window.clarity) window.clarity("stop"); };
         if (location.hostname === "riocharts.com") window.rioDocs.startClarity();
     </script>
 </head>

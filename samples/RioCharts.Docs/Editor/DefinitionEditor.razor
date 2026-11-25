@@ -1,0 +1,138 @@
+@* A property editor for a chart definition: pick the dataset, edit each series (type and fields first),
+   then the chart's own options. It edits the JSON object it is given and raises Changed after every edit.
+   Built in the docs site with a future editor component in mind; not part of 1.0. *@
+@using System.Text.Json.Nodes
+@using RioCharts.Core.Definitions
+
+<div class="pe">
+    <input class="pe-search" type="search" placeholder="Search options, e.g. legend, format, stack" aria-label="Search options"
+           value="@_search" @oninput="e => _search = e.Value?.ToString()" />
+
+    @if (Definition is null)
+    {
+        <p class="pe-description">The JSON has an error; fix it to edit the options here.</p>
+    }
+    else
+    {
+        var seriesList = DefinitionProperties.List(Definition, "series");
+        var hasInline = Definition["data"] is JsonArray { Count: > 0 };
+        var selected = seriesList is { Count: > 0 } ? seriesList[Math.Min(_series, seriesList.Count - 1)] as JsonObject : null;
+
+        @if (Matches("dataset"))
+        {
+            <div class="pe-row @(Definition["dataset"] is null ? null : "pe-set")">
+                <label class="pe-label" for="pe-dataset">dataset</label>
+                <div class="pe-input">
+                    <select id="pe-dataset" value="@(Definition["dataset"]?.ToString() ?? "")" @onchange="SetDataset">
+                        @if (hasInline || Definition["dataset"] is null)
+                        {
+                            <option value="">@(hasInline ? "inline rows (in the JSON)" : "(none)")</option>
+                        }
+                        @foreach (var name in Datasets.Keys)
+                        {
+                            <option value="@name">@name</option>
+                        }
+                    </select>
+                </div>
+                <p class="pe-description">@DefinitionProperties.Root.Child("dataset")?.Description</p>
+            </div>
+        }
+
+        <h4 class="pe-heading">Series</h4>
+        <div class="pe-tabs" role="tablist" aria-label="Series">
+            @if (seriesList is not null)
+            {
+                @for (var i = 0; i < seriesList.Count; i++)
+                {
+                    var index = i;
+                    var s = seriesList[index] as JsonObject;
+                    var active = ReferenceEquals(s, selected);
+                    <button type="button" role="tab" aria-selected="@(active ? "true" : "false")" class="@(active ? "active" : null)"
+                            @onclick="() => _series = index">
+                        @(s?["name"]?.ToString() ?? s?["y"]?.ToString() ?? $"Series {index + 1}") <span class="pe-count">@(s?["type"]?.ToString() ?? "line")</span>
+                    </button>
+                }
+            }
+            <button type="button" class="pe-add" @onclick="AddSeries">Add series</button>
+        </div>
+
+        @if (selected is not null)
+        {
+            <PropertyGroup Target="selected" Properties="SeriesProperty.Properties" Dataset="DatasetFor(selected)" Search="@_search"
+                           Pinned="SeriesPinned" MoreLabel="More series options" Changed="Changed" />
+            @if (seriesList!.Count > 1)
+            {
+                <button type="button" class="pe-link" @onclick="() => RemoveSeries(selected)">Remove this series</button>
+            }
+        }
+
+        <h4 class="pe-heading">Chart</h4>
+        <PropertyGroup Target="Definition" Properties="ChartProperties" Dataset="DatasetFor(null)" Search="@_search"
+                       Pinned="ChartPinned" MoreLabel="More chart options" Changed="Changed" />
+    }
+</div>
+
+@code {
+    /// <summary>The definition as JSON; null while the text is not valid JSON.</summary>
+    [Parameter] public JsonObject? Definition { get; set; }
+
+    /// <summary>The datasets the dataset picker offers and the field pickers read.</summary>
+    [Parameter, EditorRequired] public IReadOnlyDictionary<string, ChartDataset> Datasets { get; set; } = default!;
+
+    /// <summary>Raised after every edit of <see cref="Definition"/>.</summary>
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private static readonly DefinitionProperty SeriesProperty = DefinitionProperties.Root.Child("series")!;
+
+    // Handled above (dataset, series) or left to the JSON (inline rows, format version).
+    private static readonly IReadOnlyList<DefinitionProperty> ChartProperties =
+        [.. DefinitionProperties.Root.Properties.Where(p => p.Name is not ("dataset" or "series" or "data" or "version"))];
+
+    private static readonly IReadOnlyList<string> SeriesPinned = ["type", "x", "y", "aggregate", "timeBucket", "groupBy", "name", "stack"];
+    private static readonly IReadOnlyList<string> ChartPinned = ["title", "horizontal"];
+
+    private string? _search;
+    private int _series;
+
+    private bool Matches(string name) => DefinitionProperties.Root.Child(name)?.Matches(_search) ?? false;
+
+    private ChartDataset? DatasetFor(JsonObject? series) => DefinitionProperties.DatasetOf(Definition!, series, Datasets);
+
+    private Task SetDataset(ChangeEventArgs e)
+    {
+        var name = e.Value?.ToString();
+        if (string.IsNullOrEmpty(name))
+        {
+            Definition!.Remove("dataset");
+        }
+        else
+        {
+            Definition!["dataset"] = name;
+            Definition.Remove("data"); // a dataset replaces the inline rows
+        }
+
+        return Changed.InvokeAsync();
+    }
+
+    private Task AddSeries()
+    {
+        var list = DefinitionProperties.List(Definition!, "series", create: true)!;
+        // A copy of the last series is the likeliest start (same x, type and buckets); otherwise a line.
+        var copy = list.Count > 0 && list[^1] is JsonObject last ? (JsonObject)last.DeepClone() : new JsonObject { ["type"] = "line" };
+        copy.Remove("id");
+        copy.Remove("name");
+        list.Add(copy);
+        _series = list.Count - 1;
+        return Changed.InvokeAsync();
+    }
+
+    private Task RemoveSeries(JsonObject series)
+    {
+        DefinitionProperties.List(Definition!, "series")?.Remove(series);
+        _series = Math.Max(0, _series - 1);
+        return Changed.InvokeAsync();
+    }
+
+    /// <summary>Shows the first series again, e.g. after a new definition was loaded.</summary>
+    public void Reset() => _series = 0;
+}

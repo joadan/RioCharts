@@ -1,6 +1,10 @@
 @page "/definitions"
 @page "/specs"
 @using RioCharts.Core.Definitions
+@using RioCharts.Docs.Editor
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@inject IJSRuntime JS
 
 <PageTitle>Chart definitions · RioCharts for Blazor and .NET</PageTitle>
 
@@ -8,12 +12,14 @@
 <p class="lead">
     Describe a chart as JSON: a small object that names a dataset and its fields, easy for AI agents to write and easy to save. The same
     definition renders with <code>&lt;RioChart Definition="definition" Datasets="datasets" /&gt;</code>, on the server, or through the
-    <a href="ai">create_chart tool</a>. Edit the definition below; it is parsed, validated and drawn in your browser.
+    <a href="ai">create_chart tool</a>. Below, set the options in the panel or edit the JSON, with our data or your own; it is parsed,
+    validated and drawn in your browser.
 </p>
 <p>
     The definition holds no data itself: it refers to a <strong>dataset</strong> by name and to its <strong>fields</strong> (columns) by name.
     Your app passes the datasets in (see <a href="definitions#datasets">where the data comes from</a>), or a small definition carries its own rows in
-    <code>"data"</code>. The panel above the editor shows the datasets this page has.
+    <code>"data"</code>. The panel above the editor shows the datasets this page has, and <strong>Your data</strong> adds a CSV or JSON file
+    of your own: it is read in your browser and never leaves it.
 </p>
 
 <section class="example">
@@ -36,11 +42,38 @@
                     <code>@ds.Name</code>@if (ds.Name == UsedDataset()) {<span class="spec-data-used">used by the definition</span>}
                 </button>
             }
+            <button role="tab" aria-selected="@(_uploading ? "true" : "false")" class="@(_uploading ? "active" : null)" @onclick="ToggleUpload">
+                Your data
+            </button>
         </div>
+        @if (_uploading)
+        {
+            <div class="spec-upload">
+                <p class="spec-data-about">
+                    A CSV file with a header row, or a JSON array of objects. It is read here, in your browser, and never sent anywhere
+                    (usage statistics stop while you are here, see <a href="privacy">Privacy</a>); the playground then starts a chart from
+                    its first fields.
+                </p>
+                <InputFile accept=".csv,.json,.txt,text/csv,application/json" OnChange="Upload" />
+                <details>
+                    <summary>Or paste CSV or JSON</summary>
+                    <textarea class="spec-paste" spellcheck="false" aria-label="Data to paste (CSV or JSON)" @bind="_pasted"></textarea>
+                    <button class="small" @onclick="Paste">Use this data</button>
+                </details>
+                @if (_uploadError is not null)
+                {
+                    <p class="spec-messages errors">@_uploadError</p>
+                }
+            </div>
+        }
         <p class="spec-data-about">
             @if (shown.Name == "inline")
             {
                 <text>Rows written in the definition itself (<code>"data": [ ... ]</code>), for a few values an agent already has.</text>
+            }
+            else if (_uploaded.ContainsKey(shown.Name))
+            {
+                <text>Your data, read in your browser. It stays on this page and is gone when you leave it.</text>
             }
             else
             {
@@ -77,39 +110,46 @@
         }
     </div>
 
-    @* A transparent textarea over a highlighted copy of its text. Both wrap the same way and the
-       highlighted copy sets the height, so they stay aligned without scroll syncing. *@
-    <div class="spec-editor">
-        <pre aria-hidden="true"><code>@((MarkupString)_highlighted)</code></pre>
-        <textarea spellcheck="false" aria-label="Chart definition (JSON)" @bind="_json" @bind:event="oninput" @bind:after="Render"></textarea>
-    </div>
+    <div class="playground-grid">
+        <div class="playground-options">
+            <DefinitionEditor @ref="_editor" Definition="_definition" Datasets="AllDatasets" Changed="FromEditor" />
+        </div>
+        <div class="playground-output">
+            <div class="example-live">
+                @if (_spec is not null)
+                {
+                    <RioChart TItem="object" Definition="_spec" Datasets="AllDatasets" Height="320" Zoomable="true" />
+                }
+            </div>
 
-    <div class="example-live">
-        @if (_spec is not null)
-        {
-            <RioChart TItem="object" Definition="_spec" Datasets="DefinitionDatasets.ByName" Height="320" Zoomable="true" />
-        }
-    </div>
-
-    @if (_errors.Count > 0)
-    {
-        <ul class="spec-messages errors">
-            @foreach (var error in _errors)
+            @if (_errors.Count > 0)
             {
-                <li>@error</li>
+                <ul class="spec-messages errors">
+                    @foreach (var error in _errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
             }
-        </ul>
-    }
 
-    @if (_warnings.Count > 0)
-    {
-        <ul class="spec-messages">
-            @foreach (var warning in _warnings)
+            @if (_warnings.Count > 0)
             {
-                <li>@warning</li>
+                <ul class="spec-messages">
+                    @foreach (var warning in _warnings)
+                    {
+                        <li>@warning</li>
+                    }
+                </ul>
             }
-        </ul>
-    }
+
+            @* A transparent textarea over a highlighted copy of its text. Both wrap the same way and the
+               highlighted copy sets the height, so they stay aligned without scroll syncing. *@
+            <div class="spec-editor">
+                <pre aria-hidden="true"><code>@((MarkupString)_highlighted)</code></pre>
+                <textarea spellcheck="false" aria-label="Chart definition (JSON)" @bind="_json" @bind:event="oninput" @bind:after="FromText"></textarea>
+            </div>
+        </div>
+    </div>
 </div>
 </section>
 
@@ -244,7 +284,7 @@
     /// <summary>The playground's datasets, plus the definition's inline rows when it has some.</summary>
     private IEnumerable<ChartDataset> Datasets()
     {
-        foreach (var ds in DefinitionDatasets.ByName.Values)
+        foreach (var ds in AllDatasets.Values)
         {
             yield return ds;
         }
@@ -293,7 +333,141 @@
     {
         _picked = null; // show the dataset the new example uses
         _json = json;
+        _editor?.Reset();
+        FromText();
+    }
+
+    private DefinitionEditor? _editor;
+
+    /// <summary>The definition as JSON for the property panel; null while the text is not valid JSON.</summary>
+    private JsonObject? _definition;
+
+    /// <summary>The JSON text was edited: the panel shows what it now says.</summary>
+    private void FromText()
+    {
+        _definition = DefinitionProperties.Read(_json);
         Render();
+    }
+
+    /// <summary>An option was set in the panel: the JSON text is written from it.</summary>
+    private void FromEditor()
+    {
+        DefinitionProperties.Prune(_definition!);
+        _json = DefinitionProperties.Write(_definition!);
+        Render();
+    }
+
+    // ----- Your own data: read in the browser, kept only on this page -----
+
+    private const long MaxUploadBytes = 10 * 1024 * 1024;
+    private readonly Dictionary<string, ChartDataset> _uploaded = new(StringComparer.OrdinalIgnoreCase);
+    private bool _uploading;
+    private string? _pasted;
+    private string? _uploadError;
+
+    private IReadOnlyDictionary<string, ChartDataset> AllDatasets =>
+        _uploaded.Count == 0
+            ? DefinitionDatasets.ByName
+            : DefinitionDatasets.ByName.Values.Concat(_uploaded.Values).ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+
+    private async Task ToggleUpload()
+    {
+        _uploading = !_uploading;
+        if (_uploading)
+        {
+            await JS.InvokeVoidAsync("rioDocs.stopClarity");
+        }
+    }
+
+    private async Task Upload(InputFileChangeEventArgs e)
+    {
+        _uploadError = null;
+        if (e.File.Size > MaxUploadBytes)
+        {
+            _uploadError = $"{e.File.Name} is {e.File.Size / 1024 / 1024} MB; the playground takes files up to 10 MB.";
+            return;
+        }
+
+        using var reader = new StreamReader(e.File.OpenReadStream(MaxUploadBytes));
+        var title = Path.GetFileNameWithoutExtension(e.File.Name);
+        UseData(title, await reader.ReadToEndAsync(), e.File.Name, title);
+    }
+
+    private void Paste()
+    {
+        _uploadError = null;
+        if (string.IsNullOrWhiteSpace(_pasted))
+        {
+            _uploadError = "Paste CSV with a header row, or a JSON array of objects, first.";
+            return;
+        }
+
+        UseData("pasted", _pasted, "Pasted data", title: null);
+    }
+
+    /// <summary>Reads CSV or JSON into a dataset and starts a chart from it.</summary>
+    private void UseData(string fileName, string text, string description, string? title)
+    {
+        var name = DatasetName(fileName);
+        ChartDataset dataset;
+        try
+        {
+            var trimmed = text.TrimStart();
+            if (trimmed.StartsWith('[') || trimmed.StartsWith('{'))
+            {
+                using var doc = JsonDocument.Parse(text, new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
+                // A JSON object with an array in it (e.g. { "rows": [...] }) reads the first array.
+                var rows = doc.RootElement.ValueKind == JsonValueKind.Object
+                    ? doc.RootElement.EnumerateObject().Select(p => p.Value).FirstOrDefault(v => v.ValueKind == JsonValueKind.Array)
+                    : doc.RootElement;
+                if (rows.ValueKind != JsonValueKind.Array)
+                {
+                    _uploadError = "The JSON has no array of rows; use [ { \"field\": value, ... }, ... ].";
+                    return;
+                }
+
+                dataset = ChartDataset.FromJson(name, rows, description);
+            }
+            else
+            {
+                dataset = ChartDataset.FromCsv(name, text, description);
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or FormatException or ArgumentException or InvalidOperationException)
+        {
+            _uploadError = $"Could not read the data: {ex.Message}";
+            return;
+        }
+
+        if (dataset.RowCount == 0 || dataset.Fields.Count == 0)
+        {
+            _uploadError = "No rows found. A CSV file needs a header row and at least one row of values.";
+            return;
+        }
+
+        _uploaded[name] = dataset;
+        _uploading = false;
+        _pasted = null;
+        _picked = name;
+        _definition = DefinitionProperties.Starter(dataset);
+        if (title is not null)
+        {
+            _definition["title"] = title;
+        }
+        _editor?.Reset();
+        FromEditor();
+    }
+
+    /// <summary>A dataset name from a file name: lower case letters, digits and dashes, never one of the page's own.</summary>
+    private static string DatasetName(string fileName)
+    {
+        var name = new string([.. fileName.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-')]).Trim('-');
+        if (name.Length == 0)
+        {
+            name = "data";
+        }
+
+        return DefinitionDatasets.ByName.ContainsKey(name) ? "my-" + name : name;
     }
 
     private void Render()
@@ -307,7 +481,7 @@
         _normalized = _spec is null ? null : ChartDefinitionJson.Serialize(_spec);
         if (_spec is not null)
         {
-            var bound = ChartDefinitionBinder.Bind(_spec, DefinitionDatasets.ByName);
+            var bound = ChartDefinitionBinder.Bind(_spec, AllDatasets);
             _errors.AddRange(bound.Errors.Select(e => e.ToString()));
             _warnings.AddRange(bound.Warnings);
         }

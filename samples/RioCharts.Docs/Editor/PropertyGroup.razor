@@ -1,0 +1,152 @@
+@* The options of one JSON object: the pinned ones first, the other plain options folded under "More options",
+   then a folding section per child object (axis, legend...) and per list (annotations, more y axes...).
+   A search shows only the options that match it, with their sections open. *@
+@using System.Text.Json.Nodes
+@using RioCharts.Core.Definitions
+
+@{
+    var searching = !string.IsNullOrWhiteSpace(Search);
+    var shown = Properties.Where(p => p.Matches(Search)).ToList();
+    var pinned = shown.Where(p => Pinned.Contains(p.Name) && IsPlain(p)).OrderBy(p => Pinned.ToList().IndexOf(p.Name)).ToList();
+    var more = shown.Where(p => !Pinned.Contains(p.Name) && IsPlain(p)).ToList();
+    var sections = shown.Where(p => !IsPlain(p)).ToList();
+}
+
+@foreach (var property in pinned)
+{
+    <PropertyField Target="Target" Property="property" Dataset="Dataset" Changed="Changed" />
+}
+
+@if (more.Count > 0)
+{
+    var set = more.Count(p => Target[p.Name] is not null);
+    <details class="pe-section" open="@(searching || pinned.Count == 0)">
+        <summary>@MoreLabel <span class="pe-count">@more.Count@(set > 0 ? $", {set} set" : "")</span></summary>
+        @foreach (var property in more)
+        {
+            <PropertyField Target="Target" Property="property" Dataset="Dataset" Changed="Changed" />
+        }
+    </details>
+}
+
+@foreach (var section in sections)
+{
+    var inner = section.MatchesSelf(Search) ? null : Search;
+    <details class="pe-section" open="@searching">
+        <summary>
+            @section.Name
+            @if (Target[section.Name] is JsonArray { Count: > 0 } items)
+            {
+                <span class="pe-count">@items.Count</span>
+            }
+            else if (Target[section.Name] is JsonObject { Count: > 0 } child)
+            {
+                <span class="pe-count">@child.Count set</span>
+            }
+        </summary>
+        @if (!string.IsNullOrEmpty(section.Description))
+        {
+            <p class="pe-description">@section.Description</p>
+        }
+
+        @switch (section.Kind)
+        {
+            case PropertyKind.Object:
+                <PropertyGroup Target="ChildObject(section.Name)" Properties="section.Properties" Dataset="Dataset" Search="@inner"
+                               MoreLabel="Options" Changed="() => Attach(section.Name)" />
+                break;
+
+            case PropertyKind.ObjectList:
+                var list = DefinitionProperties.List(Target, section.Name);
+                @if (list is not null)
+                {
+                    @for (var i = 0; i < list.Count; i++)
+                    {
+                        var index = i;
+                        if (list[index] is JsonObject item)
+                        {
+                            <div class="pe-item">
+                                <div class="pe-item-head">
+                                    <span>@section.Name[@index]</span>
+                                    <button type="button" class="pe-link" @onclick="() => Remove(section.Name, index)">Remove</button>
+                                </div>
+                                <PropertyGroup Target="item" Properties="section.Properties" Dataset="Dataset" Search="@inner"
+                                               Pinned="ItemPinned" MoreLabel="Options" Changed="Changed" />
+                            </div>
+                        }
+                    }
+                }
+                <button type="button" class="pe-add" @onclick="() => Add(section.Name)">Add to @section.Name</button>
+                break;
+
+            default:
+                <p class="pe-description">Edit this one in the JSON.</p>
+                break;
+        }
+    </details>
+}
+
+@code {
+    /// <summary>The JSON object these options belong to.</summary>
+    [Parameter, EditorRequired] public JsonObject Target { get; set; } = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<DefinitionProperty> Properties { get; set; } = [];
+
+    [Parameter] public ChartDataset? Dataset { get; set; }
+
+    [Parameter] public string? Search { get; set; }
+
+    /// <summary>Options shown first and unfolded, in this order.</summary>
+    [Parameter] public IReadOnlyList<string> Pinned { get; set; } = [];
+
+    [Parameter] public string MoreLabel { get; set; } = "More options";
+
+    [Parameter] public EventCallback Changed { get; set; }
+
+    // Annotations, filters and color bands: the options that say what an item is come first.
+    private static readonly IReadOnlyList<string> ItemPinned = ["type", "field", "op", "value", "axis", "from", "to", "label", "above", "below", "color", "id", "title"];
+
+    // A child object the JSON does not have yet: edited detached, and added to the JSON when something is set.
+    private readonly Dictionary<string, JsonObject> _detached = [];
+    private JsonObject? _detachedFor;
+
+    private static bool IsPlain(DefinitionProperty p) => p.Kind is not (PropertyKind.Object or PropertyKind.ObjectList or PropertyKind.Json);
+
+    private JsonObject ChildObject(string name)
+    {
+        if (!ReferenceEquals(_detachedFor, Target))
+        {
+            _detached.Clear();
+            _detachedFor = Target;
+        }
+
+        if (DefinitionProperties.Object(Target, name) is { } attached)
+        {
+            return attached;
+        }
+
+        return _detached.TryGetValue(name, out var detached) ? detached : _detached[name] = [];
+    }
+
+    private Task Attach(string name)
+    {
+        if (_detached.Remove(name, out var child) && child.Parent is null && child.Count > 0)
+        {
+            Target[name] = child;
+        }
+
+        return Changed.InvokeAsync();
+    }
+
+    private Task Add(string name)
+    {
+        DefinitionProperties.List(Target, name, create: true)!.Add(new JsonObject());
+        return Changed.InvokeAsync();
+    }
+
+    private Task Remove(string name, int index)
+    {
+        DefinitionProperties.List(Target, name)?.RemoveAt(index);
+        return Changed.InvokeAsync();
+    }
+}
