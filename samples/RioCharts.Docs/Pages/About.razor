@@ -1,0 +1,50 @@
+@page "/about"
+@using RioCharts.Docs.Layout
+
+<PageTitle>About · RioCharts for Blazor and .NET</PageTitle>
+
+<h1>About RioCharts</h1>
+<div class="about-intro">
+    <div class="about-logo"><RioLogo Size="88" /></div>
+    <p class="lead">
+        RioCharts is an open-source (MIT) chart library for .NET, Blazor first. It is named after my son Rio, and <i>río</i>
+        happens to mean river: fitting for flowing lines and time series. The blue parrot is a nod to his favorite movie.
+    </p>
+</div>
+
+<h2 id="status">Status</h2>
+<p>
+    RioCharts is a 1.0 release candidate: the API is frozen, and until 1.0 ships only fixes and non-breaking additions go
+    in. From 1.0, updates within 1.x never break your code or your saved charts; <a href="versions">Versions and support</a>
+    has the details, and the <a href="https://github.com/joadan/RioCharts/blob/master/CHANGELOG.md">changelog</a> lists
+    every change. Issues are welcome, but there is no roadmap promise.
+</p>
+
+<h2 id="how-it-is-built">How it is built</h2>
+<p>
+    Human-led, AI-built: the design is ours, and most code is written by AI coding agents, then tested and
+    snapshot-checked before it ships. The source is on <a href="https://github.com/joadan/RioCharts">GitHub</a>.
+</p>
+
+<h2 id="this-site">This site</h2>
+<p>
+    Every chart here is rendered live in your browser with Blazor WebAssembly.
+    @if (LibraryVersion.Unreleased)
+    {
+        <text>
+            The latest package on NuGet is @LibraryVersion.LatestRelease; this site runs a newer build from master
+            (@LibraryVersion.Version, @CommitText), so features under "Unreleased" in the changelog are not in the package yet.
+        </text>
+    }
+    else if (LibraryVersion.Version.Length > 0)
+    {
+        <text>It runs version @LibraryVersion.Version (@CommitText).</text>
+    }
+    See <a href="privacy">Privacy</a> for what the site records.
+</p>
+
+@code {
+    private static RenderFragment CommitText => LibraryVersion.Commit is { } commit
+        ? @<text>commit <a href="https://github.com/joadan/RioCharts/commit/@commit">@commit</a></text>
+        : @<text>unknown commit</text>;
+}

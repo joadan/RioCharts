@@ -735,25 +735,107 @@ table.docs tr:last-child td {
 }
 
 .site-footer {
-    display: grid;
-    gap: 10px;
-    margin-top: 56px;
-    padding-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    margin-top: 48px;
+    padding: 16px 0;
     border-top: 1px solid var(--doc-border);
     color: var(--doc-muted);
     font-size: 13px;
 }
 
-.site-footer p {
-    max-width: 560px;
+.footer-meta {
+    color: var(--doc-muted);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ----- About ----- */
+
+.about-intro {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin: 0 0 36px;
+    padding: 24px 28px;
+    border: 1px solid var(--doc-border);
+    border-radius: var(--doc-radius);
+    background:
+        radial-gradient(420px 200px at 0% 0%, rgba(239, 177, 24, 0.16), transparent 70%),
+        radial-gradient(420px 220px at 100% 100%, var(--doc-accent-soft), transparent 70%),
+        var(--doc-surface);
+    box-shadow: var(--doc-shadow);
+}
+
+.about-intro .lead {
     margin: 0;
+    color: var(--doc-text);
+    font-size: 18px;
     line-height: 1.6;
 }
 
-.footer-version {
+.about-logo {
+    flex: none;
+}
+
+.about-logo .rio-logo {
     display: block;
-    margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+    border-radius: 20px;
+    box-shadow: 0 10px 24px rgba(239, 177, 24, 0.35);
+}
+
+/* Rio turns to greet the reader once when the page opens (the loading screen's turn, run once), and again on
+   hover (the header's turn). The hover rule keeps the greeting first in its list, so leaving the logo does not
+   replay the greeting. */
+.about-logo .rio-logo-side { animation: boot-logo-side 2.4s step-end 0.5s; }
+.about-logo .rio-logo-quarter { animation: boot-logo-quarter 2.4s step-end 0.5s; }
+.about-logo .rio-logo-front { animation: boot-logo-front 2.4s step-end 0.5s; }
+.about-logo .rio-logo-eyes { animation: boot-logo-blink 2.4s ease-in-out 0.5s; }
+
+.about-logo:hover .rio-logo-side { animation: boot-logo-side 2.4s step-end 0.5s, rio-logo-side 1.5s step-end; }
+.about-logo:hover .rio-logo-quarter { animation: boot-logo-quarter 2.4s step-end 0.5s, rio-logo-quarter 1.5s step-end; }
+.about-logo:hover .rio-logo-front { animation: boot-logo-front 2.4s step-end 0.5s, rio-logo-front 1.5s step-end; }
+.about-logo:hover .rio-logo-eyes { animation: boot-logo-blink 2.4s ease-in-out 0.5s, rio-logo-blink 1.5s ease-in-out; }
+
+@media (prefers-reduced-motion: reduce) {
+    .about-logo .rio-logo-side,
+    .about-logo .rio-logo-quarter,
+    .about-logo .rio-logo-front,
+    .about-logo .rio-logo-eyes {
+        animation: none;
+    }
+
+    .about-logo:hover .rio-logo-side { animation: none, rio-logo-side 1.5s step-end; }
+    .about-logo:hover .rio-logo-quarter { animation: none, rio-logo-quarter 1.5s step-end; }
+    .about-logo:hover .rio-logo-front { animation: none, rio-logo-front 1.5s step-end; }
+    .about-logo:hover .rio-logo-eyes { animation: none, rio-logo-blink 1.5s ease-in-out; }
+}
+
+@media (max-width: 600px) {
+    .about-intro {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .about-logo .rio-logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+    }
+}
+
+.site .footer-meta a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.site .footer-meta a:hover {
+    color: var(--doc-text);
 }
 
 .footer-brand {
@@ -771,7 +853,7 @@ table.docs tr:last-child td {
 .footer-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 18px;
+    gap: 16px;
 }
 
 .site .footer-links a {
@@ -793,7 +875,7 @@ table.docs tr:last-child td {
     width: calc(100% - 32px);
     max-width: 1200px;
     margin: 40px auto 0;
-    padding: 28px 0 48px;
+    padding: 16px 0 24px;
 }
 
 .hero {
