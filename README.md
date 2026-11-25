@@ -18,7 +18,7 @@ tiny JS module only measures text and follows the pointer.
 
 > **Status: 1.0 release candidate.** The 1.0 API is frozen: until 1.0 ships only fixes and non-breaking
 > additions go in; the [changelog](CHANGELOG.md) lists every change. From 1.0, updates within 1.x never break code that uses the public API or saved chart definitions
-> ([versions and support](https://riocharts.com/versions)). It is built for our own teams' needs; issues are
+> ([versions and support](https://riocharts.com/versions)). Issues are
 > welcome, but there is no roadmap promise.
 > Human-led, AI-built: the design is ours ([Design.md](Design.md)); most code is written by AI
 > coding agents and tested and snapshot-checked before it ships.

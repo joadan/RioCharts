@@ -1,6 +1,6 @@
 # Contributing
 
-Issues are welcome. RioCharts is built for our own teams' needs, so there is no roadmap promise,
+Issues are welcome. There is no roadmap promise,
 but bug reports and small, focused pull requests help.
 
 **Open an issue first.** Until 1.0 ships, every pull request must come from an issue
