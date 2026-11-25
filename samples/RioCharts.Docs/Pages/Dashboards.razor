@@ -1,0 +1,287 @@
+@page "/dashboards"
+@using System.Text.Json.Nodes
+@using RioCharts.Core.Definitions
+@using RioCharts.Docs.Editor
+
+<PageTitle>Dashboards users configure · RioCharts for Blazor and .NET</PageTitle>
+
+<h1>Dashboards your users configure</h1>
+<p class="lead">
+    Let users build their own dashboards: each chart is a small JSON definition that names a dataset and its fields. Store it per user, draw
+    it with <code>&lt;RioChart Definition="..." /&gt;</code>, and let people change it in a form, as JSON, or by asking an AI agent. The data
+    and who may see it stay in your app.
+</p>
+<p>
+    A definition holds no data and no code: only names, types and options, checked when it is read, with errors that say what is wrong. That
+    makes it safe to save what users write, and every RioCharts 1.x reads the definitions saved today. The same definition renders in Blazor,
+    to PNG or SVG on the server, and through the AI tools.
+</p>
+
+<section class="example" id="try-it">
+    <h2><a href="dashboards#try-it" class="anchor">Try it<span class="anchor-mark" aria-hidden="true">#</span></a></h2>
+    <div class="example-text">
+        <p>
+            Four tiles from saved definitions. <strong>Edit</strong> opens the same options panel as the <a href="definitions">playground</a>,
+            <strong>Add chart</strong> starts a new one, and <strong>What is saved</strong> shows what your app would store: one JSON
+            definition per tile, nothing else.
+        </p>
+    </div>
+
+    <div class="example-card dashboard-demo">
+        <div class="dashboard-grid">
+            @foreach (var tile in _tiles)
+            {
+                var editing = tile == _editing;
+                <div class="dashboard-tile @(editing ? "editing" : null)" @key="tile">
+                    <div class="dashboard-tile-head">
+                        <span>@(tile.Json["title"]?.ToString() ?? "Untitled chart")</span>
+                        <button type="button" class="small" @onclick="() => _editing = editing ? null : tile">@(editing ? "Done" : "Edit")</button>
+                        <button type="button" class="small" @onclick="() => Remove(tile)" aria-label="Remove this chart">Remove</button>
+                    </div>
+                    <div class="dashboard-tile-body">
+                        @if (editing)
+                        {
+                            <div class="dashboard-tile-editor">
+                                <DefinitionEditor Definition="tile.Json" Datasets="DefinitionDatasets.ByName" Changed="() => Update(tile)" />
+                            </div>
+                        }
+                        <div class="dashboard-tile-chart">
+                            @if (tile.Shown is not null)
+                            {
+                                @* The tile's header shows the title, so the chart leaves it out. *@
+                                <RioChart TItem="object" Definition="tile.Shown" Datasets="DefinitionDatasets.ByName" Height="@(editing ? 320 : 220)" />
+                            }
+                            else
+                            {
+                                <ul class="spec-messages errors">
+                                    @foreach (var error in tile.Errors)
+                                    {
+                                        <li>@error</li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="dashboard-actions">
+            <button type="button" class="small" @onclick="Add">Add chart</button>
+        </div>
+        <details class="example-code">
+            <summary>
+                <svg class="chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                What is saved
+            </summary>
+            <CodeBlock Language="json" Code="@Saved()" />
+        </details>
+    </div>
+</section>
+
+<h2 id="save">Save and load definitions</h2>
+<p>
+    <code>ChartDefinitionJson.Serialize</code> writes a definition as a short JSON string with <code>"version": 1</code>; keep it per user and
+    tile, in whatever store you use. <code>ChartDefinitionJson.Parse</code> reads it back. It is tolerant (synonyms such as
+    <code>column</code> or <code>doughnut</code>, comments, trailing commas) and returns errors with the path to the problem instead of
+    throwing, so one broken tile never takes the dashboard down.
+</p>
+<CodeBlock Language="csharp" Code="@SaveCode" />
+<p>
+    Saved definitions keep working: every 1.x release reads version 1 definitions, and fields, chart types and words may be added but are
+    never removed or changed in meaning (see <a href="definitions#versions">saved definitions keep working</a>). A definition from a newer
+    version is still drawn, with a warning, without the fields this version does not know.
+</p>
+
+<h2 id="data">Give each user their data</h2>
+<p>
+    A definition refers to data only by name: a dataset and its fields. Your app decides what a name means for this user. Implement
+    <code>IChartDataSource</code>: <code>Describe</code> lists the datasets a user may chart (names, fields and descriptions, for field
+    pickers and AI agents), and <code>LoadAsync</code> loads one when a definition asks for it. Return null for a name that does not exist
+    or that this user may not see; the chart then says the dataset was not found.
+</p>
+<CodeBlock Language="csharp" Code="@SourceCode" />
+<p>
+    Then load what a tile needs and draw it. <code>DefinitionErrors</code> on the chart lists binding problems (a field that is not in the
+    dataset, a text field used as a value), and the chart shows them in place of the plot.
+</p>
+<CodeBlock Language="razor" Code="@TileCode" />
+
+<h2 id="editing">Let users edit</h2>
+<ul>
+    <li>
+        <strong>A form.</strong> <code>ChartDefinitionJson.Schema()</code> is the JSON schema of a definition, with a description of every option, its
+        type and the allowed words. Build your own form from it in your design system, as the options panel on this page and in the
+        <a href="definitions">playground</a> does (its source is in
+        <a href="https://github.com/joadan/RioCharts/tree/master/samples/RioCharts.Docs/Editor">samples/RioCharts.Docs/Editor</a>; copy it
+        as a start). A ready-made editor component is planned after 1.0.
+    </li>
+    <li>
+        <strong>JSON.</strong> For power users and admins: the format is small and readable, and the parse errors say what to fix.
+    </li>
+    <li>
+        <strong>An AI agent.</strong> "Make it a stacked bar per channel": <code>ChartTool</code> gives a model the create_chart tool with
+        your datasets, and the result is the same definition, validated, to save in the tile. See <a href="ai">AI agents and MCP</a>.
+    </li>
+</ul>
+
+<h2 id="limits">Safe to store what users write</h2>
+<p>
+    A definition is data, never code: there are no expressions or scripts, and field names are only looked up in the datasets you load.
+    The parser caps what one definition can ask for (at most @ChartDefinitionJson.MaxSeries series, @ChartDefinitionJson.MaxAnnotations
+    annotations and @ChartDefinitionJson.MaxInlineRows inline rows), and text from a definition is escaped wherever it is drawn. Check
+    sizes as you would for any user input before you store it.
+</p>
+
+<h2 id="more">More for dashboards</h2>
+<ul>
+    <li><strong>Many charts on a page:</strong> <code>Interactive="false"</code> draws plain SVG with no JS (see <a href="compact">compact charts</a>), and <code>Compact="true"</code> makes KPI tiles and sparklines.</li>
+    <li><strong>Linked tiles:</strong> charts with the same <code>Group</code> share the crosshair and, when zoomable, the zoom, for tiles over the same time range.</li>
+    <li><strong>Reports by email:</strong> bind the same definition on the server and export it, with <code>ChartExport.ToPng</code> (see <a href="server-export">server-side export</a>).</li>
+    <li><strong>Theme and language:</strong> tiles follow the app's <a href="theming">theme</a> and the user's <a href="languages">culture</a>; nothing about either is stored in the definition.</li>
+</ul>
+<CodeBlock Language="csharp" Code="@ReportCode" />
+
+@code {
+    private sealed class Tile(JsonObject json)
+    {
+        public JsonObject Json { get; } = json;
+        public ChartDefinition? Spec { get; set; }
+
+        /// <summary>What the tile draws: the definition without its title, which the tile's header shows. Made once per edit.</summary>
+        public ChartDefinition? Shown { get; set; }
+        public List<string> Errors { get; set; } = [];
+    }
+
+    private static readonly string[] Saved0 =
+    [
+        """
+        { "dataset": "shop", "title": "Orders per day", "series": [{ "type": "column", "x": "timestamp", "y": "orders", "timeBucket": "day",
+          "aggregate": "sum", "groupBy": "channel", "stack": "channels" }] }
+        """,
+        """
+        { "dataset": "sales", "title": "Revenue per category (k€)", "horizontal": true,
+          "series": [{ "type": "bar", "x": "category", "y": "revenue", "aggregate": "sum", "sort": "desc" }] }
+        """,
+        """
+        { "dataset": "shop", "title": "Revenue per channel",
+          "series": [{ "type": "pie", "x": "channel", "y": "revenue", "aggregate": "sum", "innerRadius": 0.6, "format": "#,0 €" }] }
+        """,
+        """
+        { "dataset": "shop", "title": "Response time", "y": { "title": "ms" },
+          "series": [{ "type": "line", "x": "timestamp", "y": "responseMs", "timeBucket": "hour", "aggregate": "average", "name": "Average" }],
+          "annotations": [{ "value": 200, "label": "Goal" }] }
+        """,
+    ];
+
+    private readonly List<Tile> _tiles = [.. Saved0.Select(json => Parse(DefinitionProperties.Read(json)!))];
+    private Tile? _editing;
+
+    private static Tile Parse(JsonObject json)
+    {
+        var tile = new Tile(json);
+        Refresh(tile);
+        return tile;
+    }
+
+    private static void Refresh(Tile tile)
+    {
+        var parsed = ChartDefinitionJson.Parse(tile.Json.ToJsonString());
+        tile.Spec = parsed.Definition;
+        tile.Shown = parsed.Definition is null ? null : parsed.Definition with { Title = null };
+        tile.Errors = [.. parsed.Errors.Select(e => e.ToString())];
+    }
+
+    private static void Update(Tile tile)
+    {
+        DefinitionProperties.Prune(tile.Json);
+        Refresh(tile);
+    }
+
+    private void Add()
+    {
+        var json = DefinitionProperties.Starter(DefinitionDatasets.ByName["sales"]);
+        json["title"] = "New chart";
+        var tile = Parse(json);
+        _tiles.Add(tile);
+        _editing = tile;
+    }
+
+    private void Remove(Tile tile)
+    {
+        _tiles.Remove(tile);
+        if (_editing == tile)
+        {
+            _editing = null;
+        }
+    }
+
+    /// <summary>What the app would store: each tile's definition, as ChartDefinitionJson.Serialize writes it.</summary>
+    private string Saved() =>
+        "[\n" + string.Join(",\n", _tiles.Select(t => t.Spec is null ? t.Json.ToJsonString() : ChartDefinitionJson.Serialize(t.Spec))) + "\n]";
+
+    private const string SaveCode = """
+        // Save: a short JSON string per tile.
+        string json = ChartDefinitionJson.Serialize(definition);
+        await tiles.SaveAsync(userId, tileId, json);
+
+        // Load: never throws; each error names the path to the problem (e.g. series[0].type) and what is valid.
+        var parsed = ChartDefinitionJson.Parse(await tiles.LoadAsync(userId, tileId));
+        if (!parsed.Success)
+        {
+            ShowProblem(parsed.Errors);
+        }
+        """;
+
+    private const string SourceCode = """
+        public sealed class ShopData(IOrderRepository orders, ICurrentUser user) : IChartDataSource
+        {
+            // What this user may chart: names, fields and descriptions; no values needed here.
+            public IReadOnlyList<ChartDataset> Describe() => user.CanSeeOrders
+                ? [new ChartDataset("orders",
+                    [
+                        new DataField("timestamp", FieldType.Time, []),
+                        new DataField("channel", FieldType.Text, [], "Web, App or Marketplace"),
+                        new DataField("orders", FieldType.Number, []),
+                    ],
+                    "Orders per hour and sales channel")]
+                : [];
+
+            public async Task<ChartDataset?> LoadAsync(string name, CancellationToken ct = default) => name switch
+            {
+                "orders" when user.CanSeeOrders => ChartDataset.FromItems("orders",
+                    await orders.PerHourAsync(user.StoreId, ct), "Orders per hour and sales channel"),
+                _ => null, // unknown, or not for this user
+            };
+        }
+        """;
+
+    private const string TileCode = """
+        <RioChart TItem="object" Definition="tile.Definition" Datasets="tile.Datasets" Height="240" />
+
+        @code {
+            // Load the datasets the definition names (the chart's and each series' own).
+            async Task LoadAsync(Tile tile)
+            {
+                var names = tile.Definition.Series.Select(s => s.Dataset ?? tile.Definition.Dataset)
+                    .OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase);
+                var datasets = new Dictionary<string, ChartDataset>(StringComparer.OrdinalIgnoreCase);
+                foreach (var name in names)
+                {
+                    if (await data.LoadAsync(name) is { } dataset)
+                    {
+                        datasets[name] = dataset;
+                    }
+                }
+
+                tile.Datasets = datasets;
+            }
+        }
+        """;
+
+    private const string ReportCode = """
+        // The same saved tile as a PNG for a weekly email (RioCharts.Skia).
+        var definition = ChartDefinitionJson.Parse(json).Definition!;
+        var bound = await ChartDefinitionBinder.BindAsync(definition, new ShopData(orders, user));
+        byte[] png = ChartExport.ToPng(bound.Definition, bound.Data, new ExportOptions { Width = 640, Height = 320 });
+        """;
+}

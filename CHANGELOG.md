@@ -9,6 +9,9 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
   searchable, with pickers for the dataset's fields; the panel and the JSON stay in sync. **Your data** charts a CSV or
   JSON file of your own, read in the browser and never sent anywhere (usage statistics stop when you open it). No
   library changes.
+- Docs site: a page on dashboards your users configure (https://riocharts.com/dashboards). It covers saving a definition
+  per user and tile, giving each user their data with `IChartDataSource`, ways to let users edit, and why it is safe to
+  store what users write, with a live dashboard whose tiles you can edit, add and remove.
 
 ## 1.0.42-rc (2026-11-25)
 
