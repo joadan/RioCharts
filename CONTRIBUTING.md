@@ -3,9 +3,9 @@
 Issues are welcome. RioCharts is built for our own teams' needs, so there is no roadmap promise,
 but bug reports and small, focused pull requests help.
 
-**Open an issue first.** While RioCharts is in preview, every pull request must come from an issue
-where the change has been discussed and agreed. Pull requests without one may be closed: APIs
-and the design still move, and agreeing first saves work on both sides.
+**Open an issue first.** Until 1.0 ships, every pull request must come from an issue
+where the change has been discussed and agreed. Pull requests without one may be closed: the 1.0
+API is frozen, and agreeing first saves work on both sides.
 
 [Design.md](Design.md) is the design: read it before adding or changing features. Where the code differs from it, that is recorded in
 [docs/implementation-notes.md](docs/implementation-notes.md).

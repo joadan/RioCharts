@@ -8,7 +8,8 @@ tiny JS module only measures text and follows the pointer.
 
 Drawn by RioCharts.Skia itself. **[See them live, with tooltips and zoom](https://riocharts.com/)**
 
-> **Status: preview of 1.0.** Until 1.0, APIs can still change; the changelog lists every break. From 1.0, updates
+> **Status: 1.0 release candidate.** The 1.0 API is frozen: until 1.0 ships only fixes and non-breaking additions go
+> in; the changelog lists every change. From 1.0, updates
 > within 1.x never break code that uses the public API or saved chart definitions
 > ([versions and support](https://riocharts.com/versions)).
 > Human-led, AI-built: the design is ours ([Design.md](https://github.com/joadan/RioCharts/blob/master/Design.md));
@@ -100,7 +101,7 @@ https://riocharts.com/llms-full.txt, or call get_usage if the riocharts MCP serv
 
 ## Packages
 
-All target .NET 10 (LTS) and .NET 11, and are previews: add `--prerelease`.
+All target .NET 10 (LTS) and .NET 11, and are release candidates until 1.0: add `--prerelease`.
 
 | Package | For |
 | --- | --- |
