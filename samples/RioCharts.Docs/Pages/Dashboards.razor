@@ -52,11 +52,15 @@
                         @if (editing)
                         {
                             <div class="dashboard-tile-editor">
-                                <DefinitionEditor Definition="tile.Json" Datasets="AllDatasets" Changed="() => Update(tile)" />
+                                <DefinitionEditor Definition="tile.Json" Datasets="AllDatasets" Changed="() => Update(tile)" ChartShown="shown => tile.NoChart = !shown" />
                             </div>
                         }
                         <div class="dashboard-tile-chart">
-                            @if (tile.Shown is not null)
+                            @if (editing && tile.NoChart)
+                            {
+                                <p class="dashboard-tile-empty">Pick fields that make a chart, and it shows here.</p>
+                            }
+                            else if (tile.Shown is not null)
                             {
                                 @* The tile's header shows the title, so the chart leaves it out. *@
                                 <RioChart TItem="object" Definition="tile.Shown" Datasets="AllDatasets" Height="@(editing ? 320 : 220)" />
@@ -158,6 +162,9 @@
 
         /// <summary>What the tile draws: the definition without its title, which the tile's header shows. Made once per edit.</summary>
         public ChartDefinition? Shown { get; set; }
+
+        /// <summary>While editing: the fields picked make no chart, so the tile shows a note instead of a chart that would not match them.</summary>
+        public bool NoChart { get; set; }
         public List<string> Errors { get; set; } = [];
     }
 

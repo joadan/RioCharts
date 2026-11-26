@@ -13,7 +13,7 @@ public sealed record ChartGoal(string Id, string Label, string Hint, string Icon
 
 /// <summary>A data slot of a chart: which definition property it sets, in words a user knows.</summary>
 public sealed record ChartSlot(string Property, string Label, string Hint, FieldType[] Accepts, SlotPart Part = SlotPart.None, bool Required = true,
-    string? NameHint = null, string? Needs = null, Func<DataField, bool>? Check = null)
+    string? NameHint = null, string? Needs = null, Func<DataField, bool>? Check = null, bool Pickable = true)
 {
     /// <summary>
     /// Whether a field may fill this slot on its own: the right type and, for slots like latitude, a fitting name or,
@@ -56,6 +56,38 @@ public sealed record ChartKind(
     string[] Sections,
     Func<ChartDefinition, SeriesOptions, ChartDataset?, bool> Is,
     Action<JsonObject, JsonObject>? Apply = null);
+
+/// <summary>
+/// A chart the picked fields can make: each field in its slot, and <paramref name="Counts"/> when the value slot
+/// counts the rows because no number was picked.
+/// </summary>
+public sealed record ChartSuggestion(ChartKind Kind, IReadOnlyList<(ChartSlot Slot, DataField Field)> Placed, bool Counts,
+    IReadOnlyList<DataField> More)
+{
+    /// <summary>Every field the chart shows: the placed ones and the further values, one series each.</summary>
+    public IEnumerable<string> Fields => Placed.Select(p => p.Field.Name).Concat(More.Select(f => f.Name));
+
+    /// <summary>What it shows in a few words: "revenue by month", "count by channel".</summary>
+    public string Caption
+    {
+        get
+        {
+            var value = Placed.FirstOrDefault(p => p.Slot.Property is "y" or "size").Field?.Name ?? (Counts ? "count" : null);
+            if (value is not null && More.Count > 0)
+            {
+                value = string.Join(", ", [value, .. More.Take(More.Count - 1).Select(f => f.Name)]) + " and " + More[^1].Name;
+            }
+
+            var along = Placed.Where(p => p.Slot.Property is not ("y" or "size")).Select(p => p.Field.Name).ToList();
+            return (value, along.Count) switch
+            {
+                (null, _) => string.Join(", ", along),
+                (_, 0) => value,
+                _ => $"{value} by {string.Join(" and ", along)}",
+            };
+        }
+    }
+}
 
 /// <summary>An option in a fine-tune section, with a label and hint for users.</summary>
 public sealed record EditorOption(OptionScope Scope, string Property, string Label, string Hint, OptionControl Control, (string Value, string Label)[]? Choices = null);
@@ -111,7 +143,7 @@ public static class ChartKinds
         new("stacked-area", "trend", "Stacked area", "area",
             [new("x", "Time", "Along the bottom. Group the rows per hour, day or month.", AnyX, SlotPart.TimeBucket),
              Value("Value", "Each area's height; the areas add up to the total."),
-             SplitBy("Stack an area for each", "The parts that add up, e.g. per sales channel.")],
+             new("groupBy", "Stack an area for each", "The parts that add up, e.g. per sales channel.", Text)],
             ["titles", "axis", "look", "legend", "lines"],
             (c, s, d) => s.Type == SeriesType.Area && s.Stack is not null,
             (c, s) => s["stack"] = "stack"),
@@ -164,7 +196,8 @@ public static class ChartKinds
         new("waterfall", "compare", "Waterfall", "waterfall",
             [new("x", "Steps", "One bar per row, in the order of the rows.", Category),
              new("y", "Change", "How much each step adds (or takes away).", Number),
-             new("total", "Total rows", "A field that marks the rows showing the running total (true, yes or 1).", Category, Required: false)],
+             new("total", "Total rows", "A field that marks the rows showing the running total (true, yes or 1).", Category, Required: false,
+                 Pickable: false)],
             ["titles", "axis", "lines"],
             (c, s, d) => s.Type == SeriesType.Waterfall),
         new("radar", "compare", "Radar", "radar",
@@ -260,7 +293,8 @@ public static class ChartKinds
         new("bullet", "single", "Against a target", "bullet",
             [new("x", "For each", "One bar per value, each against its own target.", Category, Required: false),
              Value("Value", "The bar's length."),
-             new("targetField", "Target", "A field with each row's target; or set one target under Scale and target.", Number, Required: false)],
+             new("targetField", "Target", "A field with each row's target; or set one target under Scale and target.", Number, Required: false,
+                 Pickable: false)],
             ["titles", "scale"],
             (c, s, d) => s.Type == SeriesType.Bullet),
     ];
@@ -354,9 +388,10 @@ public static class ChartKinds
 
     /// <summary>
     /// Makes a series this kind: sets its type and variant options, drops the fields of slots the new kind does
-    /// not have, and fills empty required slots with the first field of a fitting type, so the chart draws at once.
+    /// not have, and fills empty required slots with the first field of a fitting type, so the chart draws at once
+    /// (unless <paramref name="fill"/> is false: a suggestion has placed its fields already).
     /// </summary>
-    public static void Apply(ChartKind kind, ChartKind? previous, JsonObject chart, JsonObject series, ChartDataset? dataset)
+    public static void Apply(ChartKind kind, ChartKind? previous, JsonObject chart, JsonObject series, ChartDataset? dataset, bool fill = true)
     {
         foreach (var (scope, property) in Variants)
         {
@@ -401,6 +436,26 @@ public static class ChartKinds
             series.Remove(slot.Property);
         }
 
+        if (fill)
+        {
+            Fill(kind, series, dataset);
+        }
+
+        // Time grouping only where the chart has a time axis that groups.
+        var timeX = kind.Slots.Any(s => s.Property == "x" && s.Part == SlotPart.TimeBucket) && series["x"]?.ToString() is { } x
+            && dataset.Field(x)?.Type == FieldType.Time;
+        if (!timeX)
+        {
+            series.Remove("timeBucket");
+        }
+        else if (series["timeBucket"] is null)
+        {
+            series["timeBucket"] = "auto";
+        }
+    }
+
+    private static void Fill(ChartKind kind, JsonObject series, ChartDataset dataset)
+    {
         var used = new HashSet<string>(kind.Slots.Select(s => series[s.Property]?.ToString()).OfType<string>());
         var empty = kind.Slots.Where(s => s.Required && series[s.Property] is null).ToArray();
         // All the empty slots at once when the fields left allow (a line's time slot must not take the only number).
@@ -426,17 +481,190 @@ public static class ChartKinds
                 series["aggregate"] = "sum";
             }
         }
+    }
 
-        // Time grouping only where the chart has a time axis that groups.
-        var timeX = kind.Slots.Any(s => s.Property == "x" && s.Part == SlotPart.TimeBucket) && series["x"]?.ToString() is { } x
-            && dataset.Field(x)?.Type == FieldType.Time;
-        if (!timeX)
+    // ----- Data first: the charts a set of picked fields can make -----
+
+    /// <summary>The slot properties of every kind: what a suggestion clears before it places its fields.</summary>
+    private static readonly string[] SlotProperties = [.. All.SelectMany(k => k.Slots).Select(s => s.Property).Distinct()];
+
+    /// <summary>
+    /// The fields a chart shows, series by series in slot order (x, y, groupBy...), from the dataset: the fields a
+    /// user picked, as far as the editor can tell.
+    /// </summary>
+    public static IReadOnlyList<DataField> FieldsOf(JsonObject? chart, ChartDataset? dataset)
+    {
+        if (chart?["series"] is not JsonArray list || dataset is null)
         {
-            series.Remove("timeBucket");
+            return [];
         }
-        else if (series["timeBucket"] is null)
+
+        var names = list.OfType<JsonObject>().SelectMany(series => SlotProperties.SelectMany(p => series[p] switch
         {
-            series["timeBucket"] = "auto";
+            JsonArray fields => fields.Select(n => n?.ToString()),
+            JsonValue value => [value.ToString()],
+            _ => [],
+        }));
+        return [.. names.OfType<string>().Distinct(StringComparer.Ordinal).Select(dataset.Field).OfType<DataField>()];
+    }
+
+    /// <summary>
+    /// The charts that show exactly the picked fields: each field in a slot of its type, every required slot
+    /// filled. A value slot may count the rows instead (orders per channel with only the channel picked). Best
+    /// fit first: fields of the type a slot takes first (a time along a line before a time as bar categories),
+    /// then the editor's order of charts.
+    /// </summary>
+    public static IReadOnlyList<ChartSuggestion> Suggest(IReadOnlyList<DataField> picked)
+    {
+        if (picked.Count == 0)
+        {
+            return [];
+        }
+
+        var found = new List<(ChartSuggestion Suggestion, int Cost, int Order)>();
+        for (var i = 0; i < All.Length; i++)
+        {
+            if (Place(All[i], picked) is { } best)
+            {
+                found.Add((new ChartSuggestion(All[i], best.Placed, best.Counts, []), best.Cost, i));
+            }
+            else if (MoreValues.Contains(All[i].Id) && picked.Count(f => f.Type == FieldType.Number) > 1)
+            {
+                // Several numbers on a line or bars: the first as this series' value, each further one a series
+                // of its own (sessions and revenue by hour), unless a field already splits the series.
+                var numbers = picked.Where(f => f.Type == FieldType.Number).ToList();
+                var more = numbers.Skip(1).ToList();
+                if (Place(All[i], [.. picked.Except(more)]) is { } first && first.Placed.All(p => p.Slot.Property != "groupBy")
+                    && first.Placed.Any(p => p.Slot.Property == "y" && p.Field == numbers[0]))
+                {
+                    found.Add((new ChartSuggestion(All[i], first.Placed, false, more), first.Cost, i));
+                }
+            }
+        }
+
+        return [.. found.OrderBy(f => f.Cost).ThenBy(f => Specialist.Contains(f.Suggestion.Kind.Id)).ThenBy(f => f.Order).Select(f => f.Suggestion)];
+    }
+
+    // Charts for a particular story (a funnel, a running total, a radar): after the everyday ones that fit as well,
+    // so channel and revenue suggest bars and a donut before a waterfall.
+    private static readonly HashSet<string> MoreValues = ["line", "area", "columns-time", "bars", "horizontal-bars"];
+
+    private static readonly HashSet<string> Specialist = ["waterfall", "radar", "funnel", "dumbbell", "percent-bars", "bullet", "boxplot", "treemap"];
+
+    // The cheapest way to put every picked field in its own slot of the kind; null when there is none.
+    private static (List<(ChartSlot Slot, DataField Field)> Placed, bool Counts, int Cost)? Place(ChartKind kind, IReadOnlyList<DataField> picked)
+    {
+        if (picked.Count > kind.Slots.Length)
+        {
+            return null;
+        }
+
+        (List<(ChartSlot, DataField)> Placed, bool Counts, int Cost)? best = null;
+        var placed = new List<(ChartSlot Slot, DataField Field)>();
+        // A picked number is the value: counting rows instead would show it along an axis (a line of row counts by revenue).
+        var numberPicked = picked.Any(f => f.Type == FieldType.Number);
+        Next(0, 0);
+        return best;
+
+        void Next(int i, int cost)
+        {
+            if (best is { } b && cost >= b.Cost)
+            {
+                return;
+            }
+
+            if (i == picked.Count)
+            {
+                // Required slots left empty: only a value slot, which then counts the rows (once, and at a price,
+                // so a picked number wins).
+                var open = kind.Slots.Where(s => s.Required && placed.All(p => p.Slot != s)).ToList();
+                if (open.Count == 0)
+                {
+                    best = ([.. placed], false, cost);
+                }
+                else if (open is [{ Part: SlotPart.Aggregate }] && !numberPicked && cost + 2 < (best?.Cost ?? int.MaxValue))
+                {
+                    best = ([.. placed], true, cost + 2);
+                }
+
+                return;
+            }
+
+            var field = picked[i];
+            // Marker and target slots take a field only when the user sets them below: a picked number is a value.
+            foreach (var slot in kind.Slots.Where(s => s.Pickable && s.Fits(field) && placed.All(p => p.Slot != s)))
+            {
+                placed.Add((slot, field));
+                Next(i + 1, cost + Array.IndexOf(slot.Accepts, field.Type));
+                placed.RemoveAt(placed.Count - 1);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Makes the chart the suggestion: this series becomes the chart's first and only one with its fields in their
+    /// slots (its other options stay), followed by a copy for each further value.
+    /// </summary>
+    public static void Use(ChartSuggestion suggestion, ChartKind? previous, JsonObject chart, JsonObject series, ChartDataset? dataset)
+    {
+        foreach (var property in SlotProperties)
+        {
+            series.Remove(property);
+        }
+
+        // How rows combine stays as the user chose it for each value (revenue averaged stays averaged), from any
+        // series of the chart; a value new to the chart starts as a sum. A count only stands for no value picked.
+        var combines = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var s in (chart["series"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        {
+            if (s["y"]?.ToString() is { } y && s["aggregate"]?.ToString() is { } a && a != "count")
+            {
+                combines.TryAdd(y, a);
+            }
+        }
+
+        string Combine(string value) => combines.GetValueOrDefault(value, "sum");
+        series.Remove("aggregate");
+        foreach (var (slot, field) in suggestion.Placed)
+        {
+            series[slot.Property] = slot.IsList ? new JsonArray(field.Name) : field.Name;
+            if (slot.Part == SlotPart.Aggregate)
+            {
+                SetCombine(series, Combine(field.Name));
+            }
+        }
+
+        if (suggestion.Counts)
+        {
+            series["aggregate"] = "count";
+        }
+
+        Apply(suggestion.Kind, previous, chart, series, dataset, fill: false);
+
+        var list = (JsonArray)(chart["series"] ??= new JsonArray());
+        list.Clear();
+        list.Add(series);
+        foreach (var value in suggestion.More)
+        {
+            var copy = (JsonObject)series.DeepClone();
+            copy.Remove("id");
+            copy.Remove("name");
+            copy["y"] = value.Name;
+            SetCombine(copy, Combine(value.Name));
+            list.Add(copy);
+        }
+    }
+
+    // "" is no combining: the series has no aggregate.
+    private static void SetCombine(JsonObject series, string aggregate)
+    {
+        if (aggregate.Length == 0)
+        {
+            series.Remove("aggregate");
+        }
+        else
+        {
+            series["aggregate"] = aggregate;
         }
     }
 
@@ -625,9 +853,15 @@ public static class ChartKinds
     /// <summary>The word a choice is listed under, for a value written with a synonym.</summary>
     public static string Canonical(string value) => Synonyms.GetValueOrDefault(value, value);
 
+    /// <summary>How a picked value's rows combine, in the short list under the fields; no combining only for a value already set so.</summary>
+    public static readonly (string Value, string Label)[] Combines =
+    [
+        ("sum", "Sum"), ("average", "Average"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("", "Each row"),
+    ];
+
     public static readonly (string Value, string Label)[] Aggregates =
     [
-        ("", "Value of"), ("sum", "Sum of"), ("average", "Average of"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("count", "Count rows"),
+        ("", "Each row of"), ("sum", "Sum of"), ("average", "Average of"), ("min", "Lowest"), ("max", "Highest"), ("last", "Last"), ("count", "Count rows"),
     ];
 
     public static readonly (string Value, string Label)[] TimeBuckets =

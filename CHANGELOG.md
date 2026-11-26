@@ -5,6 +5,12 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+- Docs site: the editor starts from the data. Pick the dataset and tap the fields to show; up to four charts that fit
+  them appear as cards, drawn small with the data, with the rest listed under Also. A text field alone counts the rows
+  (orders per channel). The charts by goal moved under All charts. Each tap on a field switches to the best fitting
+  chart at once; when the fields make no chart, the chart is hidden until they do. Several numbers make one series
+  each on a line, area, columns or bars (sessions and revenue by hour). A picked number's chip has its aggregate as a small
+  menu (sessions Sum, responseMs Average), kept per value when the chart changes.
 - Docs site: the tables on Large data and Server export scroll on their own on a phone, instead of making the whole
   page scroll sideways.
 - Docs site: in the editor, picking what to show (Compare, Parts of a whole...) switches the chart at once, to the
