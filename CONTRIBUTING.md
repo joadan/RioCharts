@@ -40,6 +40,20 @@ Two kinds of tests compare against files in the repository:
 Look at the difference, then accept it with `RIOCHARTS_ACCEPT_SNAPSHOTS=1 dotnet test` and review
 the diff before committing.
 
+### Checks on pull requests
+
+Every pull request against `master`, from a fork too, runs two GitHub Actions workflows on Linux:
+
+- **Test** ([test.yml](.github/workflows/test.yml)): the JS module's syntax and every test on .NET 10 and
+  .NET 11. Its `test` check is required: a pull request cannot be merged until it passes. On a
+  snapshot failure, the run's `received-snapshots` artifact has the changed SVGs.
+- **Native AOT** ([aot.yml](.github/workflows/aot.yml)): publishes `tests/RioCharts.AotSmoke` with native
+  AOT and runs it. Only when the change touches `src/`, the smoke app or the workflow; not required,
+  but a failure still needs fixing.
+
+For a first-time contributor, GitHub waits for a maintainer to approve the run. Run `dotnet test`
+locally first: the checks confirm it on Linux, they do not replace it.
+
 ## Projects
 
 | Path | What |
