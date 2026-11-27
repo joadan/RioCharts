@@ -6,3 +6,9 @@ RioCharts.Core.ChartTexts.LegendHidden.get -> string!
 RioCharts.Core.ChartTexts.LegendHidden.init -> void
 RioCharts.Core.ChartTexts.LegendNoData.get -> string!
 RioCharts.Core.ChartTexts.LegendNoData.init -> void
+RioCharts.Core.LineDash
+RioCharts.Core.LineDash.Dashed = 1 -> RioCharts.Core.LineDash
+RioCharts.Core.LineDash.Dotted = 2 -> RioCharts.Core.LineDash
+RioCharts.Core.LineDash.Solid = 0 -> RioCharts.Core.LineDash
+RioCharts.Core.SeriesOptions.Dash.get -> RioCharts.Core.LineDash
+RioCharts.Core.SeriesOptions.Dash.init -> void

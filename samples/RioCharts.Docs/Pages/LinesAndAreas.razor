@@ -74,6 +74,24 @@
     </ChildContent>
 </Example>
 
+<Example Title="Dashed and dotted lines" Code="@DashCode">
+    <Description>
+        <p>
+            <code>Dash="LineDash.Dashed"</code> or <code>LineDash.Dotted</code> tells a forecast, plan or target apart from the actual
+            values, also without color. The pattern scales with <code>StrokeWidth</code> and the legend shows it too. On an
+            <code>AreaSeries</code> it dashes the top line and keeps the fill. Here the orders of the last weeks, a dashed forecast for the
+            next two and a dotted target. In JSON definitions: <code>"dash": "dashed"</code>.
+        </p>
+    </Description>
+    <ChildContent>
+        <RioChart TItem="Reading" Height="240">
+            <LineSeries Items="DailyOrders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" Format="0" />
+            <LineSeries Items="OrdersForecast" Name="Forecast" XValue="r => r.Time" YValue="r => r.Value" Format="0" Dash="LineDash.Dashed" />
+            <LineSeries Items="OrdersTarget" Name="Target" XValue="r => r.Time" YValue="r => r.Value" Format="0" Dash="LineDash.Dotted" />
+        </RioChart>
+    </ChildContent>
+</Example>
+
 <Example Title="Numbers on the x axis" Code="@NumericCode">
     <Description>
         <p>
@@ -219,6 +237,20 @@
     private const string DotsCode = """
         <RioChart TItem="Reading">
             <LineSeries Items="checks" Name="Response time" XValue="r => r.Time" YValue="r => r.Value" Highlight="PointHighlight.All" />
+        </RioChart>
+        """;
+
+    // The forecast starts at the last actual day, so the two lines join; the target spans both.
+    private static readonly List<Reading> OrdersForecast = [.. Enumerable.Range(0, 15)
+        .Select(d => new Reading(DailyOrders[^1].Time.AddDays(d), d == 0 ? DailyOrders[^1].Value : Math.Round(235 + 45 * Math.Sin((DailyOrders[^1].Time.DayOfYear + d) / 5.0))))];
+
+    private static readonly List<Reading> OrdersTarget = [new(DailyOrders[0].Time, 250), new(OrdersForecast[^1].Time, 250)];
+
+    private const string DashCode = """
+        <RioChart TItem="Reading">
+            <LineSeries Items="orders" Name="Orders" XValue="r => r.Time" YValue="r => r.Value" />
+            <LineSeries Items="forecast" Name="Forecast" XValue="r => r.Time" YValue="r => r.Value" Dash="LineDash.Dashed" />
+            <LineSeries Items="target" Name="Target" XValue="r => r.Time" YValue="r => r.Value" Dash="LineDash.Dotted" />
         </RioChart>
         """;
 

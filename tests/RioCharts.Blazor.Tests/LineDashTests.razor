@@ -1,0 +1,24 @@
+@inherits ChartTestBase
+
+@code {
+    private sealed record Day(int Index, double Actual, double Plan);
+
+    private static readonly Day[] Days = [new(0, 3, 4), new(1, 5, 4), new(2, 4, 4), new(3, 6, 4)];
+
+    [Fact]
+    public void Dash_on_line_and_area_series_dashes_the_rendered_lines()
+    {
+        var cut = Render<RioChart<Day>>(@<RioChart TItem="Day" Items="Days">
+            <LineSeries Id="actual" XValue="d => d.Index" YValue="d => d.Actual" />
+            <LineSeries Id="plan" XValue="d => d.Index" YValue="d => d.Plan" Dash="LineDash.Dashed" />
+            <AreaSeries Id="area" XValue="d => d.Index" YValue="d => d.Actual" Dash="LineDash.Dotted" StrokeWidth="3" />
+        </RioChart>);
+
+        var dashes = cut.FindAll("path.rio-line").Select(p => p.GetAttribute("stroke-dasharray")).ToList();
+        Assert.Equal(3, dashes.Count);
+        Assert.Contains(null, dashes);
+        Assert.Contains("6 6", dashes);
+        Assert.Contains("0 7.5", dashes);
+        Assert.Null(cut.Find("path.rio-area").GetAttribute("stroke-dasharray"));
+    }
+}

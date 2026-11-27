@@ -71,6 +71,21 @@ public class SnapshotTests
             ["sp"] = Hourly(36, i => i < 8 ? 18 : i < 20 ? 21 : 19, step: 4),
         }),
 
+        ["line-dash"] = new(new ChartDefinition
+        {
+            Series =
+            [
+                new SeriesOptions { Id = "a", Name = "Actual" },
+                new SeriesOptions { Id = "f", Name = "Forecast", Dash = LineDash.Dashed },
+                new SeriesOptions { Id = "t", Name = "Target", Dash = LineDash.Dotted, StrokeWidth = 1.5 },
+            ],
+        }, new()
+        {
+            ["a"] = Hourly(24, London),
+            ["f"] = SeriesData.From(Enumerable.Range(23, 13).Select(i => Start.AddHours(i)).ToArray(), Enumerable.Range(23, 13).Select(i => London(i) + (i - 23) * 0.05).ToArray()),
+            ["t"] = SeriesData.From([Start, Start.AddHours(35)], [19.5, 19.5]),
+        }),
+
         ["line-categories"] = new(new ChartDefinition { Series = [new SeriesOptions { Id = "a", Name = "Alarms" }] },
             new() { ["a"] = Categories(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], 4, 7, 3, 9, 6, 1, 2) }),
 
