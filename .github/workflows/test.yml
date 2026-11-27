@@ -1,15 +1,23 @@
 name: Test
 
-# Runs every test on Linux, on .NET 10 and .NET 11 (the test projects target both), for each push to master, so the visual snapshots
-# (tests/RioCharts.Tests/Snapshots) are checked on the same OS as the release workflow.
+# Runs every test on Linux, on .NET 10 and .NET 11 (the test projects target both), for each push to master and each pull request
+# against it (forks too), so the visual snapshots (tests/RioCharts.Tests/Snapshots) are checked on the same OS as the release workflow.
+# Pull requests use `pull_request`, never `pull_request_target`: code from a fork runs with a read-only token and no secrets.
 # On a snapshot failure, the received SVGs are uploaded as an artifact to compare.
 on:
   push:
+    branches: [master]
+  pull_request:
     branches: [master]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# A new push to a pull request cancels its older run; runs on master always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
