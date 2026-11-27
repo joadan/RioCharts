@@ -2,15 +2,24 @@ name: Native AOT
 
 # Publishes tests/RioCharts.AotSmoke with native AOT (trimmed, no JIT) and runs it: JSON definitions,
 # binding, layout, texts, SVG/PNG export and the AI tool. The publish fails on any trimming or
-# AOT warning, and the run fails when a check does.
+# AOT warning, and the run fails when a check does. Runs on master and on pull requests (forks too, with
+# `pull_request`: read-only token, no secrets) that touch the libraries.
 on:
   push:
+    branches: [master]
+    paths: ['src/**', 'tests/RioCharts.AotSmoke/**', '.github/workflows/aot.yml']
+  pull_request:
     branches: [master]
     paths: ['src/**', 'tests/RioCharts.AotSmoke/**', '.github/workflows/aot.yml']
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# A new push to a pull request cancels its older run; runs on master always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   aot:
