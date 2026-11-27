@@ -5,6 +5,12 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+## 1.0.77-rc (2026-11-27)
+
+Third release candidate for 1.0: dashed and dotted lines (contributed in #75), and `ChartDefinitionJson.Serialize`
+writes non-ASCII text as it is. No breaking changes; the new API is
+`LineDash`, `SeriesOptions.Dash` and `Dash` on `LineSeries` and `AreaSeries`, and `"dash"` in JSON definitions.
+
 - Dashed and dotted lines: `Dash="LineDash.Dashed"` or `LineDash.Dotted` on `LineSeries` and `AreaSeries` (the area's
   top line; the fill stays), for a forecast, plan or target next to the actual values. The pattern scales with
   `StrokeWidth`, the legend swatch shows it too, and SVG, canvas and PNG export draw it the same. JSON definitions:
