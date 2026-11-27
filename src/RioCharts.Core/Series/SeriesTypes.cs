@@ -150,6 +150,36 @@ internal sealed class SeriesBuildContext
 
     public double StrokeWidth => Spec.StrokeWidth ?? 2;
 
+    /// <summary>
+    /// Adds the series' line (line and area series) in its <see cref="SeriesOptions.Dash"/> pattern. A dashed
+    /// line has its own style names, so it never shares a color band's style with a solid line of the same color.
+    /// </summary>
+    public void AddLine(PathData path)
+    {
+        var dash = DashArray(Spec.Dash, StrokeWidth);
+        var name = dash is null ? "line" : "line-" + Spec.Dash.ToString().ToLowerInvariant();
+        AddBanded(path, name, color => new Style { Stroke = color, StrokeWidth = (float)StrokeWidth, Fill = "none", DashArray = dash }, "rio-line");
+    }
+
+    /// <summary>
+    /// The <c>stroke-dasharray</c> of a dash pattern for a line of the given width; null for a solid line. The
+    /// renderers draw round line caps, which reach half the width past each dash end: a dash of 3 widths shows
+    /// as 4 with a gap of 2, and a dot is a dash of length 0 (a round dot as wide as the line).
+    /// </summary>
+    internal static string? DashArray(LineDash dash, double strokeWidth)
+    {
+        var w = strokeWidth > 0 ? strokeWidth : 2;
+        return dash switch
+        {
+            LineDash.Dashed => Dashes(3 * w, 3 * w),
+            LineDash.Dotted => Dashes(0, 2.5 * w),
+            _ => null,
+        };
+
+        static string Dashes(double on, double off) =>
+            string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{Math.Round(on, 2)} {Math.Round(off, 2)}");
+    }
+
     /// <summary>A point's own color: from the data (<see cref="SeriesData.Colors"/>), else its value's color band; null keeps the series color.</summary>
     public string? PointColor(int i) => Data.Colors?[i] ?? ColorBands.ColorOf(Spec.ColorBands, Data.Y[i]);
 
@@ -204,7 +234,7 @@ internal sealed class LineSeriesType : ISeriesType
     public void Build(SeriesBuildContext c)
     {
         var (xs, ys, _, indices) = DrawnPoints(c);
-        c.AddBanded(LineGenerator.Line(xs, ys, c.Spec.Curve), "line", color => new Style { Stroke = color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" }, "rio-line");
+        c.AddLine(LineGenerator.Line(xs, ys, c.Spec.Curve));
         AddLonePoints(c, xs, ys);
         AddHighlights(c);
         AddColoredPoints(c, xs, ys, indices);
@@ -748,7 +778,7 @@ internal sealed class AreaSeriesType : ISeriesType
         var opacity = c.Stacked ? 0.32f : 0.18f;
         var area = y0 is null ? LineGenerator.Area(xs, ys, c.ZeroY, c.Spec.Curve) : LineGenerator.AreaBetween(xs, ys, y0, c.Spec.Curve);
         c.AddBanded(area, "area", color => new Style { Fill = color, FillOpacity = opacity }, "rio-area");
-        c.AddBanded(LineGenerator.Line(xs, ys, c.Spec.Curve), "line", color => new Style { Stroke = color, StrokeWidth = (float)c.StrokeWidth, Fill = "none" }, "rio-line");
+        c.AddLine(LineGenerator.Line(xs, ys, c.Spec.Curve));
         LineSeriesType.AddLonePoints(c, xs, ys);
         LineSeriesType.AddHighlights(c);
         LineSeriesType.AddColoredPoints(c, xs, ys, indices);

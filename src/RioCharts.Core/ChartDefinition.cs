@@ -276,6 +276,10 @@ public sealed record SeriesOptions
     [Description("Line width in pixels. Default 2.")]
     public double? StrokeWidth { get; init; }
 
+    /// <summary>Line and area series: draw the line solid (default), dashed or dotted, e.g. for a forecast or a target.</summary>
+    [Description("Line and area series: draw the line solid (default), dashed or dotted, e.g. for a forecast or a target.")]
+    public LineDash Dash { get; init; } = LineDash.Solid;
+
     /// <summary>Draw order override. By default areas are drawn first, then bars, then lines.</summary>
     [Description("Draw order override. By default areas are drawn first, then bars, then lines.")]
     public int? ZIndex { get; init; }
@@ -640,6 +644,20 @@ public enum CurveType
 
     /// <summary>Holds each value until the next point.</summary>
     Step,
+}
+
+/// <summary>Dash pattern of a line. The dashes and dots scale with the line width.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<LineDash>))]
+public enum LineDash
+{
+    /// <summary>A solid line.</summary>
+    Solid,
+
+    /// <summary>Dashes, e.g. for a forecast or a plan next to the actual values.</summary>
+    Dashed,
+
+    /// <summary>Round dots, e.g. for a target or a previous period.</summary>
+    Dotted,
 }
 
 /// <summary>Points of a line or area series to mark with a dot (combine with |).</summary>

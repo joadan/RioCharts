@@ -105,6 +105,9 @@ internal sealed record LegendEntry(string SeriesId, string Label, string Color, 
 {
     /// <summary>Candlesticks colored by direction (<see cref="SeriesOptions.DirectionColors"/>): the swatch shows the rising and falling colors.</summary>
     public bool DirectionColors { get; init; }
+
+    /// <summary>Line series drawn dashed or dotted (<see cref="SeriesOptions.Dash"/>): the swatch line is too.</summary>
+    public LineDash Dash { get; init; }
 }
 
 /// <summary>The output of <see cref="ChartLayout.Compute"/>: the scene plus what interaction needs.</summary>
@@ -471,6 +474,7 @@ internal static partial class ChartLayout
                 ChartDescriber.DescribeSeries(spec, r.Spec, r.Data, xKind, culture, texts, Facts(r.Data)) ?? $"{r.Spec.DisplayName}: {texts.NoData}")
             {
                 DirectionColors = r.Spec.Type == SeriesType.Candlestick && r.Spec.DirectionColors,
+                Dash = r.Spec.Type == SeriesType.Line ? r.Spec.Dash : LineDash.Solid,
             })
             .ToList();
         var showLegend = !compact && spec.Legend.Mode switch

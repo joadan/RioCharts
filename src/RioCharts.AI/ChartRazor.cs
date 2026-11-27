@@ -309,6 +309,11 @@ public static class ChartRazor
                 sb.Append($" Curve=\"CurveType.{s.Curve}\"");
             }
 
+            if (s.Dash != LineDash.Solid && s.Type is SeriesType.Line or SeriesType.Area)
+            {
+                sb.Append($" Dash=\"LineDash.{s.Dash}\"");
+            }
+
             if (s.Type == SeriesType.MapBubble)
             {
                 if (s.Latitude is { } latitudeField && s.Longitude is { } longitudeField)

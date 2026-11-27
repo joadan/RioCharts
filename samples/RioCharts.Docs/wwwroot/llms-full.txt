@@ -38,6 +38,7 @@ Other packages, only when needed: `RioCharts.Skia` (PNG/SVG export on the server
 - Largest first: `Sort="ChartSort.Descending"` on a `BarSeries` orders the categories by its values after `Aggregate` (e.g. counts). Sorting `Items` does not help with aggregates.
 - One y axis per unit: `YAxes="@([new AxisOptions { Id = "kw", Title = "kW" }])"` on the chart and `YAxisId="kw"` on the series. Extra axes go right unless `Position = AxisPosition.Left`; several on one side sit side by side. Add `SeriesColor = true` to each axis to color it like its series.
 - Few points on a line (say under 20): `Highlight="PointHighlight.All"` puts a dot on every point (`MarkerSize` for the diameter). Other values mark single points: `First`, `Last`, `Min`, `Max`, combined with `|`.
+- Forecast, plan or target next to the actual values: `Dash="LineDash.Dashed"` or `Dash="LineDash.Dotted"` on a `LineSeries` (or the top line of an `AreaSeries`); the legend swatch shows the same pattern. JSON: `"dash": "dashed"`.
 - Bars never take more than a fifth of the plot, so a lone bar after filtering stays narrow; `MaxBarWidth="40"` on a `BarSeries` caps them in pixels.
 - `OnPointClick` on lines fires for a click within 16 px of a point (the closest point wins), so a click on the line next to a point picks it; between points far apart nothing is picked. Bars: anywhere on the bar.
 - Pins: `OnPointClick` gives the item; add a `<PointAnnotation Id="..." X="item.Time" Y="item.Value" />` for it. With `OnAnnotationClick` set, a click on the pin raises `OnAnnotationClick` (with its `Id`), even on a data point: remove the pin there.
@@ -414,6 +415,7 @@ Line series.
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `Curve`: `CurveType` — Line shape: Linear, Monotone (smooth, no overshoot) or Step.
 - `StrokeWidth`: `double` = `2` — Line width in pixels.
+- `Dash`: `LineDash` — Draws the line `LineDash.Dashed` or `LineDash.Dotted` instead of solid, e.g. for a forecast next to the actual values or a target. The legend swatch shows the same pattern. Default solid.
 - `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last | PointHighlight.Max`, or `PointHighlight.All` for a dot on every point (sparse data: shows where the values are; not drawn beyond 1000 visible points). Default none.
 - `MarkerSize`: `double?` — Diameter of the `LineSeries.Highlight` dots in pixels. Default: from the line width (for a 2 px line, 5 px; 7 px with `PointHighlight.All`).
 - `Sort`: `ChartSort?` — Category x: orders the categories by this series' values (after `Aggregate`, e.g. counts), largest first with `ChartSort.Descending`. The first series with a sort decides for the whole chart. Time and number x ignore it.
@@ -429,6 +431,7 @@ Area series, filled down to zero.
 - `Bucket`: `TimeBucket?` — Time x: one point per bucket (e.g. `TimeBucket.Day` or `TimeBucket.Month`, on the items' wall-clock time, or in the chart's `TimeZone` when set) at the bucket's start, combining its items with `Aggregate` (average when not set) or `YAggregate`. `TimeBucket.Auto` picks the bucket from the data's time span (about 50 buckets).
 - `Curve`: `CurveType` — Shape of the top edge: Linear, Monotone (smooth, no overshoot) or Step.
 - `StrokeWidth`: `double` = `2` — Width of the top line in pixels. Default 2.
+- `Dash`: `LineDash` — Draws the top line `LineDash.Dashed` or `LineDash.Dotted` instead of solid; the fill stays. Default solid.
 - `Highlight`: `PointHighlight` — Points to mark with a dot, e.g. `PointHighlight.Last`, or `PointHighlight.All` for every point. Default none.
 - `MarkerSize`: `double?` — Diameter of the `AreaSeries.Highlight` dots in pixels. Default: from the line width.
 - `Sort`: `ChartSort?` — Category x: orders the categories by this series' values (after `Aggregate`, e.g. counts), largest first with `ChartSort.Descending`. The first series with a sort decides for the whole chart. Time and number x ignore it.
@@ -1059,6 +1062,14 @@ Line shape. Step holds each value until the next point.
 - `Monotone` — A smooth curve that does not overshoot the data.
 - `Step` — Holds each value until the next point.
 
+#### `LineDash` (enum, RioCharts.Core)
+
+Dash pattern of a line. The dashes and dots scale with the line width.
+
+- `Solid` — A solid line.
+- `Dashed` — Dashes, e.g. for a forecast or a plan next to the actual values.
+- `Dotted` — Round dots, e.g. for a target or a previous period.
+
 #### `PointHighlight` (enum, RioCharts.Core)
 
 Points of a line or area series to mark with a dot (combine with |).
@@ -1179,7 +1190,7 @@ Kind of annotation.
 
 One series: its type, where its data comes from (fields and transforms in JSON definitions) and how it looks.
 
-63 properties: `Id`, `Type`, `Dataset`, `X`, `Y`, `Filter`, `TimeBucket`, `Aggregate`, `GroupBy`, `Sort`, `Limit`, `Name`, `Color`, `Curve`, `StrokeWidth`, `ZIndex`, `YAxisId`, `Stack`, `DataLabels`, `Low`, `Open`, `Q1`, `Q3`, `High`, `Row`, `Start`, `End`, `Total`, `BinWidth`, `BinCount`, `MarkerSize`, `MaxBarWidth`, `GroupByCountry`, `Latitude`, `Longitude`, `Size`, `SizeName`, `SizeFormat`, `TrendLine`, `DirectionColors`, `Highlight`, `InnerRadius`, `StartAngle`, `EndAngle`, `GroupSmallSlices`, `Path`, `VisibleLevels`, `ColorBands`, `ColorField`, `PathSeparator`, `Max`, `Min`, `Midpoint`, `BelowColor`, `Target`, `From`, `Error`, `ErrorField`, `ErrorLow`, `ErrorHigh`, `TargetField`, `Format`, `DisplayName`.
+64 properties: `Id`, `Type`, `Dataset`, `X`, `Y`, `Filter`, `TimeBucket`, `Aggregate`, `GroupBy`, `Sort`, `Limit`, `Name`, `Color`, `Curve`, `StrokeWidth`, `Dash`, `ZIndex`, `YAxisId`, `Stack`, `DataLabels`, `Low`, `Open`, `Q1`, `Q3`, `High`, `Row`, `Start`, `End`, `Total`, `BinWidth`, `BinCount`, `MarkerSize`, `MaxBarWidth`, `GroupByCountry`, `Latitude`, `Longitude`, `Size`, `SizeName`, `SizeFormat`, `TrendLine`, `DirectionColors`, `Highlight`, `InnerRadius`, `StartAngle`, `EndAngle`, `GroupSmallSlices`, `Path`, `VisibleLevels`, `ColorBands`, `ColorField`, `PathSeparator`, `Max`, `Min`, `Midpoint`, `BelowColor`, `Target`, `From`, `Error`, `ErrorField`, `ErrorLow`, `ErrorHigh`, `TargetField`, `Format`, `DisplayName`.
 
 #### `DataField` (class, RioCharts.Core.Definitions)
 

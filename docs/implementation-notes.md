@@ -477,6 +477,24 @@ Where the code differs from, or fills in details of, [Design.md](../Design.md).
   whole tree), and no "No data" text. The plot is the box inset by 1 px; a pie or radial bar fills
   its shorter side. Their description is the normal one (no `DescribeCompact`); the tooltip stays.
 
+## Dashed and dotted lines
+
+- `SeriesOptions.Dash` (`LineDash.Solid`, `Dashed`, `Dotted`) on line and area series sets the
+  line style's `DashArray`. Every renderer already drew `Style.DashArray` (the trend line and
+  reference lines used it): SVG `stroke-dasharray`, canvas `setLineDash`, Skia `SKPathEffect.CreateDash`.
+- An enum, not a free dasharray string: the patterns stay consistent across charts and themes,
+  the JSON format gets a small vocabulary (`"dash": "dashed"`, also `dash`, `dots`...), and a raw
+  string would be one more thing to validate per renderer.
+- The pattern scales with the line width: dashed `3w 3w`, dotted `0 2.5w`. All renderers draw round
+  caps, which add half the width at each dash end, so a dash of 3 widths shows as 4 with a gap of 2,
+  and a dash of length 0 is a round dot as wide as the line (Skia and canvas draw zero-length round
+  caps too; checked on a PNG export).
+- The style name carries the pattern (`series-0-line-dashed`): color bands share one style per color,
+  so a dashed and a solid line in the same band color must not share a name.
+- The legend swatch of a line series repeats the pattern at a fixed size (`4 4`, dotted `0 4`) so it
+  reads in 12 px. Area swatches stay filled squares: the fill is what identifies an area.
+- Range areas have no top line, so they have no `Dash`.
+
 
 
 ## Languages and texts

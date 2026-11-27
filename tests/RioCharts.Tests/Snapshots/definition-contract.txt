@@ -41,6 +41,7 @@ field series[].colorBands[].color
 field series[].colorBands[].label
 field series[].colorField
 field series[].curve
+field series[].dash
 field series[].dataLabels
 field series[].dataset
 field series[].directionColors
@@ -342,6 +343,14 @@ word series.curve stepafter -> step
 word series.curve stepped -> step
 word series.curve steps -> step
 word series.curve straight -> linear
+word series.dash dash -> dashed
+word series.dash dashed -> dashed
+word series.dash dashes -> dashed
+word series.dash dot -> dotted
+word series.dash dots -> dotted
+word series.dash dotted -> dotted
+word series.dash none -> solid
+word series.dash solid -> solid
 word series.filter.op != -> ne
 word series.filter.op < -> lt
 word series.filter.op <= -> lte

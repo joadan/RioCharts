@@ -129,6 +129,14 @@ internal static partial class ChartLayout
         {
             SeriesType.RangeArea => new Style { Fill = entry.Color, FillOpacity = 0.35f }, // like the band
             SeriesType.Radar => new Style { Fill = entry.Color, FillOpacity = 0.25f, Stroke = entry.Color, StrokeWidth = 1.5f }, // like the shape
+            // A dashed line shows two dashes, a dotted one four dots, in the 12 px swatch.
+            SeriesType.Line when entry.Dash != LineDash.Solid => new Style
+            {
+                Fill = entry.Color,
+                Stroke = entry.Color,
+                StrokeWidth = 2,
+                DashArray = entry.Dash == LineDash.Dotted ? "0 4" : "4 4",
+            },
             _ => new Style { Fill = entry.Color, Stroke = entry.Color, StrokeWidth = 2 },
         });
         Node swatch = entry.Type == SeriesType.Line

@@ -1,1 +1,5 @@
 #nullable enable
+RioCharts.Blazor.AreaSeries<TItem>.Dash.get -> RioCharts.Core.LineDash
+RioCharts.Blazor.AreaSeries<TItem>.Dash.set -> void
+RioCharts.Blazor.LineSeries<TItem>.Dash.get -> RioCharts.Core.LineDash
+RioCharts.Blazor.LineSeries<TItem>.Dash.set -> void

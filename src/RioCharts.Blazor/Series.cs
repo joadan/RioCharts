@@ -461,6 +461,12 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
     [Parameter] public double StrokeWidth { get; set; } = 2;
 
     /// <summary>
+    /// Draws the line <c>LineDash.Dashed</c> or <c>LineDash.Dotted</c> instead of solid, e.g. for a forecast next to the actual
+    /// values or a target. The legend swatch shows the same pattern. Default solid.
+    /// </summary>
+    [Parameter] public LineDash Dash { get; set; }
+
+    /// <summary>
     /// Points to mark with a dot, e.g. <c>PointHighlight.Last | PointHighlight.Max</c>, or <c>PointHighlight.All</c> for a dot
     /// on every point (sparse data: shows where the values are; not drawn beyond 1000 visible points). Default none.
     /// </summary>
@@ -483,7 +489,7 @@ public sealed class LineSeries<TItem> : ErrorBarSeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
     {
-        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize, Sort = Sort,
+        Curve = Curve, StrokeWidth = StrokeWidth, Dash = Dash, Highlight = Highlight, MarkerSize = MarkerSize, Sort = Sort,
     };
 }
 
@@ -503,6 +509,9 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
 
     /// <summary>Width of the top line in pixels. Default 2.</summary>
     [Parameter] public double StrokeWidth { get; set; } = 2;
+
+    /// <summary>Draws the top line <c>LineDash.Dashed</c> or <c>LineDash.Dotted</c> instead of solid; the fill stays. Default solid.</summary>
+    [Parameter] public LineDash Dash { get; set; }
 
     /// <summary>Points to mark with a dot, e.g. <c>PointHighlight.Last</c>, or <c>PointHighlight.All</c> for every point. Default none.</summary>
     [Parameter] public PointHighlight Highlight { get; set; }
@@ -524,7 +533,7 @@ public sealed class AreaSeries<TItem> : SeriesBase<TItem>
     /// <inheritdoc />
     protected override SeriesOptions CreateOptions(string id) => base.CreateOptions(id) with
     {
-        Curve = Curve, StrokeWidth = StrokeWidth, Highlight = Highlight, MarkerSize = MarkerSize, Sort = Sort,
+        Curve = Curve, StrokeWidth = StrokeWidth, Dash = Dash, Highlight = Highlight, MarkerSize = MarkerSize, Sort = Sort,
     };
 }
 

@@ -5,6 +5,10 @@ frozen until 1.0, and breaking changes from earlier previews are called out unde
 
 ## Unreleased
 
+- Dashed and dotted lines: `Dash="LineDash.Dashed"` or `LineDash.Dotted` on `LineSeries` and `AreaSeries` (the area's
+  top line; the fill stays), for a forecast, plan or target next to the actual values. The pattern scales with
+  `StrokeWidth`, the legend swatch shows it too, and SVG, canvas and PNG export draw it the same. JSON definitions:
+  `"dash": "dashed"` (also `"dotted"`, `"solid"`); `ChartRazor` writes `Dash`.
 - Docs site: the editor starts from the data. Pick the dataset and tap the fields to show; up to four charts that fit
   them appear as cards, drawn small with the data, with the rest listed under Also. A text field alone counts the rows
   (orders per channel). The charts by goal moved under All charts. Each tap on a field switches to the best fitting

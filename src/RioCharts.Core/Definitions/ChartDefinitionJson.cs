@@ -66,6 +66,7 @@ public static class ChartDefinitionJson
         var camel = JsonNamingPolicy.CamelCase;
         options.Converters.Add(new JsonStringEnumConverter<SeriesType>(camel));
         options.Converters.Add(new JsonStringEnumConverter<CurveType>(camel));
+        options.Converters.Add(new JsonStringEnumConverter<LineDash>(camel));
         options.Converters.Add(new JsonStringEnumConverter<PointHighlight>(camel));
         options.Converters.Add(new JsonStringEnumConverter<ScaleType>(camel));
         options.Converters.Add(new JsonStringEnumConverter<AxisPosition>(camel));
@@ -421,6 +422,12 @@ public static class ChartDefinitionJson
         ["curved"] = "monotone", ["step"] = "step", ["stepped"] = "step", ["steps"] = "step", ["stepafter"] = "step",
     };
 
+    private static readonly Dictionary<string, string> Dashes = new(StringComparer.Ordinal)
+    {
+        ["solid"] = "solid", ["none"] = "solid", ["dashed"] = "dashed", ["dash"] = "dashed", ["dashes"] = "dashed",
+        ["dotted"] = "dotted", ["dot"] = "dotted", ["dots"] = "dotted",
+    };
+
     private static readonly Dictionary<string, string> Aggregates = new(StringComparer.Ordinal)
     {
         ["sum"] = "sum", ["total"] = "sum", ["average"] = "average", ["avg"] = "average", ["mean"] = "average", ["min"] = "min",
@@ -455,7 +462,7 @@ public static class ChartDefinitionJson
         if (root["series"] is null && (root.ContainsKey("x") || root.ContainsKey("y")))
         {
             var single = new JsonObject();
-            foreach (var key in new[] { "type", "x", "y", "name", "groupBy", "aggregate", "timeBucket", "curve", "stack", "filter", "sort", "limit" })
+            foreach (var key in new[] { "type", "x", "y", "name", "groupBy", "aggregate", "timeBucket", "curve", "dash", "stack", "filter", "sort", "limit" })
             {
                 if (root[key] is { } value)
                 {
@@ -524,6 +531,7 @@ public static class ChartDefinitionJson
                 }
 
                 Vocabulary(s, "curve", Curves, $"series[{i}].curve", errors);
+                Vocabulary(s, "dash", Dashes, $"series[{i}].dash", errors);
                 Vocabulary(s, "aggregate", Aggregates, $"series[{i}].aggregate", errors);
                 Vocabulary(s, "timeBucket", Buckets, $"series[{i}].timeBucket", errors);
                 Vocabulary(s, "sort", Sorts, $"series[{i}].sort", errors);
@@ -690,6 +698,7 @@ public static class ChartDefinitionJson
         }
 
         Words("series.curve", Curves);
+        Words("series.dash", Dashes);
         Words("series.aggregate", Aggregates);
         Words("series.timeBucket", Buckets);
         Words("series.sort", Sorts);
